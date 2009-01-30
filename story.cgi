@@ -34,6 +34,24 @@ s|@@POSTTIME@@|$posttime|g
 cat_post "$fn"
 
 cat templates/story-bottom.html
+cat templates/story-comment-head.html | sed -e "
+s|@@COMCOUNT@@|`ls data/posts/$postid/comments/|wc -l`|g
+"
+
+for cmtid in `ls data/posts/$postid/comments | sort -n`; do
+	cat templates/story-comment-item-head.html | sed -e "
+s|@@COMID@@|$cmtid|g
+"
+	cat_post "data/posts/$postid/comments/$cmtid/text.txt"
+	cat templates/story-comment-item-tail.html | sed -e "
+s|@@COMID@@|$cmtid|g
+s|@@COMAUTHOR@@|`get_xattr author data/posts/$postid/comments/$cmtid/`|g
+s|@@COMDATE@@|`get_date data/posts/$postid/comments/$cmtid/`|g
+s|@@COMTIME@@|`get_time data/posts/$postid/comments/$cmtid/`|g
+"
+done
+
+cat templates/story-comment-tail.html
 
 ##########################
 

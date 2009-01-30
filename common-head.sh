@@ -44,11 +44,12 @@ arch_date()
 cat_post()
 {
 #/^<!--more-->$/ { exit; }
+#{ print "<br/>" }
 	cat "$1" | awk '
 BEGIN { par=1 }
 (par) { print "<p>"; par=0 }
 { print $0 }
-/^$/ { print "</p>"; par=1 }
+/^$/ { print "</p>"; par=1; next }
 END { if (!par) print "</p>" }
 '
 }

@@ -13,7 +13,7 @@ s|@@CATDESC@@|$catdesc|g
 "
 done
 cat templates/sidebar-middle.html
-for archname in data/by-month/* ; do
+for archname in `ls data/by-month/ | sort -r` ; do
 	archname=`basename $archname`
 
 	cat templates/sidebar-archive-item.html | sed -e "
