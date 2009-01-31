@@ -51,7 +51,7 @@ cat templates/header.html | sed -e "s|@@TITLE@@|$catid|"
 for postid in `ls data/by-category/$catid/ | sort -r` ; do
 	[ -d "data/by-category/$catid/$postid" ] && continue
 
-	fn="data/posts/$postid/post.txt"
+	fn="data/posts/$postid/"
 
 	cat templates/story-top.html | sed -e "
 s|@@POSTID@@|`basename $postid`|g
@@ -69,7 +69,7 @@ s|@@CATNAME@@|$catname|g
 s|@@POSTTIME@@|`get_time "$fn"`|g
 	"
 
-	cat_post "$fn"
+	cat_post "$fn/post.txt"
 
 	cat templates/story-bottom.html
 done

@@ -1,7 +1,7 @@
 # usage: get_xattr <attrname> <filename>
 get_xattr()
 {
-	cat "$2_xattrs/$1" 2> /dev/null
+	getfattr --only-values -n "user.$1" "$2" 2> /dev/null
 }
 
 # usage: get_date <filename>

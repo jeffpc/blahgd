@@ -6,7 +6,7 @@
 
 postid=`echo "$PATH_INFO" | sed -e 's,^/,,'`
 
-fn="data/posts/$postid/post.txt"
+fn="data/posts/$postid/"
 
 title=`get_xattr post_title "$fn"`
 postdate=`get_date "$fn"`
@@ -31,7 +31,7 @@ cat templates/story-middle.html | sed -e "
 s|@@POSTTIME@@|$posttime|g
 "
 
-cat_post "$fn"
+cat_post "$fn/post.txt"
 
 cat templates/story-bottom.html
 cat templates/story-comment-head.html | sed -e "

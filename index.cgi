@@ -12,7 +12,7 @@ for postid in `ls data/posts/ | sort -rn` ; do
 	cnt=$(($cnt + 1))
 	[ $cnt -gt 10 ] && break
 
-	fn="data/posts/$postid/post.txt"
+	fn="data/posts/$postid/"
 
 	cat templates/story-top.html | sed -e "
 s|@@POSTID@@|`basename $postid`|g
@@ -30,7 +30,7 @@ s|@@CATNAME@@|$catname|g
 s|@@POSTTIME@@|`get_time "$fn"`|g
 	"
 
-	cat_post "$fn"
+	cat_post "$fn/post.txt"
 
 	cat templates/story-bottom.html
 done

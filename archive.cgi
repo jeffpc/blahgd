@@ -9,7 +9,7 @@ catid=`echo "$PATH_INFO" | sed -e 's,^/,,'`
 cat templates/header.html | sed -e "s|@@TITLE@@|`arch_title_date $catid`|"
 
 for postid in `ls data/by-month/$catid/ | sort -nr` ; do
-	fn="data/posts/$postid/post.txt"
+	fn="data/posts/$postid/"
 
 	cat templates/story-top.html | sed -e "
 s|@@POSTID@@|`basename $postid`|g
@@ -27,7 +27,7 @@ s|@@CATNAME@@|$catname|g
 s|@@POSTTIME@@|`get_time "$fn"`|g
 	"
 
-	cat_post "$fn"
+	cat_post "$fn/post.txt"
 
 	cat templates/story-bottom.html
 done
