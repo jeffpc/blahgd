@@ -1,15 +1,9 @@
 cat templates/footer.html
 
 cat templates/sidebar-top.html
-for catname in `find data/by-category/ -mindepth 1 -type d | sort` ; do
-	shortcatname=`echo $catname | sed -e 's,data/by-category/,,'`
-
-	catdesc=`get_xattr category_desc "$catname"`
-	[ -z "$catdesc" ] && catdesc="View all posts filed under $shortcatname"
-
+for catname in `find data/by-category/ -mindepth 1 -type d | sed -e 's,data/by-category/,,' | sort` ; do
 	cat templates/sidebar-cat-item.html | sed -e "
-s|@@CATNAME@@|$shortcatname|g
-s|@@CATDESC@@|$catdesc|g
+s|@@CATNAME@@|$catname|g
 "
 done
 cat templates/sidebar-middle.html
