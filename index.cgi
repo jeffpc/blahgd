@@ -10,7 +10,7 @@ cnt=0
 
 for postid in `ls data/posts/ | sort -rn` ; do
 	cnt=$(($cnt + 1))
-	[ $cnt -gt 5 ] && break
+	[ $cnt -gt 10 ] && break
 
 	fn="data/posts/$postid/post.txt"
 
