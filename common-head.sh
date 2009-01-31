@@ -16,28 +16,38 @@ get_time()
 	date "+%H:%M" -d "`get_xattr post_time "$1"`"
 }
 
+# usage: str_month <MM>
+str_month()
+{
+	case "$1" in
+		01) echo "january" ;;
+		02) echo "february" ;;
+		03) echo "march" ;;
+		04) echo "april" ;;
+		05) echo "may" ;;
+		06) echo "june" ;;
+		07) echo "july" ;;
+		08) echo "august" ;;
+		09) echo "september" ;;
+		10) echo "october" ;;
+		11) echo "november" ;;
+		12) echo "december" ;;
+		*)  echo "unknown" ;;
+	esac
+}
+
 # usage: arch_date <YYYYMM>
 arch_date()
 {
-	y=`expr substr "$1" 1 4`
+	m=`expr substr "$1" 5 2`
+	echo "`str_month $m` `expr substr "$1" 1 4`"
+}
 
-	case `expr substr "$1" 5 2` in
-		01) m="january" ;;
-		02) m="february" ;;
-		03) m="march" ;;
-		04) m="april" ;;
-		05) m="may" ;;
-		06) m="june" ;;
-		07) m="july" ;;
-		08) m="august" ;;
-		09) m="september" ;;
-		10) m="october" ;;
-		11) m="november" ;;
-		12) m="december" ;;
-		*) m="unknown" ;;
-	esac
-
-	echo "$m $y"
+# usage: arch_title_date <YYYYMM>
+arch_title_date()
+{
+	m=`expr substr "$1" 5 2`
+	echo "`expr substr "$1" 1 4` \&raquo; `str_month $m`"
 }
 
 # usage: cat_post <filename>
