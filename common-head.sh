@@ -16,10 +16,20 @@ get_time()
 	date "+%H:%M" -d "`get_xattr post_time "$1"`"
 }
 
-# usage: get_date <filename>
+# usage: get_date <fmt> <filename>
 get_rss_date()
 {
-	date "+%a, %d %b %Y %H:%M:%S +0000" -d "`get_xattr post_time "$1"`"
+	case "$1" in
+		rss2)
+			date "+%a, %d %b %Y %H:%M:%S +0000" -d "`get_xattr post_time "$2"`"
+			;;
+		atom)
+			date "+%Y-%m-%dT%H:%M:%SZ" -d "`get_xattr post_time "$2"`"
+			;;
+		*)
+			echo "???"
+			;;
+	esac
 }
 
 # usage: str_month <MM>
@@ -75,5 +85,6 @@ cat_post_preview()
 	cat "$1" | head -1
 }
 
-echo "Content-type: text/html"
+[ -z "$CONTENT_TYPE" ] && CONTENT_TYPE="text/html"
+echo "Content-type: $CONTENT_TYPE"
 echo ""
