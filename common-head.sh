@@ -16,6 +16,12 @@ get_time()
 	date "+%H:%M" -d "`get_xattr post_time "$1"`"
 }
 
+# usage: get_date <filename>
+get_rss_date()
+{
+	date "+%a, %d %b %Y %H:%M:%S +0000" -d "`get_xattr post_time "$1"`"
+}
+
 # usage: str_month <MM>
 str_month()
 {
@@ -62,6 +68,11 @@ BEGIN { par=1 }
 /^$/ { print "</p>"; par=1; next }
 END { if (!par) print "</p>" }
 '
+}
+
+cat_post_preview()
+{
+	cat "$1" | head -1
 }
 
 echo "Content-type: text/html"

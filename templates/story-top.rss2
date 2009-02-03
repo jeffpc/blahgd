@@ -1,0 +1,11 @@
+	<item>
+		<title>@@TITLE@@</title>
+		<link>http://josefsipek.net/blahg-test/?p=@@POSTID@@</link>
+		<comments>http://josefsipek.net/blahg-test/?p=@@POSTID@@#comments</comments>
+
+		<pubDate>@@POSTDATE@@</pubDate>
+		<dc:creator>JeffPC</dc:creator>
+		
+		<guid isPermaLink="false">http://josefsipek.net/blahg-test/?p=@@POSTID@@</guid>
+
+		<wfw:commentRss>http://josefsipek.net/blahg/?feed=rss2&amp;p=@@POSTID@@</wfw:commentRss>
