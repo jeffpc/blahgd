@@ -3,20 +3,47 @@
 case "$PATH_INFO" in
 	/rss)
 		fmt="rss"
-		CONTENT_TYPE="text/xml; charset=UTF-8"
+		view="index"
 		;;
 	/rss2)
 		fmt="rss2"
-		CONTENT_TYPE="text/xml; charset=UTF-8"
+		view="index"
 		;;
 	/atom)
 		fmt="atom"
-		CONTENT_TYPE="application/atom+xml; charset=UTF-8"
+		view="index"
+		;;
+	/rss/[0-9]*)
+		fmt="rss"
+		view="comments"
+		postid="`echo $PATH_INFO | cut -d/ -f3`"
+		;;
+	/rss2/[0-9]*)
+		fmt="rss2"
+		view="comments"
+		postid="`echo $PATH_INFO | cut -d/ -f3`"
+		;;
+	/atom/[0-9]*)
+		fmt="atom"
+		view="comments"
+		postid="`echo $PATH_INFO | cut -d/ -f3`"
 		;;
 	*)
 		echo "Location: /blahg-test/"
 		echo ""
 		exit 0
+		;;
+esac
+
+case "$fmt" in
+	rss)
+		CONTENT_TYPE="text/xml; charset=UTF-8"
+		;;
+	rss2)
+		CONTENT_TYPE="text/xml; charset=UTF-8"
+		;;
+	atom)
+		CONTENT_TYPE="application/atom+xml; charset=UTF-8"
 		;;
 esac
 
