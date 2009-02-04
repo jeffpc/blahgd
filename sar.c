@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <dirent.h>
@@ -126,9 +127,31 @@ static struct repltab_entry __repltab_cat_html[] = {
 	{"",		NULL},
 };
 
+static void echo_arch_name(struct post *post, void *data)
+{
+	char *name = data;
+
+	fprintf(post->out, "%s", name);
+}
+
+static void echo_arch_desc(struct post *post, void *data)
+{
+	char *name = data;
+
+	fprintf(post->out, "%s %c%c%c%c", up_month_strs[atoi(name+4)-1],
+		name[0], name[1], name[2], name[3]);
+}
+
+static struct repltab_entry __repltab_arch_html[] = {
+	{"ARCHNAME",	echo_arch_name},
+	{"ARCHDESC",	echo_arch_desc},
+	{"",		NULL},
+};
+
 struct repltab_entry *repltab_html = __repltab_html;
 struct repltab_entry *repltab_comm_html = __repltab_comm_html;
 struct repltab_entry *repltab_cat_html = __repltab_cat_html;
+struct repltab_entry *repltab_arch_html = __repltab_arch_html;
 
 static int invoke_repl(struct post *post, void *data, char *cmd,
 		       struct repltab_entry *repltab)

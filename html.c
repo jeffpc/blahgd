@@ -133,9 +133,34 @@ static void __invoke_for_each_cat(struct post *post, char *prefix, void(*f)(stru
 	closedir(dir);
 }
 
+static void __invoke_for_each_archive(struct post *post, void(*f)(struct post*, char*))
+{
+	struct dirent *de;
+	DIR *dir;
+
+	dir = opendir("data/by-month");
+	if (!dir)
+		return;
+
+	while((de = readdir(dir))) {
+		if (!strcmp(de->d_name, ".") ||
+		    !strcmp(de->d_name, ".."))
+			continue;
+
+		f(post, de->d_name);
+	}
+
+	closedir(dir);
+}
+
 static void __sidebar_cat_item(struct post *post, char *catname)
 {
 	cat(post, catname, "templates/sidebar-cat-item.html", repltab_cat_html);
+}
+
+static void __sidebar_arch_item(struct post *post, char *archname)
+{
+	cat(post, archname, "templates/sidebar-archive-item.html", repltab_arch_html);
 }
 
 void html_sidebar(struct post *post)
@@ -145,10 +170,9 @@ void html_sidebar(struct post *post)
 	__invoke_for_each_cat(post, ".", __sidebar_cat_item);
 
 	cat(post, NULL, "templates/sidebar-middle.html", repltab_html);
-#if 0
-	for_each_month()
-		cat(post, NULL, "templates/sidebar-archive-item.html", repltab_html);
-#endif
+
+	__invoke_for_each_archive(post, __sidebar_arch_item);
+
 	cat(post, NULL, "templates/sidebar-bottom.html", repltab_html);
 }
 

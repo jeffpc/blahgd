@@ -14,6 +14,7 @@ extern void sar(struct post *post, void *data, char *ibuf,
 extern struct repltab_entry *repltab_html;
 extern struct repltab_entry *repltab_comm_html;
 extern struct repltab_entry *repltab_cat_html;
+extern struct repltab_entry *repltab_arch_html;
 
 #define COPYCHAR(ob, oi, c)	do { \
 					ob[oi] = c; \
