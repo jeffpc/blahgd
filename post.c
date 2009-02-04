@@ -50,6 +50,47 @@ out_close:
 	close(fd);
 }
 
+#define CATP_SKIP	0
+#define CATP_ECHO	1
+#define CATP_PAR	2
+
+static void __do_cat_post(struct post *post, char *ibuf, int len)
+{
+	int sidx, eidx;
+	int state = CATP_SKIP;
+	char tmp;
+
+	for(eidx = sidx = 0; eidx < len; eidx++) {
+		tmp = ibuf[eidx];
+
+		switch(state) {
+			case CATP_SKIP:
+				if (tmp != '\n') {
+					fwrite(ibuf+sidx, 1, eidx-sidx, post->out);
+					fwrite("<p>", 1, 3, post->out);
+					sidx = eidx;
+					state = CATP_ECHO;
+				}
+				break;
+
+			case CATP_ECHO:
+				if (tmp == '\n')
+					state = CATP_PAR;
+				break;
+
+			case CATP_PAR:
+				if (tmp == '\n') {
+					fwrite(ibuf+sidx, 1, eidx-sidx, post->out);
+					fwrite("</p>", 1, 4, post->out);
+					sidx = eidx+1;
+					state = CATP_SKIP;
+				}
+				break;
+
+		}
+	}
+}
+
 void cat_post(struct post *post)
 {
 	char path[FILENAME_MAX];
@@ -78,10 +119,7 @@ void cat_post(struct post *post)
 		goto out_close;
 	}
 
-	/* FIXME: do <p> insertion, etc. */
-	fwrite("<p>", 1, 3, post->out);
-	fwrite(ibuf, 1, statbuf.st_size, post->out);
-	fwrite("</p>", 1, 4, post->out);
+	__do_cat_post(post, ibuf, statbuf.st_size);
 
 	munmap(ibuf, statbuf.st_size);
 
@@ -118,10 +156,7 @@ void cat_post_comment(struct post *post, struct comment *comm)
 		goto out_close;
 	}
 
-	/* FIXME: do <p> insertion, etc. */
-	fwrite("<p>", 1, 3, post->out);
-	fwrite(ibuf, 1, statbuf.st_size, post->out);
-	fwrite("</p>", 1, 4, post->out);
+	__do_cat_post(post, ibuf, statbuf.st_size);
 
 	munmap(ibuf, statbuf.st_size);
 
