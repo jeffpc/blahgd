@@ -5,5 +5,8 @@ FILES=sar.c post.c xattr.c html.c
 
 all: story
 
+clean:
+	rm -f story
+
 story: story.c $(FILES)
 	$(CC) $(CFLAGS) -o $@ story.c $(FILES)
