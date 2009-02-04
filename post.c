@@ -89,6 +89,11 @@ static void __do_cat_post(struct post *post, char *ibuf, int len)
 
 		}
 	}
+
+	if (state != CATP_SKIP) {
+		fwrite(ibuf+sidx, 1, eidx-sidx, post->out);
+		fwrite("</p>", 1, 4, post->out);
+	}
 }
 
 void cat_post(struct post *post)
