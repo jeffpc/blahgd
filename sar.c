@@ -9,6 +9,11 @@ static void echo_postid(struct post *post)
 	fprintf(post->out, "%d", post->id);
 }
 
+static char* up_month_strs[12] = {
+	"January", "February", "March", "April", "May", "June",
+	"July", "August", "September", "October", "November", "December",
+};
+
 static void echo_title(struct post *post)
 {
 	fprintf(post->out, "%s", post->title);
@@ -16,12 +21,20 @@ static void echo_title(struct post *post)
 
 static void echo_posttime(struct post *post)
 {
-	fprintf(post->out, "||posttime||");
+	fprintf(post->out, "%02d:%02d", post->time.tm_hour,
+		post->time.tm_min);
 }
 
 static void echo_postdate(struct post *post)
 {
-	fprintf(post->out, "||postdate||");
+	fprintf(post->out, "%s %d, %04d",
+		up_month_strs[post->time.tm_mon], post->time.tm_mday,
+		1900+post->time.tm_year);
+}
+
+static void echo_comment_count(struct post *post)
+{
+	fprintf(post->out, "???"); // FIXME
 }
 
 static struct repltab_entry __repltab_html[] = {
@@ -29,6 +42,7 @@ static struct repltab_entry __repltab_html[] = {
 	{"POSTDATE",	echo_postdate},
 	{"POSTTIME",	echo_posttime},
 	{"TITLE",	echo_title},
+	{"COMCOUNT",	echo_comment_count},
 	{"",		NULL},
 };
 

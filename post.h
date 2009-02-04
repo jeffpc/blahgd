@@ -1,12 +1,14 @@
 #ifndef __POST_H
 #define __POST_H
 
+#include <time.h>
+
 struct post {
 	FILE *out;
 	int id;
 	char *title;
 	char *cats;
-	char *time;
+	struct tm time;
 };
 
 #define XATTR_TITLE	"user.post_title"
