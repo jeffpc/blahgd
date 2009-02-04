@@ -16,7 +16,7 @@
 #include "xattr.h"
 #include "sar.h"
 
-void cat(struct post *post, struct comment *comm, char *tmpl,
+void cat(struct post *post, void *data, char *tmpl,
 	 struct repltab_entry *repltab)
 {
 	struct stat statbuf;
@@ -42,7 +42,7 @@ void cat(struct post *post, struct comment *comm, char *tmpl,
 		goto out_close;
 	}
 
-	sar(post, comm, ibuf, statbuf.st_size, repltab);
+	sar(post, data, ibuf, statbuf.st_size, repltab);
 
 	munmap(ibuf, statbuf.st_size);
 

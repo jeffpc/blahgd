@@ -33,7 +33,7 @@ struct repltab_entry;
 
 extern void cat_post(struct post *post);
 extern void cat_post_comment(struct post *post, struct comment *comm);
-extern void cat(struct post *post, struct comment *comm, char *tmpl,
+extern void cat(struct post *post, void *data, char *tmpl,
 		struct repltab_entry *repltab);
 
 extern void invoke_for_each_comment(struct post *post,

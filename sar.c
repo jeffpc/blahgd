@@ -6,7 +6,7 @@
 #include "post.h"
 #include "sar.h"
 
-static void echo_postid(struct post *post, struct comment *comm)
+static void echo_postid(struct post *post, void *data)
 {
 	fprintf(post->out, "%d", post->id);
 }
@@ -16,25 +16,25 @@ static char* up_month_strs[12] = {
 	"July", "August", "September", "October", "November", "December",
 };
 
-static void echo_title(struct post *post, struct comment *comm)
+static void echo_title(struct post *post, void *data)
 {
 	fprintf(post->out, "%s", post->title);
 }
 
-static void echo_posttime(struct post *post, struct comment *comm)
+static void echo_posttime(struct post *post, void *data)
 {
 	fprintf(post->out, "%02d:%02d", post->time.tm_hour,
 		post->time.tm_min);
 }
 
-static void echo_postdate(struct post *post, struct comment *comm)
+static void echo_postdate(struct post *post, void *data)
 {
 	fprintf(post->out, "%s %d, %04d",
 		up_month_strs[post->time.tm_mon], post->time.tm_mday,
 		1900+post->time.tm_year);
 }
 
-static void echo_comment_count(struct post *post, struct comment *comm)
+static void echo_comment_count(struct post *post, void *data)
 {
 	char path[FILENAME_MAX];
 	struct dirent *de;
@@ -70,24 +70,32 @@ static struct repltab_entry __repltab_html[] = {
 	{"",		NULL},
 };
 
-static void echo_comment_id(struct post *post, struct comment *comm)
+static void echo_comment_id(struct post *post, void *data)
 {
+	struct comment *comm = data;
+
 	fprintf(post->out, "%d", comm->id);
 }
 
-static void echo_comment_author(struct post *post, struct comment *comm)
+static void echo_comment_author(struct post *post, void *data)
 {
+	struct comment *comm = data;
+
 	fprintf(post->out, "%s", comm->author);
 }
 
-static void echo_comment_time(struct post *post, struct comment *comm)
+static void echo_comment_time(struct post *post, void *data)
 {
+	struct comment *comm = data;
+
 	fprintf(post->out, "%02d:%02d", comm->time.tm_hour,
 		comm->time.tm_min);
 }
 
-static void echo_comment_date(struct post *post, struct comment *comm)
+static void echo_comment_date(struct post *post, void *data)
 {
+	struct comment *comm = data;
+
 	fprintf(post->out, "%s %d, %04d",
 		up_month_strs[comm->time.tm_mon], comm->time.tm_mday,
 		1900+comm->time.tm_year);
@@ -106,10 +114,23 @@ static struct repltab_entry __repltab_comm_html[] = {
 	{"",		NULL},
 };
 
+static void echo_cat_name(struct post *post, void *data)
+{
+	char *name = data;
+
+	fprintf(post->out, "%s", name);
+}
+
+static struct repltab_entry __repltab_cat_html[] = {
+	{"CATNAME",	echo_cat_name},
+	{"",		NULL},
+};
+
 struct repltab_entry *repltab_html = __repltab_html;
 struct repltab_entry *repltab_comm_html = __repltab_comm_html;
+struct repltab_entry *repltab_cat_html = __repltab_cat_html;
 
-static int invoke_repl(struct post *post, struct comment *comm, char *cmd,
+static int invoke_repl(struct post *post, void *data, char *cmd,
 		       struct repltab_entry *repltab)
 {
 	int i;
@@ -121,7 +142,7 @@ static int invoke_repl(struct post *post, struct comment *comm, char *cmd,
 		if (strcmp(cmd, repltab[i].what))
 			continue;
 
-		repltab[i].f(post, comm);
+		repltab[i].f(post, data);
 		return 0;
 	}
 
@@ -134,12 +155,7 @@ static int invoke_repl(struct post *post, struct comment *comm, char *cmd,
 #define SAR_SPECIAL	3
 #define SAR_ERROR	4
 
-#define COPYCHAR(ob, oi, c)	do { \
-					ob[oi] = c; \
-					oi++; \
-				} while(0)
-
-void sar(struct post *post, struct comment *comm, char *ibuf, int size,
+void sar(struct post *post, void *data, char *ibuf, int size,
 	 struct repltab_entry *repltab)
 {
 	char obuf[size];
@@ -189,7 +205,7 @@ void sar(struct post *post, struct comment *comm, char *ibuf, int size,
 					state = SAR_ERROR;
 				else {
 					COPYCHAR(cmd, cidx, '\0');
-					if (invoke_repl(post, comm, cmd, repltab))
+					if (invoke_repl(post, data, cmd, repltab))
 						fprintf(post->out, "@@%s@@", cmd);
 					cidx = 0;
 					state = SAR_NORMAL;
