@@ -8,36 +8,39 @@
 /************************************************************************/
 void html_story(struct post *post)
 {
-	cat(post, "templates/story-top.html", repltab_html);
+	cat(post, NULL, "templates/story-top.html", repltab_html);
 
 #if 0
 	for_each_category(post)
 		cat(stdout, "templates/story-cat-item.html", repltab_html);
 #endif
 
-	cat(post, "templates/story-middle.html", repltab_html);
+	cat(post, NULL, "templates/story-middle.html", repltab_html);
 
 	cat_post(post);
 
-	cat(post, "templates/story-bottom.html", NULL);
+	cat(post, NULL, "templates/story-bottom.html", NULL);
 }
 
 /************************************************************************/
 /*                           POST COMMENTS                              */
 /************************************************************************/
+static void __html_comment(struct post *post, struct comment *comm)
+{
+	cat(post, comm, "templates/story-comment-item-head.html",
+	    repltab_comm_html);
+	cat_post_comment(post, comm);
+	cat(post, comm, "templates/story-comment-item-tail.html",
+	    repltab_comm_html);
+}
+
 void html_comments(struct post *post)
 {
-	cat(post, "templates/story-comment-head.html", repltab_html);
+	cat(post, NULL, "templates/story-comment-head.html", repltab_html);
 
-#if 0
-	for_each_comment(post) {
-		cat(post, "templates/story-comment-item-head.html", repltab_html);
-		cat_post_comment(post, commentid);
-		cat(post, "templates/story-comment-item-tail.html", repltab_html);
-	}
-#endif
+	invoke_for_each_comment(post, __html_comment);
 
-	cat(post, "templates/story-comment-tail.html", repltab_html);
+	cat(post, NULL, "templates/story-comment-tail.html", repltab_html);
 }
 
 /************************************************************************/
@@ -45,17 +48,17 @@ void html_comments(struct post *post)
 /************************************************************************/
 void html_sidebar(struct post *post)
 {
-	cat(post, "templates/sidebar-top.html", repltab_html);
+	cat(post, NULL, "templates/sidebar-top.html", repltab_html);
 #if 0
 	for_each_category()
-		cat(post, "templates/sidebar-cat-item.html", repltab_html);
+		cat(post, NULL, "templates/sidebar-cat-item.html", repltab_html);
 #endif
-	cat(post, "templates/sidebar-middle.html", repltab_html);
+	cat(post, NULL, "templates/sidebar-middle.html", repltab_html);
 #if 0
 	for_each_month()
-		cat(post, "templates/sidebar-archive-item.html", repltab_html);
+		cat(post, NULL, "templates/sidebar-archive-item.html", repltab_html);
 #endif
-	cat(post, "templates/sidebar-bottom.html", repltab_html);
+	cat(post, NULL, "templates/sidebar-bottom.html", repltab_html);
 }
 
 /************************************************************************/
@@ -63,7 +66,7 @@ void html_sidebar(struct post *post)
 /************************************************************************/
 void html_header(struct post *post)
 {
-	cat(post, "templates/header.html", repltab_html);
+	cat(post, NULL, "templates/header.html", repltab_html);
 }
 
 /************************************************************************/
@@ -71,5 +74,5 @@ void html_header(struct post *post)
 /************************************************************************/
 void html_footer(struct post *post)
 {
-	cat(post, "templates/footer.html", repltab_html);
+	cat(post, NULL, "templates/footer.html", repltab_html);
 }

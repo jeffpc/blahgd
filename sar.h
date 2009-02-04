@@ -5,12 +5,13 @@
 
 struct repltab_entry {
 	char what[16];
-	void (*f)(struct post*);
+	void (*f)(struct post*, struct comment*);
 };
 
-extern void sar(struct post *post, char *ibuf, int size,
-		struct repltab_entry *repltab);
+extern void sar(struct post *post, struct comment *comm, char *ibuf,
+		int size, struct repltab_entry *repltab);
 
-struct repltab_entry *repltab_html;
+extern struct repltab_entry *repltab_html;
+extern struct repltab_entry *repltab_comm_html;
 
 #endif
