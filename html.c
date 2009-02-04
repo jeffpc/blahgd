@@ -1,6 +1,11 @@
+#define _XOPEN_SOURCE 500
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include "sar.h"
 #include "html.h"
@@ -8,7 +13,7 @@
 /************************************************************************/
 /*                                POST                                  */
 /************************************************************************/
-static void __invoke_for_each_cat(struct post *post, void(*f)(struct post*, char*))
+static void __invoke_for_each_post_cat(struct post *post, void(*f)(struct post*, char*))
 {
 	char *obuf;
 	char tmp;
@@ -59,7 +64,7 @@ void html_story(struct post *post)
 {
 	cat(post, NULL, "templates/story-top.html", repltab_html);
 
-	__invoke_for_each_cat(post, __story_cat_item);
+	__invoke_for_each_post_cat(post, __story_cat_item);
 
 	cat(post, NULL, "templates/story-middle.html", repltab_html);
 
@@ -92,13 +97,53 @@ void html_comments(struct post *post)
 /************************************************************************/
 /*                                 SIDEBAR                              */
 /************************************************************************/
+static void __invoke_for_each_cat(struct post *post, char *prefix, void(*f)(struct post*, char*))
+{
+	struct stat statbuf;
+	char path[FILENAME_MAX];
+	struct dirent *de;
+	DIR *dir;
+	int ret;
+
+	snprintf(path, FILENAME_MAX, "data/by-category/%s", prefix);
+	dir = opendir(path);
+	if (!dir)
+		return;
+
+	while((de = readdir(dir))) {
+		if (!strcmp(de->d_name, ".") ||
+		    !strcmp(de->d_name, ".."))
+			continue;
+
+		snprintf(path, FILENAME_MAX, "data/by-category/%s/%s", prefix, de->d_name);
+
+		ret = lstat(path, &statbuf);
+		if (ret == -1) {
+			fprintf(post->out, "stat failed\n");
+			break;
+		}
+
+		if (!S_ISDIR(statbuf.st_mode))
+			continue;
+
+		f(post, path+2+17);
+		__invoke_for_each_cat(post, path+17, f);
+	}
+
+	closedir(dir);
+}
+
+static void __sidebar_cat_item(struct post *post, char *catname)
+{
+	cat(post, catname, "templates/sidebar-cat-item.html", repltab_cat_html);
+}
+
 void html_sidebar(struct post *post)
 {
 	cat(post, NULL, "templates/sidebar-top.html", repltab_html);
-#if 0
-	for_each_category()
-		cat(post, NULL, "templates/sidebar-cat-item.html", repltab_html);
-#endif
+
+	__invoke_for_each_cat(post, ".", __sidebar_cat_item);
+
 	cat(post, NULL, "templates/sidebar-middle.html", repltab_html);
 #if 0
 	for_each_month()
