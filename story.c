@@ -8,6 +8,7 @@
 
 int main(int argc, char **argv)
 {
+	char *path_info;
 	struct post post;
 	int ret;
 
@@ -15,9 +16,17 @@ int main(int argc, char **argv)
 
 	fprintf(post.out, "Content-Type: text/html\n\n");
 
-	ret = load_post(30, &post);
+	path_info = getenv("PATH_INFO");
+
+	if (!path_info) {
+		fprintf(post.out, "Invalid post #\n");
+		return 0;
+	}
+
+	ret = load_post(atoi(path_info+1), &post);
 	if (ret) {
-		fprintf(post.out, "Gah! %d\n", ret);
+		fprintf(post.out, "Gah! %d (postid=%d)\n", ret,
+			atoi(path_info+1));
 		return 0;
 	}
 
