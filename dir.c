@@ -11,18 +11,36 @@
 
 #define LIST_BLOCK_SIZE		128
 
-static int cmp_asc(const void *a, const void *b)
+static int cmp_str_asc(const void *a, const void *b)
 {
 	char *as = *(char**)a, *bs = *(char**)b;
 
 	return strcmp(as, bs);
 }
 
-static int cmp_desc(const void *a, const void *b)
+static int cmp_str_desc(const void *a, const void *b)
 {
 	char *as = *(char**)a, *bs = *(char**)b;
 
 	return -strcmp(as, bs);
+}
+
+static int cmp_int_asc(const void *a, const void *b)
+{
+	int as = atoi(*(char**)a), bs = atoi(*(char**)b);
+
+	if (as < bs)
+		return -1;
+	return as != bs;
+}
+
+static int cmp_int_desc(const void *a, const void *b)
+{
+	int as = atoi(*(char**)a), bs = atoi(*(char**)b);
+
+	if (as > bs)
+		return -1;
+	return as != bs;
 }
 
 int sorted_readdir_loop(DIR *dir, struct post *post,
@@ -53,10 +71,21 @@ int sorted_readdir_loop(DIR *dir, struct post *post,
 		count++;
 	}
 
-	if (updown == SORT_ASC)
-		qsort(list, count, sizeof(char*), cmp_asc);
-	else
-		qsort(list, count, sizeof(char*), cmp_desc);
+	switch(updown) {
+		default:
+		case SORT_ASC | SORT_STRING:
+			qsort(list, count, sizeof(char*), cmp_str_asc);
+			break;
+		case SORT_DESC | SORT_STRING:
+			qsort(list, count, sizeof(char*), cmp_str_desc);
+			break;
+		case SORT_ASC | SORT_NUMERIC:
+			qsort(list, count, sizeof(char*), cmp_int_asc);
+			break;
+		case SORT_DESC | SORT_NUMERIC:
+			qsort(list, count, sizeof(char*), cmp_int_desc);
+			break;
+	}
 
 	for(i=0; (i<count) && limit; i++) {
 		f(post, list[i], data);
