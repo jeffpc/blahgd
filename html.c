@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "config.h"
 #include "sar.h"
 #include "html.h"
 #include "dir.h"
@@ -75,6 +76,42 @@ void html_story(struct post *post)
 }
 
 /************************************************************************/
+/*                             INDEX                                    */
+/************************************************************************/
+static void __each_index_helper(struct post *post, char *name, void *data)
+{
+	int postid = atoi(name);
+	struct post p;
+
+	memset(&p, 0, sizeof(struct post));
+	p.out = post->out;
+
+	if (load_post(postid, &p))
+		return;
+
+	cat(&p, NULL, "templates/story-top.html", repltab_story_html);
+	cat(&p, NULL, "templates/story-middle.html", repltab_story_html);
+	cat_post(&p);
+	cat(&p, NULL, "templates/story-bottom.html", NULL);
+
+	destroy_post(&p);
+}
+
+void html_index(struct post *post)
+{
+	DIR *dir;
+
+	dir = opendir("data/posts");
+	if (!dir)
+		return;
+
+	sorted_readdir_loop(dir, post, __each_index_helper, NULL, SORT_DESC,
+			    HTML_INDEX_STORIES);
+
+	closedir(dir);
+}
+
+/************************************************************************/
 /*                           POST COMMENTS                              */
 /************************************************************************/
 static void __html_comment(struct post *post, struct comment *comm)
@@ -137,7 +174,7 @@ static void __invoke_for_each_cat(struct post *post, char *prefix,
 	if (!dir)
 		return;
 
-	sorted_readdir_loop(dir, post, __each_cat_helper, plist, SORT_ASC);
+	sorted_readdir_loop(dir, post, __each_cat_helper, plist, SORT_ASC, -1);
 
 	closedir(dir);
 }
@@ -157,7 +194,7 @@ static void __invoke_for_each_archive(struct post *post, void(*f)(struct post*, 
 	if (!dir)
 		return;
 
-	sorted_readdir_loop(dir, post, __cb_wrap, f, SORT_DESC);
+	sorted_readdir_loop(dir, post, __cb_wrap, f, SORT_DESC, -1);
 
 	closedir(dir);
 }

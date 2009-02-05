@@ -8,6 +8,6 @@
 
 extern int sorted_readdir_loop(DIR *dir, struct post *post,
 			       void(*f)(struct post*, char*, void*),
-			       void *data, int updown);
+			       void *data, int updown, int limit);
 
 #endif

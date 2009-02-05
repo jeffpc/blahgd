@@ -21,6 +21,7 @@ int main(int argc, char **argv)
 	fprintf(post.out, "Content-Type: text/html\n\n");
 
 	html_header(&post);
+	html_index(&post);
 	html_sidebar(&post);
 	html_footer(&post);
 

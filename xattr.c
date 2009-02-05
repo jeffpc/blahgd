@@ -22,5 +22,7 @@ char *safe_getxattr(char *path, char *attr_name)
 		return NULL;
 	}
 
+	buf[size] = '\0';
+
 	return buf;
 }
