@@ -15,6 +15,7 @@
 #include "post.h"
 #include "xattr.h"
 #include "sar.h"
+#include "dir.h"
 
 void cat(struct post *post, void *data, char *tmpl,
 	 struct repltab_entry *repltab)
@@ -199,14 +200,27 @@ void destroy_comment(struct comment *comm)
 	free(comm->author);
 }
 
+static void __each_comment_helper(struct post *post, char *name, void *data)
+{
+	void(*f)(struct post*, struct comment*) = data;
+	struct comment comm;
+	int commid;
+
+	commid = atoi(name);
+
+	if (load_comment(post, commid, &comm))
+		return;
+
+	f(post, &comm);
+
+	destroy_comment(&comm);
+}
+
 void invoke_for_each_comment(struct post *post, void(*f)(struct post*,
 							 struct comment*))
 {
 	char path[FILENAME_MAX];
-	struct dirent *de;
 	DIR *dir;
-	struct comment comm;
-	int commid;
 
 	snprintf(path, FILENAME_MAX, "data/posts/%d/comments", post->id);
 
@@ -214,20 +228,7 @@ void invoke_for_each_comment(struct post *post, void(*f)(struct post*,
 	if (!dir)
 		return;
 
-	while((de = readdir(dir))) {
-		if (!strcmp(de->d_name, ".") ||
-		    !strcmp(de->d_name, ".."))
-			continue;
-
-		commid = atoi(de->d_name);
-
-		if (load_comment(post, commid, &comm))
-			break;
-
-		f(post, &comm);
-
-		destroy_comment(&comm);
-	}
+	sorted_readdir_loop(dir, post, __each_comment_helper, f, SORT_ASC);
 
 	closedir(dir);
 }

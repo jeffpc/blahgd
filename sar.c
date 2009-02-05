@@ -17,7 +17,7 @@ static char* up_month_strs[12] = {
 	"July", "August", "September", "October", "November", "December",
 };
 
-static void echo_title(struct post *post, void *data)
+static void echo_story_title(struct post *post, void *data)
 {
 	fprintf(post->out, "%s", post->title);
 }
@@ -40,15 +40,16 @@ static void echo_comment_count(struct post *post, void *data)
 	char path[FILENAME_MAX];
 	struct dirent *de;
 	DIR *dir;
-	int count;
+	int count = 0;
 
 	snprintf(path, FILENAME_MAX, "data/posts/%d/comments", post->id);
 
 	dir = opendir(path);
-	if (!dir)
+	if (!dir) {
+		fprintf(post->out, "No");
 		return;
+	}
 
-	count = 0;
 	while((de = readdir(dir))) {
 		if (!strcmp(de->d_name, ".") ||
 		    !strcmp(de->d_name, ".."))
@@ -62,11 +63,11 @@ static void echo_comment_count(struct post *post, void *data)
 	fprintf(post->out, "%d", count);
 }
 
-static struct repltab_entry __repltab_html[] = {
+static struct repltab_entry __repltab_story_html[] = {
 	{"POSTID",	echo_postid},
 	{"POSTDATE",	echo_postdate},
 	{"POSTTIME",	echo_posttime},
-	{"TITLE",	echo_title},
+	{"TITLE",	echo_story_title},
 	{"COMCOUNT",	echo_comment_count},
 	{"",		NULL},
 };
@@ -106,7 +107,7 @@ static struct repltab_entry __repltab_comm_html[] = {
 	{"POSTID",	echo_postid},
 	{"POSTDATE",	echo_postdate},
 	{"POSTTIME",	echo_posttime},
-	{"TITLE",	echo_title},
+	{"TITLE",	echo_story_title},
 	{"COMCOUNT",	echo_comment_count},
 	{"COMID",	echo_comment_id},
 	{"COMAUTHOR",	echo_comment_author},
@@ -148,7 +149,7 @@ static struct repltab_entry __repltab_arch_html[] = {
 	{"",		NULL},
 };
 
-struct repltab_entry *repltab_html = __repltab_html;
+struct repltab_entry *repltab_story_html = __repltab_story_html;
 struct repltab_entry *repltab_comm_html = __repltab_comm_html;
 struct repltab_entry *repltab_cat_html = __repltab_cat_html;
 struct repltab_entry *repltab_arch_html = __repltab_arch_html;

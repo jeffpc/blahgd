@@ -11,7 +11,7 @@ struct repltab_entry {
 extern void sar(struct post *post, void *data, char *ibuf,
 		int size, struct repltab_entry *repltab);
 
-extern struct repltab_entry *repltab_html;
+extern struct repltab_entry *repltab_story_html;
 extern struct repltab_entry *repltab_comm_html;
 extern struct repltab_entry *repltab_cat_html;
 extern struct repltab_entry *repltab_arch_html;
