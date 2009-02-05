@@ -90,6 +90,7 @@ static void __each_index_helper(struct post *post, char *name, void *data)
 		return;
 
 	cat(&p, NULL, "templates/story-top.html", repltab_story_html);
+	__invoke_for_each_post_cat(&p, __story_cat_item);
 	cat(&p, NULL, "templates/story-middle.html", repltab_story_html);
 	cat_post(&p);
 	cat(&p, NULL, "templates/story-bottom.html", NULL);
@@ -174,7 +175,8 @@ static void __invoke_for_each_cat(struct post *post, char *prefix,
 	if (!dir)
 		return;
 
-	sorted_readdir_loop(dir, post, __each_cat_helper, plist, SORT_ASC, -1);
+	sorted_readdir_loop(dir, post, __each_cat_helper, plist,
+			    SORT_ASC | SORT_STRING, -1);
 
 	closedir(dir);
 }
