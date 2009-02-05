@@ -63,6 +63,9 @@ static void __do_cat_post(struct post *post, char *ibuf, int len)
 
 	for(eidx = sidx = 0; eidx < len; eidx++) {
 		tmp = ibuf[eidx];
+#if 0
+		printf("\n|'%c' %d| ",tmp, state);
+#endif
 
 		switch(state) {
 			case CATP_SKIP:
@@ -85,7 +88,8 @@ static void __do_cat_post(struct post *post, char *ibuf, int len)
 					fwrite("</p>\n", 1, 5, post->out);
 					sidx = eidx+1;
 					state = CATP_SKIP;
-				}
+				} else
+					state = CATP_ECHO;
 				break;
 
 		}
