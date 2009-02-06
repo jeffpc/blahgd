@@ -113,6 +113,26 @@ void html_index(struct post *post)
 }
 
 /************************************************************************/
+/*                           ARCHIVE INDEX                              */
+/************************************************************************/
+void html_archive(struct post *post, int archid)
+{
+	char path[FILENAME_MAX];
+	DIR *dir;
+
+	snprintf(path, FILENAME_MAX, "data/by-month/%d", archid);
+
+	dir = opendir(path);
+	if (!dir)
+		return;
+
+	sorted_readdir_loop(dir, post, __each_index_helper, NULL, SORT_DESC,
+			    HTML_INDEX_STORIES);
+
+	closedir(dir);
+}
+
+/************************************************************************/
 /*                           POST COMMENTS                              */
 /************************************************************************/
 static void __html_comment(struct post *post, struct comment *comm)
