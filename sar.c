@@ -12,7 +12,7 @@ static void echo_postid(struct post *post, void *data)
 	fprintf(post->out, "%d", post->id);
 }
 
-static char* up_month_strs[12] = {
+char* up_month_strs[12] = {
 	"January", "February", "March", "April", "May", "June",
 	"July", "August", "September", "October", "November", "December",
 };

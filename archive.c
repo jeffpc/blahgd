@@ -13,10 +13,13 @@ int main(int argc, char **argv)
 	char *path_info;
 	int archid;
 	struct post post;
+	char nicetitle[32];
 
 	clock_gettime(CLOCK_REALTIME, &s);
 
+	memset(&post, 0, sizeof(struct post));
 	post.out = stdout;
+	post.title = nicetitle;
 
 	fprintf(post.out, "Content-Type: text/html\n\n");
 
@@ -29,15 +32,15 @@ int main(int argc, char **argv)
 
 	archid = atoi(path_info+1);
 
-	memset(&post, 0, sizeof(struct post));
-	post.out = stdout;
-	post.title = "archive XYZ";
+	snprintf(nicetitle, 32, "%d &raquo; %s", archid/100,
+		 up_month_strs[(archid%100)-1]);
 
 	html_header(&post);
 	html_archive(&post, archid);
 	html_sidebar(&post);
 	html_footer(&post);
 
+	post.title = NULL;
 	destroy_post(&post);
 
 	clock_gettime(CLOCK_REALTIME, &e);

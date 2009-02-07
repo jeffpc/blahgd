@@ -16,6 +16,8 @@ extern struct repltab_entry *repltab_comm_html;
 extern struct repltab_entry *repltab_cat_html;
 extern struct repltab_entry *repltab_arch_html;
 
+extern char* up_month_strs[12];
+
 #define COPYCHAR(ob, oi, c)	do { \
 					ob[oi] = c; \
 					oi++; \

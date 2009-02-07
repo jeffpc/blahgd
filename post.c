@@ -83,13 +83,15 @@ static void __do_cat_post(struct post *post, char *ibuf, int len)
 				break;
 
 			case CATP_PAR:
+				fwrite(ibuf+sidx, 1, eidx-sidx, post->out);
+				sidx = eidx;
 				if (tmp == '\n') {
-					fwrite(ibuf+sidx, 1, eidx-sidx, post->out);
 					fwrite("</p>\n", 1, 5, post->out);
-					sidx = eidx+1;
 					state = CATP_SKIP;
-				} else
+				} else {
+					fwrite("<br/>\n", 1, 5, post->out);
 					state = CATP_ECHO;
+				}
 				break;
 
 		}
