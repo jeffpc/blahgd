@@ -36,10 +36,10 @@ s,^5$,random,
 s,^9$,rants,
 s,^3$,school,
 s,^13$,star-trek,
-s,^19$,star-trek/enterprise,
-s,^15$,star-trek/the-next-generation,
-s,^16$,star-trek/the-original-series,
-s,^18$,star-trek/voyager,
+s,^19$,star-trek/ent,
+s,^15$,star-trek/tng,
+s,^16$,star-trek/tos,
+s,^18$,star-trek/voy,
 s,^43$,stargate,
 s,^23$,stargate/sg-1,
 s,^41$,sysadmin,
@@ -48,7 +48,7 @@ s,^4$,work,
 
 cat templates/header.html | sed -e "s|@@TITLE@@|$catid|"
 
-for postid in `ls data/by-category/$catid/ | sort -r` ; do
+for postid in `ls data/by-category/$catid/ | sort -rn` ; do
 	[ -d "data/by-category/$catid/$postid" ] && continue
 
 	fn="data/posts/$postid/"
