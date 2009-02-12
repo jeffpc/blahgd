@@ -3,7 +3,7 @@ CFLAGS=-Wall -g -O2 -std=c99 -D_POSIX_C_SOURCE=199309 -lrt
 
 FILES=sar.c post.c xattr.c html.c dir.c
 
-all: story index archive
+all: story index archive category
 
 clean:
 	rm -f story index
@@ -16,3 +16,6 @@ story: story.c $(FILES)
 
 archive: archive.c $(FILES)
 	$(CC) $(CFLAGS) -o $@ archive.c $(FILES)
+
+category: category.c $(FILES)
+	$(CC) $(CFLAGS) -o $@ category.c $(FILES)
