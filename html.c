@@ -112,6 +112,43 @@ void html_index(struct post *post)
 	closedir(dir);
 }
 
+static void __each_feed_index_helper(struct post *post, char *name, void *data)
+{
+	int postid = atoi(name);
+	struct post p;
+
+	memset(&p, 0, sizeof(struct post));
+	p.out = post->out;
+
+	if (load_post(postid, &p))
+		return;
+
+	cat(&p, NULL, "templates/story-top.atom", repltab_story_html);
+	//__invoke_for_each_post_cat(&p, __story_cat_item);
+	cat(&p, NULL, "templates/story-middle-desc.atom", repltab_story_html);
+	//cat_post_preview(&p);
+	cat(&p, NULL, "templates/story-bottom-desc.atom", repltab_story_html);
+	cat(&p, NULL, "templates/story-middle.atom", repltab_story_html);
+	//cat_post(&p);
+	cat(&p, NULL, "templates/story-bottom.atom", NULL);
+
+	destroy_post(&p);
+}
+
+void feed_index(struct post *post, char *fmt)
+{
+	DIR *dir;
+
+	dir = opendir("data/posts");
+	if (!dir)
+		return;
+
+	sorted_readdir_loop(dir, post, __each_feed_index_helper, NULL, SORT_DESC,
+			    FEED_INDEX_STORIES);
+
+	closedir(dir);
+}
+
 /************************************************************************/
 /*                           ARCHIVE INDEX                              */
 /************************************************************************/
@@ -272,10 +309,20 @@ void html_header(struct post *post)
 	cat(post, NULL, "templates/header.html", repltab_story_html);
 }
 
+void feed_header(struct post *post, char *fmt)
+{
+	cat(post, NULL, "templates/header.atom", repltab_story_html);
+}
+
 /************************************************************************/
 /*                             PAGE FOOTER                              */
 /************************************************************************/
 void html_footer(struct post *post)
 {
 	cat(post, NULL, "templates/footer.html", repltab_story_html);
+}
+
+void feed_footer(struct post *post, char *fmt)
+{
+	cat(post, NULL, "templates/footer.atom", repltab_story_html);
 }
