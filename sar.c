@@ -35,7 +35,7 @@ static void echo_postdate(struct post *post, void *data)
 		1900+post->time.tm_year);
 }
 
-static void echo_comment_count(struct post *post, void *data)
+static void __echo_comment_count(struct post *post, void *data, int numeric)
 {
 	char path[FILENAME_MAX];
 	struct dirent *de;
@@ -46,7 +46,7 @@ static void echo_comment_count(struct post *post, void *data)
 
 	dir = opendir(path);
 	if (!dir) {
-		fprintf(post->out, "No");
+		fprintf(post->out, numeric ? "0" : "No");
 		return;
 	}
 
@@ -63,12 +63,31 @@ static void echo_comment_count(struct post *post, void *data)
 	fprintf(post->out, "%d", count);
 }
 
+static void echo_comment_count(struct post *post, void *data)
+{
+	__echo_comment_count(post, data, 0);
+}
+
+static void echo_comment_count_numeric(struct post *post, void *data)
+{
+	__echo_comment_count(post, data, 1);
+}
+
 static struct repltab_entry __repltab_story_html[] = {
 	{"POSTID",	echo_postid},
 	{"POSTDATE",	echo_postdate},
 	{"POSTTIME",	echo_posttime},
 	{"TITLE",	echo_story_title},
 	{"COMCOUNT",	echo_comment_count},
+	{"",		NULL},
+};
+
+static struct repltab_entry __repltab_story_numcomment_html[] = {
+	{"POSTID",	echo_postid},
+	{"POSTDATE",	echo_postdate},
+	{"POSTTIME",	echo_posttime},
+	{"TITLE",	echo_story_title},
+	{"COMCOUNT",	echo_comment_count_numeric},
 	{"",		NULL},
 };
 
@@ -150,6 +169,7 @@ static struct repltab_entry __repltab_arch_html[] = {
 };
 
 struct repltab_entry *repltab_story_html = __repltab_story_html;
+struct repltab_entry *repltab_story_numcomment_html = __repltab_story_numcomment_html;
 struct repltab_entry *repltab_comm_html = __repltab_comm_html;
 struct repltab_entry *repltab_cat_html = __repltab_cat_html;
 struct repltab_entry *repltab_arch_html = __repltab_arch_html;

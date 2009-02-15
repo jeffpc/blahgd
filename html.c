@@ -93,7 +93,7 @@ static void __each_index_helper(struct post *post, char *name, void *data)
 	__invoke_for_each_post_cat(&p, __story_cat_item);
 	cat(&p, NULL, "templates/story-middle.html", repltab_story_html);
 	cat_post(&p);
-	cat(&p, NULL, "templates/story-bottom.html", NULL);
+	cat(&p, NULL, "templates/story-bottom.html", repltab_story_numcomment_html);
 
 	destroy_post(&p);
 }

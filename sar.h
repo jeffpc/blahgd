@@ -15,6 +15,7 @@ extern struct repltab_entry *repltab_story_html;
 extern struct repltab_entry *repltab_comm_html;
 extern struct repltab_entry *repltab_cat_html;
 extern struct repltab_entry *repltab_arch_html;
+extern struct repltab_entry *repltab_story_numcomment_html;
 
 extern char* up_month_strs[12];
 
