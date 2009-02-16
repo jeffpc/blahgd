@@ -164,7 +164,7 @@ void html_archive(struct post *post, int archid)
 		return;
 
 	sorted_readdir_loop(dir, post, __each_index_helper, NULL, SORT_DESC,
-			    HTML_INDEX_STORIES);
+			    HTML_ARCHIVE_STORIES);
 
 	closedir(dir);
 }
@@ -184,7 +184,7 @@ void html_category(struct post *post, char *catname)
 		return;
 
 	sorted_readdir_loop(dir, post, __each_index_helper, NULL, SORT_DESC,
-			    HTML_INDEX_STORIES);
+			    HTML_CATEGORY_STORIES);
 
 	closedir(dir);
 }
