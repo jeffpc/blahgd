@@ -72,7 +72,7 @@ void html_story(struct post *post)
 
 	cat_post(post);
 
-	cat(post, NULL, "templates/story-bottom.html", NULL);
+	cat(post, NULL, "templates/story-bottom-short.html", NULL);
 }
 
 /************************************************************************/
