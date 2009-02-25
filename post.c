@@ -88,6 +88,8 @@ static void __do_cat_post(struct post *post, char *ibuf, int len)
 				if (tmp == '\n') {
 					fwrite("</p>\n", 1, 5, post->out);
 					state = CATP_SKIP;
+				} else if (post->fmt == 1) {
+					state = CATP_ECHO;
 				} else {
 					fwrite("<br/>\n", 1, 5, post->out);
 					state = CATP_ECHO;
@@ -242,26 +244,31 @@ void invoke_for_each_comment(struct post *post, void(*f)(struct post*,
 int load_post(int postid, struct post *post)
 {
 	char path[FILENAME_MAX];
-	char *buf;
+	char *buf1,*buf2;
 
 	snprintf(path, FILENAME_MAX, "data/posts/%d", postid);
 
 	post->id = postid;
 	post->title = safe_getxattr(path, XATTR_TITLE);
 	post->cats  = safe_getxattr(path, XATTR_CATS);
-	buf         = safe_getxattr(path, XATTR_TIME);
+	buf1        = safe_getxattr(path, XATTR_TIME);
+	buf2        = safe_getxattr(path, XATTR_FMT);
 
-	if (post->title && buf && (strlen(buf) == 16)) {
+	if (post->title && buf1 && (strlen(buf1) == 16)) {
 		/* "2005-01-02 03:03" */
-		strptime(buf, "%Y-%m-%d %H:%M", &post->time);
+		strptime(buf1, "%Y-%m-%d %H:%M", &post->time);
 
-		free(buf);
+		post->fmt = buf2 ? atoi(buf2) : 0;
+
+		free(buf1);
+		free(buf2);
 
 		return 0;
 	}
 
 	destroy_post(post);
-	free(buf);
+	free(buf1);
+	free(buf2);
 	return ENOMEM;
 }
 
