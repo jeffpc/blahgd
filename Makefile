@@ -2,11 +2,12 @@ CC=gcc
 CFLAGS=-Wall -g -O2 -std=c99 -D_POSIX_C_SOURCE=199309 -lrt
 
 FILES=sar.c post.c xattr.c html.c dir.c
+BINS=story index archive category feed comment
 
-all: story index archive category feed comment
+all: $(BINS)
 
 clean:
-	rm -f story index
+	rm -f $(BINS)
 
 index: index.c $(FILES)
 	$(CC) $(CFLAGS) -o $@ index.c $(FILES)
