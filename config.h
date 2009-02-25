@@ -6,5 +6,8 @@
 #define HTML_CATEGORY_STORIES		10
 #define FEED_INDEX_STORIES		15
 
+#define COMMENT_MAX_DELAY		(3600)	/* 60 mins max think time */
+#define COMMENT_MIN_DELAY		(10)	/* 10 secs min think time */
+
 #endif
 
