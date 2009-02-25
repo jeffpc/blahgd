@@ -3,6 +3,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <dirent.h>
+#include <time.h>
 
 #include "post.h"
 #include "sar.h"
@@ -73,12 +74,18 @@ static void echo_comment_count_numeric(struct post *post, void *data)
 	__echo_comment_count(post, data, 1);
 }
 
+static void echo_unixdate(struct post *post, void *data)
+{
+	fprintf(post->out, "%lu", time(NULL));
+}
+
 static struct repltab_entry __repltab_story_html[] = {
 	{"POSTID",	echo_postid},
 	{"POSTDATE",	echo_postdate},
 	{"POSTTIME",	echo_posttime},
 	{"TITLE",	echo_story_title},
 	{"COMCOUNT",	echo_comment_count},
+	{"UNIXDATE",	echo_unixdate},
 	{"",		NULL},
 };
 
