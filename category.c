@@ -12,6 +12,49 @@
 #define HDD_2DOT	2
 #define HDD_OK		3
 
+char *wordpress_catn[] = {
+	[1]  = "miscellaneous",
+	[2]  = "programming/kernel",
+	[3]  = "school",
+	[4]  = "work",
+	[5]  = "random",
+	[6]  = "programming",
+	[7]  = "events/ols-2005",
+	[8]  = "events",
+	[9]  = "rants",
+	[10] = "movies",
+	[11] = "humor",
+	[13] = "star-trek",
+	[15] = "star-trek/tng",
+	[16] = "star-trek/tos",
+	[17] = "legal",
+	[18] = "star-trek/voy",
+	[19] = "star-trek/ent",
+	[20] = "events/ols-2006",
+	[21] = "fsl",
+	[22] = "fsl/unionfs",
+	[23] = "stargate/sg-1",
+	[24] = "open-source",
+	[25] = "astronomy",
+	[26] = "programming/vcs",
+	[27] = "programming/vcs/git",
+	[28] = "programming/vcs/mercurial",
+	[29] = "events/ols-2007",
+	[30] = "programming/vcs/guilt",
+	[31] = "photography",
+	[34] = "music",
+	[35] = "programming/mainframes",
+	[36] = "events/sc-07",
+	[39] = "hvf",
+	[40] = "events/ols-2008",
+	[41] = "sysadmin",
+	[42] = "documentation",
+	[43] = "stargate",
+};
+
+#define MIN_CATN 1
+#define MAX_CATN 43
+
 int hasdotdot(char *path)
 {
 	int state = HDD_START;
@@ -51,6 +94,7 @@ int main(int argc, char **argv)
 	struct timespec s,e;
 	char *path_info;
 	struct post post;
+	int catn;
 
 	clock_gettime(CLOCK_REALTIME, &s);
 
@@ -75,10 +119,27 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
-	post.title = path_info+1;
+	catn = atoi(path_info+1);
+	if (catn == 0) {
+		/* string cat name */
+		post.title = path_info+1;
+	} else {
+		/* wordpress cat name */
+		if ((catn < MIN_CATN) || (catn > MAX_CATN)) {
+			fprintf(post.out, "Go away!\n");
+			return 0;
+		}
+
+		post.title = wordpress_catn[catn];
+
+		if (!post.title) {
+			fprintf(post.out, "Go away.\n");
+			return 0;
+		}
+	}
 
 	html_header(&post);
-	html_category(&post, path_info+1);
+	html_category(&post, post.title);
 	html_sidebar(&post);
 	html_footer(&post);
 
