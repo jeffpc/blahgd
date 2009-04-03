@@ -62,6 +62,11 @@ static void __story_cat_item(struct post *post, char *catname)
 	cat(post, catname, "templates/story-cat-item.html", repltab_cat_html);
 }
 
+static void __story_cat_item_feed(struct post *post, char *catname)
+{
+	cat(post, catname, "templates/story-cat-item.atom", repltab_cat_html);
+}
+
 void html_story(struct post *post)
 {
 	cat(post, NULL, "templates/story-top.html", repltab_story_html);
@@ -124,12 +129,13 @@ static void __each_feed_index_helper(struct post *post, char *name, void *data)
 		return;
 
 	cat(&p, NULL, "templates/story-top.atom", repltab_story_html);
-	//__invoke_for_each_post_cat(&p, __story_cat_item);
+	__invoke_for_each_post_cat(&p, __story_cat_item_feed);
 	cat(&p, NULL, "templates/story-middle-desc.atom", repltab_story_html);
 	//cat_post_preview(&p);
+	cat_post(&p);
 	cat(&p, NULL, "templates/story-bottom-desc.atom", repltab_story_html);
 	cat(&p, NULL, "templates/story-middle.atom", repltab_story_html);
-	//cat_post(&p);
+	cat_post(&p);
 	cat(&p, NULL, "templates/story-bottom.atom", NULL);
 
 	destroy_post(&p);
