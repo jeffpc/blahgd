@@ -95,6 +95,7 @@ static struct repltab_entry __repltab_story_numcomment_html[] = {
 	{"POSTTIME",	echo_posttime},
 	{"TITLE",	echo_story_title},
 	{"COMCOUNT",	echo_comment_count_numeric},
+	{"UNIXDATE",	echo_unixdate},
 	{"",		NULL},
 };
 

@@ -128,7 +128,7 @@ static void __each_feed_index_helper(struct post *post, char *name, void *data)
 	if (load_post(postid, &p))
 		return;
 
-	cat(&p, NULL, "templates/story-top.atom", repltab_story_html);
+	cat(&p, NULL, "templates/story-top.atom", repltab_story_numcomment_html);
 	__invoke_for_each_post_cat(&p, __story_cat_item_feed);
 	cat(&p, NULL, "templates/story-middle-desc.atom", repltab_story_html);
 	//cat_post_preview(&p);
