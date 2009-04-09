@@ -11,6 +11,8 @@ int main(int argc, char **argv)
 {
 	struct timespec s,e;
 	struct post post;
+	char *pn;
+	int page;
 
 	clock_gettime(CLOCK_REALTIME, &s);
 
@@ -20,8 +22,14 @@ int main(int argc, char **argv)
 
 	fprintf(post.out, "Content-Type: text/html\n\n");
 
+	pn = getenv("QUERY_STRING");
+	if (!pn)
+		page = 0;
+	else
+		page = atoi(pn);
+
 	html_header(&post);
-	html_index(&post);
+	html_index(&post, page);
 	html_sidebar(&post);
 	html_footer(&post);
 

@@ -236,7 +236,8 @@ void invoke_for_each_comment(struct post *post, void(*f)(struct post*,
 	if (!dir)
 		return;
 
-	sorted_readdir_loop(dir, post, __each_comment_helper, f, SORT_ASC, -1);
+	sorted_readdir_loop(dir, post, __each_comment_helper, f, SORT_ASC,
+			    0, -1);
 
 	closedir(dir);
 }

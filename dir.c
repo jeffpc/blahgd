@@ -45,7 +45,7 @@ static int cmp_int_desc(const void *a, const void *b)
 
 int sorted_readdir_loop(DIR *dir, struct post *post,
 			void(*f)(struct post*, char*, void*), void *data,
-			int updown, int limit)
+			int updown, int start, int limit)
 {
 	struct dirent *de;
 	char **list = NULL;
@@ -88,6 +88,11 @@ int sorted_readdir_loop(DIR *dir, struct post *post,
 	}
 
 	for(i=0; (i<count) && limit; i++) {
+		if (start) {
+			start--;
+			continue;
+		}
+
 		f(post, list[i], data);
 		free(list[i]);
 

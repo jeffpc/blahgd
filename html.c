@@ -103,7 +103,7 @@ static void __each_index_helper(struct post *post, char *name, void *data)
 	destroy_post(&p);
 }
 
-void html_index(struct post *post)
+void html_index(struct post *post, int page)
 {
 	DIR *dir;
 
@@ -112,7 +112,7 @@ void html_index(struct post *post)
 		return;
 
 	sorted_readdir_loop(dir, post, __each_index_helper, NULL, SORT_DESC,
-			    HTML_INDEX_STORIES);
+			    page*HTML_INDEX_STORIES, HTML_INDEX_STORIES);
 
 	closedir(dir);
 }
@@ -150,7 +150,7 @@ void feed_index(struct post *post, char *fmt)
 		return;
 
 	sorted_readdir_loop(dir, post, __each_feed_index_helper, NULL, SORT_DESC,
-			    FEED_INDEX_STORIES);
+			    0, FEED_INDEX_STORIES);
 
 	closedir(dir);
 }
@@ -162,6 +162,7 @@ void html_archive(struct post *post, int archid)
 {
 	char path[FILENAME_MAX];
 	DIR *dir;
+	int page=0; //FIXME
 
 	snprintf(path, FILENAME_MAX, "data/by-month/%d", archid);
 
@@ -170,7 +171,7 @@ void html_archive(struct post *post, int archid)
 		return;
 
 	sorted_readdir_loop(dir, post, __each_index_helper, NULL, SORT_DESC,
-			    HTML_ARCHIVE_STORIES);
+			    HTML_ARCHIVE_STORIES*page, HTML_ARCHIVE_STORIES);
 
 	closedir(dir);
 }
@@ -182,6 +183,7 @@ void html_category(struct post *post, char *catname)
 {
 	char path[FILENAME_MAX];
 	DIR *dir;
+	int page=0; //FIXME
 
 	snprintf(path, FILENAME_MAX, "data/by-category/%s/", catname);
 
@@ -190,7 +192,7 @@ void html_category(struct post *post, char *catname)
 		return;
 
 	sorted_readdir_loop(dir, post, __each_index_helper, NULL, SORT_DESC,
-			    HTML_CATEGORY_STORIES);
+			    HTML_CATEGORY_STORIES*page, HTML_CATEGORY_STORIES);
 
 	closedir(dir);
 }
@@ -259,7 +261,7 @@ static void __invoke_for_each_cat(struct post *post, char *prefix,
 		return;
 
 	sorted_readdir_loop(dir, post, __each_cat_helper, plist,
-			    SORT_ASC | SORT_STRING, -1);
+			    SORT_ASC | SORT_STRING, 0, -1);
 
 	closedir(dir);
 }
@@ -279,7 +281,7 @@ static void __invoke_for_each_archive(struct post *post, void(*f)(struct post*, 
 	if (!dir)
 		return;
 
-	sorted_readdir_loop(dir, post, __cb_wrap, f, SORT_DESC, -1);
+	sorted_readdir_loop(dir, post, __cb_wrap, f, SORT_DESC, 0, -1);
 
 	closedir(dir);
 }
