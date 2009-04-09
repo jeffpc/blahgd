@@ -79,6 +79,16 @@ static void echo_unixdate(struct post *post, void *data)
 	fprintf(post->out, "%lu", time(NULL));
 }
 
+static void echo_pageno_m1(struct post *post, void *data)
+{
+	fprintf(post->out, "%d", max(0,post->page-1));
+}
+
+static void echo_pageno_p1(struct post *post, void *data)
+{
+	fprintf(post->out, "%d", post->page+1);
+}
+
 static struct repltab_entry __repltab_story_html[] = {
 	{"POSTID",	echo_postid},
 	{"POSTDATE",	echo_postdate},
@@ -86,6 +96,8 @@ static struct repltab_entry __repltab_story_html[] = {
 	{"TITLE",	echo_story_title},
 	{"COMCOUNT",	echo_comment_count},
 	{"UNIXDATE",	echo_unixdate},
+	{"NEXT_PAGENO",	echo_pageno_m1},
+	{"PREV_PAGENO",	echo_pageno_p1},
 	{"",		NULL},
 };
 
@@ -96,6 +108,8 @@ static struct repltab_entry __repltab_story_numcomment_html[] = {
 	{"TITLE",	echo_story_title},
 	{"COMCOUNT",	echo_comment_count_numeric},
 	{"UNIXDATE",	echo_unixdate},
+	{"NEXT_PAGENO",	echo_pageno_m1},
+	{"PREV_PAGENO",	echo_pageno_p1},
 	{"",		NULL},
 };
 

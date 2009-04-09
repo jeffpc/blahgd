@@ -103,7 +103,7 @@ static void __each_index_helper(struct post *post, char *name, void *data)
 	destroy_post(&p);
 }
 
-void html_index(struct post *post, int page)
+void html_index(struct post *post)
 {
 	DIR *dir;
 
@@ -112,7 +112,7 @@ void html_index(struct post *post, int page)
 		return;
 
 	sorted_readdir_loop(dir, post, __each_index_helper, NULL, SORT_DESC,
-			    page*HTML_INDEX_STORIES, HTML_INDEX_STORIES);
+			    post->page*HTML_INDEX_STORIES, HTML_INDEX_STORIES);
 
 	closedir(dir);
 }

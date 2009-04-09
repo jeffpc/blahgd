@@ -16,6 +16,7 @@ struct post {
 	char *title;
 	char *cats;
 	struct tm time;
+	int page;
 };
 
 #define XATTR_TITLE		"user.post_title"
@@ -40,5 +41,7 @@ extern void cat(struct post *post, void *data, char *tmpl,
 
 extern void invoke_for_each_comment(struct post *post,
 				    void(*f)(struct post*, struct comment*));
+
+#define max(a,b)	((a)<(b)? (b) : (a))
 
 #endif
