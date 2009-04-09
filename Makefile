@@ -9,6 +9,9 @@ all: $(BINS)
 clean:
 	rm -f $(BINS)
 
+tags:
+	cscope -R -b
+
 index: index.c $(FILES)
 	$(CC) $(CFLAGS) -o $@ index.c $(FILES)
 
