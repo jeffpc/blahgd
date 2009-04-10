@@ -6,8 +6,8 @@
 		<title type="html"><![CDATA[@@TITLE@@]]></title>
 		<link rel="alternate" type="text/html" href="http://josefsipek.net/blahg/?p=@@POSTID@@" />
 		<id>http://josefsipek.net/blahg/?p=@@POSTID@@</id>
-		<updated>@@POSTDATE@@</updated>
-		<published>@@POSTDATE@@</published>
+		<updated>@@POSTDATEZULU@@</updated>
+		<published>@@POSTDATEZULU@@</published>
 
 		<link rel="replies" type="text/html" href="http://josefsipek.net/blahg/?p=@@POSTID@@#comments" thr:count="1"/>
 		<thr:total>@@COMCOUNT@@</thr:total>

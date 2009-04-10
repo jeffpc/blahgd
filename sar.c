@@ -36,6 +36,27 @@ static void echo_postdate(struct post *post, void *data)
 		1900+post->time.tm_year);
 }
 
+static void __echo_postdate_zulu(struct post *post, struct tm *time)
+{
+	fprintf(post->out, "%04d-%02d-%02dT%02d:%02d:%02d.000+00:00",
+		1900+time->tm_year,
+		time->tm_mon,
+		time->tm_mday,
+		time->tm_hour,
+		time->tm_min,
+		time->tm_sec);
+}
+
+static void echo_postdate_zulu(struct post *post, void *data)
+{
+	__echo_postdate_zulu(post, &post->time);
+}
+
+static void echo_lastpostdate_zulu(struct post *post, void *data)
+{
+	__echo_postdate_zulu(post, &post->lasttime);
+}
+
 static void __echo_comment_count(struct post *post, void *data, int numeric)
 {
 	char path[FILENAME_MAX];
@@ -97,6 +118,8 @@ static void echo_pagetype(struct post *post, void *data)
 static struct repltab_entry __repltab_story_html[] = {
 	{"POSTID",	echo_postid},
 	{"POSTDATE",	echo_postdate},
+	{"POSTDATEZULU",echo_postdate_zulu},
+	{"LASTPUBDATE",	echo_lastpostdate_zulu},
 	{"POSTTIME",	echo_posttime},
 	{"TITLE",	echo_story_title},
 	{"COMCOUNT",	echo_comment_count},
@@ -110,6 +133,8 @@ static struct repltab_entry __repltab_story_html[] = {
 static struct repltab_entry __repltab_story_numcomment_html[] = {
 	{"POSTID",	echo_postid},
 	{"POSTDATE",	echo_postdate},
+	{"POSTDATEZULU",echo_postdate_zulu},
+	{"LASTPUBDATE",	echo_lastpostdate_zulu},
 	{"POSTTIME",	echo_posttime},
 	{"TITLE",	echo_story_title},
 	{"COMCOUNT",	echo_comment_count_numeric},
@@ -154,6 +179,8 @@ static void echo_comment_date(struct post *post, void *data)
 static struct repltab_entry __repltab_comm_html[] = {
 	{"POSTID",	echo_postid},
 	{"POSTDATE",	echo_postdate},
+	{"POSTDATEZULU",echo_postdate_zulu},
+	{"LASTPUBDATE",	echo_lastpostdate_zulu},
 	{"POSTTIME",	echo_posttime},
 	{"TITLE",	echo_story_title},
 	{"COMCOUNT",	echo_comment_count},

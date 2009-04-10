@@ -249,6 +249,8 @@ int load_post(int postid, struct post *post)
 
 	snprintf(path, FILENAME_MAX, "data/posts/%d", postid);
 
+	memset(&post->lasttime, 0, sizeof(struct tm));
+
 	post->id = postid;
 	post->title = safe_getxattr(path, XATTR_TITLE);
 	post->cats  = safe_getxattr(path, XATTR_CATS);

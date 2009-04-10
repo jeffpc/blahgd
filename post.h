@@ -20,6 +20,7 @@ struct post {
 
 	char *pagetype; /* date for archive pages, category name for
 			   category lists, undefined otherwise */
+	struct tm lasttime; /* date/time of the last update */
 };
 
 #define XATTR_TITLE		"user.post_title"

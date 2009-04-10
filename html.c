@@ -140,6 +140,15 @@ static void __each_feed_index_helper(struct post *post, char *name, void *data)
 	cat_post(&p);
 	cat(&p, NULL, "templates/story-bottom.atom", NULL);
 
+	/* copy over the last time? */
+	if ((post->lasttime.tm_year < p.time.tm_year) ||
+	    (post->lasttime.tm_mon < p.time.tm_mon) ||
+	    (post->lasttime.tm_mday < p.time.tm_mday) ||
+	    (post->lasttime.tm_hour < p.time.tm_hour) ||
+	    (post->lasttime.tm_min < p.time.tm_min) ||
+	    (post->lasttime.tm_sec < p.time.tm_sec))
+		memcpy(&post->lasttime, &p.time, sizeof(struct tm));
+
 	destroy_post(&p);
 }
 
