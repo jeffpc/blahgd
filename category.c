@@ -95,6 +95,7 @@ int main(int argc, char **argv)
 	char *path_info;
 	struct post post;
 	int catn;
+	char *pn;
 
 	clock_gettime(CLOCK_REALTIME, &s);
 
@@ -137,6 +138,12 @@ int main(int argc, char **argv)
 			return 0;
 		}
 	}
+
+	pn = getenv("QUERY_STRING");
+	if (!pn)
+		post.page = 0;
+	else
+		post.page = atoi(pn);
 
 	html_header(&post);
 	html_category(&post, post.title);

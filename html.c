@@ -115,6 +115,8 @@ void html_index(struct post *post)
 			    post->page*HTML_INDEX_STORIES, HTML_INDEX_STORIES);
 
 	closedir(dir);
+
+	cat(post, NULL, "templates/index-pager.html", repltab_story_html);
 }
 
 static void __each_feed_index_helper(struct post *post, char *name, void *data)
@@ -183,7 +185,6 @@ void html_category(struct post *post, char *catname)
 {
 	char path[FILENAME_MAX];
 	DIR *dir;
-	int page=0; //FIXME
 
 	snprintf(path, FILENAME_MAX, "data/by-category/%s/", catname);
 
@@ -192,9 +193,12 @@ void html_category(struct post *post, char *catname)
 		return;
 
 	sorted_readdir_loop(dir, post, __each_index_helper, NULL, SORT_DESC,
-			    HTML_CATEGORY_STORIES*page, HTML_CATEGORY_STORIES);
+			    HTML_CATEGORY_STORIES*post->page,
+			    HTML_CATEGORY_STORIES);
 
 	closedir(dir);
+
+	cat(post, NULL, "templates/category-pager.html", repltab_story_html);
 }
 
 /************************************************************************/
