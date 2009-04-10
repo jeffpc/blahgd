@@ -71,7 +71,8 @@ static void __do_cat_post(struct post *post, char *ibuf, int len)
 			case CATP_SKIP:
 				if (tmp != '\n') {
 					fwrite(ibuf+sidx, 1, eidx-sidx, post->out);
-					fwrite("<p>", 1, 3, post->out);
+					if (post->fmt != 2)
+						fwrite("<p>", 1, 3, post->out);
 					sidx = eidx;
 					state = CATP_ECHO;
 				}
@@ -86,12 +87,14 @@ static void __do_cat_post(struct post *post, char *ibuf, int len)
 				fwrite(ibuf+sidx, 1, eidx-sidx, post->out);
 				sidx = eidx;
 				if (tmp == '\n') {
-					fwrite("</p>\n", 1, 5, post->out);
+					if (post->fmt != 2)
+						fwrite("</p>\n", 1, 5, post->out);
 					state = CATP_SKIP;
 				} else if (post->fmt == 1) {
 					state = CATP_ECHO;
 				} else {
-					fwrite("<br/>\n", 1, 5, post->out);
+					if (post->fmt != 2)
+						fwrite("<br/>\n", 1, 5, post->out);
 					state = CATP_ECHO;
 				}
 				break;
@@ -101,7 +104,8 @@ static void __do_cat_post(struct post *post, char *ibuf, int len)
 
 	if (state != CATP_SKIP) {
 		fwrite(ibuf+sidx, 1, eidx-sidx, post->out);
-		fwrite("</p>", 1, 4, post->out);
+		if (post->fmt != 2)
+			fwrite("</p>", 1, 4, post->out);
 	}
 }
 
