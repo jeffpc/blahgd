@@ -40,7 +40,7 @@ static void __echo_postdate_zulu(struct post *post, struct tm *time)
 {
 	fprintf(post->out, "%04d-%02d-%02dT%02d:%02d:%02d.000+00:00",
 		1900+time->tm_year,
-		time->tm_mon,
+		time->tm_mon+1,
 		time->tm_mday,
 		time->tm_hour,
 		time->tm_min,
