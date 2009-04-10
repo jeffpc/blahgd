@@ -48,4 +48,39 @@ extern void invoke_for_each_comment(struct post *post,
 
 #define max(a,b)	((a)<(b)? (b) : (a))
 
+static inline int tm_cmp(struct tm *t1, struct tm *t2)
+{
+	if (t1->tm_year < t2->tm_year)
+		return -1;
+	if (t1->tm_year > t2->tm_year)
+		return 1;
+
+	if (t1->tm_mon < t2->tm_mon)
+		return -1;
+	if (t1->tm_mon > t2->tm_mon)
+		return 1;
+
+	if (t1->tm_mday < t2->tm_mday)
+		return -1;
+	if (t1->tm_mday > t2->tm_mday)
+		return 1;
+
+	if (t1->tm_hour < t2->tm_hour)
+		return -1;
+	if (t1->tm_hour > t2->tm_hour)
+		return 1;
+
+	if (t1->tm_min < t2->tm_min)
+		return -1;
+	if (t1->tm_min > t2->tm_min)
+		return 1;
+
+	if (t1->tm_sec < t2->tm_sec)
+		return -1;
+	if (t1->tm_sec > t2->tm_sec)
+		return 1;
+
+	return 0;
+}
+
 #endif
