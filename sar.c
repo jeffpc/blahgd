@@ -89,6 +89,11 @@ static void echo_pageno_p1(struct post *post, void *data)
 	fprintf(post->out, "%d", post->page+1);
 }
 
+static void echo_pagetype(struct post *post, void *data)
+{
+	fprintf(post->out, "%s", post->pagetype);
+}
+
 static struct repltab_entry __repltab_story_html[] = {
 	{"POSTID",	echo_postid},
 	{"POSTDATE",	echo_postdate},
@@ -98,6 +103,7 @@ static struct repltab_entry __repltab_story_html[] = {
 	{"UNIXDATE",	echo_unixdate},
 	{"NEXT_PAGENO",	echo_pageno_m1},
 	{"PREV_PAGENO",	echo_pageno_p1},
+	{"PAGETYPE",	echo_pagetype},
 	{"",		NULL},
 };
 
@@ -110,6 +116,7 @@ static struct repltab_entry __repltab_story_numcomment_html[] = {
 	{"UNIXDATE",	echo_unixdate},
 	{"NEXT_PAGENO",	echo_pageno_m1},
 	{"PREV_PAGENO",	echo_pageno_p1},
+	{"PAGETYPE",	echo_pagetype},
 	{"",		NULL},
 };
 

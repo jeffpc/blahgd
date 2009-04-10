@@ -138,6 +138,7 @@ int main(int argc, char **argv)
 			return 0;
 		}
 	}
+	post.pagetype = post.title;
 
 	pn = getenv("QUERY_STRING");
 	if (!pn)

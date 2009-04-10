@@ -164,7 +164,6 @@ void html_archive(struct post *post, int archid)
 {
 	char path[FILENAME_MAX];
 	DIR *dir;
-	int page=0; //FIXME
 
 	snprintf(path, FILENAME_MAX, "data/by-month/%d", archid);
 
@@ -173,9 +172,11 @@ void html_archive(struct post *post, int archid)
 		return;
 
 	sorted_readdir_loop(dir, post, __each_index_helper, NULL, SORT_DESC,
-			    HTML_ARCHIVE_STORIES*page, HTML_ARCHIVE_STORIES);
+			    HTML_ARCHIVE_STORIES*post->page, HTML_ARCHIVE_STORIES);
 
 	closedir(dir);
+
+	cat(post, NULL, "templates/archive-pager.html", repltab_story_html);
 }
 
 /************************************************************************/

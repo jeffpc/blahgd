@@ -17,6 +17,9 @@ struct post {
 	char *cats;
 	struct tm time;
 	int page;
+
+	char *pagetype; /* date for archive pages, category name for
+			   category lists, undefined otherwise */
 };
 
 #define XATTR_TITLE		"user.post_title"

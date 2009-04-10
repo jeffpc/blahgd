@@ -14,6 +14,7 @@ int main(int argc, char **argv)
 	int archid;
 	struct post post;
 	char nicetitle[32];
+	char *pn;
 
 	clock_gettime(CLOCK_REALTIME, &s);
 
@@ -31,9 +32,16 @@ int main(int argc, char **argv)
 	}
 
 	archid = atoi(path_info+1);
+	post.pagetype = path_info+1;
 
 	snprintf(nicetitle, 32, "%d &raquo; %s", archid/100,
 		 up_month_strs[(archid%100)-1]);
+
+	pn = getenv("QUERY_STRING");
+	if (!pn)
+		post.page = 0;
+	else
+		post.page = atoi(pn);
 
 	html_header(&post);
 	html_archive(&post, archid);
