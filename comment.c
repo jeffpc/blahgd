@@ -5,6 +5,8 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include "config.h"
 #include "post.h"
@@ -32,6 +34,23 @@
 #define SC_ID_EQ		17
 #define SC_ERROR		20
 
+static int __write(int fd, char *buf, int len)
+{
+	int ret;
+	int offset = 0;
+
+	while(offset < len) {
+		ret = write(fd, buf+offset, len-offset);
+		if (ret < 0) {
+			printf("Write error! %s (%d)\n", strerror(errno), errno);
+			return 1;
+		}
+
+		offset += ret;
+	}
+	return 0;
+}
+
 void save_comment(struct post *post)
 {
 	char path[FILENAME_MAX];
@@ -50,6 +69,7 @@ void save_comment(struct post *post)
 	int comment_len = 0;
 	time_t date = 0;
 	int id = 0;
+	int fd;
 
 	int ret;
 
@@ -200,21 +220,39 @@ void save_comment(struct post *post)
 		return;
 	}
 
-	snprintf(path, FILENAME_MAX, "data/pending-comments/%d-%lu%09luW",
-		 id, now.tv_sec, now.tv_nsec);
+	snprintf(path, FILENAME_MAX, "data/pending-comments/%d-%08lx.%08lx.%04xW",
+		 id, now.tv_sec, now.tv_nsec, getpid());
 
 	if (mkdir(path, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == -1) {
 		fprintf(post->out, "Ow, could not create directory: %d (%s)\n", errno, strerror(errno));
 		return;
 	}
 
+	if ((strlen(path) + strlen("/post.txt")) >= FILENAME_MAX) {
+		fprintf(post->out, "Uf...filename too long!\n");
+		return;
+	}
+
+	strcat(path, "/post.txt");
+
+	if ((fd = open(path, O_WRONLY | O_CREAT | O_EXCL,
+		       S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1) {
+		fprintf(post->out, "Couldn't create file ... :(\n");
+		return;
+	}
+
+	if (__write(fd, comment_buf, strlen(comment_buf)) != 0)
+		goto out;
+
 	/*
 	 * TODO:
-	 * - write to data/pending-comments/....W/post.txt
 	 * - set xattrs on data/pending-comments/....W
 	 * - rename data/pending-comments/....W to
 	 *   data/pending-comments/....
 	 */
+
+out:
+	close(fd);
 }
 
 int main(int argc, char **argv)
