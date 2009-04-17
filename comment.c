@@ -12,6 +12,7 @@
 #include "post.h"
 #include "sar.h"
 #include "html.h"
+#include "xattr.h"
 
 #define SHORT_BUF_LEN		128
 #define MEDIUM_BUF_LEN		256
@@ -54,6 +55,8 @@ static int __write(int fd, char *buf, int len)
 void save_comment(struct post *post)
 {
 	char path[FILENAME_MAX];
+	char *dirpath = NULL;
+	char *newdirpath = NULL;
 	int in;
 	char tmp;
 
@@ -166,7 +169,10 @@ void save_comment(struct post *post)
 					state = SC_IGNORE;
 				}
 
-				COPYCHAR(comment_buf, comment_len, tmp);
+				if (tmp == '+')
+					COPYCHAR(comment_buf, comment_len, ' ');
+				else
+					COPYCHAR(comment_buf, comment_len, tmp);
 				break;
 
 			case SC_DATE:
@@ -223,14 +229,21 @@ void save_comment(struct post *post)
 	snprintf(path, FILENAME_MAX, "data/pending-comments/%d-%08lx.%08lx.%04xW",
 		 id, now.tv_sec, now.tv_nsec, getpid());
 
-	if (mkdir(path, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == -1) {
-		fprintf(post->out, "Ow, could not create directory: %d (%s)\n", errno, strerror(errno));
+	dirpath = strdup(path);
+	newdirpath = strdup(path);
+	if (!dirpath || !newdirpath) {
+		fprintf(post->out, "Eeeep...ENOMEM\n");
 		return;
+	}
+
+	if (mkdir(dirpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == -1) {
+		fprintf(post->out, "Ow, could not create directory: %d (%s)\n", errno, strerror(errno));
+		goto out_free;
 	}
 
 	if ((strlen(path) + strlen("/post.txt")) >= FILENAME_MAX) {
 		fprintf(post->out, "Uf...filename too long!\n");
-		return;
+		goto out_free;
 	}
 
 	strcat(path, "/post.txt");
@@ -238,21 +251,30 @@ void save_comment(struct post *post)
 	if ((fd = open(path, O_WRONLY | O_CREAT | O_EXCL,
 		       S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1) {
 		fprintf(post->out, "Couldn't create file ... :(\n");
-		return;
+		goto out;
 	}
 
 	if (__write(fd, comment_buf, strlen(comment_buf)) != 0)
 		goto out;
 
-	/*
-	 * TODO:
-	 * - set xattrs on data/pending-comments/....W
-	 * - rename data/pending-comments/....W to
-	 *   data/pending-comments/....
-	 */
+	safe_setxattr(dirpath, XATTR_COMM_AUTHOR, author_buf,
+		      strlen(author_buf));
+	safe_setxattr(dirpath, XATTR_TIME, "now", 3);
+
+	newdirpath[strlen(newdirpath)] = '\0';
+
+	ret = rename(dirpath, newdirpath);
+	if (ret) {
+		fprintf(post->out, "Could not rename '%s' to '%s'\n",
+			dirpath, newdirpath);
+		goto out;
+	}
 
 out:
 	close(fd);
+out_free:
+	free(dirpath);
+	free(newdirpath);
 }
 
 int main(int argc, char **argv)
