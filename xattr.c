@@ -3,6 +3,11 @@
 #include <sys/types.h>
 #include <attr/xattr.h>
 
+int safe_setxattr(char *path, char *name, void *value, size_t len)
+{
+	return setxattr(path, name, value, len, XATTR_CREATE); // XATTR_REPLACE
+}
+
 char *safe_getxattr(char *path, char *attr_name)
 {
 	ssize_t size;
