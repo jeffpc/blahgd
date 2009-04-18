@@ -54,6 +54,7 @@ static int __write(int fd, char *buf, int len)
 
 int save_comment(struct post *post)
 {
+	char curdate[32];
 	char path[FILENAME_MAX];
 	char *dirpath = NULL;
 	char *newdirpath = NULL;
@@ -78,6 +79,8 @@ int save_comment(struct post *post)
 	int ret;
 
 	struct timespec now;
+	time_t tmp_t;
+	struct tm *tmp_tm;
 
 	author_buf[0] = '\0'; /* better be paranoid */
 	email_buf[0] = '\0'; /* better be paranoid */
@@ -235,6 +238,14 @@ int save_comment(struct post *post)
 		return 1;
 	}
 
+	tmp_t = time(NULL);
+	tmp_tm = localtime(&tmp_t);
+	if (!tmp_tm) {
+		return 1;
+	}
+
+	strftime(curdate, 31, "%Y-%m-%d %H:%M", tmp_tm);
+
 	snprintf(path, FILENAME_MAX, "data/pending-comments/%d-%08lx.%08lx.%04xW",
 		 id, now.tv_sec, now.tv_nsec, getpid());
 
@@ -276,7 +287,7 @@ int save_comment(struct post *post)
 
 	safe_setxattr(dirpath, XATTR_COMM_AUTHOR, author_buf,
 		      strlen(author_buf));
-	safe_setxattr(dirpath, XATTR_TIME, "now", 3);
+	safe_setxattr(dirpath, XATTR_TIME, curdate, strlen(curdate));
 
 	newdirpath[strlen(newdirpath)-1] = '\0';
 
