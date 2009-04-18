@@ -261,7 +261,7 @@ void save_comment(struct post *post)
 		      strlen(author_buf));
 	safe_setxattr(dirpath, XATTR_TIME, "now", 3);
 
-	newdirpath[strlen(newdirpath)] = '\0';
+	newdirpath[strlen(newdirpath)-1] = '\0';
 
 	ret = rename(dirpath, newdirpath);
 	if (ret) {
