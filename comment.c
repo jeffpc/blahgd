@@ -5,11 +5,14 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include "config.h"
 #include "post.h"
 #include "sar.h"
 #include "html.h"
+#include "xattr.h"
 
 #define SHORT_BUF_LEN		128
 #define MEDIUM_BUF_LEN		256
@@ -32,11 +35,31 @@
 #define SC_ID_EQ		17
 #define SC_ERROR		20
 
-void save_comment(struct post *post)
+static int __write(int fd, char *buf, int len)
+{
+	int ret;
+	int offset = 0;
+
+	while(offset < len) {
+		ret = write(fd, buf+offset, len-offset);
+		if (ret < 0) {
+			printf("Write error! %s (%d)\n", strerror(errno), errno);
+			return 1;
+		}
+
+		offset += ret;
+	}
+	return 0;
+}
+
+int save_comment(struct post *post)
 {
 	char path[FILENAME_MAX];
+	char *dirpath = NULL;
+	char *newdirpath = NULL;
 	int in;
 	char tmp;
+	int result = 1;
 
 	int state;
 
@@ -50,6 +73,7 @@ void save_comment(struct post *post)
 	int comment_len = 0;
 	time_t date = 0;
 	int id = 0;
+	int fd;
 
 	int ret;
 
@@ -146,7 +170,10 @@ void save_comment(struct post *post)
 					state = SC_IGNORE;
 				}
 
-				COPYCHAR(comment_buf, comment_len, tmp);
+				if (tmp == '+')
+					COPYCHAR(comment_buf, comment_len, ' ');
+				else
+					COPYCHAR(comment_buf, comment_len, tmp);
 				break;
 
 			case SC_DATE:
@@ -174,70 +201,122 @@ void save_comment(struct post *post)
 			break;
 	}
 
+#if 0
 	fprintf(post->out, "author: \"%s\"\n", author_buf);
 	fprintf(post->out, "email: \"%s\"\n", email_buf);
 	fprintf(post->out, "url: \"%s\"\n", url_buf);
 	fprintf(post->out, "comment: \"%s\"\n", comment_buf);
 	fprintf(post->out, "date: %lu\n", date);
 	fprintf(post->out, "id: %d\n", id);
+#endif
+
+	ret = load_post(id, post);
+	if (ret) {
+#if 0
+		fprintf(post->out, "Gah! %d (postid=%d)\n", ret, id);
+#endif
+		return 1;
+	}
 
 	if ((strlen(author_buf) == 0) ||
 	    (strlen(email_buf) == 0) ||
 	    (strlen(comment_buf) == 0)) {
+#if 0
 		fprintf(post->out, "You must fill in name, email, and comment\n");
-		return;
-	}
-
-	ret = load_post(id, post);
-	if (ret) {
-		fprintf(post->out, "Gah! %d (postid=%d)\n", ret, id);
-		return;
+#endif
+		return 1;
 	}
 
 	clock_gettime(CLOCK_REALTIME, &now);
 	if ((now.tv_sec > (date+COMMENT_MAX_DELAY)) || (now.tv_sec < (date+COMMENT_MIN_DELAY))) {
+#if 0
 		fprintf(post->out, "Flash-gordon or geriatric was here...  %lu %lu\n", now.tv_sec, date);
-		return;
+#endif
+		return 1;
 	}
 
-	snprintf(path, FILENAME_MAX, "data/pending-comments/%d-%lu%09luW",
-		 id, now.tv_sec, now.tv_nsec);
+	snprintf(path, FILENAME_MAX, "data/pending-comments/%d-%08lx.%08lx.%04xW",
+		 id, now.tv_sec, now.tv_nsec, getpid());
 
-	if (mkdir(path, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == -1) {
+	dirpath = strdup(path);
+	newdirpath = strdup(path);
+	if (!dirpath || !newdirpath) {
+#if 0
+		fprintf(post->out, "Eeeep...ENOMEM\n");
+#endif
+		return 1;
+	}
+
+	if (mkdir(dirpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == -1) {
+#if 0
 		fprintf(post->out, "Ow, could not create directory: %d (%s)\n", errno, strerror(errno));
-		return;
+#endif
+		goto out_free;
 	}
 
-	/*
-	 * TODO:
-	 * - write to data/pending-comments/....W/post.txt
-	 * - set xattrs on data/pending-comments/....W
-	 * - rename data/pending-comments/....W to
-	 *   data/pending-comments/....
-	 */
+	if ((strlen(path) + strlen("/post.txt")) >= FILENAME_MAX) {
+#if 0
+		fprintf(post->out, "Uf...filename too long!\n");
+#endif
+		goto out_free;
+	}
+
+	strcat(path, "/post.txt");
+
+	if ((fd = open(path, O_WRONLY | O_CREAT | O_EXCL,
+		       S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1) {
+#if 0
+		fprintf(post->out, "Couldn't create file ... :(\n");
+#endif
+		goto out;
+	}
+
+	if (__write(fd, comment_buf, strlen(comment_buf)) != 0)
+		goto out;
+
+	safe_setxattr(dirpath, XATTR_COMM_AUTHOR, author_buf,
+		      strlen(author_buf));
+	safe_setxattr(dirpath, XATTR_TIME, "now", 3);
+
+	newdirpath[strlen(newdirpath)-1] = '\0';
+
+	ret = rename(dirpath, newdirpath);
+	if (ret) {
+#if 0
+		fprintf(post->out, "Could not rename '%s' to '%s'\n",
+			dirpath, newdirpath);
+#endif
+		goto out;
+	}
+
+	result = 0;
+
+out:
+	close(fd);
+out_free:
+	free(dirpath);
+	free(newdirpath);
+	return result;
 }
 
 int main(int argc, char **argv)
 {
 	struct timespec s,e;
 	struct post post;
+	int res;
 
 	clock_gettime(CLOCK_REALTIME, &s);
 
 	post.out = stdout;
 
-	fprintf(post.out, "Content-Type: text/plain\n\n");
+	fprintf(post.out, "Content-Type: text/html\n\n");
 
-	save_comment(&post);
+	res = save_comment(&post);
 
-#if 0
 	html_header(&post);
-	html_story(&post);
-	html_comments(&post);
+	html_save_comment(&post, res);
 	html_sidebar(&post);
 	html_footer(&post);
-#endif
-
 	destroy_post(&post);
 
 	clock_gettime(CLOCK_REALTIME, &e);

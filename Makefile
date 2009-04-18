@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -g -O2 -std=c99 -D_POSIX_C_SOURCE=199309 -lrt
+CFLAGS=-Wall -g -O2 -std=c99 -D_POSIX_C_SOURCE=199309 -D_BSD_SOURCE -lrt
 
 FILES=sar.c post.c xattr.c html.c dir.c
 BINS=story index archive category feed comment
