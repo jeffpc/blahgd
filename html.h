@@ -4,6 +4,7 @@
 #include "post.h"
 
 extern void html_story(struct post *post);
+extern void html_save_comment(struct post *post, int notsaved);
 extern void html_index(struct post *post);
 extern void html_archive(struct post *post, int archid);
 extern void html_category(struct post *post, char *catname);

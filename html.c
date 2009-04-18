@@ -318,6 +318,22 @@ void html_sidebar(struct post *post)
 	cat(post, NULL, "templates/sidebar-bottom.html", repltab_story_html);
 }
 
+void html_save_comment(struct post *post, int notsaved)
+{
+	cat(post, NULL, "templates/story-top.html", repltab_story_html);
+
+	__invoke_for_each_post_cat(post, __story_cat_item);
+
+	if (notsaved)
+		cat(post, NULL, "templates/story-comment-notsaved.html", repltab_story_html);
+	else
+		cat(post, NULL, "templates/story-comment-saved.html", repltab_story_html);
+
+	//cat_post(post);
+
+	cat(post, NULL, "templates/story-bottom-short.html", NULL);
+}
+
 /************************************************************************/
 /*                             PAGE HEADER                              */
 /************************************************************************/
