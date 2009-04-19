@@ -324,10 +324,16 @@ int main(int argc, char **argv)
 
 	res = save_comment(&post);
 
+	if (res && !post.title)
+		post.title = "Erorr";
+
 	html_header(&post);
 	html_save_comment(&post, res);
 	html_sidebar(&post);
 	html_footer(&post);
+
+	if (res)
+		post.title = NULL; // NOTE: This might actually leak some memory
 	destroy_post(&post);
 
 	clock_gettime(CLOCK_REALTIME, &e);
