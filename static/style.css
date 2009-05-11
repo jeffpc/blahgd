@@ -1,0 +1,308 @@
+a {
+	color: black;
+}
+
+a img {
+	border: none;
+}
+
+h1 {
+	color: #336699;
+	font-size: 22pt;
+}
+
+h2 {
+	color: #336699;
+	font-size: 18pt;
+}
+
+h3 {
+	color: #336699;
+	font-size: 14pt;
+}
+
+h4 {
+	color: #336699;
+	font-size: 12pt;
+}
+
+acronym, abbr {
+	border-bottom: 1px dashed #333;
+}
+
+acronym, abbr, span.caps {
+	font-size: 90%;
+	letter-spacing: .07em;
+}
+
+acronym, abbr {
+	cursor: help;
+}
+
+blockquote {
+	border-left: 5px solid #ccc;
+	margin-left: 1.5em;
+	padding-left: 5px;
+}
+
+body {
+	background-color: #FFFFCC;
+	color: Black;
+	margin: 20px;
+	font-size: 12pt;
+}
+
+cite {
+	font-size: 90%;
+	font-style: normal;
+}
+
+ol#comments li p {
+	font-size: 100%;
+}
+
+p, li, .feedback {
+	font: 90%/175% 'Lucida Grande', 'Lucida Sans Unicode', Verdana, sans-serif;
+	letter-spacing: -1px;
+}
+
+/* classes used by the_meta() */
+ul.post-meta {
+	list-style: none;
+}
+
+ul.post-meta span.post-meta-key {
+	font-weight: bold;
+}
+
+.alignright {
+	float: right;
+}
+
+.alignleft {
+	float: left
+}
+
+.credit {
+	background: #90a090;
+	border-top: double 3px #aba;
+	color: #fff;
+	font-size: 11px;
+	margin: 10px 0 0 0;
+	padding: 3px;
+	text-align: center;
+}
+
+.credit a:link, .credit a:hover {
+	color: #fff;
+}
+
+.storycontent pre {
+	font-size: 85%;
+}
+
+.feedback {
+	color: #ccc;
+	text-align: right;
+	clear: both;
+}
+
+.meta {
+	font-size: .75em;
+}
+
+.meta li, ul.post-meta li {
+	display: inline;
+}
+
+.meta ul {
+	display: inline;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.meta, .meta a {
+	color: #808080;
+	font-weight: normal;
+	letter-spacing: 0;
+}
+
+.navigation {
+	display: block;
+	text-align: center;
+	margin-top: 10px;
+	margin-bottom: 60px;
+}
+
+.storytitle {
+	margin: 0;
+}
+
+.storytitle a {
+	text-decoration: none;
+}
+
+#commentform #author, #commentform #email, #commentform #url, #commentform textarea {
+	background: #fff;
+	border: 1px solid #333;
+	padding: .2em;
+}
+
+#commentform textarea {
+	width: 100%;
+}
+
+#commentlist li ul {
+	border-left: 1px solid #ddd;
+	font-size: 110%;
+	list-style-type: none;
+}
+
+#content {
+	margin: 30px 11em 0 0em;
+	padding-right: 60px;
+}
+
+#header {
+	color: #336699;
+}
+
+#header a {
+	color: #336699;
+	text-decoration: none;
+}
+
+#header a:hover {
+	text-decoration: underline;
+}
+
+#menu {
+	background: #fff;
+	border-left: 1px dotted #ccc;
+	border-top: solid 3px #e0e6e0;
+	padding: 20px 0 10px 30px;
+	position: absolute;
+	right: 2px;
+	top: 0;
+	width: 11em;
+}
+
+#menu form {
+	margin: 0 0 0 13px;
+}
+
+#menu input#s {
+	width: 80%;
+	background: #eee;
+	border: 1px solid #999;
+	color: #000;
+}
+
+#menu ul {
+	color: #336699;
+	font-weight: bold;
+	list-style-type: none;
+	margin: 0;
+	padding-left: 3px;
+	text-transform: lowercase;
+}
+
+#menu ul li {
+	letter-spacing: 0.1em;
+	margin-top: 10px;
+	padding-bottom: 2px; /*border-bottom: dotted 1px #ccc;*/
+}
+
+/* for other & links */
+#menu ul li h2 {
+	font: 10pt/115% sans-serif;
+	font-weight: bold;
+	/* font-size: 10pt; */ /* sans-serif; */
+}
+
+#menu ul ul {
+	line-height: 100%;
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+	text-align: left;
+}
+
+#menu ul ul li {
+	border: 0;
+	font: normal normal 12px/115% sans-serif;
+	letter-spacing: 0;
+	margin-top: 0;
+	padding: 0;
+	padding-left: 12px;
+}
+
+#menu ul ul li a {
+	color: #000;
+	text-decoration: none;
+}
+
+#menu ul ul li a:hover {
+	border-bottom: 1px solid #809080;
+}
+
+#menu ul ul ul.children {
+	padding-left: 4px;
+}
+
+#wp-calendar {
+	border: 1px solid #ddd;
+	empty-cells: show;
+	font-size: 14px;
+	margin: 0;
+	width: 90%;
+}
+
+#wp-calendar #next a {
+	padding-right: 10px;
+	text-align: right;
+}
+
+#wp-calendar #prev a {
+	padding-left: 10px;
+	text-align: left;
+}
+
+#wp-calendar a {
+	display: block;
+	text-decoration: none;
+}
+
+#wp-calendar a:hover {
+	background: #e0e6e0;
+	color: #333;
+}
+
+#wp-calendar caption {
+	color: #999;
+	font-size: 16px;
+	text-align: left;
+}
+
+#wp-calendar td {
+	color: #ccc;
+	font: normal 12px 'Lucida Grande', 'Lucida Sans Unicode', Verdana, sans-serif;
+	letter-spacing: normal;
+	padding: 2px 0;
+	text-align: center;
+}
+
+#wp-calendar td.pad:hover {
+	background: #fff;
+}
+
+#wp-calendar td:hover, #wp-calendar #today {
+	background: #eee;
+	color: #bbb;
+}
+
+#wp-calendar th {
+	font-style: normal;
+	text-transform: capitalize;
+}
