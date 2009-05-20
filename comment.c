@@ -261,13 +261,14 @@ int save_comment(struct post *post)
 	if ((strlen(author_buf) == 0) ||
 	    (strlen(email_buf) == 0) ||
 	    (strlen(comment_buf) == 0)) {
-		comment_error_log("You must fill in name, email, and comment\n");
+		comment_error_log("You must fill in name, email, and comment (postid=%d)\n", id);
 		return 1;
 	}
 
 	clock_gettime(CLOCK_REALTIME, &now);
 	if ((now.tv_sec > (date+COMMENT_MAX_DELAY)) || (now.tv_sec < (date+COMMENT_MIN_DELAY))) {
-		comment_error_log("Flash-gordon or geriatric was here... load:%lu comment:%lu\n", date, now.tv_sec);
+		comment_error_log("Flash-gordon or geriatric was here... load:%lu comment:%lu postid:%d\n",
+				  date, now.tv_sec, id);
 		return 1;
 	}
 
@@ -290,7 +291,7 @@ int save_comment(struct post *post)
 	}
 
 	if (mkdir(dirpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == -1) {
-		comment_error_log("Ow, could not create directory: %d (%s)\n", errno, strerror(errno));
+		comment_error_log("Ow, could not create directory: %d (%s) '%s'\n", errno, strerror(errno), dirpath);
 		goto out_free;
 	}
 
@@ -303,7 +304,8 @@ int save_comment(struct post *post)
 
 	if ((fd = open(path, O_WRONLY | O_CREAT | O_EXCL,
 		       S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1) {
-		comment_error_log("Couldn't create file ... :(\n");
+		comment_error_log("Couldn't create file ... :( %d (%s) '%s'\n",
+				  errno, strerror(errno), path);
 		goto out;
 	}
 
@@ -318,8 +320,9 @@ int save_comment(struct post *post)
 
 	ret = rename(dirpath, newdirpath);
 	if (ret) {
-		comment_error_log("Could not rename '%s' to '%s'\n",
-				  dirpath, newdirpath);
+		comment_error_log("Could not rename '%s' to '%s' %d (%s)\n",
+				  dirpath, newdirpath, errno,
+				  strerror(errno));
 		goto out;
 	}
 
