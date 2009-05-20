@@ -1,10 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 #include <time.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/file.h>
 #include <unistd.h>
 #include <fcntl.h>
 
@@ -50,6 +52,43 @@ static int __write(int fd, char *buf, int len)
 		offset += ret;
 	}
 	return 0;
+}
+
+static void comment_error_log(char *fmt, ...)
+{
+	char msg[4096];
+	va_list args;
+	int ret, len;
+	int fd;
+
+	time_t now;
+
+	now = time(NULL);
+
+	len = strftime(msg, 4096, "%a %b %d %H:%M:%S %Y:  ",
+		       localtime(&now));
+
+	va_start(args, fmt);
+	len += vsnprintf(msg+len, 4096-len, fmt, args);
+	va_end(args);
+
+	fd = open(ERROR_LOG_FILE, O_WRONLY | O_APPEND | O_CREAT, 0644);
+	if (fd == -1) {
+		fprintf(stderr, "%s: Failed to open log file\n", __func__);
+		return;
+	}
+
+	ret = flock(fd, LOCK_EX);
+	if (ret == -1) {
+		fprintf(stderr, "%s: Failed to lock log file\n", __func__);
+		goto out;
+	}
+
+	ret = write(fd, msg, len);
+
+out:
+	flock(fd, LOCK_UN);
+	close(fd);
 }
 
 int save_comment(struct post *post)
@@ -215,31 +254,25 @@ int save_comment(struct post *post)
 
 	ret = load_post(id, post);
 	if (ret) {
-#if 0
-		fprintf(post->out, "Gah! %d (postid=%d)\n", ret, id);
-#endif
+		comment_error_log("Gah! %d (postid=%d)\n", ret, id);
 		return 1;
 	}
 
 	if ((strlen(author_buf) == 0) ||
 	    (strlen(email_buf) == 0) ||
 	    (strlen(comment_buf) == 0)) {
-#if 0
-		fprintf(post->out, "You must fill in name, email, and comment\n");
-#endif
+		comment_error_log("You must fill in name, email, and comment\n");
 		return 1;
 	}
 
 	clock_gettime(CLOCK_REALTIME, &now);
 	if ((now.tv_sec > (date+COMMENT_MAX_DELAY)) || (now.tv_sec < (date+COMMENT_MIN_DELAY))) {
-#if 0
-		fprintf(post->out, "Flash-gordon or geriatric was here...  %lu %lu\n", now.tv_sec, date);
-#endif
+		comment_error_log("Flash-gordon or geriatric was here... load:%lu comment:%lu\n", date, now.tv_sec);
 		return 1;
 	}
 
 	tmp_t = time(NULL);
-	tmp_tm = localtime(&tmp_t);
+	tmp_tm = gmtime(&tmp_t);
 	if (!tmp_tm) {
 		return 1;
 	}
@@ -252,23 +285,17 @@ int save_comment(struct post *post)
 	dirpath = strdup(path);
 	newdirpath = strdup(path);
 	if (!dirpath || !newdirpath) {
-#if 0
-		fprintf(post->out, "Eeeep...ENOMEM\n");
-#endif
+		comment_error_log("Eeeep...ENOMEM\n");
 		return 1;
 	}
 
 	if (mkdir(dirpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == -1) {
-#if 0
-		fprintf(post->out, "Ow, could not create directory: %d (%s)\n", errno, strerror(errno));
-#endif
+		comment_error_log("Ow, could not create directory: %d (%s)\n", errno, strerror(errno));
 		goto out_free;
 	}
 
 	if ((strlen(path) + strlen("/post.txt")) >= FILENAME_MAX) {
-#if 0
-		fprintf(post->out, "Uf...filename too long!\n");
-#endif
+		comment_error_log("Uf...filename too long!\n");
 		goto out_free;
 	}
 
@@ -276,9 +303,7 @@ int save_comment(struct post *post)
 
 	if ((fd = open(path, O_WRONLY | O_CREAT | O_EXCL,
 		       S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1) {
-#if 0
-		fprintf(post->out, "Couldn't create file ... :(\n");
-#endif
+		comment_error_log("Couldn't create file ... :(\n");
 		goto out;
 	}
 
@@ -293,10 +318,8 @@ int save_comment(struct post *post)
 
 	ret = rename(dirpath, newdirpath);
 	if (ret) {
-#if 0
-		fprintf(post->out, "Could not rename '%s' to '%s'\n",
-			dirpath, newdirpath);
-#endif
+		comment_error_log("Could not rename '%s' to '%s'\n",
+				  dirpath, newdirpath);
 		goto out;
 	}
 

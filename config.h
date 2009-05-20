@@ -9,5 +9,7 @@
 #define COMMENT_MAX_DELAY		(3600)	/* 60 mins max think time */
 #define COMMENT_MIN_DELAY		(10)	/* 10 secs min think time */
 
+#define ERROR_LOG_FILE			"data/logs/comment_error.log"
+
 #endif
 
