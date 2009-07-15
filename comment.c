@@ -267,8 +267,8 @@ int save_comment(struct post *post)
 
 	clock_gettime(CLOCK_REALTIME, &now);
 	if ((now.tv_sec > (date+COMMENT_MAX_DELAY)) || (now.tv_sec < (date+COMMENT_MIN_DELAY))) {
-		comment_error_log("Flash-gordon or geriatric was here... load:%lu comment:%lu postid:%d\n",
-				  date, now.tv_sec, id);
+		comment_error_log("Flash-gordon or geriatric was here... load:%lu comment:%lu delta:%lu postid:%d\n",
+				  date, now.tv_sec, now.tv_sec - date, id);
 		return 1;
 	}
 
