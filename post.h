@@ -28,6 +28,9 @@ struct post {
 #define XATTR_TIME		"user.post_time"
 #define XATTR_FMT		"user.post_fmt"
 #define XATTR_COMM_AUTHOR	"user.author"
+#define XATTR_COMM_EMAIL	"user.email"
+#define XATTR_COMM_URL		"user.url"
+#define XATTR_COMM_IP		"user.remote_addr"
 
 extern int load_post(int postid, struct post *post);
 extern void dump_post(struct post *post);
