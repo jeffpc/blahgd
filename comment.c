@@ -109,6 +109,7 @@ int save_comment(struct post *post)
 	int email_len = 0;
 	char url_buf[MEDIUM_BUF_LEN];
 	int url_len = 0;
+	char *remote_addr; /* yes, this is a pointer */
 	char comment_buf[LONG_BUF_LEN];
 	int comment_len = 0;
 	time_t date = 0;
@@ -315,6 +316,17 @@ int save_comment(struct post *post)
 	safe_setxattr(dirpath, XATTR_COMM_AUTHOR, author_buf,
 		      strlen(author_buf));
 	safe_setxattr(dirpath, XATTR_TIME, curdate, strlen(curdate));
+	safe_setxattr(dirpath, XATTR_COMM_EMAIL, email_buf,
+		      strlen(email_buf));
+
+	if (url_buf[0])
+		safe_setxattr(dirpath, XATTR_COMM_URL, url_buf,
+			      strlen(url_buf));
+
+	remote_addr = getenv("REMOTE_ADDR");
+	if (remote_addr)
+		safe_setxattr(dirpath, XATTR_COMM_IP, remote_addr,
+			      strlen(remote_addr));
 
 	newdirpath[strlen(newdirpath)-1] = '\0';
 
