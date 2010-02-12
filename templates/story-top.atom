@@ -1,13 +1,13 @@
 			<entry>
 		<author>
 			<name>JeffPC</name>
-						<uri>http://www.josefsipek.net</uri>
+						<uri>http://blahg.josefsipek.net</uri>
 					</author>
 		<title type="html"><![CDATA[@@TITLE@@]]></title>
-		<link rel="alternate" type="text/html" href="http://josefsipek.net/blahg/?p=@@POSTID@@" />
-		<id>http://josefsipek.net/blahg/?p=@@POSTID@@</id>
+		<link rel="alternate" type="text/html" href="http://blahg.josefsipek.net/?p=@@POSTID@@" />
+		<id>http://blahg.josefsipek.net/?p=@@POSTID@@</id>
 		<updated>@@POSTDATEZULU@@</updated>
 		<published>@@POSTDATEZULU@@</published>
 
-		<link rel="replies" type="text/html" href="http://josefsipek.net/blahg/?p=@@POSTID@@#comments" thr:count="1"/>
+		<link rel="replies" type="text/html" href="http://blahg.josefsipek.net/?p=@@POSTID@@#comments" thr:count="1"/>
 		<thr:total>@@COMCOUNT@@</thr:total>
