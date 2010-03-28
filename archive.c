@@ -7,6 +7,14 @@
 #include "sar.h"
 #include "html.h"
 
+static int validate_arch_id(int arch)
+{
+	int y = arch / 100;
+	int m = arch % 100;
+
+	return (m >= 1) && (m <= 12) && (y > 2000) && (y < 3000);
+}
+
 int main(int argc, char **argv)
 {
 	struct timespec s,e;
@@ -33,6 +41,11 @@ int main(int argc, char **argv)
 
 	archid = atoi(path_info+1);
 	post.pagetype = path_info+1;
+
+	if (!validate_arch_id(archid)) {
+		archid = 200001;
+		post.pagetype = "200001";
+	}
 
 	snprintf(nicetitle, 32, "%d &raquo; %s", archid/100,
 		 up_month_strs[(archid%100)-1]);
