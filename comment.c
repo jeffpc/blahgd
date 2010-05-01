@@ -296,12 +296,12 @@ int save_comment(struct post *post)
 		goto out_free;
 	}
 
-	if ((strlen(path) + strlen("/post.txt")) >= FILENAME_MAX) {
+	if ((strlen(path) + strlen("/text.txt")) >= FILENAME_MAX) {
 		comment_error_log("Uf...filename too long!\n");
 		goto out_free;
 	}
 
-	strcat(path, "/post.txt");
+	strcat(path, "/text.txt");
 
 	if ((fd = open(path, O_WRONLY | O_CREAT | O_EXCL,
 		       S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1) {
