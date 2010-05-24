@@ -13,6 +13,7 @@
 #include "config.h"
 #include "post.h"
 #include "sar.h"
+#include "decode.h"
 #include "html.h"
 #include "xattr.h"
 
@@ -309,6 +310,12 @@ int save_comment(struct post *post)
 				  errno, strerror(errno), path);
 		goto out;
 	}
+
+	/* URL decode everything */
+	urldecode(comment_buf, strlen(comment_buf), comment_buf);
+	urldecode(author_buf, strlen(author_buf), author_buf);
+	urldecode(email_buf, strlen(email_buf), email_buf);
+	urldecode(url_buf, strlen(url_buf), url_buf);
 
 	if (__write(fd, comment_buf, strlen(comment_buf)) != 0)
 		goto out;
