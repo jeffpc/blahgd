@@ -364,6 +364,10 @@ int main(int argc, char **argv)
 	clock_gettime(CLOCK_REALTIME, &s);
 
 	post.out = stdout;
+	post.id  = 0;
+	post.time.tm_year = 0;
+	post.time.tm_mon = 0;
+	post.time.tm_mday = 1;
 
 	fprintf(post.out, "Content-Type: text/html\n\n");
 
