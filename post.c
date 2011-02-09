@@ -119,6 +119,11 @@ void cat_post(struct post *post)
 
 	snprintf(path, FILENAME_MAX, "data/posts/%d/post.txt", post->id);
 
+	if (post->fmt == 3) {
+		__do_cat_post_fmt3(post, path);
+		return;
+	}
+
 	fd = open(path, O_RDONLY);
 	if (fd == -1) {
 		fprintf(post->out, "post.txt open error\n");

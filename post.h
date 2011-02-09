@@ -46,6 +46,8 @@ extern void cat_post_comment(struct post *post, struct comment *comm);
 extern void cat(struct post *post, void *data, char *tmpl,
 		struct repltab_entry *repltab);
 
+void __do_cat_post_fmt3(struct post *p, char *path);
+
 extern void invoke_for_each_comment(struct post *post,
 				    void(*f)(struct post*, struct comment*));
 
