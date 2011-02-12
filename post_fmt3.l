@@ -6,10 +6,6 @@
 
 #include "post_fmt3.tab.h"
 
-#include "post.h"
-
-static struct post *post;
-
 %}
 
 %%
@@ -29,20 +25,6 @@ static struct post *post;
 [".,()/=<>!:;\$]	{ yylval.ptr = strdup(yytext); return SCHAR; }
 [A-Za-z0-9]+		{ yylval.ptr = strdup(yytext); return WORD; }
 %%
-
-void __do_cat_post_fmt3(struct post *p, char *path)
-{
-	yyin = fopen(path, "r");
-	if (!yyin) {
-		fprintf(post->out, "post.txt open error\n");
-		return;
-	}
-
-	post = p;
-
-	while (yylex())
-		;
-}
 
 int yywrap()
 {

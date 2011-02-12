@@ -8,7 +8,7 @@ BINS=story index archive category feed comment
 all: $(BINS)
 
 clean:
-	rm -f $(BINS) post_fmt3.lex.c post_fmt3.tab.{c,h}
+	rm -f $(BINS) post_fmt3.lex.c post_fmt3.tab.c post_fmt3.tab.h
 
 tags:
 	cscope -R -b

@@ -4,8 +4,17 @@
 #include <string.h>
 #include <assert.h>
 
-int yylex(void);
-void yyerror(char *);
+#include "post.h"
+
+static struct post *post;
+
+extern int yylex(void);
+extern void yyrestart(FILE*);
+
+void yyerror(char *e)
+{
+	fprintf(post->out, "%s\n", e);
+}
 
 static char *concat(char *a, char *b)
 {
@@ -198,3 +207,24 @@ optcmdarg : OBRACE paragraph CBRACE	{ $$ = $2; }
 
 cmdarg : OCURLY paragraph CCURLY	{ $$ = $2; }
        ;
+
+%%
+
+void __do_cat_post_fmt3(struct post *p, char *path)
+{
+	FILE *f;
+
+	f = fopen(path, "r");
+	if (!f) {
+		fprintf(post->out, "post.txt open error\n");
+		return;
+	}
+
+	post = p;
+
+	yyrestart(f);
+
+	while (yyparse())
+		;
+}
+
