@@ -35,4 +35,4 @@ comment: comment.c $(FILES)
 	lex -o $@ $<
 
 %.tab.c %.tab.h: %.y
-	bison -t -r all -d $<
+	bison -d $<
