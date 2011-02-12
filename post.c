@@ -111,13 +111,21 @@ static void __do_cat_post(struct post *post, char *ibuf, int len)
 
 void cat_post(struct post *post)
 {
+	char *exts[4] = {
+		[0] = "txt",
+		[1] = "txt",
+		[2] = "txt",
+		[3] = "tex",
+	};
+
 	char path[FILENAME_MAX];
 	struct stat statbuf;
 	char *ibuf;
 	int ret;
 	int fd;
 
-	snprintf(path, FILENAME_MAX, "data/posts/%d/post.txt", post->id);
+	snprintf(path, FILENAME_MAX, "data/posts/%d/post.%s", post->id,
+		 exts[post->fmt]);
 
 	if (post->fmt == 3) {
 		__do_cat_post_fmt3(post, path);
@@ -255,6 +263,7 @@ int load_post(int postid, struct post *post)
 {
 	char path[FILENAME_MAX];
 	char *buf1,*buf2;
+	int ret = 0;
 
 	snprintf(path, FILENAME_MAX, "data/posts/%d", postid);
 
@@ -272,16 +281,17 @@ int load_post(int postid, struct post *post)
 
 		post->fmt = buf2 ? atoi(buf2) : 0;
 
-		free(buf1);
-		free(buf2);
+		if ((post->fmt < 0) || (post->fmt > 3))
+			ret = EINVAL;
+	} else
+		ret = ENOMEM;
 
-		return 0;
-	}
+	if (ret)
+		destroy_post(post);
 
-	destroy_post(post);
 	free(buf1);
 	free(buf2);
-	return ENOMEM;
+	return ret;
 }
 
 void destroy_post(struct post *post)

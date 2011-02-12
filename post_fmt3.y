@@ -237,7 +237,7 @@ void __do_cat_post_fmt3(struct post *p, char *path)
 
 	f = fopen(path, "r");
 	if (!f) {
-		fprintf(post->out, "post.txt open error\n");
+		fprintf(p->out, "post.tex open error\n");
 		return;
 	}
 
