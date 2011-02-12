@@ -78,6 +78,11 @@ static char *process_cmd(char *cmd, char *txt, char *opt)
 		return concat4("<em>", txt, "</em>", "");
 	}
 
+	if (!strcmp(cmd, "textbf")) {
+		assert(!opt);
+		return concat4("<strong>", txt, "</strong>", "");
+	}
+
 	if (!strcmp(cmd, "item")) {
 		assert(!opt);
 		return concat4("<li>", txt, "</li>", "");
@@ -186,7 +191,7 @@ static char *special_char(char *txt)
 };
 
 %token <ptr> PAREND NLINE WSPACE BSLASH OCURLY CCURLY OBRACE CBRACE AMP
-%token <ptr> USCORE DASH OQUOT CQUOT SCHAR WORD
+%token <ptr> USCORE PERCENT DASH OQUOT CQUOT SCHAR WORD
 
 %type <ptr> paragraphs paragraph line thing cmd cmdarg optcmdarg
 
@@ -230,6 +235,7 @@ cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd($1, $3, $2); }
     | CBRACE			{ $$ = $1; }
     | AMP			{ $$ = strdup("&amp;"); }
     | USCORE			{ $$ = $1; }
+    | PERCENT			{ $$ = $1; }
     ;
 
 optcmdarg : OBRACE paragraph CBRACE	{ $$ = $2; }
