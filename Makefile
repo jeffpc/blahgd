@@ -1,13 +1,14 @@
 CC=gcc
 CFLAGS=-Wall -g -O2 -std=c99 -D_POSIX_C_SOURCE=199309 -D_BSD_SOURCE -lrt
 
-FILES=sar.c post.c xattr.c html.c dir.c fsm.c decode.c post_fmt3.c
+FILES=sar.c post.c xattr.c html.c dir.c fsm.c decode.c post_fmt3.tab.c \
+	post_fmt3.lex.c
 BINS=story index archive category feed comment
 
 all: $(BINS)
 
 clean:
-	rm -f $(BINS) post_fmt3.c
+	rm -f $(BINS) post_fmt3.lex.c post_fmt3.tab.{c,h}
 
 tags:
 	cscope -R -b
@@ -30,5 +31,8 @@ feed: feed.c $(FILES)
 comment: comment.c $(FILES)
 	$(CC) $(CFLAGS) -o $@ comment.c $(FILES)
 
-%.c: %.l
+%.lex.c: %.l %.tab.h
 	lex -o $@ $<
+
+%.tab.c %.tab.h: %.y
+	bison -t -r all -d $<

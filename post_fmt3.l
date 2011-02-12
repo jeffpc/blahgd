@@ -4,36 +4,30 @@
 %{
 #include <stdlib.h>
 
+#include "post_fmt3.tab.h"
+
 #include "post.h"
 
-struct post *post;
+static struct post *post;
 
-enum {
-	PAREND = 1,
-	WSPACE,
-	BSLASH,
-	OCURLY,
-	CCURLY,
-	DASH,
-	OQUOT,
-	CQUOT,
-	SCHAR,
-	WORD,
-};
 %}
 
 %%
-\n\n			{ fprintf(post->out, "tok:PAREND\n"); return PAREND; }
-\n			{ fprintf(post->out, "tok:WSPACE\n"); return WSPACE; }
-[ \t]			{ fprintf(post->out, "tok:WSPACE\n"); return WSPACE; }
-"\\"			{ fprintf(post->out, "tok:BSLASH\n"); return BSLASH; }
-"{"			{ fprintf(post->out, "tok:OCURLY\n"); return OCURLY; }
-"}"			{ fprintf(post->out, "tok:CCURLY\n"); return CCURLY; }
--{1,3}			{ fprintf(post->out, "tok:DASH '%s'\n", yytext); return DASH; }
-`{1,2}			{ fprintf(post->out, "tok:OQUOT '%s'\n", yytext); return OQUOT; }
-'{1,2}			{ fprintf(post->out, "tok:CQUOT '%s'\n", yytext); return CQUOT; }
-[".,()/=<>!:;_\$]	{ fprintf(post->out, "tok:SCHAR '%s'\n", yytext); return SCHAR; }
-[A-Za-z0-9]+		{ fprintf(post->out, "tok:WORD '%s'\n", yytext); return WORD; }
+\n\n[ \t\n]*		{ yylval.ptr = strdup(yytext); return PAREND; }
+\n			{ yylval.ptr = strdup(yytext); return NLINE; }
+[ \t]+			{ yylval.ptr = strdup(yytext); return WSPACE; }
+"\\"			{ yylval.ptr = strdup(yytext); return BSLASH; }
+"{"			{ yylval.ptr = strdup(yytext); return OCURLY; }
+"}"			{ yylval.ptr = strdup(yytext); return CCURLY; }
+"["			{ yylval.ptr = strdup(yytext); return OBRACE; }
+"]"			{ yylval.ptr = strdup(yytext); return CBRACE; }
+"&"			{ yylval.ptr = strdup(yytext); return AMP; }
+"_"			{ yylval.ptr = strdup(yytext); return USCORE; }
+-{1,3}			{ yylval.ptr = strdup(yytext); return DASH; }
+`{1,2}			{ yylval.ptr = strdup(yytext); return OQUOT; }
+'{1,2}			{ yylval.ptr = strdup(yytext); return CQUOT; }
+[".,()/=<>!:;\$]	{ yylval.ptr = strdup(yytext); return SCHAR; }
+[A-Za-z0-9]+		{ yylval.ptr = strdup(yytext); return WORD; }
 %%
 
 void __do_cat_post_fmt3(struct post *p, char *path)
