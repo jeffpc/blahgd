@@ -6,6 +6,8 @@
 
 #include "post_fmt3.tab.h"
 
+extern void yyerror2(char *, char *);
+
 %}
 
 %%
@@ -22,8 +24,9 @@
 -{1,3}			{ yylval.ptr = strdup(yytext); return DASH; }
 `{1,2}			{ yylval.ptr = strdup(yytext); return OQUOT; }
 '{1,2}			{ yylval.ptr = strdup(yytext); return CQUOT; }
-[".,()/=<>!:;\$]	{ yylval.ptr = strdup(yytext); return SCHAR; }
+[~".,()/=<>!:;\$]	{ yylval.ptr = strdup(yytext); return SCHAR; }
 [A-Za-z0-9]+		{ yylval.ptr = strdup(yytext); return WORD; }
+.|\n			{ yyerror2("post text contains invalid characters", yytext); yyterminate(); }
 %%
 
 int yywrap()

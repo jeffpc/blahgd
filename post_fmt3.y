@@ -13,7 +13,12 @@ extern void yyrestart(FILE*);
 
 void yyerror(char *e)
 {
-	fprintf(post->out, "%s\n", e);
+	fprintf(post->out, "Error: %s\n", e);
+}
+
+void yyerror2(char *e, char *yytext)
+{
+	fprintf(post->out, "Error: %s (%s)\n", e, yytext);
 }
 
 static char *concat(char *a, char *b)
@@ -73,6 +78,22 @@ static char *process_cmd(char *cmd, char *txt, char *opt)
 	if (!strcmp(cmd, "item")) {
 		assert(!opt);
 		return concat4("<li>", txt, "</li>", "");
+	}
+
+	if (!strcmp(cmd, "begin") || !strcmp(cmd, "end")) {
+		int begin = !strcmp(cmd, "begin");
+
+		if (!strcmp(txt, "enumerate")) {
+			assert(!opt);
+			return strdup(begin ? "</p><ol>" : "</ol><p>");
+		}
+
+		if (!strcmp(txt, "itemize")) {
+			assert(!opt);
+			return strdup(begin ? "</p><ul>" : "</ul><p>");
+		}
+
+		return concat4("[INVAL ENVIRON", txt, "]", "");
 	}
 
 	if (!strcmp(cmd, "section")) {
@@ -198,7 +219,7 @@ cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd($1, $3, $2); }
     | CCURLY			{ $$ = $1; }
     | OBRACE			{ $$ = $1; }
     | CBRACE			{ $$ = $1; }
-    | AMP			{ $$ = $1; }
+    | AMP			{ $$ = strdup("&amp;"); }
     | USCORE			{ $$ = $1; }
     ;
 
@@ -227,4 +248,3 @@ void __do_cat_post_fmt3(struct post *p, char *path)
 	while (yyparse())
 		;
 }
-
