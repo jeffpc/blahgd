@@ -93,6 +93,12 @@ static char *process_cmd(char *cmd, char *txt, char *opt)
 			return strdup(begin ? "</p><ul>" : "</ul><p>");
 		}
 
+		if (!strcmp(txt, "quote")) {
+			assert(!opt);
+			return strdup(begin ? "</p><blockquote><p>" :
+					      "</p></blockquote><p>");
+		}
+
 		return concat4("[INVAL ENVIRON", txt, "]", "");
 	}
 
