@@ -191,7 +191,7 @@ static char *special_char(char *txt)
 };
 
 %token <ptr> PAREND NLINE WSPACE BSLASH OCURLY CCURLY OBRACE CBRACE AMP
-%token <ptr> USCORE PERCENT DASH OQUOT CQUOT SCHAR WORD
+%token <ptr> USCORE PERCENT DASH OQUOT CQUOT SCHAR ELLIPSIS WORD
 
 %type <ptr> paragraphs paragraph line thing cmd cmdarg optcmdarg
 
@@ -223,6 +223,7 @@ thing : WORD			{ $$ = $1; }
       | OQUOT			{ $$ = oquote(strlen($1)); }
       | CQUOT			{ $$ = cquote(strlen($1)); }
       | SCHAR			{ $$ = special_char($1); }
+      | ELLIPSIS		{ $$ = strdup("&hellip;"); }
       | BSLASH cmd		{ $$ = $2; }
       ;
 

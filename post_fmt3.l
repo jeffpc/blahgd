@@ -22,6 +22,7 @@ extern void yyerror2(char *, char *);
 "&"			{ yylval.ptr = strdup(yytext); return AMP; }
 "_"			{ yylval.ptr = strdup(yytext); return USCORE; }
 "%"			{ yylval.ptr = strdup(yytext); return PERCENT; }
+\.{3}			{ yylval.ptr = strdup(yytext); return ELLIPSIS; }
 -{1,3}			{ yylval.ptr = strdup(yytext); return DASH; }
 `{1,2}			{ yylval.ptr = strdup(yytext); return OQUOT; }
 '{1,2}			{ yylval.ptr = strdup(yytext); return CQUOT; }
