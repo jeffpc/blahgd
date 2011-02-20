@@ -89,7 +89,7 @@ int hasdotdot(char *path)
 	return (state == HDD_2DOT);
 }
 
-int main(int argc, char **argv)
+int blahg_category(int argc, char **argv)
 {
 	struct timespec s,e;
 	char *path_info;

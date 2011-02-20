@@ -7,7 +7,7 @@
 #include "sar.h"
 #include "html.h"
 
-int main(int argc, char **argv)
+int blahg_feed(int argc, char **argv)
 {
 	struct timespec s,e;
 	struct post post;

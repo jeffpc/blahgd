@@ -355,7 +355,7 @@ out_free:
 	return result;
 }
 
-int main(int argc, char **argv)
+int blahg_comment(int argc, char **argv)
 {
 	struct timespec s,e;
 	struct post post;

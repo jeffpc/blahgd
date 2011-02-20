@@ -2,7 +2,8 @@ CC=gcc
 CFLAGS=-Wall -g -O2 -std=c99 -D_POSIX_C_SOURCE=199309 -D_BSD_SOURCE -lrt
 
 FILES=sar.c post.c xattr.c html.c dir.c fsm.c decode.c post_fmt3.tab.c \
-	post_fmt3.lex.c
+	post_fmt3.lex.c \
+	main.c archive.c category.c comment.c feed.c index.c story.c
 BINS=story index archive category feed comment
 
 all: $(BINS)
@@ -13,23 +14,23 @@ clean:
 tags:
 	cscope -R -b
 
-index: index.c $(FILES)
-	$(CC) $(CFLAGS) -o $@ index.c $(FILES)
+index: $(FILES)
+	$(CC) $(CFLAGS) -o $@ $(FILES)
 
-story: story.c $(FILES)
-	$(CC) $(CFLAGS) -o $@ story.c $(FILES)
+story: index
+	ln -fs $< $@
 
-archive: archive.c $(FILES)
-	$(CC) $(CFLAGS) -o $@ archive.c $(FILES)
+archive: index
+	ln -fs $< $@
 
-category: category.c $(FILES)
-	$(CC) $(CFLAGS) -o $@ category.c $(FILES)
+category: index
+	ln -fs $< $@
 
-feed: feed.c $(FILES)
-	$(CC) $(CFLAGS) -o $@ feed.c $(FILES)
+feed: index
+	ln -fs $< $@
 
-comment: comment.c $(FILES)
-	$(CC) $(CFLAGS) -o $@ comment.c $(FILES)
+comment: index
+	ln -fs $< $@
 
 %.lex.c: %.l %.tab.h
 	lex -o $@ $<

@@ -7,7 +7,7 @@
 #include "sar.h"
 #include "html.h"
 
-int main(int argc, char **argv)
+int blahg_story(int argc, char **argv)
 {
 	struct timespec s,e;
 	char *path_info;

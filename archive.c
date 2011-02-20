@@ -15,7 +15,7 @@ static int validate_arch_id(int arch)
 	return (m >= 1) && (m <= 12) && (y > 2000) && (y < 3000);
 }
 
-int main(int argc, char **argv)
+int blahg_archive(int argc, char **argv)
 {
 	struct timespec s,e;
 	char *path_info;
