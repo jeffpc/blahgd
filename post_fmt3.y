@@ -5,6 +5,7 @@
 #include <assert.h>
 
 #include "post.h"
+#include "listing.h"
 
 static struct post *post;
 
@@ -65,6 +66,11 @@ static char *concat5(char *a, char *b, char *c, char *d, char *e)
 	return ret;
 }
 
+static char *__listing(char *txt, char *opt)
+{
+	return concat4("<pre>", "", listing(post, txt), "</pre>");
+}
+
 static char *process_cmd(char *cmd, char *txt, char *opt)
 {
 	if (!strcmp(cmd, "link"))
@@ -82,6 +88,9 @@ static char *process_cmd(char *cmd, char *txt, char *opt)
 		assert(!opt);
 		return concat4("<strong>", txt, "</strong>", "");
 	}
+
+	if (!strcmp(cmd, "listing"))
+		return __listing(txt, opt);
 
 	if (!strcmp(cmd, "item")) {
 		assert(!opt);
