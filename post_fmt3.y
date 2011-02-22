@@ -200,7 +200,7 @@ static char *special_char(char *txt)
 };
 
 %token <ptr> PAREND NLINE WSPACE BSLASH OCURLY CCURLY OBRACE CBRACE AMP
-%token <ptr> USCORE PERCENT DASH OQUOT CQUOT SCHAR ELLIPSIS WORD
+%token <ptr> USCORE PERCENT DOLLAR DASH OQUOT CQUOT SCHAR ELLIPSIS WORD
 
 %type <ptr> paragraphs paragraph line thing cmd cmdarg optcmdarg
 
@@ -246,6 +246,7 @@ cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd($1, $3, $2); }
     | AMP			{ $$ = strdup("&amp;"); }
     | USCORE			{ $$ = $1; }
     | PERCENT			{ $$ = $1; }
+    | DOLLAR			{ $$ = $1; }
     ;
 
 optcmdarg : OBRACE paragraph CBRACE	{ $$ = $2; }
