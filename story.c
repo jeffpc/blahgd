@@ -7,10 +7,9 @@
 #include "sar.h"
 #include "html.h"
 
-int blahg_story(int argc, char **argv)
+int blahg_story(int p)
 {
 	struct timespec s,e;
-	char *path_info;
 	struct post post;
 	int ret;
 
@@ -20,17 +19,14 @@ int blahg_story(int argc, char **argv)
 
 	fprintf(post.out, "Content-Type: text/html\n\n");
 
-	path_info = getenv("PATH_INFO");
-
-	if (!path_info) {
+	if (p == -1) {
 		fprintf(post.out, "Invalid post #\n");
 		return 0;
 	}
 
-	ret = load_post(atoi(path_info+1), &post);
+	ret = load_post(p, &post);
 	if (ret) {
-		fprintf(post.out, "Gah! %d (postid=%d)\n", ret,
-			atoi(path_info+1));
+		fprintf(post.out, "Gah! %d (postid=%d)\n", ret, p);
 		return 0;
 	}
 

@@ -15,49 +15,41 @@ static int validate_arch_id(int arch)
 	return (m >= 1) && (m <= 12) && (y > 2000) && (y < 3000);
 }
 
-int blahg_archive(int argc, char **argv)
+int blahg_archive(int m, int paged)
 {
 	struct timespec s,e;
-	char *path_info;
-	int archid;
 	struct post post;
 	char nicetitle[32];
-	char *pn;
+	char pagetype[32];
 
 	clock_gettime(CLOCK_REALTIME, &s);
 
 	memset(&post, 0, sizeof(struct post));
 	post.out = stdout;
 	post.title = nicetitle;
+	post.pagetype = pagetype;
 
 	fprintf(post.out, "Content-Type: text/html\n\n");
 
-	path_info = getenv("PATH_INFO");
-
-	if (!path_info) {
+	if (m == -1) {
 		fprintf(post.out, "Invalid archival #\n");
 		return 0;
 	}
 
-	archid = atoi(path_info+1);
-	post.pagetype = path_info+1;
+	snprintf(pagetype, 32, "%d", m);
 
-	if (!validate_arch_id(archid)) {
-		archid = 200001;
+	if (!validate_arch_id(m)) {
+		m = 200001;
 		post.pagetype = "200001";
 	}
 
-	snprintf(nicetitle, 32, "%d &raquo; %s", archid/100,
-		 up_month_strs[(archid%100)-1]);
+	snprintf(nicetitle, 32, "%d &raquo; %s", m/100,
+		 up_month_strs[(m%100)-1]);
 
-	pn = getenv("QUERY_STRING");
-	if (!pn)
-		post.page = 0;
-	else
-		post.page = atoi(pn);
+	post.page = max(paged, 0);
 
 	html_header(&post);
-	html_archive(&post, archid);
+	html_archive(&post, m);
 	html_sidebar(&post);
 	html_footer(&post);
 

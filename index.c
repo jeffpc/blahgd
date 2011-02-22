@@ -6,12 +6,12 @@
 #include "post.h"
 #include "sar.h"
 #include "html.h"
+#include "main.h"
 
-int blahg_index(int argc, char **argv)
+int blahg_index(int paged)
 {
 	struct timespec s,e;
 	struct post post;
-	char *pn;
 
 	clock_gettime(CLOCK_REALTIME, &s);
 
@@ -21,11 +21,7 @@ int blahg_index(int argc, char **argv)
 
 	fprintf(post.out, "Content-Type: text/html\n\n");
 
-	pn = getenv("QUERY_STRING");
-	if (!pn)
-		post.page = 0;
-	else
-		post.page = atoi(pn);
+	post.page = max(paged, 0);
 
 	html_header(&post);
 	html_index(&post);

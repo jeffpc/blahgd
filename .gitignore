@@ -1,9 +1,4 @@
-index
-story
-archive
-category
-feed
-comment
+blahg
 
 post_fmt3.lex.c
 post_fmt3.tab.c

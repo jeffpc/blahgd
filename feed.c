@@ -7,10 +7,20 @@
 #include "sar.h"
 #include "html.h"
 
-int blahg_feed(int argc, char **argv)
+int blahg_feed(char *feed, int p)
 {
 	struct timespec s,e;
 	struct post post;
+
+	if (strcmp(feed, "atom")) {
+		printf("Status: 404 Not Found\n\nNot found.\n");
+		return 0;
+	}
+
+	if (p != -1) {
+		printf("Status: 404 Not Found\n\nComment feed not yet supported.\n");
+		return 0;
+	}
 
 	clock_gettime(CLOCK_REALTIME, &s);
 

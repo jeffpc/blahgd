@@ -89,13 +89,11 @@ int hasdotdot(char *path)
 	return (state == HDD_2DOT);
 }
 
-int blahg_category(int argc, char **argv)
+int blahg_category(char *cat, int paged)
 {
 	struct timespec s,e;
-	char *path_info;
 	struct post post;
 	int catn;
-	char *pn;
 
 	clock_gettime(CLOCK_REALTIME, &s);
 
@@ -104,9 +102,7 @@ int blahg_category(int argc, char **argv)
 
 	fprintf(post.out, "Content-Type: text/html\n\n");
 
-	path_info = getenv("PATH_INFO");
-
-	if (!path_info) {
+	if (!cat) {
 		fprintf(post.out, "Invalid category name\n");
 		return 0;
 	}
@@ -115,15 +111,15 @@ int blahg_category(int argc, char **argv)
 	 * SECURITY CHECK: make sure no one is trying to give us a '..' in
 	 * the path
 	 */
-	if (hasdotdot(path_info)) {
+	if (hasdotdot(cat)) {
 		fprintf(post.out, "Go away\n");
 		return 0;
 	}
 
-	catn = atoi(path_info+1);
+	catn = atoi(cat);
 	if (catn == 0) {
 		/* string cat name */
-		post.title = path_info+1;
+		post.title = cat;
 	} else {
 		/* wordpress cat name */
 		if ((catn < MIN_CATN) || (catn > MAX_CATN)) {
@@ -140,11 +136,7 @@ int blahg_category(int argc, char **argv)
 	}
 	post.pagetype = post.title;
 
-	pn = getenv("QUERY_STRING");
-	if (!pn)
-		post.page = 0;
-	else
-		post.page = atoi(pn);
+	post.page = max(paged,0);
 
 	html_header(&post);
 	html_category(&post, post.title);
