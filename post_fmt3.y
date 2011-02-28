@@ -4,6 +4,7 @@
 #include <string.h>
 #include <assert.h>
 
+#include "config.h"
 #include "post.h"
 #include "listing.h"
 
@@ -132,6 +133,13 @@ static char *process_cmd(char *cmd, char *txt, char *opt)
 	if (!strcmp(cmd, "subsubsection")) {
 		assert(!opt);
 		return concat4("<h6>", txt, "</h6>", "");
+	}
+
+	if (!strcmp(cmd, "bug")) {
+		assert(!opt);
+		return concat5("<a href=\"" BUG_BASE_URL "/", txt,
+			"\"><img src=\"/static/bug.png\" alt=\"bug\" />&nbsp;Bug #",
+			txt, "</a>");
 	}
 
 	return concat4("[INVAL CMD", txt, "]", "");

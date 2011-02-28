@@ -11,5 +11,7 @@
 
 #define ERROR_LOG_FILE			"data/logs/comment_error.log"
 
+#define BUG_BASE_URL			"http://bugs.31bits.net"
+
 #endif
 
