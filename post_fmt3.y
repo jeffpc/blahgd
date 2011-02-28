@@ -69,7 +69,7 @@ static char *concat5(char *a, char *b, char *c, char *d, char *e)
 
 static char *__listing(char *txt, char *opt)
 {
-	return concat4("<pre>", "", listing(post, txt), "</pre>");
+	return concat4("</p><pre>", "", listing(post, txt), "</pre><p>");
 }
 
 static char *process_cmd(char *cmd, char *txt, char *opt)
