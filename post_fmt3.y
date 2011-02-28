@@ -138,7 +138,7 @@ static char *process_cmd(char *cmd, char *txt, char *opt)
 	if (!strcmp(cmd, "bug")) {
 		assert(!opt);
 		return concat5("<a href=\"" BUG_BASE_URL "/", txt,
-			"\"><img src=\"/static/bug.png\" alt=\"bug\" />&nbsp;Bug #",
+			"\"><img src=\"/static/bug.png\" alt=\"bug #\" />&nbsp;",
 			txt, "</a>");
 	}
 
@@ -208,7 +208,7 @@ static char *special_char(char *txt)
 };
 
 %token <ptr> PAREND NLINE WSPACE BSLASH OCURLY CCURLY OBRACE CBRACE AMP
-%token <ptr> USCORE PERCENT DOLLAR DASH OQUOT CQUOT SCHAR ELLIPSIS WORD
+%token <ptr> USCORE PERCENT DOLLAR TILDE DASH OQUOT CQUOT SCHAR ELLIPSIS WORD
 
 %type <ptr> paragraphs paragraph line thing cmd cmdarg optcmdarg
 
@@ -241,6 +241,7 @@ thing : WORD			{ $$ = $1; }
       | CQUOT			{ $$ = cquote(strlen($1)); }
       | SCHAR			{ $$ = special_char($1); }
       | ELLIPSIS		{ $$ = strdup("&hellip;"); }
+      | TILDE			{ $$ = strdup("&nbsp;"); }
       | BSLASH cmd		{ $$ = $2; }
       ;
 
@@ -255,6 +256,7 @@ cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd($1, $3, $2); }
     | USCORE			{ $$ = $1; }
     | PERCENT			{ $$ = $1; }
     | DOLLAR			{ $$ = $1; }
+    | TILDE			{ $$ = $1; }
     ;
 
 optcmdarg : OBRACE paragraph CBRACE	{ $$ = $2; }
