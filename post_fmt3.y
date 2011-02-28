@@ -208,7 +208,8 @@ static char *special_char(char *txt)
 };
 
 %token <ptr> PAREND NLINE WSPACE BSLASH OCURLY CCURLY OBRACE CBRACE AMP
-%token <ptr> USCORE PERCENT DOLLAR TILDE DASH OQUOT CQUOT SCHAR ELLIPSIS WORD
+%token <ptr> USCORE PERCENT DOLLAR TILDE DASH OQUOT CQUOT SCHAR ELLIPSIS
+%token <ptr> UTF8FIRST3 UTF8FIRST2 UTF8REST WORD
 
 %type <ptr> paragraphs paragraph line thing cmd cmdarg optcmdarg
 
@@ -234,15 +235,17 @@ line : line thing		{ $$ = concat($1, $2); }
      | thing			{ $$ = $1; }
      ;
 
-thing : WORD			{ $$ = $1; }
-      | WSPACE			{ $$ = $1; }
-      | DASH			{ $$ = dash(strlen($1)); }
-      | OQUOT			{ $$ = oquote(strlen($1)); }
-      | CQUOT			{ $$ = cquote(strlen($1)); }
-      | SCHAR			{ $$ = special_char($1); }
-      | ELLIPSIS		{ $$ = strdup("&hellip;"); }
-      | TILDE			{ $$ = strdup("&nbsp;"); }
-      | BSLASH cmd		{ $$ = $2; }
+thing : WORD				{ $$ = $1; }
+      | UTF8FIRST2 UTF8REST		{ $$ = concat($1, $2); }
+      | UTF8FIRST3 UTF8REST UTF8REST	{ $$ = concat4($1, $2, $3, ""); }
+      | WSPACE				{ $$ = $1; }
+      | DASH				{ $$ = dash(strlen($1)); }
+      | OQUOT				{ $$ = oquote(strlen($1)); }
+      | CQUOT				{ $$ = cquote(strlen($1)); }
+      | SCHAR				{ $$ = special_char($1); }
+      | ELLIPSIS			{ $$ = strdup("&hellip;"); }
+      | TILDE				{ $$ = strdup("&nbsp;"); }
+      | BSLASH cmd			{ $$ = $2; }
       ;
 
 cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd($1, $3, $2); }

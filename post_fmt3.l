@@ -29,6 +29,9 @@ extern void yyerror2(char *, char *);
 `{1,2}			{ yylval.ptr = strdup(yytext); return OQUOT; }
 '{1,2}			{ yylval.ptr = strdup(yytext); return CQUOT; }
 [".,()/=<>!:;\+?@]	{ yylval.ptr = strdup(yytext); return SCHAR; }
+[\xe0-\xef]		{ yylval.ptr = strdup(yytext); return UTF8FIRST3; }
+[\xc0-\xdf]		{ yylval.ptr = strdup(yytext); return UTF8FIRST2; }
+[\x80-\xbf]		{ yylval.ptr = strdup(yytext); return UTF8REST; }
 [A-Za-z0-9]+		{ yylval.ptr = strdup(yytext); return WORD; }
 .|\n			{ yyerror2("post text contains invalid characters", yytext); yyterminate(); }
 %%
