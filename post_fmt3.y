@@ -94,8 +94,12 @@ static char *process_cmd(char *cmd, char *txt, char *opt)
 		return __listing(txt, opt);
 
 	if (!strcmp(cmd, "item")) {
-		assert(!opt);
-		return concat4("<li>", txt, "</li>", "");
+		// FIXME: we should keep track of what commands we've
+		// encountered and then decide if <li> is the right tag to
+		// use
+		if (!opt)
+			return concat4("<li>", txt, "</li>", "");
+		return concat5("<dt>", opt, "</dt><dd>", txt, "</dd>");
 	}
 
 	if (!strcmp(cmd, "begin") || !strcmp(cmd, "end")) {
@@ -109,6 +113,11 @@ static char *process_cmd(char *cmd, char *txt, char *opt)
 		if (!strcmp(txt, "itemize")) {
 			assert(!opt);
 			return strdup(begin ? "</p><ul>" : "</ul><p>");
+		}
+
+		if (!strcmp(txt, "description")) {
+			assert(!opt);
+			return strdup(begin ? "</p><dl>" : "</dl><p>");
 		}
 
 		if (!strcmp(txt, "quote")) {
