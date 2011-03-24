@@ -85,6 +85,11 @@ static char *process_cmd(char *cmd, char *txt, char *opt)
 		return concat4("<em>", txt, "</em>", "");
 	}
 
+	if (!strcmp(cmd, "texttt")) {
+		assert(!opt);
+		return concat4("<tt>", txt, "</tt>", "");
+	}
+
 	if (!strcmp(cmd, "textbf")) {
 		assert(!opt);
 		return concat4("<strong>", txt, "</strong>", "");
