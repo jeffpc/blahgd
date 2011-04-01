@@ -136,17 +136,17 @@ static char *process_cmd(char *cmd, char *txt, char *opt)
 
 	if (!strcmp(cmd, "section")) {
 		assert(!opt);
-		return concat4("<h4>", txt, "</h4>", "");
+		return concat4("</p><h4>", txt, "</h4><p>", "");
 	}
 
 	if (!strcmp(cmd, "subsection")) {
 		assert(!opt);
-		return concat4("<h5>", txt, "</h5>", "");
+		return concat4("</p><h5>", txt, "</h5><p>", "");
 	}
 
 	if (!strcmp(cmd, "subsubsection")) {
 		assert(!opt);
-		return concat4("<h6>", txt, "</h6>", "");
+		return concat4("</p><h6>", txt, "</h6><p>", "");
 	}
 
 	if (!strcmp(cmd, "bug")) {
