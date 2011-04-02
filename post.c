@@ -124,8 +124,13 @@ void cat_post(struct post *post)
 	int ret;
 	int fd;
 
-	snprintf(path, FILENAME_MAX, "data/posts/%d/post.%s", post->id,
-		 exts[post->fmt]);
+	if (post->preview)
+		fprintf(post->out, "<p><strong>NOTE: This is only a preview."
+			" This post hasn't been published yet. The post's"
+			" title, categories, and publication time will"
+			" change.</strong></p>\n");
+
+	snprintf(path, FILENAME_MAX, "%s/post.%s", post->path, exts[post->fmt]);
 
 	if (post->fmt == 3) {
 		__do_cat_post_fmt3(post, path);
@@ -166,8 +171,8 @@ void cat_post_comment(struct post *post, struct comment *comm)
 	int ret;
 	int fd;
 
-	snprintf(path, FILENAME_MAX, "data/posts/%d/comments/%d/text.txt",
-		 post->id, comm->id);
+	snprintf(path, FILENAME_MAX, "%s/comments/%d/text.txt", post->path,
+		 comm->id);
 
 	fd = open(path, O_RDONLY);
 	if (fd == -1) {
@@ -200,8 +205,7 @@ int load_comment(struct post *post, int commid, struct comment *comm)
 	char path[FILENAME_MAX];
 	char *buf;
 
-	snprintf(path, FILENAME_MAX, "data/posts/%d/comments/%d", post->id,
-		 commid);
+	snprintf(path, FILENAME_MAX, "%s/comments/%d", post->path, commid);
 
 	comm->id = commid;
 	comm->author = safe_getxattr(path, XATTR_COMM_AUTHOR);
@@ -247,7 +251,7 @@ void invoke_for_each_comment(struct post *post, void(*f)(struct post*,
 	char path[FILENAME_MAX];
 	DIR *dir;
 
-	snprintf(path, FILENAME_MAX, "data/posts/%d/comments", post->id);
+	snprintf(path, FILENAME_MAX, "%s/comments", post->path);
 
 	dir = opendir(path);
 	if (!dir)
@@ -259,21 +263,34 @@ void invoke_for_each_comment(struct post *post, void(*f)(struct post*,
 	closedir(dir);
 }
 
-int load_post(int postid, struct post *post)
+int load_post(int postid, struct post *post, int preview)
 {
 	char path[FILENAME_MAX];
 	char *buf1,*buf2;
 	int ret = 0;
 
-	snprintf(path, FILENAME_MAX, "data/posts/%d", postid);
+	if (!preview)
+		snprintf(path, FILENAME_MAX, "data/posts/%d", postid);
+	else
+		snprintf(path, FILENAME_MAX, "data/pending-posts/%d",
+			 postid);
 
 	memset(&post->lasttime, 0, sizeof(struct tm));
 
 	post->id = postid;
-	post->title = safe_getxattr(path, XATTR_TITLE);
-	post->cats  = safe_getxattr(path, XATTR_CATS);
-	buf1        = safe_getxattr(path, XATTR_TIME);
-	buf2        = safe_getxattr(path, XATTR_FMT);
+	post->path = strdup(path);
+	post->preview = preview;
+	if (!preview) {
+		post->title = safe_getxattr(path, XATTR_TITLE);
+		post->cats  = safe_getxattr(path, XATTR_CATS);
+		buf1        = safe_getxattr(path, XATTR_TIME);
+		buf2        = safe_getxattr(path, XATTR_FMT);
+	} else {
+		post->title = strdup("Post Preview");
+		post->cats  = strdup("preview");
+		buf1        = strdup("1970-01-01 00:00");
+		buf2        = strdup("3");
+	}
 
 	if (post->title && buf1 && (strlen(buf1) == 16)) {
 		/* "2005-01-02 03:03" */

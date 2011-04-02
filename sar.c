@@ -64,7 +64,7 @@ static void __echo_comment_count(struct post *post, void *data, int numeric)
 	DIR *dir;
 	int count = 0;
 
-	snprintf(path, FILENAME_MAX, "data/posts/%d/comments", post->id);
+	snprintf(path, FILENAME_MAX, "%s/comments", post->path);
 
 	dir = opendir(path);
 	if (!dir) {

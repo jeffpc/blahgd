@@ -32,7 +32,7 @@ char *listing(struct post *post, char *fname)
 	int len, size;
 	FILE *in;
 
-	snprintf(path, FILENAME_MAX, "data/posts/%d/%s", post->id, fname);
+	snprintf(path, FILENAME_MAX, "%s/%s", post->path, fname);
 
 	in = fopen(path, "r");
 	if (!in) {

@@ -7,7 +7,7 @@
 #include "sar.h"
 #include "html.h"
 
-int blahg_story(int p)
+int blahg_story(int p, int preview)
 {
 	struct timespec s,e;
 	struct post post;
@@ -24,7 +24,7 @@ int blahg_story(int p)
 		return 0;
 	}
 
-	ret = load_post(p, &post);
+	ret = load_post(p, &post, preview);
 	if (ret) {
 		fprintf(post.out, "Gah! %d (postid=%d)\n", ret, p);
 		return 0;
@@ -32,7 +32,8 @@ int blahg_story(int p)
 
 	html_header(&post);
 	html_story(&post);
-	html_comments(&post);
+	if (!preview)
+		html_comments(&post);
 	html_sidebar(&post);
 	html_footer(&post);
 

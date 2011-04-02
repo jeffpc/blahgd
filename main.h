@@ -18,6 +18,7 @@ struct qs {
 	int p;
 	int paged;
 	int m;
+	int preview;
 	char *cat;
 	char *feed;
 	char *comment;
@@ -28,6 +29,6 @@ extern int blahg_category(char *cat, int paged);
 extern int blahg_comment();
 extern int blahg_feed(char *feed, int p);
 extern int blahg_index(int paged);
-extern int blahg_story(int p);
+extern int blahg_story(int p, int preview);
 
 #endif

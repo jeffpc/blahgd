@@ -26,6 +26,8 @@ static void parse_qs(char *qs, struct qs *args)
 	args->m = -1;
 	args->cat = NULL;
 	args->feed = NULL;
+	args->comment = NULL;
+	args->preview = 0;
 
 	if (!qs)
 		return;
@@ -55,6 +57,9 @@ static void parse_qs(char *qs, struct qs *args)
 			len = 5;
 		} else if (!strncmp(qs, "comment=", 8)) {
 			cptr = &args->comment;
+			len = 8;
+		} else if (!strncmp(qs, "preview=", 8)) {
+			iptr = &args->preview;
 			len = 8;
 		} else {
 			args->page = PAGE_MALFORMED;
@@ -109,7 +114,7 @@ int main(int argc, char **argv)
 		case PAGE_INDEX:
 			return blahg_index(args.paged);
 		case PAGE_STORY:
-			return blahg_story(args.p);
+			return blahg_story(args.p, args.preview);
 		default:
 			return blahg_malformed(argc, argv);
 	}

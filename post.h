@@ -18,6 +18,9 @@ struct post {
 	struct tm time;
 	int page;
 
+	char *path;
+	int preview;
+
 	char *pagetype; /* date for archive pages, category name for
 			   category lists, undefined otherwise */
 	struct tm lasttime; /* date/time of the last update */
@@ -32,7 +35,7 @@ struct post {
 #define XATTR_COMM_URL		"user.url"
 #define XATTR_COMM_IP		"user.remote_addr"
 
-extern int load_post(int postid, struct post *post);
+extern int load_post(int postid, struct post *post, int preview);
 extern void dump_post(struct post *post);
 extern void destroy_post(struct post *post);
 

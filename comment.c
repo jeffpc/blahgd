@@ -254,7 +254,7 @@ int save_comment(struct post *post)
 	fprintf(post->out, "id: %d\n", id);
 #endif
 
-	ret = load_post(id, post);
+	ret = load_post(id, post, 0);
 	if (ret) {
 		comment_error_log("Gah! %d (postid=%d)\n", ret, id);
 		return 1;

@@ -91,7 +91,7 @@ static void __each_index_helper(struct post *post, char *name, void *data)
 	memset(&p, 0, sizeof(struct post));
 	p.out = post->out;
 
-	if (load_post(postid, &p))
+	if (load_post(postid, &p, 0))
 		return;
 
 	cat(&p, NULL, "templates/story-top.html", repltab_story_html);
@@ -127,7 +127,7 @@ static void __each_feed_index_helper(struct post *post, char *name, void *data)
 	memset(&p, 0, sizeof(struct post));
 	p.out = post->out;
 
-	if (load_post(postid, &p))
+	if (load_post(postid, &p, 0))
 		return;
 
 	cat(&p, NULL, "templates/story-top.atom", repltab_story_numcomment_html);
