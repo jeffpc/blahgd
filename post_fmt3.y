@@ -3,6 +3,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <errno.h>
+#include <unistd.h>
+
+#include <openssl/sha.h>
 
 #include "config.h"
 #include "post.h"
@@ -215,6 +219,117 @@ static char *special_char(char *txt)
 	return strdup(ret);
 }
 
+static inline char asciify(unsigned char c)
+{
+	return (c < 10) ? (c + '0') : (c - 10 + 'A');
+}
+
+static void hexdump(char *a, unsigned char *b, int len)
+{
+	int i;
+
+	for(i=0; i<len; i++) {
+		a[i*2]   = asciify(b[i] >> 4);
+		a[i*2+1] = asciify(b[i] & 15);
+	}
+	a[i*2] = '\0';
+}
+
+#define TEX_TMP_DIR "/tmp"
+#define TEX_FILE_NAME TEX_TMP_DIR "/blahg_math"
+static int __render_math(char *tex, char *md, char *dstpath, char *texpath,
+			 char *dvipath, char *pspath, char *pngpath)
+{
+	char cmd[3*FILENAME_MAX];
+	char *pwd;
+	FILE *f;
+
+	pwd = getcwd(NULL, FILENAME_MAX);
+	if (!pwd)
+		goto err;
+
+	f = fopen(texpath, "w");
+	if (!f)
+		goto err;
+
+	chdir(TEX_TMP_DIR);
+
+	fprintf(f, "\\documentclass[10pt]{article}\n");
+	fprintf(f, "%% add additional packages here\n");
+	fprintf(f, "\\usepackage{amsmath}\n");
+	fprintf(f, "\\usepackage{amsfonts}\n");
+	fprintf(f, "\\usepackage{amssymb}\n");
+	//fprintf(f, "\\usepackage{pst-plot}\n");
+	fprintf(f, "\\usepackage{color}\n");
+	fprintf(f, "\\pagestyle{empty}\n");
+	fprintf(f, "\\begin{document}\n");
+	fprintf(f, "\\begin{equation*}\n");
+	fprintf(f, "\\large\n");
+	fprintf(f, tex);
+	fprintf(f, "\\end{equation*}\n");
+	fprintf(f, "\\end{document}\n");
+	fclose(f);
+
+	snprintf(cmd, sizeof(cmd), "latex --interaction=nonstopmode %s > /dev/null", texpath);
+	if (system(cmd))
+		goto err_chdir;
+
+	snprintf(cmd, sizeof(cmd), "dvips -E %s -o %s > /dev/null", dvipath, pspath);
+	if (system(cmd))
+		goto err_chdir;
+
+	snprintf(cmd, sizeof(cmd), "convert -density 120 %s %s > /dev/null", pspath, pngpath);
+	if (system(cmd))
+		goto err_chdir;
+
+	chdir(pwd);
+
+	snprintf(cmd, sizeof(cmd), "cp %s %s", pngpath, dstpath);
+	if (system(cmd))
+		goto err;
+
+	return 0;
+
+err_chdir:
+	chdir(pwd);
+
+err:
+	return 1;
+}
+
+static char *render_math(char *tex)
+{
+	char finalpath[FILENAME_MAX];
+	char texpath[FILENAME_MAX];
+	char dvipath[FILENAME_MAX];
+	char pspath[FILENAME_MAX];
+	char pngpath[FILENAME_MAX];
+
+	unsigned char md[20];
+	char amd[41];
+	int ret;
+
+	SHA1((const unsigned char*) tex, strlen(tex), md);
+	hexdump(amd, md, 20);
+
+	snprintf(finalpath, FILENAME_MAX, "math/%s.png", amd);
+	snprintf(texpath, FILENAME_MAX, "/tmp/blahg_math_%s_%d.tex", amd, getpid());
+	snprintf(dvipath, FILENAME_MAX, "/tmp/blahg_math_%s_%d.dvi", amd, getpid());
+	snprintf(pspath,  FILENAME_MAX, "/tmp/blahg_math_%s_%d.ps",  amd, getpid());
+	snprintf(pngpath, FILENAME_MAX, "/tmp/blahg_math_%s_%d.png", amd, getpid());
+
+	ret = 0;
+	//if (path does not exist)
+		ret = __render_math(tex, amd, finalpath, texpath, dvipath,
+				    pspath, pngpath);
+
+	if (ret)
+		return concat4("<span>Math Error (", strerror(errno),
+			       ")</span>", "");
+
+	return concat4("<img src=\"", finalpath, "\" alt=\"math\" />", "");
+}
+
 %}
 
 %union {
@@ -223,9 +338,15 @@ static char *special_char(char *txt)
 
 %token <ptr> PAREND NLINE WSPACE BSLASH OCURLY CCURLY OBRACE CBRACE AMP
 %token <ptr> USCORE PERCENT DOLLAR TILDE DASH OQUOT CQUOT SCHAR ELLIPSIS
-%token <ptr> UTF8FIRST3 UTF8FIRST2 UTF8REST WORD
+%token <ptr> UTF8FIRST3 UTF8FIRST2 UTF8REST WORD PLUS MINUS ASTERISK SLASH
+%token <ptr> W_TIMES W_FRAC
 
-%type <ptr> paragraphs paragraph line thing cmd cmdarg optcmdarg
+%type <ptr> paragraphs paragraph line thing cmd cmdarg optcmdarg math mexpr
+%type <ptr> mcmd mcmdarg
+
+%left USCORE
+%left PLUS MINUS
+%left ASTERISK SLASH
 
 %%
 
@@ -253,6 +374,10 @@ thing : WORD				{ $$ = $1; }
       | UTF8FIRST2 UTF8REST		{ $$ = concat($1, $2); }
       | UTF8FIRST3 UTF8REST UTF8REST	{ $$ = concat4($1, $2, $3, ""); }
       | WSPACE				{ $$ = $1; }
+      | PLUS				{ $$ = $1; }
+      | MINUS				{ $$ = dash(strlen($1)); }
+      | ASTERISK			{ $$ = $1; }
+      | SLASH				{ $$ = $1; }
       | DASH				{ $$ = dash(strlen($1)); }
       | OQUOT				{ $$ = oquote(strlen($1)); }
       | CQUOT				{ $$ = cquote(strlen($1)); }
@@ -260,6 +385,7 @@ thing : WORD				{ $$ = $1; }
       | ELLIPSIS			{ $$ = strdup("&hellip;"); }
       | TILDE				{ $$ = strdup("&nbsp;"); }
       | BSLASH cmd			{ $$ = $2; }
+      | DOLLAR math DOLLAR		{ $$ = render_math($2); }
       ;
 
 cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd($1, $3, $2); }
@@ -281,6 +407,29 @@ optcmdarg : OBRACE paragraph CBRACE	{ $$ = $2; }
 
 cmdarg : OCURLY paragraph CCURLY	{ $$ = $2; }
        ;
+
+math : mexpr			{ $$ = $1; }
+     ;
+
+mexpr : WORD				{ $$ = $1; }
+      | WSPACE				{ $$ = $1; }
+      | mexpr USCORE mexpr 		{ $$ = concat4($1, $2, $3, ""); }
+      | mexpr PLUS mexpr 		{ $$ = concat4($1, $2, $3, ""); }
+      | mexpr MINUS mexpr 		{ $$ = concat4($1, $2, $3, ""); }
+      | mexpr ASTERISK mexpr	 	{ $$ = concat4($1, $2, $3, ""); }
+//      | mexpr WSPACE mexpr 		{ $$ = concat4($1, $2, $3, ""); }
+//      | OCURLY mexpr CCURLY		{ $$ = concat4($1, $2, $3, ""); }
+//      | BSLASH WORD			{ $$ = concat($1, $2); }
+//      | BSLASH mcmd			{ $$ = concat($1, $2); }
+      |					{ $$ = strdup(""); }
+      ;
+
+mcmd : W_TIMES				{ $$ = $1; }
+     | W_FRAC mcmdarg mcmdarg		{ $$ = concat4($1, $2, $3, ""); }
+     ;
+
+mcmdarg : OCURLY mexpr CCURLY		{ $$ = concat4($1, $2, $3, ""); }
+	;
 
 %%
 

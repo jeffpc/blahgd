@@ -25,13 +25,19 @@ extern void yyerror2(char *, char *);
 "$"			{ yylval.ptr = strdup(yytext); return DOLLAR; }
 "~"			{ yylval.ptr = strdup(yytext); return TILDE; }
 \.{3}			{ yylval.ptr = strdup(yytext); return ELLIPSIS; }
--{1,3}			{ yylval.ptr = strdup(yytext); return DASH; }
+"+"			{ yylval.ptr = strdup(yytext); return PLUS; }
+-			{ yylval.ptr = strdup(yytext); return MINUS; }
+"*"			{ yylval.ptr = strdup(yytext); return ASTERISK; }
+"/"			{ yylval.ptr = strdup(yytext); return SLASH; }
+-{2,3}			{ yylval.ptr = strdup(yytext); return DASH; }
 `{1,2}			{ yylval.ptr = strdup(yytext); return OQUOT; }
 '{1,2}			{ yylval.ptr = strdup(yytext); return CQUOT; }
-[".,()/=<>!:;\+?@*#]	{ yylval.ptr = strdup(yytext); return SCHAR; }
+[".,()=<>!:;\?@#]	{ yylval.ptr = strdup(yytext); return SCHAR; }
 [\xe0-\xef]		{ yylval.ptr = strdup(yytext); return UTF8FIRST3; }
 [\xc0-\xdf]		{ yylval.ptr = strdup(yytext); return UTF8FIRST2; }
 [\x80-\xbf]		{ yylval.ptr = strdup(yytext); return UTF8REST; }
+"times"			{ yylval.ptr = strdup(yytext); return W_TIMES; }
+"frac"			{ yylval.ptr = strdup(yytext); return W_FRAC; }
 [A-Za-z0-9]+		{ yylval.ptr = strdup(yytext); return WORD; }
 .|\n			{ yyerror2("post text contains invalid characters", yytext); yyterminate(); }
 %%
