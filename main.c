@@ -91,7 +91,12 @@ static void parse_qs(char *qs, struct qs *args)
 
 static int blahg_malformed(int argc, char **argv)
 {
-	printf("Malformed...\n");
+	printf("Content-Type: text/plain\n\n");
+	printf("There has been an error processing your request.  The site"
+	       "administrator has\nbeen notified.\n\nSorry for the"
+	       "inconvenience.\n\nJosef 'Jeff' Sipek.\n");
+
+	// FIXME: send $SCRIPT_URL, $PATH_INFO, and $QUERY_STRING via email
 
 	return 0;
 }
