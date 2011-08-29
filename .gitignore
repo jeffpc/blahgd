@@ -9,3 +9,8 @@ tags
 .*.swp
 
 data
+
+Makefile
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
