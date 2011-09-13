@@ -156,6 +156,11 @@ static char *process_cmd(char *cmd, char *txt, char *opt)
 			txt, "</a>");
 	}
 
+	if (!strcmp(cmd, "degree")) {
+		assert(!opt);
+		return concat4("\xc2\xb0", txt, "", "");
+	}
+
 	return concat4("[INVAL CMD", txt, "]", "");
 }
 
