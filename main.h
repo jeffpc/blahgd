@@ -10,6 +10,7 @@ enum {
 	PAGE_FEED,
 	PAGE_INDEX,
 	PAGE_STORY,
+	PAGE_XMLRPC,
 };
 
 struct qs {
@@ -19,6 +20,7 @@ struct qs {
 	int paged;
 	int m;
 	int preview;
+	int xmlrpc;
 	char *cat;
 	char *feed;
 	char *comment;
@@ -30,5 +32,6 @@ extern int blahg_comment();
 extern int blahg_feed(char *feed, int p);
 extern int blahg_index(int paged);
 extern int blahg_story(int p, int preview);
+extern int blahg_pingback();
 
 #endif

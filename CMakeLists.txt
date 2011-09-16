@@ -11,9 +11,9 @@ ADD_FLEX_BISON_DEPENDENCY(fmt3 fmt3)
 
 add_executable(blahg sar.c post.c xattr.c html.c dir.c fsm.c decode.c
 	listing.c main.c archive.c category.c comment.c feed.c index.c
-	story.c
+	story.c pingback.c
 	${FLEX_fmt3_OUTPUTS}
 	${BISON_fmt3_OUTPUTS}
 )
 
-target_link_libraries(blahg rt)
+target_link_libraries(blahg rt xmlrpc xmlrpc_server_cgi xmlrpc_server xmlrpc_util)

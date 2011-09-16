@@ -24,6 +24,7 @@ static void parse_qs(char *qs, struct qs *args)
 	args->p = -1;
 	args->paged = -1;
 	args->m = -1;
+	args->xmlrpc = 0;
 	args->cat = NULL;
 	args->feed = NULL;
 	args->comment = NULL;
@@ -61,6 +62,9 @@ static void parse_qs(char *qs, struct qs *args)
 		} else if (!strncmp(qs, "preview=", 8)) {
 			iptr = &args->preview;
 			len = 8;
+		} else if (!strncmp(qs, "xmlrpc=", 7)) {
+			iptr = &args->xmlrpc;
+			len = 7;
 		} else {
 			args->page = PAGE_MALFORMED;
 			return;
@@ -77,7 +81,9 @@ static void parse_qs(char *qs, struct qs *args)
 		qs = tmp;
 	}
 
-	if (args->comment)
+	if (args->xmlrpc)
+		args->page = PAGE_XMLRPC;
+	else if (args->comment)
 		args->page = PAGE_COMMENT;
 	else if (args->feed)
 		args->page = PAGE_FEED;
@@ -107,6 +113,8 @@ int main(int argc, char **argv)
 
 	parse_qs(getenv("QUERY_STRING"), &args);
 
+	printf("X-Pingback: http://blahg-test.josefsipek.net/?xmlrpc=1\n");
+
 	switch(args.page) {
 		case PAGE_ARCHIVE:
 			return blahg_archive(args.m, args.paged);
@@ -120,6 +128,8 @@ int main(int argc, char **argv)
 			return blahg_index(args.paged);
 		case PAGE_STORY:
 			return blahg_story(args.p, args.preview);
+		case PAGE_XMLRPC:
+			return blahg_pingback();
 		default:
 			return blahg_malformed(argc, argv);
 	}
