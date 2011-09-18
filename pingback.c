@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/server.h>
 #include <xmlrpc-c/server_cgi.h>
@@ -7,18 +9,28 @@ static xmlrpc_value *ping(xmlrpc_env * const envP,
 			  void * const serverInfo,
 			  void * const channelInfo)
 {
-	xmlrpc_int32 x, y, z;
+	char *src, *tgt;
 
 	/* Parse our argument array. */
-	xmlrpc_decompose_value(envP, paramArrayP, "(ii)", &x, &y);
+	xmlrpc_decompose_value(envP, paramArrayP, "(ss)", &src, &tgt);
 	if (envP->fault_occurred)
 		return NULL;
 
-	/* Add our two numbers. */
-	z = x + y;
+	/* we got a pingback for 'tgt' from 'src' */
+	/*
+	author="XXX";
+	email="XXX";
+	post_time=<get current time>
+	remote_addr=<get the IP>
+	url=src
 
-	/* Return our result. */
-	return xmlrpc_build_value(envP, "i", z);
+	make a comment
+	*/
+
+	free(src);
+	free(tgt);
+
+	return xmlrpc_build_value(envP, "s", "");
 }
 
 int blahg_pingback()
