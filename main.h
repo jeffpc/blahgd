@@ -34,4 +34,6 @@ extern int blahg_index(int paged);
 extern int blahg_story(int p, int preview);
 extern int blahg_pingback();
 
+extern void disp_404(char *title, char *txt);
+
 #endif

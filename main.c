@@ -4,6 +4,8 @@
 #include <libgen.h>
 
 #include "main.h"
+#include "post.h"
+#include "html.h"
 
 static char *nullterminate(char *s)
 {
@@ -105,6 +107,28 @@ static int blahg_malformed(int argc, char **argv)
 	// FIXME: send $SCRIPT_URL, $PATH_INFO, and $QUERY_STRING via email
 
 	return 0;
+}
+
+void disp_404(char *title, char *txt)
+{
+	struct post post;
+
+	memset(&post, 0, sizeof(struct post));
+	post.out = stdout;
+	post.title = "Error";
+
+	fprintf(post.out, "Status: 404 Not Found\nContent-Type: text/html\n\n");
+
+	html_header(&post);
+	printf("<h2>%s</h2>\n<div class=\"storycentent\">%s</div>\n", title, txt);
+
+	html_sidebar(&post);
+	html_footer(&post);
+
+	post.title = NULL;
+	destroy_post(&post);
+
+	exit(0);
 }
 
 int main(int argc, char **argv)
