@@ -149,6 +149,12 @@ static char *process_cmd(char *cmd, char *txt, char *opt)
 		return concat4("</p><h6>", txt, "</h6><p>", "");
 	}
 
+	if (!strcmp(cmd, "wiki")) {
+		return concat5("<a href=\"" WIKI_BASE_URL "/", txt,
+			"\"><img src=\"/static/wiki.png\" alt=\"Wikipedia article:\" />&nbsp;",
+			opt ? opt : txt, "</a>");
+	}
+
 	if (!strcmp(cmd, "bug")) {
 		assert(!opt);
 		return concat5("<a href=\"" BUG_BASE_URL "/", txt,
