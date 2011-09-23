@@ -252,7 +252,7 @@ paragraphs : paragraphs PAREND paragraph NLINE	{ $$ = concat4($1, "<p>", $3, "</
 	   | paragraph				{ $$ = concat4("<p>", $1, "</p>\n", ""); }
 	   ;
 
-paragraph : paragraph NLINE line	{ $$ = concat4($1, $2, $3, ""); }
+paragraph : paragraph NLINE line	{ $$ = concat4($1, " ", $3, ""); }
 	  | line			{ $$ = $1; }
 	  ;
 
