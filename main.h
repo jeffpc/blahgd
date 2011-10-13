@@ -6,6 +6,7 @@ enum {
 
 	PAGE_ARCHIVE,
 	PAGE_CATEGORY,
+	PAGE_TAG,
 	PAGE_COMMENT,
 	PAGE_FEED,
 	PAGE_INDEX,
@@ -22,12 +23,14 @@ struct qs {
 	int preview;
 	int xmlrpc;
 	char *cat;
+	char *tag;
 	char *feed;
 	char *comment;
 };
 
 extern int blahg_archive(int m, int paged);
 extern int blahg_category(char *cat, int paged);
+extern int blahg_tag(char *tag, int paged);
 extern int blahg_comment();
 extern int blahg_feed(char *feed, int p);
 extern int blahg_index(int paged);

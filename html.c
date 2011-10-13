@@ -207,6 +207,29 @@ void html_category(struct post *post, char *catname)
 }
 
 /************************************************************************/
+/*                              TAG INDEX                               */
+/************************************************************************/
+void html_tag(struct post *post, char *tagname)
+{
+	char path[FILENAME_MAX];
+	DIR *dir;
+
+	snprintf(path, FILENAME_MAX, "data/by-tag/%s/", tagname);
+
+	dir = opendir(path);
+	if (!dir)
+		return;
+
+	sorted_readdir_loop(dir, post, __each_index_helper, NULL, SORT_DESC,
+			    HTML_TAG_STORIES*post->page,
+			    HTML_TAG_STORIES);
+
+	closedir(dir);
+
+	cat(post, NULL, "templates/tag-pager.html", repltab_story_html);
+}
+
+/************************************************************************/
 /*                           POST COMMENTS                              */
 /************************************************************************/
 static void __html_comment(struct post *post, struct comment *comm)

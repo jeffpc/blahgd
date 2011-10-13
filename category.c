@@ -55,7 +55,7 @@ char *wordpress_catn[] = {
 #define MIN_CATN 1
 #define MAX_CATN 43
 
-int hasdotdot(char *path)
+static int hasdotdot(char *path)
 {
 	int state = HDD_START;
 	char tmp;
