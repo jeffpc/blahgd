@@ -75,7 +75,7 @@ static char *__listing(char *txt, char *opt)
 static char *process_cmd(char *cmd, char *txt, char *opt)
 {
 	if (!strcmp(cmd, "link"))
-		return concat5("<a href=\"", opt ? opt : "", "\">", txt, "</a>");
+		return concat5("<a href=\"", txt, "\">", opt ? opt : txt, "</a>");
 
 	if (!strcmp(cmd, "img"))
 		return concat5("<img src=\"", txt, "\" alt=\"", opt ? opt : "", "\" />");
