@@ -28,6 +28,7 @@ static void parse_qs(char *qs, struct qs *args)
 	args->m = -1;
 	args->xmlrpc = 0;
 	args->cat = NULL;
+	args->tag = NULL;
 	args->feed = NULL;
 	args->comment = NULL;
 	args->preview = 0;
@@ -54,6 +55,9 @@ static void parse_qs(char *qs, struct qs *args)
 			len = 2;
 		} else if (!strncmp(qs, "cat=", 4)) {
 			cptr = &args->cat;
+			len = 4;
+		} else if (!strncmp(qs, "tag=", 4)) {
+			cptr = &args->tag;
 			len = 4;
 		} else if (!strncmp(qs, "feed=", 5)) {
 			cptr = &args->feed;
@@ -89,6 +93,8 @@ static void parse_qs(char *qs, struct qs *args)
 		args->page = PAGE_COMMENT;
 	else if (args->feed)
 		args->page = PAGE_FEED;
+	else if (args->tag)
+		args->page = PAGE_TAG;
 	else if (args->cat)
 		args->page = PAGE_CATEGORY;
 	else if (args->m != -1)
@@ -144,6 +150,8 @@ int main(int argc, char **argv)
 			return blahg_archive(args.m, args.paged);
 		case PAGE_CATEGORY:
 			return blahg_category(args.cat, args.paged);
+		case PAGE_TAG:
+			return blahg_tag(args.tag, args.paged);
 		case PAGE_COMMENT:
 			return blahg_comment();
 		case PAGE_FEED:

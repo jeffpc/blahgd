@@ -4,6 +4,7 @@
 #define HTML_INDEX_STORIES		10
 #define HTML_ARCHIVE_STORIES		10
 #define HTML_CATEGORY_STORIES		10
+#define HTML_TAG_STORIES		10
 #define FEED_INDEX_STORIES		15
 
 #define COMMENT_MAX_DELAY		(3600)	/* 60 mins max think time */

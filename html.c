@@ -184,26 +184,26 @@ void html_archive(struct post *post, int archid)
 }
 
 /************************************************************************/
-/*                          CATEGORY INDEX                              */
+/*                         CATEGORY/TAG INDEX                           */
 /************************************************************************/
-void html_category(struct post *post, char *catname)
+void html_tag(struct post *post, char *tagname, char *bydir, int numstories)
 {
 	char path[FILENAME_MAX];
 	DIR *dir;
 
-	snprintf(path, FILENAME_MAX, "data/by-category/%s/", catname);
+	snprintf(path, FILENAME_MAX, "data/by-%s/%s/", bydir, tagname);
 
 	dir = opendir(path);
 	if (!dir)
 		return;
 
 	sorted_readdir_loop(dir, post, __each_index_helper, NULL, SORT_DESC,
-			    HTML_CATEGORY_STORIES*post->page,
-			    HTML_CATEGORY_STORIES);
+			    numstories*post->page, numstories);
 
 	closedir(dir);
 
-	cat(post, NULL, "templates/category-pager.html", repltab_story_html);
+	snprintf(path, FILENAME_MAX, "templates/%s-pager.html", bydir);
+	cat(post, NULL, path, repltab_story_html);
 }
 
 /************************************************************************/
