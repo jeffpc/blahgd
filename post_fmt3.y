@@ -234,7 +234,7 @@ static char *special_char(char *txt)
 
 %token <ptr> PAREND NLINE WSPACE BSLASH OCURLY CCURLY OBRACE CBRACE AMP
 %token <ptr> USCORE PERCENT DOLLAR TILDE DASH OQUOT CQUOT SCHAR ELLIPSIS
-%token <ptr> UTF8FIRST3 UTF8FIRST2 UTF8REST WORD
+%token <ptr> UTF8FIRST3 UTF8FIRST2 UTF8REST WORD PIPE
 
 %type <ptr> paragraphs paragraph line thing cmd cmdarg optcmdarg
 
@@ -264,6 +264,7 @@ thing : WORD				{ $$ = $1; }
       | UTF8FIRST2 UTF8REST		{ $$ = concat($1, $2); }
       | UTF8FIRST3 UTF8REST UTF8REST	{ $$ = concat4($1, $2, $3, ""); }
       | WSPACE				{ $$ = $1; }
+      | PIPE				{ $$ = $1; }
       | DASH				{ $$ = dash(strlen($1)); }
       | OQUOT				{ $$ = oquote(strlen($1)); }
       | CQUOT				{ $$ = cquote(strlen($1)); }
