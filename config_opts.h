@@ -1,5 +1,5 @@
-#ifndef __CONFIG_H
-#define __CONFIG_H
+#ifndef __CONFIG_OPTS_H
+#define __CONFIG_OPTS_H
 
 #define HTML_INDEX_STORIES		10
 #define HTML_ARCHIVE_STORIES		10

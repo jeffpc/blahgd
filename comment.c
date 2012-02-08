@@ -58,6 +58,9 @@ static int __write(int fd, char *buf, int len)
 
 static void comment_error_log(char *fmt, ...)
 {
+#ifndef HAVE_FLOCK
+	struct flock fl;
+#endif
 	char msg[4096];
 	va_list args;
 	int ret, len;
@@ -80,7 +83,17 @@ static void comment_error_log(char *fmt, ...)
 		return;
 	}
 
+#ifdef HAVE_FLOCK
 	ret = flock(fd, LOCK_EX);
+#else
+	fl.l_type = F_WRLCK;
+	fl.l_start = 0;
+	fl.l_whence = SEEK_SET;
+	fl.l_start = 0;
+	fl.l_len = 0;
+	fl.l_pid = getpid();
+	ret = fcntl(fd, F_SETLKW, &fl);
+#endif
 	if (ret == -1) {
 		fprintf(stderr, "%s: Failed to lock log file\n", __func__);
 		goto out;
@@ -89,7 +102,17 @@ static void comment_error_log(char *fmt, ...)
 	ret = write(fd, msg, len);
 
 out:
+#ifdef HAVE_FLOCK
 	flock(fd, LOCK_UN);
+#else
+	fl.l_type = F_UNLCK;
+	fl.l_start = 0;
+	fl.l_whence = SEEK_SET;
+	fl.l_start = 0;
+	fl.l_len = 0;
+	fl.l_pid = getpid();
+	fcntl(fd, F_SETLK, &fl);
+#endif
 	close(fd);
 }
 
@@ -127,7 +150,7 @@ int write_out_comment(struct post *post, int id, struct timespec *now, char *aut
 	strftime(curdate, 31, "%Y-%m-%d %H:%M", tmp_tm);
 
 	snprintf(path, FILENAME_MAX, "data/pending-comments/%d-%08lx.%08lx.%04xW",
-		 id, now->tv_sec, now->tv_nsec, getpid());
+		 id, now->tv_sec, now->tv_nsec, (unsigned) getpid());
 
 	dirpath = strdup(path);
 	newdirpath = strdup(path);

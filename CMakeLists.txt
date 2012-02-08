@@ -1,6 +1,11 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8)
 
-set(CMAKE_C_FLAGS "-Wall -O2 -g -std=c99 -D_POSIX_C_SOURCE=199309 -D_BSD_SOURCE")
+include(CheckFunctionExists)
+configure_file(config.h.in config.h)
+
+check_function_exists(flock HAVE_FLOCK)
+
+set(CMAKE_C_FLAGS "-Wall -O2 -g -std=c99 -D_XOPEN_SOURCE=700 -D_STDC_C99 -D_XPG6 -D__EXTENSIONS__")
 
 find_package(BISON)
 find_package(FLEX)
@@ -16,4 +21,8 @@ add_executable(blahg sar.c post.c xattr.c html.c dir.c fsm.c decode.c
 	${BISON_fmt3_OUTPUTS}
 )
 
-target_link_libraries(blahg rt xmlrpc xmlrpc_server_cgi xmlrpc_server xmlrpc_util)
+find_package(XMLRPC COMPONENTS cgi-server REQUIRED)
+include_directories(${XMLRPC_INCLUDE_DIRS})
+target_link_libraries(blahg ${XMLRPC_LIBRARIES})
+
+target_link_libraries(blahg rt)
