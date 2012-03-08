@@ -151,14 +151,14 @@ static char *process_cmd(char *cmd, char *txt, char *opt)
 
 	if (!strcmp(cmd, "wiki")) {
 		return concat5("<a href=\"" WIKI_BASE_URL "/", txt,
-			"\"><img src=\"/static/wiki.png\" alt=\"Wikipedia article:\" />&nbsp;",
+			"\"><img src=\"/wiki.png\" alt=\"Wikipedia article:\" />&nbsp;",
 			opt ? opt : txt, "</a>");
 	}
 
 	if (!strcmp(cmd, "bug")) {
 		assert(!opt);
 		return concat5("<a href=\"" BUG_BASE_URL "/", txt,
-			"\"><img src=\"/static/bug.png\" alt=\"bug #\" />&nbsp;",
+			"\"><img src=\"/bug.png\" alt=\"bug #\" />&nbsp;",
 			txt, "</a>");
 	}
 
