@@ -143,7 +143,7 @@ int main(int argc, char **argv)
 
 	parse_qs(getenv("QUERY_STRING"), &args);
 
-	printf("X-Pingback: http://blahg-test.josefsipek.net/?xmlrpc=1\n");
+	printf("X-Pingback: http://blahg.josefsipek.net/?xmlrpc=1\n");
 
 	switch(args.page) {
 		case PAGE_ARCHIVE:
