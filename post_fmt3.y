@@ -134,6 +134,9 @@ static char *process_cmd(char *cmd, char *txt, char *opt)
 		return concat4("[INVAL ENVIRON", txt, "]", "");
 	}
 
+	if (!strcmp(cmd, "abbrev"))
+		return concat5("<abbr title=\"", opt ? opt : txt, "\">", txt, "</abbr>");
+
 	if (!strcmp(cmd, "section")) {
 		assert(!opt);
 		return concat4("</p><h4>", txt, "</h4><p>", "");
