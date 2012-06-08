@@ -16,13 +16,15 @@ ADD_FLEX_BISON_DEPENDENCY(fmt3 fmt3)
 
 add_executable(blahg sar.c post.c xattr.c html.c dir.c fsm.c decode.c
 	listing.c main.c archive.c category.c comment.c feed.c index.c
-	story.c pingback.c tag.c utils.c
+	story.c pingback.c tag.c utils.c db.c
 	${FLEX_fmt3_OUTPUTS}
 	${BISON_fmt3_OUTPUTS}
 )
 
+find_library(SQLITE_LIB sqlite3)
+
 find_package(XMLRPC COMPONENTS cgi-server REQUIRED)
 include_directories(${XMLRPC_INCLUDE_DIRS})
-target_link_libraries(blahg ${XMLRPC_LIBRARIES})
+target_link_libraries(blahg ${XMLRPC_LIBRARIES} ${SQLITE_LIB})
 
 target_link_libraries(blahg rt)

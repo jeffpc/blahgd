@@ -101,10 +101,10 @@ int blahg_category(char *cat, int paged)
 
 	post.page = max(paged,0);
 
-	html_header(&post);
+	feed_header(&post, "html");
 	html_tag(&post, post.title, "category", HTML_CATEGORY_STORIES);
 	html_sidebar(&post);
-	html_footer(&post);
+	feed_footer(&post, "html");
 
 	post.title = NULL;
 	destroy_post(&post);

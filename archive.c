@@ -48,10 +48,10 @@ int blahg_archive(int m, int paged)
 
 	post.page = max(paged, 0);
 
-	html_header(&post);
+	feed_header(&post, "html");
 	html_archive(&post, m);
 	html_sidebar(&post);
-	html_footer(&post);
+	feed_footer(&post, "html");
 
 	post.title = NULL;
 	destroy_post(&post);

@@ -7,6 +7,7 @@
 #include "post.h"
 #include "sar.h"
 #include "html.h"
+#include "config_opts.h"
 
 int blahg_feed(char *feed, int p)
 {
@@ -39,7 +40,7 @@ int blahg_feed(char *feed, int p)
 	fprintf(post.out, "Content-Type: application/atom+xml; charset=UTF-8\n\n");
 
 	feed_header(&post,"atom");
-	feed_index(&post,"atom");
+	feed_index(&post, "atom", FEED_INDEX_STORIES);
 	feed_footer(&post,"atom");
 
 	post.title = NULL;

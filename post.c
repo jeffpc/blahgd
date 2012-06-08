@@ -15,18 +15,22 @@
 #include "xattr.h"
 #include "sar.h"
 #include "dir.h"
+#include "db.h"
 
-void cat(struct post *post, void *data, char *tmpl,
+void cat(struct post *post, void *data, char *tmpl, char *fmt,
 	 struct repltab_entry *repltab)
 {
+	char path[FILENAME_MAX];
 	struct stat statbuf;
 	char *ibuf;
 	int ret;
 	int fd;
 
-	fd = open(tmpl, O_RDONLY);
+	snprintf(path, sizeof(path), "templates/%s.%s", tmpl, fmt);
+
+	fd = open(path, O_RDONLY);
 	if (fd == -1) {
-		fprintf(post->out, "template open error\n");
+		fprintf(post->out, "template (%s) open error\n", path);
 		return;
 	}
 
@@ -265,7 +269,7 @@ void invoke_for_each_comment(struct post *post, void(*f)(struct post*,
 int load_post(int postid, struct post *post, int preview)
 {
 	char path[FILENAME_MAX];
-	char *buf1,*buf2;
+	char *buf1 = NULL;
 	int ret = 0;
 
 	if (!preview)
@@ -280,25 +284,28 @@ int load_post(int postid, struct post *post, int preview)
 	post->path = strdup(path);
 	post->preview = preview;
 	if (!preview) {
-		post->title = safe_getxattr(path, XATTR_TITLE);
-		post->cats  = safe_getxattr(path, XATTR_CATS);
-		buf1        = safe_getxattr(path, XATTR_TIME);
-		buf2        = safe_getxattr(path, XATTR_FMT);
+		sqlite3_stmt *stmt;
+		int ret;
+
+		open_db();
+		SQL(stmt, "SELECT title, cats, time, fmt FROM posts WHERE id=?");
+		SQL_BIND_INT(stmt, 1, postid);
+		SQL_FOR_EACH(stmt) {
+			post->title = strdup(SQL_COL_STR(stmt, 0));
+			post->cats  = strdup(SQL_COL_STR(stmt, 1));
+			buf1        = strdup(SQL_COL_STR(stmt, 2));
+			post->fmt   = SQL_COL_INT(stmt, 3);
+		}
 	} else {
 		post->title = strdup("Post Preview");
 		post->cats  = strdup("preview");
 		buf1        = strdup("1970-01-01 00:00");
-		buf2        = strdup("3");
+		post->fmt   = 3;
 	}
 
 	if (post->title && buf1 && (strlen(buf1) == 16)) {
 		/* "2005-01-02 03:03" */
 		strptime(buf1, "%Y-%m-%d %H:%M", &post->time);
-
-		post->fmt = buf2 ? atoi(buf2) : 0;
-
-		if ((post->fmt < 0) || (post->fmt > 3))
-			ret = EINVAL;
 	} else
 		ret = ENOMEM;
 
@@ -306,7 +313,6 @@ int load_post(int postid, struct post *post, int preview)
 		destroy_post(post);
 
 	free(buf1);
-	free(buf2);
 	return ret;
 }
 

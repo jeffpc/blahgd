@@ -125,11 +125,11 @@ void disp_404(char *title, char *txt)
 
 	fprintf(post.out, "Status: 404 Not Found\nContent-Type: text/html\n\n");
 
-	html_header(&post);
+	feed_header(&post, "html");
 	printf("<h2>%s</h2>\n<div class=\"storycentent\">%s</div>\n", title, txt);
 
 	html_sidebar(&post);
-	html_footer(&post);
+	feed_footer(&post, "html");
 
 	post.title = NULL;
 	destroy_post(&post);

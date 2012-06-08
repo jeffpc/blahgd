@@ -11,10 +11,13 @@
 #include "html.h"
 #include "dir.h"
 
+#include "db.h"
+
 /************************************************************************/
 /*                                POST                                  */
 /************************************************************************/
-static void __invoke_for_each_post_cat(struct post *post, void(*f)(struct post*, char*))
+static void __invoke_for_each_post_cat(struct post *post, void(*f)(struct post*, char*, char*),
+				       char *fmt)
 {
 	char *obuf;
 	char tmp;
@@ -42,7 +45,7 @@ static void __invoke_for_each_post_cat(struct post *post, void(*f)(struct post*,
 				/* fall-thourgh */
 			case ',':
 				COPYCHAR(obuf, oidx, '\0');
-				f(post, obuf);
+				f(post, obuf, fmt);
 				oidx=0;
 				break;
 			default:
@@ -56,108 +59,64 @@ static void __invoke_for_each_post_cat(struct post *post, void(*f)(struct post*,
 	free(obuf);
 }
 
-static void __story_cat_item(struct post *post, char *catname)
+static void __story_cat_item(struct post *post, char *catname, char *fmt)
 {
-	cat(post, catname, "templates/story-cat-item.html", repltab_cat_html);
-}
-
-static void __story_cat_item_feed(struct post *post, char *catname)
-{
-	cat(post, catname, "templates/story-cat-item.atom", repltab_cat_html);
+	cat(post, catname, "story-cat-item", fmt, repltab_cat_html);
 }
 
 void html_story(struct post *post)
 {
-	cat(post, NULL, "templates/story-top.html", repltab_story_html);
+	cat(post, NULL, "story-top", "html", repltab_story_html);
 
-	__invoke_for_each_post_cat(post, __story_cat_item);
+	__invoke_for_each_post_cat(post, __story_cat_item, "html");
 
-	cat(post, NULL, "templates/story-middle.html", repltab_story_html);
+	cat(post, NULL, "story-middle", "html", repltab_story_html);
 
 	cat_post(post);
 
-	cat(post, NULL, "templates/story-bottom-short.html", NULL);
+	cat(post, NULL, "story-bottom-short", "html", NULL);
 }
 
 /************************************************************************/
 /*                             INDEX                                    */
 /************************************************************************/
-static void __each_index_helper(struct post *post, char *name, void *data)
+void feed_index(struct post *post, char *fmt, int limit)
 {
-	int postid = atoi(name);
-	struct post p;
+	sqlite3_stmt *stmt;
+	int ret;
 
-	memset(&p, 0, sizeof(struct post));
-	p.out = post->out;
+	open_db();
+	SQL(stmt, "SELECT id FROM posts ORDER BY time DESC LIMIT ? OFFSET ?");
+	SQL_BIND_INT(stmt, 1, limit);
+	SQL_BIND_INT(stmt, 2, post->page * limit);
+	SQL_FOR_EACH(stmt) {
+		struct post p;
+		int postid;
 
-	if (load_post(postid, &p, 0))
-		return;
+		postid = SQL_COL_INT(stmt, 0);
+		p.out = post->out;
 
-	cat(&p, NULL, "templates/story-top.html", repltab_story_html);
-	__invoke_for_each_post_cat(&p, __story_cat_item);
-	cat(&p, NULL, "templates/story-middle.html", repltab_story_html);
-	cat_post(&p);
-	cat(&p, NULL, "templates/story-bottom.html", repltab_story_numcomment_html);
+		if (load_post(postid, &p, 0))
+			continue;
 
-	destroy_post(&p);
-}
+		cat(&p, NULL, "story-top", fmt, repltab_story_html);
+		__invoke_for_each_post_cat(&p, __story_cat_item, fmt);
+		if (!strcmp("atom", fmt)) {
+			cat(&p, NULL, "story-middle-desc", "atom", repltab_story_html);
+			//cat_post_preview(&p);
+			cat_post(&p);
+			cat(&p, NULL, "story-bottom-desc", "atom", repltab_story_html);
+		}
+		cat(&p, NULL, "story-middle", fmt, repltab_story_html);
+		cat_post(&p);
+		cat(&p, NULL, "story-bottom", fmt, repltab_story_numcomment_html);
 
-void html_index(struct post *post)
-{
-	DIR *dir;
+		/* copy over the last time? */
+		if (tm_cmp(&post->lasttime, &p.time) < 0)
+			memcpy(&post->lasttime, &p.time, sizeof(struct tm));
 
-	dir = opendir("data/posts");
-	if (!dir)
-		return;
-
-	sorted_readdir_loop(dir, post, __each_index_helper, NULL, SORT_DESC,
-			    post->page*HTML_INDEX_STORIES, HTML_INDEX_STORIES);
-
-	closedir(dir);
-
-	cat(post, NULL, "templates/index-pager.html", repltab_story_html);
-}
-
-static void __each_feed_index_helper(struct post *post, char *name, void *data)
-{
-	int postid = atoi(name);
-	struct post p;
-
-	memset(&p, 0, sizeof(struct post));
-	p.out = post->out;
-
-	if (load_post(postid, &p, 0))
-		return;
-
-	cat(&p, NULL, "templates/story-top.atom", repltab_story_numcomment_html);
-	__invoke_for_each_post_cat(&p, __story_cat_item_feed);
-	cat(&p, NULL, "templates/story-middle-desc.atom", repltab_story_html);
-	//cat_post_preview(&p);
-	cat_post(&p);
-	cat(&p, NULL, "templates/story-bottom-desc.atom", repltab_story_html);
-	cat(&p, NULL, "templates/story-middle.atom", repltab_story_html);
-	cat_post(&p);
-	cat(&p, NULL, "templates/story-bottom.atom", NULL);
-
-	/* copy over the last time? */
-	if (tm_cmp(&post->lasttime, &p.time) < 0)
-		memcpy(&post->lasttime, &p.time, sizeof(struct tm));
-
-	destroy_post(&p);
-}
-
-void feed_index(struct post *post, char *fmt)
-{
-	DIR *dir;
-
-	dir = opendir("data/posts");
-	if (!dir)
-		return;
-
-	sorted_readdir_loop(dir, post, __each_feed_index_helper, NULL, SORT_DESC,
-			    0, FEED_INDEX_STORIES);
-
-	closedir(dir);
+		destroy_post(&p);
+	}
 }
 
 /************************************************************************/
@@ -165,21 +124,50 @@ void feed_index(struct post *post, char *fmt)
 /************************************************************************/
 void html_archive(struct post *post, int archid)
 {
-	char path[FILENAME_MAX];
-	DIR *dir;
+	char fromtime[32];
+	char totime[32];
+	sqlite3_stmt *stmt;
+	int toyear, tomonth;
+	int ret;
 
-	snprintf(path, FILENAME_MAX, "data/by-month/%d", archid);
+	toyear = archid / 100;
+	tomonth = (archid % 100) + 1;
+	if (tomonth > 12) {
+		tomonth = 1;
+		toyear++;
+	}
 
-	dir = opendir(path);
-	if (!dir)
-		return;
+	snprintf(fromtime, sizeof(fromtime), "%04d-%02d-01 00:00",
+		 archid / 100, archid % 100);
+	snprintf(totime, sizeof(totime), "%04d-%02d-01 00:00",
+		 toyear, tomonth);
 
-	sorted_readdir_loop(dir, post, __each_index_helper, NULL, SORT_DESC,
-			    HTML_ARCHIVE_STORIES*post->page, HTML_ARCHIVE_STORIES);
+	open_db();
+	SQL(stmt, "SELECT id FROM posts WHERE time>=? AND time<? ORDER BY time DESC LIMIT ? OFFSET ?");
+	SQL_BIND_STR(stmt, 1, fromtime);
+	SQL_BIND_STR(stmt, 2, totime);
+	SQL_BIND_INT(stmt, 3, HTML_ARCHIVE_STORIES);
+	SQL_BIND_INT(stmt, 4, post->page * HTML_ARCHIVE_STORIES);
+	SQL_FOR_EACH(stmt) {
+		struct post p;
+		int postid;
 
-	closedir(dir);
+		postid = SQL_COL_INT(stmt, 0);
+		p.out = post->out;
 
-	cat(post, NULL, "templates/archive-pager.html", repltab_story_html);
+		if (load_post(postid, &p, 0))
+			continue;
+
+		cat(&p, NULL, "story-top", "html", repltab_story_html);
+		__invoke_for_each_post_cat(&p, __story_cat_item, "html");
+		cat(&p, NULL, "story-middle", "html", repltab_story_html);
+		cat_post(&p);
+		cat(&p, NULL, "story-bottom", "html", repltab_story_numcomment_html);
+
+		destroy_post(&p);
+	}
+
+	cat(post, NULL, "archive-pager", "html", repltab_story_html);
 }
 
 /************************************************************************/
@@ -188,21 +176,42 @@ void html_archive(struct post *post, int archid)
 void html_tag(struct post *post, char *tagname, char *bydir, int numstories)
 {
 	char path[FILENAME_MAX];
-	DIR *dir;
+	char tag[FILENAME_MAX];
+	sqlite3_stmt *stmt;
+	int ret;
 
-	snprintf(path, FILENAME_MAX, "data/by-%s/%s/", bydir, tagname);
+	snprintf(tag, sizeof(tag), "%%%s%%", tagname);
 
-	dir = opendir(path);
-	if (!dir)
-		return;
+	open_db();
+	if (!strcmp(bydir, "tag"))
+		SQL(stmt, "SELECT id FROM posts WHERE tags LIKE ? ORDER BY time DESC LIMIT ? OFFSET ?");
+	else
+		SQL(stmt, "SELECT id FROM posts WHERE cats LIKE ? ORDER BY time DESC LIMIT ? OFFSET ?");
 
-	sorted_readdir_loop(dir, post, __each_index_helper, NULL, SORT_DESC,
-			    numstories*post->page, numstories);
+	SQL_BIND_STR(stmt, 1, tag);
+	SQL_BIND_INT(stmt, 2, numstories);
+	SQL_BIND_INT(stmt, 3, post->page * numstories);
+	SQL_FOR_EACH(stmt) {
+		struct post p;
+		int postid;
 
-	closedir(dir);
+		postid = SQL_COL_INT(stmt, 0);
+		p.out = post->out;
 
-	snprintf(path, FILENAME_MAX, "templates/%s-pager.html", bydir);
-	cat(post, NULL, path, repltab_story_html);
+		if (load_post(postid, &p, 0))
+			continue;
+
+		cat(&p, NULL, "story-top", "html", repltab_story_html);
+		__invoke_for_each_post_cat(&p, __story_cat_item, "html");
+		cat(&p, NULL, "story-middle", "html", repltab_story_html);
+		cat_post(&p);
+		cat(&p, NULL, "story-bottom", "html", repltab_story_numcomment_html);
+
+		destroy_post(&p);
+	}
+
+	snprintf(path, FILENAME_MAX, "%s-pager", bydir);
+	cat(post, NULL, path, "html", repltab_story_html);
 }
 
 /************************************************************************/
@@ -210,20 +219,20 @@ void html_tag(struct post *post, char *tagname, char *bydir, int numstories)
 /************************************************************************/
 static void __html_comment(struct post *post, struct comment *comm)
 {
-	cat(post, comm, "templates/story-comment-item-head.html",
+	cat(post, comm, "story-comment-item-head", "html",
 	    repltab_comm_html);
 	cat_post_comment(post, comm);
-	cat(post, comm, "templates/story-comment-item-tail.html",
+	cat(post, comm, "story-comment-item-tail", "html",
 	    repltab_comm_html);
 }
 
 void html_comments(struct post *post)
 {
-	cat(post, NULL, "templates/story-comment-head.html", repltab_story_html);
+	cat(post, NULL, "story-comment-head", "html", repltab_story_html);
 
 	invoke_for_each_comment(post, __html_comment);
 
-	cat(post, NULL, "templates/story-comment-tail.html", repltab_story_html);
+	cat(post, NULL, "story-comment-tail", "html", repltab_story_html);
 }
 
 /************************************************************************/
@@ -274,87 +283,72 @@ static void __invoke_for_each_cat(struct post *post, char *prefix,
 	closedir(dir);
 }
 
-static void __cb_wrap(struct post *post, char *name, void *data)
-{
-	void(*f)(struct post*, char*) = data;
-
-	f(post, name);
-}
-
 static void __invoke_for_each_archive(struct post *post, void(*f)(struct post*, char*))
 {
-	DIR *dir;
+	sqlite3_stmt *stmt;
+	int ret;
 
-	dir = opendir("data/by-month");
-	if (!dir)
-		return;
+	open_db();
+	SQL(stmt, "SELECT DISTINCT STRFTIME(\"%Y%m\", time) AS t FROM posts ORDER BY t DESC");
+	SQL_FOR_EACH(stmt) {
+		const char *archid;
 
-	sorted_readdir_loop(dir, post, __cb_wrap, f, SORT_DESC, 0, -1);
-
-	closedir(dir);
+		archid = SQL_COL_STR(stmt, 0);
+		f(post, (char*) archid);
+	}
 }
 
 static void __sidebar_cat_item(struct post *post, char *catname)
 {
-	cat(post, catname, "templates/sidebar-cat-item.html", repltab_cat_html);
+	cat(post, catname, "sidebar-cat-item", "html", repltab_cat_html);
 }
 
 static void __sidebar_arch_item(struct post *post, char *archname)
 {
-	cat(post, archname, "templates/sidebar-archive-item.html", repltab_arch_html);
+	cat(post, archname, "sidebar-archive-item", "html", repltab_arch_html);
 }
 
 void html_sidebar(struct post *post)
 {
-	cat(post, NULL, "templates/sidebar-top.html", repltab_story_html);
+	cat(post, NULL, "sidebar-top", "html", repltab_story_html);
 
 	__invoke_for_each_cat(post, ".", __sidebar_cat_item);
 
-	cat(post, NULL, "templates/sidebar-middle.html", repltab_story_html);
+	cat(post, NULL, "sidebar-middle", "html", repltab_story_html);
 
 	__invoke_for_each_archive(post, __sidebar_arch_item);
 
-	cat(post, NULL, "templates/sidebar-bottom.html", repltab_story_html);
+	cat(post, NULL, "sidebar-bottom", "html", repltab_story_html);
 }
 
 void html_save_comment(struct post *post, int notsaved)
 {
-	cat(post, NULL, "templates/story-top.html", repltab_story_html);
+	cat(post, NULL, "story-top", "html", repltab_story_html);
 
-	__invoke_for_each_post_cat(post, __story_cat_item);
+	__invoke_for_each_post_cat(post, __story_cat_item, "html");
 
 	if (notsaved)
-		cat(post, NULL, "templates/story-comment-notsaved.html", repltab_story_html);
+		cat(post, NULL, "story-comment-notsaved", "html", repltab_story_html);
 	else
-		cat(post, NULL, "templates/story-comment-saved.html", repltab_story_html);
+		cat(post, NULL, "story-comment-saved", "html", repltab_story_html);
 
 	//cat_post(post);
 
-	cat(post, NULL, "templates/story-bottom-short.html", NULL);
+	cat(post, NULL, "story-bottom-short", "html", NULL);
 }
 
 /************************************************************************/
 /*                             PAGE HEADER                              */
 /************************************************************************/
-void html_header(struct post *post)
-{
-	cat(post, NULL, "templates/header.html", repltab_story_html);
-}
-
 void feed_header(struct post *post, char *fmt)
 {
-	cat(post, NULL, "templates/header.atom", repltab_story_html);
+	cat(post, NULL, "header", fmt, repltab_story_html);
 }
 
 /************************************************************************/
 /*                             PAGE FOOTER                              */
 /************************************************************************/
-void html_footer(struct post *post)
-{
-	cat(post, NULL, "templates/footer.html", repltab_story_html);
-}
-
 void feed_footer(struct post *post, char *fmt)
 {
-	cat(post, NULL, "templates/footer.atom", repltab_story_html);
+	cat(post, NULL, "footer", fmt, repltab_story_html);
 }

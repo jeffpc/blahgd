@@ -46,7 +46,7 @@ struct repltab_entry;
 
 extern void cat_post(struct post *post);
 extern void cat_post_comment(struct post *post, struct comment *comm);
-extern void cat(struct post *post, void *data, char *tmpl,
+extern void cat(struct post *post, void *data, char *tmpl, char *fmt,
 		struct repltab_entry *repltab);
 
 void __do_cat_post_fmt3(struct post *p, char *path);

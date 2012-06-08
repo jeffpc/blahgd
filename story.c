@@ -30,12 +30,12 @@ int blahg_story(int p, int preview)
 		return 0;
 	}
 
-	html_header(&post);
+	feed_header(&post, "html");
 	html_story(&post);
 	if (!preview)
 		html_comments(&post);
 	html_sidebar(&post);
-	html_footer(&post);
+	feed_footer(&post, "html");
 
 	destroy_post(&post);
 

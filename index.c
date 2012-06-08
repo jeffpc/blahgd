@@ -7,6 +7,7 @@
 #include "sar.h"
 #include "html.h"
 #include "main.h"
+#include "config_opts.h"
 
 int blahg_index(int paged)
 {
@@ -23,10 +24,10 @@ int blahg_index(int paged)
 
 	post.page = max(paged, 0);
 
-	html_header(&post);
-	html_index(&post);
+	feed_header(&post, "html");
+	feed_index(&post, "html", HTML_INDEX_STORIES);
 	html_sidebar(&post);
-	html_footer(&post);
+	feed_footer(&post, "html");
 
 	post.title = NULL;
 	destroy_post(&post);

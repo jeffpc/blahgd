@@ -1,0 +1,8 @@
+CREATE TABLE posts (
+	id INTEGER PRIMARY KEY,
+	time TIMESTAMP,
+	title VARCHAR,
+	fmt INTEGER,
+	tags VARCHAR,
+	cats VARCHAR
+);

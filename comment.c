@@ -409,10 +409,10 @@ int blahg_comment()
 	if (res && !post.title)
 		post.title = "Erorr";
 
-	html_header(&post);
+	feed_header(&post, "html");
 	html_save_comment(&post, res);
 	html_sidebar(&post);
-	html_footer(&post);
+	feed_footer(&post, "html");
 
 	if (res)
 		post.title = NULL; // NOTE: This might actually leak some memory
