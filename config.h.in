@@ -1,0 +1,9 @@
+#ifndef __CONFIG_H
+#define __CONFIG_H
+
+#cmakedefine HAVE_FLOCK 1
+#cmakedefine HAVE_XMLRPC 1
+
+#include "config_opts.h"
+
+#endif

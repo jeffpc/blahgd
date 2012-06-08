@@ -79,7 +79,7 @@ static char *__listing(char *txt, char *opt)
 static char *process_cmd(char *cmd, char *txt, char *opt)
 {
 	if (!strcmp(cmd, "link"))
-		return concat5("<a href=\"", opt ? opt : "", "\">", txt, "</a>");
+		return concat5("<a href=\"", txt, "\">", opt ? opt : txt, "</a>");
 
 	if (!strcmp(cmd, "img"))
 		return concat5("<img src=\"", txt, "\" alt=\"", opt ? opt : "", "\" />");
@@ -138,6 +138,9 @@ static char *process_cmd(char *cmd, char *txt, char *opt)
 		return concat4("[INVAL ENVIRON", txt, "]", "");
 	}
 
+	if (!strcmp(cmd, "abbrev"))
+		return concat5("<abbr title=\"", opt ? opt : txt, "\">", txt, "</abbr>");
+
 	if (!strcmp(cmd, "section")) {
 		assert(!opt);
 		return concat4("</p><h4>", txt, "</h4><p>", "");
@@ -153,11 +156,22 @@ static char *process_cmd(char *cmd, char *txt, char *opt)
 		return concat4("</p><h6>", txt, "</h6><p>", "");
 	}
 
+	if (!strcmp(cmd, "wiki")) {
+		return concat5("<a href=\"" WIKI_BASE_URL "/", txt,
+			"\"><img src=\"/wiki.png\" alt=\"Wikipedia article:\" />&nbsp;",
+			opt ? opt : txt, "</a>");
+	}
+
 	if (!strcmp(cmd, "bug")) {
 		assert(!opt);
 		return concat5("<a href=\"" BUG_BASE_URL "/", txt,
-			"\"><img src=\"/static/bug.png\" alt=\"bug #\" />&nbsp;",
+			"\"><img src=\"/bug.png\" alt=\"bug #\" />&nbsp;",
 			txt, "</a>");
+	}
+
+	if (!strcmp(cmd, "degree")) {
+		assert(!opt);
+		return concat4("\xc2\xb0", txt, "", "");
 	}
 
 	return concat4("[INVAL CMD", txt, "]", "");
@@ -339,6 +353,7 @@ static char *render_math(char *tex)
 %token <ptr> PAREND NLINE WSPACE BSLASH OCURLY CCURLY OBRACE CBRACE AMP
 %token <ptr> USCORE PERCENT DOLLAR TILDE DASH OQUOT CQUOT SCHAR ELLIPSIS
 %token <ptr> UTF8FIRST3 UTF8FIRST2 UTF8REST WORD PLUS MINUS ASTERISK SLASH
+%token <ptr> PIPE
 %token <ptr> W_TIMES W_FRAC
 
 %type <ptr> paragraphs paragraph line thing cmd cmdarg optcmdarg math mexpr
@@ -362,7 +377,7 @@ paragraphs : paragraphs PAREND paragraph NLINE	{ $$ = concat4($1, "<p>", $3, "</
 	   | paragraph				{ $$ = concat4("<p>", $1, "</p>\n", ""); }
 	   ;
 
-paragraph : paragraph NLINE line	{ $$ = concat4($1, $2, $3, ""); }
+paragraph : paragraph NLINE line	{ $$ = concat4($1, " ", $3, ""); }
 	  | line			{ $$ = $1; }
 	  ;
 
@@ -374,6 +389,7 @@ thing : WORD				{ $$ = $1; }
       | UTF8FIRST2 UTF8REST		{ $$ = concat($1, $2); }
       | UTF8FIRST3 UTF8REST UTF8REST	{ $$ = concat4($1, $2, $3, ""); }
       | WSPACE				{ $$ = $1; }
+      | PIPE				{ $$ = $1; }
       | PLUS				{ $$ = $1; }
       | MINUS				{ $$ = dash(strlen($1)); }
       | ASTERISK			{ $$ = $1; }

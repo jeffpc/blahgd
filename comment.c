@@ -12,6 +12,7 @@
 
 #include "config.h"
 #include "post.h"
+#include "comment.h"
 #include "sar.h"
 #include "decode.h"
 #include "html.h"
@@ -57,6 +58,9 @@ static int __write(int fd, char *buf, int len)
 
 static void comment_error_log(char *fmt, ...)
 {
+#ifndef HAVE_FLOCK
+	struct flock fl;
+#endif
 	char msg[4096];
 	va_list args;
 	int ret, len;
@@ -79,7 +83,17 @@ static void comment_error_log(char *fmt, ...)
 		return;
 	}
 
+#ifdef HAVE_FLOCK
 	ret = flock(fd, LOCK_EX);
+#else
+	fl.l_type = F_WRLCK;
+	fl.l_start = 0;
+	fl.l_whence = SEEK_SET;
+	fl.l_start = 0;
+	fl.l_len = 0;
+	fl.l_pid = getpid();
+	ret = fcntl(fd, F_SETLKW, &fl);
+#endif
 	if (ret == -1) {
 		fprintf(stderr, "%s: Failed to lock log file\n", __func__);
 		goto out;
@@ -88,19 +102,124 @@ static void comment_error_log(char *fmt, ...)
 	ret = write(fd, msg, len);
 
 out:
+#ifdef HAVE_FLOCK
 	flock(fd, LOCK_UN);
+#else
+	fl.l_type = F_UNLCK;
+	fl.l_start = 0;
+	fl.l_whence = SEEK_SET;
+	fl.l_start = 0;
+	fl.l_len = 0;
+	fl.l_pid = getpid();
+	fcntl(fd, F_SETLK, &fl);
+#endif
 	close(fd);
 }
 
-int save_comment(struct post *post)
+int write_out_comment(struct post *post, int id, struct timespec *now, char *author, char *email,
+		      char *url, char *comment)
 {
 	char curdate[32];
 	char path[FILENAME_MAX];
 	char *dirpath = NULL;
 	char *newdirpath = NULL;
+	char *remote_addr; /* yes, this is a pointer */
+	int ret;
+	int result = 1;
+	int fd;
+
+	time_t tmp_t;
+	struct tm *tmp_tm;
+
+	ret = load_post(id, post, 0);
+	if (ret) {
+		comment_error_log("Gah! %d (postid=%d)\n", ret, id);
+		return 1;
+	}
+
+	if ((strlen(author) == 0) || (strlen(comment) == 0)) {
+		comment_error_log("You must fill in name, and comment (postid=%d)\n", id);
+		return 1;
+	}
+
+	tmp_t = now->tv_sec;
+	tmp_tm = gmtime(&tmp_t);
+	if (!tmp_tm)
+		return 1;
+
+	strftime(curdate, 31, "%Y-%m-%d %H:%M", tmp_tm);
+
+	snprintf(path, FILENAME_MAX, "data/pending-comments/%d-%08lx.%08lx.%04xW",
+		 id, now->tv_sec, now->tv_nsec, (unsigned) getpid());
+
+	dirpath = strdup(path);
+	newdirpath = strdup(path);
+	if (!dirpath || !newdirpath) {
+		comment_error_log("Eeeep...ENOMEM\n");
+		return 1;
+	}
+
+	if (mkdir(dirpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == -1) {
+		comment_error_log("Ow, could not create directory: %d (%s) '%s'\n", errno, strerror(errno), dirpath);
+		goto out_free;
+	}
+
+	if ((strlen(path) + strlen("/text.txt")) >= FILENAME_MAX) {
+		comment_error_log("Uf...filename too long!\n");
+		goto out_free;
+	}
+
+	strcat(path, "/text.txt");
+
+	if ((fd = open(path, O_WRONLY | O_CREAT | O_EXCL,
+		       S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1) {
+		comment_error_log("Couldn't create file ... :( %d (%s) '%s'\n",
+				  errno, strerror(errno), path);
+		goto out_free;
+	}
+
+	if (__write(fd, comment, strlen(comment)) != 0)
+		goto out;
+
+	safe_setxattr(dirpath, XATTR_COMM_AUTHOR, author,
+		      strlen(author));
+	safe_setxattr(dirpath, XATTR_TIME, curdate, strlen(curdate));
+	safe_setxattr(dirpath, XATTR_COMM_EMAIL, email,
+		      strlen(email));
+
+	if (url && url[0])
+		safe_setxattr(dirpath, XATTR_COMM_URL, url, strlen(url));
+
+	remote_addr = getenv("REMOTE_ADDR");
+	if (remote_addr)
+		safe_setxattr(dirpath, XATTR_COMM_IP, remote_addr,
+			      strlen(remote_addr));
+
+	newdirpath[strlen(newdirpath)-1] = '\0';
+
+	ret = rename(dirpath, newdirpath);
+	if (ret) {
+		comment_error_log("Could not rename '%s' to '%s' %d (%s)\n",
+				  dirpath, newdirpath, errno,
+				  strerror(errno));
+		goto out;
+	}
+
+	result = 0;
+
+out:
+	close(fd);
+out_free:
+	free(dirpath);
+	free(newdirpath);
+
+	return result;
+}
+
+static int save_comment(struct post *post)
+{
 	int in;
 	char tmp;
-	int result = 1;
 
 	int state;
 
@@ -110,18 +229,12 @@ int save_comment(struct post *post)
 	int email_len = 0;
 	char url_buf[MEDIUM_BUF_LEN];
 	int url_len = 0;
-	char *remote_addr; /* yes, this is a pointer */
 	char comment_buf[LONG_BUF_LEN];
 	int comment_len = 0;
 	time_t date = 0;
 	int id = 0;
-	int fd;
-
-	int ret;
 
 	struct timespec now;
-	time_t tmp_t;
-	struct tm *tmp_tm;
 
 	author_buf[0] = '\0'; /* better be paranoid */
 	email_buf[0] = '\0'; /* better be paranoid */
@@ -254,61 +367,11 @@ int save_comment(struct post *post)
 	fprintf(post->out, "id: %d\n", id);
 #endif
 
-	ret = load_post(id, post, 0);
-	if (ret) {
-		comment_error_log("Gah! %d (postid=%d)\n", ret, id);
-		return 1;
-	}
-
-	if ((strlen(author_buf) == 0) ||
-	    (strlen(email_buf) == 0) ||
-	    (strlen(comment_buf) == 0)) {
-		comment_error_log("You must fill in name, email, and comment (postid=%d)\n", id);
-		return 1;
-	}
-
 	clock_gettime(CLOCK_REALTIME, &now);
 	if ((now.tv_sec > (date+COMMENT_MAX_DELAY)) || (now.tv_sec < (date+COMMENT_MIN_DELAY))) {
 		comment_error_log("Flash-gordon or geriatric was here... load:%lu comment:%lu delta:%lu postid:%d\n",
 				  date, now.tv_sec, now.tv_sec - date, id);
 		return 1;
-	}
-
-	tmp_t = time(NULL);
-	tmp_tm = gmtime(&tmp_t);
-	if (!tmp_tm) {
-		return 1;
-	}
-
-	strftime(curdate, 31, "%Y-%m-%d %H:%M", tmp_tm);
-
-	snprintf(path, FILENAME_MAX, "data/pending-comments/%d-%08lx.%08lx.%04xW",
-		 id, now.tv_sec, now.tv_nsec, getpid());
-
-	dirpath = strdup(path);
-	newdirpath = strdup(path);
-	if (!dirpath || !newdirpath) {
-		comment_error_log("Eeeep...ENOMEM\n");
-		return 1;
-	}
-
-	if (mkdir(dirpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == -1) {
-		comment_error_log("Ow, could not create directory: %d (%s) '%s'\n", errno, strerror(errno), dirpath);
-		goto out_free;
-	}
-
-	if ((strlen(path) + strlen("/text.txt")) >= FILENAME_MAX) {
-		comment_error_log("Uf...filename too long!\n");
-		goto out_free;
-	}
-
-	strcat(path, "/text.txt");
-
-	if ((fd = open(path, O_WRONLY | O_CREAT | O_EXCL,
-		       S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1) {
-		comment_error_log("Couldn't create file ... :( %d (%s) '%s'\n",
-				  errno, strerror(errno), path);
-		goto out;
 	}
 
 	/* URL decode everything */
@@ -317,42 +380,12 @@ int save_comment(struct post *post)
 	urldecode(email_buf, strlen(email_buf), email_buf);
 	urldecode(url_buf, strlen(url_buf), url_buf);
 
-	if (__write(fd, comment_buf, strlen(comment_buf)) != 0)
-		goto out;
-
-	safe_setxattr(dirpath, XATTR_COMM_AUTHOR, author_buf,
-		      strlen(author_buf));
-	safe_setxattr(dirpath, XATTR_TIME, curdate, strlen(curdate));
-	safe_setxattr(dirpath, XATTR_COMM_EMAIL, email_buf,
-		      strlen(email_buf));
-
-	if (url_buf[0])
-		safe_setxattr(dirpath, XATTR_COMM_URL, url_buf,
-			      strlen(url_buf));
-
-	remote_addr = getenv("REMOTE_ADDR");
-	if (remote_addr)
-		safe_setxattr(dirpath, XATTR_COMM_IP, remote_addr,
-			      strlen(remote_addr));
-
-	newdirpath[strlen(newdirpath)-1] = '\0';
-
-	ret = rename(dirpath, newdirpath);
-	if (ret) {
-		comment_error_log("Could not rename '%s' to '%s' %d (%s)\n",
-				  dirpath, newdirpath, errno,
-				  strerror(errno));
-		goto out;
+	if (strlen(email_buf) == 0) {
+		comment_error_log("You must fill in name, email, and comment (postid=%d)\n", id);
+		return 1;
 	}
 
-	result = 0;
-
-out:
-	close(fd);
-out_free:
-	free(dirpath);
-	free(newdirpath);
-	return result;
+	return write_out_comment(post, id, &now, author_buf, email_buf, url_buf, comment_buf);
 }
 
 int blahg_comment()

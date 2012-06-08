@@ -4,6 +4,8 @@
 #include <libgen.h>
 
 #include "main.h"
+#include "post.h"
+#include "html.h"
 
 static char *nullterminate(char *s)
 {
@@ -24,7 +26,9 @@ static void parse_qs(char *qs, struct qs *args)
 	args->p = -1;
 	args->paged = -1;
 	args->m = -1;
+	args->xmlrpc = 0;
 	args->cat = NULL;
+	args->tag = NULL;
 	args->feed = NULL;
 	args->comment = NULL;
 	args->preview = 0;
@@ -52,6 +56,9 @@ static void parse_qs(char *qs, struct qs *args)
 		} else if (!strncmp(qs, "cat=", 4)) {
 			cptr = &args->cat;
 			len = 4;
+		} else if (!strncmp(qs, "tag=", 4)) {
+			cptr = &args->tag;
+			len = 4;
 		} else if (!strncmp(qs, "feed=", 5)) {
 			cptr = &args->feed;
 			len = 5;
@@ -61,6 +68,9 @@ static void parse_qs(char *qs, struct qs *args)
 		} else if (!strncmp(qs, "preview=", 8)) {
 			iptr = &args->preview;
 			len = 8;
+		} else if (!strncmp(qs, "xmlrpc=", 7)) {
+			iptr = &args->xmlrpc;
+			len = 7;
 		} else {
 			args->page = PAGE_MALFORMED;
 			return;
@@ -77,10 +87,14 @@ static void parse_qs(char *qs, struct qs *args)
 		qs = tmp;
 	}
 
-	if (args->comment)
+	if (args->xmlrpc)
+		args->page = PAGE_XMLRPC;
+	else if (args->comment)
 		args->page = PAGE_COMMENT;
 	else if (args->feed)
 		args->page = PAGE_FEED;
+	else if (args->tag)
+		args->page = PAGE_TAG;
 	else if (args->cat)
 		args->page = PAGE_CATEGORY;
 	else if (args->m != -1)
@@ -91,9 +105,36 @@ static void parse_qs(char *qs, struct qs *args)
 
 static int blahg_malformed(int argc, char **argv)
 {
-	printf("Malformed...\n");
+	printf("Content-Type: text/plain\n\n");
+	printf("There has been an error processing your request.  The site "
+	       "administrator has\nbeen notified.\n\nSorry for the "
+	       "inconvenience.\n\nJosef 'Jeff' Sipek.\n");
+
+	// FIXME: send $SCRIPT_URL, $PATH_INFO, and $QUERY_STRING via email
 
 	return 0;
+}
+
+void disp_404(char *title, char *txt)
+{
+	struct post post;
+
+	memset(&post, 0, sizeof(struct post));
+	post.out = stdout;
+	post.title = "Error";
+
+	fprintf(post.out, "Status: 404 Not Found\nContent-Type: text/html\n\n");
+
+	html_header(&post);
+	printf("<h2>%s</h2>\n<div class=\"storycentent\">%s</div>\n", title, txt);
+
+	html_sidebar(&post);
+	html_footer(&post);
+
+	post.title = NULL;
+	destroy_post(&post);
+
+	exit(0);
 }
 
 int main(int argc, char **argv)
@@ -102,11 +143,15 @@ int main(int argc, char **argv)
 
 	parse_qs(getenv("QUERY_STRING"), &args);
 
+	printf("X-Pingback: http://blahg.josefsipek.net/?xmlrpc=1\n");
+
 	switch(args.page) {
 		case PAGE_ARCHIVE:
 			return blahg_archive(args.m, args.paged);
 		case PAGE_CATEGORY:
 			return blahg_category(args.cat, args.paged);
+		case PAGE_TAG:
+			return blahg_tag(args.tag, args.paged);
 		case PAGE_COMMENT:
 			return blahg_comment();
 		case PAGE_FEED:
@@ -115,6 +160,8 @@ int main(int argc, char **argv)
 			return blahg_index(args.paged);
 		case PAGE_STORY:
 			return blahg_story(args.p, args.preview);
+		case PAGE_XMLRPC:
+			return blahg_pingback();
 		default:
 			return blahg_malformed(argc, argv);
 	}
