@@ -312,11 +312,11 @@ void html_sidebar(struct post *post)
 {
 	cat(post, NULL, "sidebar-top", "html", repltab_story_html);
 
-	__invoke_for_each_cat(post, ".", __sidebar_cat_item);
+	__invoke_for_each_archive(post, __sidebar_arch_item);
 
 	cat(post, NULL, "sidebar-middle", "html", repltab_story_html);
 
-	__invoke_for_each_archive(post, __sidebar_arch_item);
+	__invoke_for_each_cat(post, ".", __sidebar_cat_item);
 
 	cat(post, NULL, "sidebar-bottom", "html", repltab_story_html);
 }
