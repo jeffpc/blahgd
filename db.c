@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 #include "db.h"
 #include "config_opts.h"
@@ -7,6 +8,7 @@ sqlite3 *db;
 
 int open_db()
 {
+	sqlite3_stmt *stmt;
 	int ret;
 
 	if (db)
@@ -18,6 +20,9 @@ int open_db()
 			DB_FILE, sqlite3_errmsg(db), ret);
 		return 1;
 	}
+
+	SQL(stmt, "PRAGMA foreign_keys = ON");
+	SQL_RUN(stmt);
 
 	return 0;
 }
