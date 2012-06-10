@@ -238,51 +238,6 @@ void html_comments(struct post *post)
 /************************************************************************/
 /*                                 SIDEBAR                              */
 /************************************************************************/
-static void __invoke_for_each_cat(struct post *post, char *prefix,
-				  void(*f)(struct post*, char*));
-
-static void __each_cat_helper(struct post *post, char *name, void *data)
-{
-	char *prefix = ((char**)data)[0];
-	void(*f)(struct post*, char*) = ((void**)data)[1];
-
-	char path[FILENAME_MAX];
-	struct stat statbuf;
-	int ret;
-
-	snprintf(path, FILENAME_MAX, "data/by-category/%s/%s", prefix, name);
-
-	ret = lstat(path, &statbuf);
-	if (ret == -1) {
-		fprintf(post->out, "stat failed\n");
-		return;
-	}
-
-	if (!S_ISDIR(statbuf.st_mode))
-		return;
-
-	f(post, path+2+17);
-	__invoke_for_each_cat(post, path+17, f);
-}
-
-static void __invoke_for_each_cat(struct post *post, char *prefix,
-				  void(*f)(struct post*, char*))
-{
-	char path[FILENAME_MAX];
-	DIR *dir;
-	void *plist[2] = {prefix, f};
-
-	snprintf(path, FILENAME_MAX, "data/by-category/%s", prefix);
-	dir = opendir(path);
-	if (!dir)
-		return;
-
-	sorted_readdir_loop(dir, post, __each_cat_helper, plist,
-			    SORT_ASC | SORT_STRING, 0, -1);
-
-	closedir(dir);
-}
-
 static void __invoke_for_each_archive(struct post *post, void(*f)(struct post*, char*))
 {
 	sqlite3_stmt *stmt;
