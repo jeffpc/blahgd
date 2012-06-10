@@ -298,25 +298,37 @@ static void __invoke_for_each_archive(struct post *post, void(*f)(struct post*, 
 	}
 }
 
-static void __sidebar_cat_item(struct post *post, char *catname)
-{
-	cat(post, catname, "sidebar-cat-item", "html", repltab_cat_html);
-}
-
 static void __sidebar_arch_item(struct post *post, char *archname)
 {
 	cat(post, archname, "sidebar-archive-item", "html", repltab_arch_html);
 }
 
+static void __tag_cloud(struct post *post)
+{
+	sqlite3_stmt *stmt;
+	int ret;
+
+	SQL(stmt, "SELECT tag, count(1) FROM post_tags GROUP BY tag ORDER BY tag");
+	SQL_FOR_EACH(stmt) {
+		const char *tag;
+
+		tag = SQL_COL_STR(stmt, 0);
+
+		cat(post, (char*) tag, "sidebar-tag-item", "html", repltab_cat_html);
+	}
+}
+
 void html_sidebar(struct post *post)
 {
+	open_db();
+
 	cat(post, NULL, "sidebar-top", "html", repltab_story_html);
 
-	__invoke_for_each_archive(post, __sidebar_arch_item);
+	__tag_cloud(post);
 
 	cat(post, NULL, "sidebar-middle", "html", repltab_story_html);
 
-	__invoke_for_each_cat(post, ".", __sidebar_cat_item);
+	__invoke_for_each_archive(post, __sidebar_arch_item);
 
 	cat(post, NULL, "sidebar-bottom", "html", repltab_story_html);
 }

@@ -6,3 +6,19 @@ CREATE TABLE posts (
 	tags VARCHAR,
 	cats VARCHAR
 );
+
+CREATE TABLE tags (
+	tag VARCHAR PRIMARY KEY
+);
+
+CREATE TABLE post_tags (
+	post INTEGER,
+	tag VARCHAR,
+	PRIMARY KEY(post, tag),
+	FOREIGN KEY(post) REFERENCES posts(id),
+	FOREIGN KEY(tag) REFERENCES tags(tag)
+);
+
+CREATE TABLE cats (
+	cat VARCHAR PRIMARY KEY
+);
