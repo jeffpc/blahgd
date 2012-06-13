@@ -27,7 +27,7 @@ static void __invoke_for_each_post_cat(struct post *post, void(*f)(struct post*,
 	if (!post->cats)
 		return;
 
-	obuf = malloc(strlen(post->cats));
+	obuf = malloc(strlen(post->cats)+1);
 	if (!obuf) {
 		fprintf(post->out, "ERROR: could not alloc memory\n");
 		return;
