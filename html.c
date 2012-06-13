@@ -117,6 +117,9 @@ void feed_index(struct post *post, char *fmt, int limit)
 
 		destroy_post(&p);
 	}
+
+	if (!strcmp("html", fmt))
+		cat(post, NULL, "index-pager", fmt, repltab_story_html);
 }
 
 /************************************************************************/
