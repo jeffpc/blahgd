@@ -14,7 +14,7 @@ struct post {
 	int id;
 	int fmt;
 	char *title;
-	char *cats;
+	char *cats, *tags;
 	struct tm time;
 	int page;
 

@@ -176,19 +176,16 @@ void html_archive(struct post *post, int archid)
 void html_tag(struct post *post, char *tagname, char *bydir, int numstories)
 {
 	char path[FILENAME_MAX];
-	char tag[FILENAME_MAX];
 	sqlite3_stmt *stmt;
 	int ret;
 
-	snprintf(tag, sizeof(tag), "%%%s%%", tagname);
-
 	open_db();
 	if (!strcmp(bydir, "tag"))
-		SQL(stmt, "SELECT id FROM posts WHERE tags LIKE ? ORDER BY time DESC LIMIT ? OFFSET ?");
+		SQL(stmt, "SELECT post_tags.post FROM post_tags,posts WHERE post_tags.post=posts.id AND post_tags.tag=? ORDER BY posts.time DESC LIMIT ? OFFSET ?");
 	else
-		SQL(stmt, "SELECT id FROM posts WHERE cats LIKE ? ORDER BY time DESC LIMIT ? OFFSET ?");
+		SQL(stmt, "SELECT post_cats.post FROM post_cats,posts WHERE post_cats.post=posts.id AND post_cats.cat=? ORDER BY posts.time DESC LIMIT ? OFFSET ?");
 
-	SQL_BIND_STR(stmt, 1, tag);
+	SQL_BIND_STR(stmt, 1, tagname);
 	SQL_BIND_INT(stmt, 2, numstories);
 	SQL_BIND_INT(stmt, 3, post->page * numstories);
 	SQL_FOR_EACH(stmt) {

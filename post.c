@@ -288,13 +288,62 @@ int load_post(int postid, struct post *post, int preview)
 		int ret;
 
 		open_db();
-		SQL(stmt, "SELECT title, cats, time, fmt FROM posts WHERE id=?");
+		SQL(stmt, "SELECT title, time, fmt FROM posts WHERE id=?");
 		SQL_BIND_INT(stmt, 1, postid);
 		SQL_FOR_EACH(stmt) {
 			post->title = strdup(SQL_COL_STR(stmt, 0));
-			post->cats  = strdup(SQL_COL_STR(stmt, 1));
-			buf1        = strdup(SQL_COL_STR(stmt, 2));
-			post->fmt   = SQL_COL_INT(stmt, 3);
+			buf1        = strdup(SQL_COL_STR(stmt, 1));
+			post->fmt   = SQL_COL_INT(stmt, 2);
+		}
+
+		post->cats = NULL;
+		SQL(stmt, "SELECT cat FROM post_cats WHERE post=?");
+		SQL_BIND_INT(stmt, 1, postid);
+		SQL_FOR_EACH(stmt) {
+			const char *cat = strdup(SQL_COL_STR(stmt, 0));
+
+			if (!post->cats) {
+				post->cats = strdup(cat);
+			} else {
+				char *buf2;
+				int len;
+
+				len  = strlen(post->cats) + 1 + strlen(cat) + 1;
+				buf2 = malloc(len);
+				if (!buf2) {
+					ret = ENOMEM;
+					break;
+				}
+
+				snprintf(buf2, len, "%s,%s", post->cats, cat);
+				free(post->cats);
+				post->cats = buf2;
+			}
+		}
+
+		post->tags = NULL;
+		SQL(stmt, "SELECT tag FROM post_tags WHERE post=?");
+		SQL_BIND_INT(stmt, 1, postid);
+		SQL_FOR_EACH(stmt) {
+			const char *tag = strdup(SQL_COL_STR(stmt, 0));
+
+			if (!post->tags) {
+				post->tags = strdup(tag);
+			} else {
+				char *buf2;
+				int len;
+
+				len  = strlen(post->tags) + 1 + strlen(tag) + 1;
+				buf2 = malloc(len);
+				if (!buf2) {
+					ret = ENOMEM;
+					break;
+				}
+
+				snprintf(buf2, len, "%s,%s", post->tags, tag);
+				free(post->tags);
+				post->tags = buf2;
+			}
 		}
 	} else {
 		post->title = strdup("Post Preview");
@@ -320,6 +369,7 @@ void destroy_post(struct post *post)
 {
 	free(post->title);
 	free(post->cats);
+	free(post->tags);
 }
 
 void dump_post(struct post *post)
