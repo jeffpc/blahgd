@@ -191,15 +191,15 @@ static struct repltab_entry __repltab_comm_html[] = {
 	{"",		NULL},
 };
 
-static void echo_cat_name(struct post *post, void *data)
+static void echo_tag_name(struct post *post, void *data)
 {
 	char *name = data;
 
 	fprintf(post->out, "%s", name);
 }
 
-static struct repltab_entry __repltab_cat_html[] = {
-	{"CATNAME",	echo_cat_name},
+static struct repltab_entry __repltab_tag_html[] = {
+	{"TAGNAME",	echo_tag_name},
 	{"",		NULL},
 };
 
@@ -227,7 +227,7 @@ static struct repltab_entry __repltab_arch_html[] = {
 struct repltab_entry *repltab_story_html = __repltab_story_html;
 struct repltab_entry *repltab_story_numcomment_html = __repltab_story_numcomment_html;
 struct repltab_entry *repltab_comm_html = __repltab_comm_html;
-struct repltab_entry *repltab_cat_html = __repltab_cat_html;
+struct repltab_entry *repltab_tag_html = __repltab_tag_html;
 struct repltab_entry *repltab_arch_html = __repltab_arch_html;
 
 static int invoke_repl(struct post *post, void *data, char *cmd,

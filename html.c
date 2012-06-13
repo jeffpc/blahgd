@@ -16,7 +16,7 @@
 /************************************************************************/
 /*                                POST                                  */
 /************************************************************************/
-static void __invoke_for_each_post_cat(struct post *post, void(*f)(struct post*, char*, char*),
+static void __invoke_for_each_post_tag(struct post *post, void(*f)(struct post*, char*, char*),
 				       char *fmt)
 {
 	char *obuf;
@@ -24,10 +24,10 @@ static void __invoke_for_each_post_cat(struct post *post, void(*f)(struct post*,
 	int iidx, oidx;
 	int done;
 
-	if (!post->cats)
+	if (!post->tags)
 		return;
 
-	obuf = malloc(strlen(post->cats)+1);
+	obuf = malloc(strlen(post->tags)+1);
 	if (!obuf) {
 		fprintf(post->out, "ERROR: could not alloc memory\n");
 		return;
@@ -37,7 +37,7 @@ static void __invoke_for_each_post_cat(struct post *post, void(*f)(struct post*,
 	oidx = 0;
 	done = 0;
 	while(!done) {
-		tmp = post->cats[iidx];
+		tmp = post->tags[iidx];
 
 		switch(tmp) {
 			case '\0':
@@ -59,16 +59,16 @@ static void __invoke_for_each_post_cat(struct post *post, void(*f)(struct post*,
 	free(obuf);
 }
 
-static void __story_cat_item(struct post *post, char *catname, char *fmt)
+static void __story_tag_item(struct post *post, char *tagname, char *fmt)
 {
-	cat(post, catname, "story-cat-item", fmt, repltab_cat_html);
+	cat(post, tagname, "story-tag-item", fmt, repltab_tag_html);
 }
 
 void html_story(struct post *post)
 {
 	cat(post, NULL, "story-top", "html", repltab_story_html);
 
-	__invoke_for_each_post_cat(post, __story_cat_item, "html");
+	__invoke_for_each_post_tag(post, __story_tag_item, "html");
 
 	cat(post, NULL, "story-middle", "html", repltab_story_html);
 
@@ -100,7 +100,7 @@ void feed_index(struct post *post, char *fmt, int limit)
 			continue;
 
 		cat(&p, NULL, "story-top", fmt, repltab_story_html);
-		__invoke_for_each_post_cat(&p, __story_cat_item, fmt);
+		__invoke_for_each_post_tag(&p, __story_tag_item, fmt);
 		if (!strcmp("atom", fmt)) {
 			cat(&p, NULL, "story-middle-desc", "atom", repltab_story_html);
 			//cat_post_preview(&p);
@@ -159,7 +159,7 @@ void html_archive(struct post *post, int archid)
 			continue;
 
 		cat(&p, NULL, "story-top", "html", repltab_story_html);
-		__invoke_for_each_post_cat(&p, __story_cat_item, "html");
+		__invoke_for_each_post_tag(&p, __story_tag_item, "html");
 		cat(&p, NULL, "story-middle", "html", repltab_story_html);
 		cat_post(&p);
 		cat(&p, NULL, "story-bottom", "html", repltab_story_numcomment_html);
@@ -199,7 +199,7 @@ void html_tag(struct post *post, char *tagname, char *bydir, int numstories)
 			continue;
 
 		cat(&p, NULL, "story-top", "html", repltab_story_html);
-		__invoke_for_each_post_cat(&p, __story_cat_item, "html");
+		__invoke_for_each_post_tag(&p, __story_tag_item, "html");
 		cat(&p, NULL, "story-middle", "html", repltab_story_html);
 		cat_post(&p);
 		cat(&p, NULL, "story-bottom", "html", repltab_story_numcomment_html);
@@ -266,7 +266,7 @@ static void __tag_cloud(struct post *post)
 
 		tag = SQL_COL_STR(stmt, 0);
 
-		cat(post, (char*) tag, "sidebar-tag-item", "html", repltab_cat_html);
+		cat(post, (char*) tag, "sidebar-tag-item", "html", repltab_tag_html);
 	}
 }
 
@@ -289,7 +289,7 @@ void html_save_comment(struct post *post, int notsaved)
 {
 	cat(post, NULL, "story-top", "html", repltab_story_html);
 
-	__invoke_for_each_post_cat(post, __story_cat_item, "html");
+	__invoke_for_each_post_tag(post, __story_tag_item, "html");
 
 	if (notsaved)
 		cat(post, NULL, "story-comment-notsaved", "html", repltab_story_html);

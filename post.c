@@ -297,7 +297,7 @@ int load_post(int postid, struct post *post, int preview)
 		}
 
 		post->cats = NULL;
-		SQL(stmt, "SELECT cat FROM post_cats WHERE post=?");
+		SQL(stmt, "SELECT cat FROM post_cats WHERE post=? ORDER BY cat");
 		SQL_BIND_INT(stmt, 1, postid);
 		SQL_FOR_EACH(stmt) {
 			const char *cat = strdup(SQL_COL_STR(stmt, 0));
@@ -322,7 +322,7 @@ int load_post(int postid, struct post *post, int preview)
 		}
 
 		post->tags = NULL;
-		SQL(stmt, "SELECT tag FROM post_tags WHERE post=?");
+		SQL(stmt, "SELECT tag FROM post_tags WHERE post=? ORDER BY tag");
 		SQL_BIND_INT(stmt, 1, postid);
 		SQL_FOR_EACH(stmt) {
 			const char *tag = strdup(SQL_COL_STR(stmt, 0));
@@ -377,8 +377,9 @@ void dump_post(struct post *post)
 	if (!post)
 		fprintf(stdout, "p=NULL\n");
 	else
-		fprintf(post->out, "p=%p { %d, '%s', '%s', '%04d-%02d-%02d %02d:%02d' }\n\n",
+		fprintf(post->out, "p=%p { %d, '%s', '%s', '%s', '%04d-%02d-%02d %02d:%02d' }\n\n",
 			post, post->id, post->title, post->cats,
+			post->tags,
 			post->time.tm_year, post->time.tm_mon,
 			post->time.tm_mday, post->time.tm_hour,
 			post->time.tm_min);
