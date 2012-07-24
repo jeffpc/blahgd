@@ -238,6 +238,24 @@ ul.post-meta span.post-meta-key {
 	padding-left: 12px;
 }
 
+#tagcloud a {
+	line-height: 100%;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	margin-top: 0;
+	font: normal normal 12px/115% sans-serif;
+	letter-spacing: 0;
+	padding-left: 1px;
+	color: #000;
+	text-decoration: none;
+	text-transform: lowercase;
+}
+
+#tagcloud a:hover {
+	border-bottom: 1px solid #809080;
+}
+
 #menu ul ul li a {
 	color: #000;
 	text-decoration: none;
