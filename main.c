@@ -143,7 +143,9 @@ int main(int argc, char **argv)
 
 	parse_qs(getenv("QUERY_STRING"), &args);
 
+#ifdef USE_XMLRPC
 	printf("X-Pingback: http://blahg.josefsipek.net/?xmlrpc=1\n");
+#endif
 
 	switch(args.page) {
 		case PAGE_ARCHIVE:
@@ -160,8 +162,10 @@ int main(int argc, char **argv)
 			return blahg_index(args.paged);
 		case PAGE_STORY:
 			return blahg_story(args.p, args.preview);
+#ifdef USE_XMLRPC
 		case PAGE_XMLRPC:
 			return blahg_pingback();
+#endif
 		default:
 			return blahg_malformed(argc, argv);
 	}

@@ -35,7 +35,9 @@ extern int blahg_comment();
 extern int blahg_feed(char *feed, int p);
 extern int blahg_index(int paged);
 extern int blahg_story(int p, int preview);
+#ifdef USE_XMLRPC
 extern int blahg_pingback();
+#endif
 
 extern void disp_404(char *title, char *txt);
 
