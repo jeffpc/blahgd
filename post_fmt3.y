@@ -77,8 +77,14 @@ static char *process_cmd(char *cmd, char *txt, char *opt)
 	if (!strcmp(cmd, "link"))
 		return concat5("<a href=\"", txt, "\">", opt ? opt : txt, "</a>");
 
+	if (!strcmp(cmd, "photolink"))
+		return concat5("<a href=\"" PHOTO_BASE_URL "/", txt, "\">", opt ? opt : txt, "</a>");
+
 	if (!strcmp(cmd, "img"))
 		return concat5("<img src=\"", txt, "\" alt=\"", opt ? opt : "", "\" />");
+
+	if (!strcmp(cmd, "photo"))
+		return concat5("<img src=\"" PHOTO_BASE_URL "/", txt, "\" alt=\"", opt ? opt : "", "\" />");
 
 	if (!strcmp(cmd, "emph")) {
 		assert(!opt);
