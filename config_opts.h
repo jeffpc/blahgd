@@ -16,6 +16,7 @@
 
 #define BUG_BASE_URL			"http://bugs.31bits.net"
 #define WIKI_BASE_URL			"http://en.wikipedia.org/wiki"
+#define PHOTO_BASE_URL		"http://www.josefsipek.net/photos"
 
 #endif
 
