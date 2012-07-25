@@ -15,7 +15,7 @@ extern int open_db();
 			fprintf(stderr, "Error %s:%d: %s (%d)\n", \
 				__FILE__, __LINE__, sqlite3_errmsg(db), \
 				ret); \
-			return; \
+			return 1; \
 		} \
 	} while(0)
 
@@ -51,7 +51,7 @@ extern int open_db();
 			fprintf(stderr, "Error %s:%d: %s (%d)\n", \
 				__FILE__, __LINE__, sqlite3_errmsg(db), \
 				ret); \
-			return; \
+			return 1; \
 		} \
 	} while(0)
 
