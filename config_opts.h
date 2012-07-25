@@ -14,6 +14,7 @@
 
 #define ERROR_LOG_FILE			"data/logs/comment_error.log"
 
+#define BASE_URL					"http://blahg.josefsipek.net"
 #define BUG_BASE_URL			"http://bugs.31bits.net"
 #define WIKI_BASE_URL			"http://en.wikipedia.org/wiki"
 #define PHOTO_BASE_URL		"http://www.josefsipek.net/photos"

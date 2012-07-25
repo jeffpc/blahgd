@@ -144,7 +144,7 @@ int main(int argc, char **argv)
 	parse_qs(getenv("QUERY_STRING"), &args);
 
 #ifdef USE_XMLRPC
-	printf("X-Pingback: http://blahg.josefsipek.net/?xmlrpc=1\n");
+	printf("X-Pingback: " BASE_URL "/?xmlrpc=1\n");
 #endif
 
 	switch(args.page) {
