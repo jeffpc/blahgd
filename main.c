@@ -17,8 +17,9 @@ static char *nullterminate(char *s)
 	return s + 1;
 }
 
-static void parse_qs(char *qs, struct qs *args)
+static void parse_qs(char *qs, struct req *req)
 {
+	struct qs *args = &req->args;
 	char *tmp;
 	char *end;
 
@@ -103,7 +104,7 @@ static void parse_qs(char *qs, struct qs *args)
 		args->page = PAGE_STORY;
 }
 
-static int blahg_malformed(int argc, char **argv)
+static int blahg_malformed(struct req *req, int argc, char **argv)
 {
 	printf("Content-Type: text/plain\n\n");
 	printf("There has been an error processing your request.  The site "
@@ -137,17 +138,34 @@ void disp_404(char *title, char *txt)
 	exit(0);
 }
 
+static void req_init(struct req *req)
+{
+	clock_gettime(CLOCK_REALTIME, &req->start);
+
+	req->buf  = NULL;
+	req->head = NULL;
+}
+
+void req_head(struct req *req, char *header)
+{
+#warning header output not yet implemented
+}
+
 int main(int argc, char **argv)
 {
-	struct qs args;
+	struct req request;
+	int ret;
 
-	parse_qs(getenv("QUERY_STRING"), &args);
+	req_init(&request);
+
+	parse_qs(getenv("QUERY_STRING"), &request);
 
 #ifdef USE_XMLRPC
-	printf("X-Pingback: " BASE_URL "/?xmlrpc=1\n");
+	req_head(&request, "X-Pingback: " BASE_URL "/?xmlrpc=1");
 #endif
 
-	switch(args.page) {
+	switch (request.args.page) {
+#if 0
 		case PAGE_ARCHIVE:
 			return blahg_archive(args.m, args.paged);
 		case PAGE_CATEGORY:
@@ -158,17 +176,22 @@ int main(int argc, char **argv)
 			return blahg_comment();
 		case PAGE_FEED:
 			return blahg_feed(args.feed, args.p);
+#endif
 		case PAGE_INDEX:
-			return blahg_index(args.paged);
+			ret = blahg_index(&request, request.args.paged);
+#if 0
 		case PAGE_STORY:
 			return blahg_story(args.p, args.preview);
 #ifdef USE_XMLRPC
 		case PAGE_XMLRPC:
 			return blahg_pingback();
 #endif
+#endif
 		default:
-			return blahg_malformed(argc, argv);
+			return blahg_malformed(&request, argc, argv);
 	}
 
-	return 0;
+	// FIXME: calculate request latency
+
+	return ret;
 }

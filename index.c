@@ -7,35 +7,31 @@
 #include "sar.h"
 #include "html.h"
 #include "main.h"
+#include "map.h"
 #include "config_opts.h"
 
-int blahg_index(int paged)
+static char *__render(struct req *req, char *str)
 {
-	struct timespec s,e;
-	struct post post;
+}
 
-	clock_gettime(CLOCK_REALTIME, &s);
+int render_page(struct req *req, char *tmpl, char *fmt)
+{
+	int ret;
 
-	memset(&post, 0, sizeof(struct post));
-	post.out = stdout;
-	post.title = "Blahg";
+	ret = load_map(&req->map, fmt);
+	if (ret)
+		return ret;
 
-	fprintf(post.out, "Content-Type: text/html\n\n");
+	printf("%s\n", __render(req, strdup("{index}")));
 
-	post.page = max(paged, 0);
+	return ret;
+}
 
-	feed_header(&post, "html");
-	feed_index(&post, "html", HTML_INDEX_STORIES);
-	html_sidebar(&post);
-	feed_footer(&post, "html");
+int blahg_index(struct req *req, int page)
+{
+	req_head(req, "Content-Type: text/html");
 
-	post.title = NULL;
-	destroy_post(&post);
+	page = max(page, 0);
 
-	clock_gettime(CLOCK_REALTIME, &e);
-
-	fprintf(post.out, "<!-- time to render: %ld.%09ld seconds -->\n", (int)e.tv_sec-s.tv_sec,
-		e.tv_nsec-s.tv_nsec+((e.tv_sec-s.tv_sec) ? 1000000000 : 0));
-
-	return 0;
+	return render_page(req, "index", "html");
 }

@@ -5,7 +5,7 @@ configure_file(config.h.in config.h)
 
 check_function_exists(flock HAVE_FLOCK)
 
-set(CMAKE_C_FLAGS "-Wall -O2 -g -std=c99 -D_XOPEN_SOURCE=700 -D_STDC_C99 -D_XPG6 -D__EXTENSIONS__")
+set(CMAKE_C_FLAGS "-Wall -O2 -g -std=gnu99 -D_XOPEN_SOURCE=700 -D_STDC_C99 -D_XPG6 -D__EXTENSIONS__")
 
 find_package(BISON)
 find_package(FLEX)
@@ -25,7 +25,7 @@ endif()
 
 add_executable(blahg sar.c post.c xattr.c html.c dir.c fsm.c decode.c
 	listing.c main.c archive.c category.c comment.c feed.c index.c
-	story.c tag.c utils.c db.c ${PINGBACK_SRC}
+	story.c tag.c utils.c db.c ${PINGBACK_SRC} map.c ini.c avl.c
 	${FLEX_fmt3_OUTPUTS}
 	${BISON_fmt3_OUTPUTS}
 )
