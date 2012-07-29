@@ -12,6 +12,7 @@
 
 static char *__render(struct req *req, char *str)
 {
+	return "";
 }
 
 int render_page(struct req *req, char *tmpl, char *fmt)
@@ -22,7 +23,7 @@ int render_page(struct req *req, char *tmpl, char *fmt)
 	if (ret)
 		return ret;
 
-	printf("%s\n", __render(req, strdup("{index}")));
+	printf("%s\n", __render(req, tmpl));
 
 	return ret;
 }
@@ -33,5 +34,5 @@ int blahg_index(struct req *req, int page)
 
 	page = max(page, 0);
 
-	return render_page(req, "index", "html");
+	return render_page(req, "{index}", "html");
 }
