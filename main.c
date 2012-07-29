@@ -4,6 +4,7 @@
 #include <libgen.h>
 
 #include "main.h"
+#include "map.h"
 #include "post.h"
 #include "html.h"
 
@@ -144,6 +145,12 @@ static void req_init(struct req *req)
 
 	req->buf  = NULL;
 	req->head = NULL;
+	memset(&req->map, 0, sizeof(req->map));
+}
+
+static void req_destroy(struct req *req)
+{
+	free_map(&req->map);
 }
 
 void req_head(struct req *req, char *header)
@@ -179,6 +186,7 @@ int main(int argc, char **argv)
 #endif
 		case PAGE_INDEX:
 			ret = blahg_index(&request, request.args.paged);
+			break;
 #if 0
 		case PAGE_STORY:
 			return blahg_story(args.p, args.preview);
@@ -192,6 +200,7 @@ int main(int argc, char **argv)
 	}
 
 	// FIXME: calculate request latency
+	req_destroy(&request);
 
 	return ret;
 }

@@ -54,3 +54,19 @@ int load_map(struct avl_root *map, char *fmt)
 
 	return ini_parse(path, __map_parser, map);
 }
+
+void free_map(struct avl_root *map)
+{
+	struct avl_node *node;
+	struct map *m;
+
+	while (map->root) {
+		node = avl_find_minimum(map);
+		avl_remove_node(map, node);
+
+		m = container_of(node, struct map, node);
+		free(m->key);
+		free(m->value);
+		free(m);
+	}
+}

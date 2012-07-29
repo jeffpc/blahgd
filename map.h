@@ -10,5 +10,6 @@ struct map {
 };
 
 extern int load_map(struct avl_root *map, char *fmt);
+extern void free_map(struct avl_root *map);
 
 #endif
