@@ -11,14 +11,14 @@
 static struct post *post;
 
 extern int yylex(void);
-extern void yyrestart(FILE*);
+extern void fmt3_restart(FILE*);
 
 void yyerror(char *e)
 {
 	fprintf(post->out, "Error: %s\n", e);
 }
 
-void yyerror2(char *e, char *yytext)
+void fmt3_error2(char *e, char *yytext)
 {
 	fprintf(post->out, "Error: %s (%s)\n", e, yytext);
 }
@@ -317,7 +317,7 @@ void __do_cat_post_fmt3(struct post *p, char *path)
 
 	post = p;
 
-	yyrestart(f);
+	fmt3_restart(f);
 
 	while (yyparse())
 		;

@@ -10,8 +10,8 @@ set(CMAKE_C_FLAGS "-Wall -O2 -g -std=gnu99 -D_XOPEN_SOURCE=700 -D_STDC_C99 -D_XP
 find_package(BISON)
 find_package(FLEX)
 
-BISON_TARGET(fmt3 post_fmt3.y post_fmt3.tab.c)
-FLEX_TARGET(fmt3 post_fmt3.l post_fmt3.lex.c)
+BISON_TARGET(fmt3 post_fmt3.y post_fmt3.tab.c COMPILE_FLAGS "-p fmt3_")
+FLEX_TARGET(fmt3 post_fmt3.l post_fmt3.lex.c COMPILE_FLAGS "-P fmt3_")
 ADD_FLEX_BISON_DEPENDENCY(fmt3 fmt3)
 
 if(USE_XMLRPC)
