@@ -37,3 +37,4 @@ include_directories(${SQLITE_INC})
 
 target_link_libraries(blahg ${XMLRPC_LIBRARIES} ${SQLITE_LIB})
 target_link_libraries(blahg rt)
+target_link_libraries(blahg umem)
