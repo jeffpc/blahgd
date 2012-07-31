@@ -22,6 +22,7 @@
 							ptr = realloc(ptr, size); \
 						} \
 						ptr[len] = chr; \
+						ptr[len+1] = '\0'; \
 						len++; \
 					} while(0)
 
