@@ -14,6 +14,10 @@ BISON_TARGET(fmt3 post_fmt3.y post_fmt3.tab.c COMPILE_FLAGS "-p fmt3_")
 FLEX_TARGET(fmt3 post_fmt3.l post_fmt3.lex.c COMPILE_FLAGS "-P fmt3_")
 ADD_FLEX_BISON_DEPENDENCY(fmt3 fmt3)
 
+BISON_TARGET(tmpl template.y template.tab.c COMPILE_FLAGS "-p tmpl_")
+FLEX_TARGET(tmpl template.l template.lex.c COMPILE_FLAGS "-P tmpl_")
+ADD_FLEX_BISON_DEPENDENCY(tmpl tmpl)
+
 if(USE_XMLRPC)
 	set(PINGBACK_SRC pingback.c)
 	find_package(XMLRPC COMPONENTS cgi-server REQUIRED)
@@ -26,8 +30,8 @@ endif()
 add_executable(blahg sar.c post.c xattr.c html.c dir.c fsm.c decode.c
 	listing.c main.c archive.c category.c comment.c feed.c index.c
 	story.c tag.c utils.c db.c ${PINGBACK_SRC} map.c ini.c avl.c
-	${FLEX_fmt3_OUTPUTS}
-	${BISON_fmt3_OUTPUTS}
+	${FLEX_fmt3_OUTPUTS} ${BISON_fmt3_OUTPUTS}
+	${FLEX_tmpl_OUTPUTS} ${BISON_tmpl_OUTPUTS}
 )
 
 find_library(SQLITE_LIB sqlite3)
