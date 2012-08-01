@@ -181,7 +181,7 @@ static char *process_cmd(char *cmd, char *txt, char *opt)
 
 static char *dash(int len)
 {
-	char *ret[4] = {
+	static const char *ret[4] = {
 		[0] = NULL,
 		[1] = "-",
 		[2] = "&ndash;",
@@ -195,7 +195,7 @@ static char *dash(int len)
 
 static char *oquote(int len)
 {
-	char *ret[3] = {
+	static const char *ret[3] = {
 		[0] = NULL,
 		[1] = "&lsquo;",
 		[2] = "&ldquo;",
@@ -208,7 +208,7 @@ static char *oquote(int len)
 
 static char *cquote(int len)
 {
-	char *ret[3] = {
+	static const char *ret[3] = {
 		[0] = NULL,
 		[1] = "&rsquo;",
 		[2] = "&rdquo;",
