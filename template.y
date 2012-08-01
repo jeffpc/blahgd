@@ -10,6 +10,8 @@
 
 #include "config.h"
 
+extern int tmpl_lex(void *, void *);
+
 void yyerror(void *scan, char *e)
 {
 	fprintf(stderr, "Error: %s\n", e);
@@ -22,6 +24,8 @@ void yyerror(void *scan, char *e)
 
 %token <c> OCURLY CCURLY PIPE FORMAT
 %token <c> LETTER CHAR
+
+%type <ptr> page words cmd pipeline pipe name
 
 %%
 

@@ -7,8 +7,6 @@
 #include <stdlib.h>
 
 #include "template.tab.h"
-
-extern int tmpl_lex(YYSTYPE *, yyscan_t);
 %}
 
 %%
