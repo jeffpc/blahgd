@@ -18,13 +18,13 @@ static int validate_arch_id(int arch)
 int blahg_archive(int m, int paged)
 {
 	struct timespec s,e;
-	struct post post;
+	struct post_old post;
 	char nicetitle[32];
 	char pagetype[32];
 
 	clock_gettime(CLOCK_REALTIME, &s);
 
-	memset(&post, 0, sizeof(struct post));
+	memset(&post, 0, sizeof(struct post_old));
 	post.out = stdout;
 	post.title = nicetitle;
 	post.pagetype = pagetype;

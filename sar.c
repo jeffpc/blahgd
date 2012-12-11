@@ -8,7 +8,7 @@
 #include "post.h"
 #include "sar.h"
 
-static void echo_postid(struct post *post, void *data)
+static void echo_postid(struct post_old *post, void *data)
 {
 	fprintf(post->out, "%d", post->id);
 }
@@ -18,25 +18,25 @@ char* up_month_strs[12] = {
 	"July", "August", "September", "October", "November", "December",
 };
 
-static void echo_story_title(struct post *post, void *data)
+static void echo_story_title(struct post_old *post, void *data)
 {
 	fprintf(post->out, "%s", post->title);
 }
 
-static void echo_posttime(struct post *post, void *data)
+static void echo_posttime(struct post_old *post, void *data)
 {
 	fprintf(post->out, "%02d:%02d", post->time.tm_hour,
 		post->time.tm_min);
 }
 
-static void echo_postdate(struct post *post, void *data)
+static void echo_postdate(struct post_old *post, void *data)
 {
 	fprintf(post->out, "%s %d, %04d",
 		up_month_strs[post->time.tm_mon], post->time.tm_mday,
 		1900+post->time.tm_year);
 }
 
-static void __echo_postdate_zulu(struct post *post, struct tm *time)
+static void __echo_postdate_zulu(struct post_old *post, struct tm *time)
 {
 	fprintf(post->out, "%04d-%02d-%02dT%02d:%02d:%02dZ",
 		1900+time->tm_year,
@@ -47,17 +47,17 @@ static void __echo_postdate_zulu(struct post *post, struct tm *time)
 		time->tm_sec);
 }
 
-static void echo_postdate_zulu(struct post *post, void *data)
+static void echo_postdate_zulu(struct post_old *post, void *data)
 {
 	__echo_postdate_zulu(post, &post->time);
 }
 
-static void echo_lastpostdate_zulu(struct post *post, void *data)
+static void echo_lastpostdate_zulu(struct post_old *post, void *data)
 {
 	__echo_postdate_zulu(post, &post->lasttime);
 }
 
-static void __echo_comment_count(struct post *post, void *data, int numeric)
+static void __echo_comment_count(struct post_old *post, void *data, int numeric)
 {
 	char path[FILENAME_MAX];
 	struct dirent *de;
@@ -85,32 +85,32 @@ static void __echo_comment_count(struct post *post, void *data, int numeric)
 	fprintf(post->out, "%d", count);
 }
 
-static void echo_comment_count(struct post *post, void *data)
+static void echo_comment_count(struct post_old *post, void *data)
 {
 	__echo_comment_count(post, data, 0);
 }
 
-static void echo_comment_count_numeric(struct post *post, void *data)
+static void echo_comment_count_numeric(struct post_old *post, void *data)
 {
 	__echo_comment_count(post, data, 1);
 }
 
-static void echo_unixdate(struct post *post, void *data)
+static void echo_unixdate(struct post_old *post, void *data)
 {
 	fprintf(post->out, "%lu", time(NULL));
 }
 
-static void echo_pageno_m1(struct post *post, void *data)
+static void echo_pageno_m1(struct post_old *post, void *data)
 {
 	fprintf(post->out, "%d", max(0,post->page-1));
 }
 
-static void echo_pageno_p1(struct post *post, void *data)
+static void echo_pageno_p1(struct post_old *post, void *data)
 {
 	fprintf(post->out, "%d", post->page+1);
 }
 
-static void echo_pagetype(struct post *post, void *data)
+static void echo_pagetype(struct post_old *post, void *data)
 {
 	fprintf(post->out, "%s", post->pagetype);
 }
@@ -145,21 +145,21 @@ static struct repltab_entry __repltab_story_numcomment_html[] = {
 	{"",		NULL},
 };
 
-static void echo_comment_id(struct post *post, void *data)
+static void echo_comment_id(struct post_old *post, void *data)
 {
 	struct comment *comm = data;
 
 	fprintf(post->out, "%d", comm->id);
 }
 
-static void echo_comment_author(struct post *post, void *data)
+static void echo_comment_author(struct post_old *post, void *data)
 {
 	struct comment *comm = data;
 
 	fprintf(post->out, "%s", comm->author);
 }
 
-static void echo_comment_time(struct post *post, void *data)
+static void echo_comment_time(struct post_old *post, void *data)
 {
 	struct comment *comm = data;
 
@@ -167,7 +167,7 @@ static void echo_comment_time(struct post *post, void *data)
 		comm->time.tm_min);
 }
 
-static void echo_comment_date(struct post *post, void *data)
+static void echo_comment_date(struct post_old *post, void *data)
 {
 	struct comment *comm = data;
 
@@ -191,7 +191,7 @@ static struct repltab_entry __repltab_comm_html[] = {
 	{"",		NULL},
 };
 
-static void echo_tag_name(struct post *post, void *data)
+static void echo_tag_name(struct post_old *post, void *data)
 {
 	char *name = data;
 
@@ -203,14 +203,14 @@ static struct repltab_entry __repltab_tag_html[] = {
 	{"",		NULL},
 };
 
-static void echo_arch_name(struct post *post, void *data)
+static void echo_arch_name(struct post_old *post, void *data)
 {
 	char *name = data;
 
 	fprintf(post->out, "%s", name);
 }
 
-static void echo_arch_desc(struct post *post, void *data)
+static void echo_arch_desc(struct post_old *post, void *data)
 {
 	char *name = data;
 
@@ -230,7 +230,7 @@ struct repltab_entry *repltab_comm_html = __repltab_comm_html;
 struct repltab_entry *repltab_tag_html = __repltab_tag_html;
 struct repltab_entry *repltab_arch_html = __repltab_arch_html;
 
-static int invoke_repl(struct post *post, void *data, char *cmd,
+static int invoke_repl(struct post_old *post, void *data, char *cmd,
 		       struct repltab_entry *repltab)
 {
 	int i;
@@ -255,7 +255,7 @@ static int invoke_repl(struct post *post, void *data, char *cmd,
 #define SAR_SPECIAL	3
 #define SAR_ERROR	4
 
-void sar(struct post *post, void *data, char *ibuf, int size,
+void sar(struct post_old *post, void *data, char *ibuf, int size,
 	 struct repltab_entry *repltab)
 {
 	char obuf[size];

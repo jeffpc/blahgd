@@ -116,7 +116,7 @@ out:
 	close(fd);
 }
 
-int write_out_comment(struct post *post, int id, struct timespec *now, char *author, char *email,
+int write_out_comment(struct post_old *post, int id, struct timespec *now, char *author, char *email,
 		      char *url, char *comment)
 {
 	char curdate[32];
@@ -216,7 +216,7 @@ out_free:
 	return result;
 }
 
-static int save_comment(struct post *post)
+static int save_comment(struct post_old *post)
 {
 	int in;
 	char tmp;
@@ -391,7 +391,7 @@ static int save_comment(struct post *post)
 int blahg_comment()
 {
 	struct timespec s,e;
-	struct post post;
+	struct post_old post;
 	int res;
 
 	clock_gettime(CLOCK_REALTIME, &s);

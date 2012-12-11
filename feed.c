@@ -12,7 +12,7 @@
 int blahg_feed(char *feed, int p)
 {
 	struct timespec s,e;
-	struct post post;
+	struct post_old post;
 
 	if (strcmp(feed, "atom"))
 		disp_404("Atom only",
@@ -33,7 +33,7 @@ int blahg_feed(char *feed, int p)
 
 	clock_gettime(CLOCK_REALTIME, &s);
 
-	memset(&post, 0, sizeof(struct post));
+	memset(&post, 0, sizeof(struct post_old));
 	post.out = stdout;
 	post.title = "Blahg";
 

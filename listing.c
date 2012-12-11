@@ -26,7 +26,7 @@
 						len++; \
 					} while(0)
 
-char *listing(struct post *post, char *fname)
+char *listing(struct post_old *post, char *fname)
 {
 	char path[FILENAME_MAX];
 	char *out;

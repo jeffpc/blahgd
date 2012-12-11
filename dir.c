@@ -42,8 +42,8 @@ static int cmp_int_desc(const void *a, const void *b)
 	return as != bs;
 }
 
-int sorted_readdir_loop(DIR *dir, struct post *post,
-			void(*f)(struct post*, char*, void*), void *data,
+int sorted_readdir_loop(DIR *dir, struct post_old *post,
+			void(*f)(struct post_old*, char*, void*), void *data,
 			int updown, int start, int limit)
 {
 	struct dirent *de;

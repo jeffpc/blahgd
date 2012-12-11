@@ -119,9 +119,9 @@ static int blahg_malformed(struct req *req, int argc, char **argv)
 
 void disp_404(char *title, char *txt)
 {
-	struct post post;
+	struct post_old post;
 
-	memset(&post, 0, sizeof(struct post));
+	memset(&post, 0, sizeof(struct post_old));
 	post.out = stdout;
 	post.title = "Error";
 

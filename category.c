@@ -55,12 +55,12 @@ char *wordpress_catn[] = {
 int blahg_category(char *cat, int paged)
 {
 	struct timespec s,e;
-	struct post post;
+	struct post_old post;
 	int catn;
 
 	clock_gettime(CLOCK_REALTIME, &s);
 
-	memset(&post, 0, sizeof(struct post));
+	memset(&post, 0, sizeof(struct post_old));
 	post.out = stdout;
 
 	fprintf(post.out, "Content-Type: text/html\n\n");

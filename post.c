@@ -17,7 +17,7 @@
 #include "dir.h"
 #include "db.h"
 
-void cat(struct post *post, void *data, char *tmpl, char *fmt,
+void cat(struct post_old *post, void *data, char *tmpl, char *fmt,
 	 struct repltab_entry *repltab)
 {
 	char path[FILENAME_MAX];
@@ -58,7 +58,7 @@ out_close:
 #define CATP_ECHO	1
 #define CATP_PAR	2
 
-static void __do_cat_post(struct post *post, char *ibuf, int len)
+static void __do_cat_post(struct post_old *post, char *ibuf, int len)
 {
 	int sidx, eidx;
 	int state = CATP_SKIP;
@@ -112,7 +112,7 @@ static void __do_cat_post(struct post *post, char *ibuf, int len)
 	}
 }
 
-void cat_post(struct post *post)
+void cat_post(struct post_old *post)
 {
 	char *exts[4] = {
 		[0] = "txt",
@@ -166,7 +166,7 @@ out_close:
 	close(fd);
 }
 
-void cat_post_comment(struct post *post, struct comment *comm)
+void cat_post_comment(struct post_old *post, struct comment *comm)
 {
 	char path[FILENAME_MAX];
 	struct stat statbuf;
@@ -203,7 +203,7 @@ out_close:
 	close(fd);
 }
 
-int load_comment(struct post *post, int commid, struct comment *comm)
+int load_comment(struct post_old *post, int commid, struct comment *comm)
 {
 	char path[FILENAME_MAX];
 	char *buf;
@@ -232,9 +232,9 @@ void destroy_comment(struct comment *comm)
 	free(comm->author);
 }
 
-static void __each_comment_helper(struct post *post, char *name, void *data)
+static void __each_comment_helper(struct post_old *post, char *name, void *data)
 {
-	void(*f)(struct post*, struct comment*) = data;
+	void(*f)(struct post_old*, struct comment*) = data;
 	struct comment comm;
 	int commid;
 
@@ -248,7 +248,7 @@ static void __each_comment_helper(struct post *post, char *name, void *data)
 	destroy_comment(&comm);
 }
 
-void invoke_for_each_comment(struct post *post, void(*f)(struct post*,
+void invoke_for_each_comment(struct post_old *post, void(*f)(struct post_old*,
 							 struct comment*))
 {
 	char path[FILENAME_MAX];
@@ -266,7 +266,7 @@ void invoke_for_each_comment(struct post *post, void(*f)(struct post*,
 	closedir(dir);
 }
 
-int load_post(int postid, struct post *post, int preview)
+int load_post(int postid, struct post_old *post, int preview)
 {
 	char path[FILENAME_MAX];
 	char *buf1 = NULL;
@@ -365,14 +365,14 @@ int load_post(int postid, struct post *post, int preview)
 	return ret;
 }
 
-void destroy_post(struct post *post)
+void destroy_post(struct post_old *post)
 {
 	free(post->title);
 	free(post->cats);
 	free(post->tags);
 }
 
-void dump_post(struct post *post)
+void dump_post(struct post_old *post)
 {
 	if (!post)
 		fprintf(stdout, "p=NULL\n");

@@ -16,7 +16,7 @@
 /************************************************************************/
 /*                                POST                                  */
 /************************************************************************/
-static void __invoke_for_each_post_tag(struct post *post, void(*f)(struct post*, char*, char*),
+static void __invoke_for_each_post_tag(struct post_old *post, void(*f)(struct post_old*, char*, char*),
 				       char *fmt)
 {
 	char *obuf;
@@ -59,12 +59,12 @@ static void __invoke_for_each_post_tag(struct post *post, void(*f)(struct post*,
 	free(obuf);
 }
 
-static void __story_tag_item(struct post *post, char *tagname, char *fmt)
+static void __story_tag_item(struct post_old *post, char *tagname, char *fmt)
 {
 	cat(post, tagname, "story-tag-item", fmt, repltab_tag_html);
 }
 
-void html_story(struct post *post)
+void html_story(struct post_old *post)
 {
 	cat(post, NULL, "story-top", "html", repltab_story_html);
 
@@ -80,7 +80,7 @@ void html_story(struct post *post)
 /************************************************************************/
 /*                             INDEX                                    */
 /************************************************************************/
-void feed_index(struct post *post, char *fmt, int limit)
+void feed_index(struct post_old *post, char *fmt, int limit)
 {
 	sqlite3_stmt *stmt;
 	int ret;
@@ -90,7 +90,7 @@ void feed_index(struct post *post, char *fmt, int limit)
 	SQL_BIND_INT(stmt, 1, limit);
 	SQL_BIND_INT(stmt, 2, post->page * limit);
 	SQL_FOR_EACH(stmt) {
-		struct post p;
+		struct post_old p;
 		int postid;
 
 		postid = SQL_COL_INT(stmt, 0);
@@ -125,7 +125,7 @@ void feed_index(struct post *post, char *fmt, int limit)
 /************************************************************************/
 /*                           ARCHIVE INDEX                              */
 /************************************************************************/
-void html_archive(struct post *post, int archid)
+void html_archive(struct post_old *post, int archid)
 {
 	char fromtime[32];
 	char totime[32];
@@ -152,7 +152,7 @@ void html_archive(struct post *post, int archid)
 	SQL_BIND_INT(stmt, 3, HTML_ARCHIVE_STORIES);
 	SQL_BIND_INT(stmt, 4, post->page * HTML_ARCHIVE_STORIES);
 	SQL_FOR_EACH(stmt) {
-		struct post p;
+		struct post_old p;
 		int postid;
 
 		postid = SQL_COL_INT(stmt, 0);
@@ -176,7 +176,7 @@ void html_archive(struct post *post, int archid)
 /************************************************************************/
 /*                         CATEGORY/TAG INDEX                           */
 /************************************************************************/
-void html_tag(struct post *post, char *tagname, char *bydir, int numstories)
+void html_tag(struct post_old *post, char *tagname, char *bydir, int numstories)
 {
 	char path[FILENAME_MAX];
 	sqlite3_stmt *stmt;
@@ -192,7 +192,7 @@ void html_tag(struct post *post, char *tagname, char *bydir, int numstories)
 	SQL_BIND_INT(stmt, 2, numstories);
 	SQL_BIND_INT(stmt, 3, post->page * numstories);
 	SQL_FOR_EACH(stmt) {
-		struct post p;
+		struct post_old p;
 		int postid;
 
 		postid = SQL_COL_INT(stmt, 0);
@@ -217,7 +217,7 @@ void html_tag(struct post *post, char *tagname, char *bydir, int numstories)
 /************************************************************************/
 /*                           POST COMMENTS                              */
 /************************************************************************/
-static void __html_comment(struct post *post, struct comment *comm)
+static void __html_comment(struct post_old *post, struct comment *comm)
 {
 	cat(post, comm, "story-comment-item-head", "html",
 	    repltab_comm_html);
@@ -226,7 +226,7 @@ static void __html_comment(struct post *post, struct comment *comm)
 	    repltab_comm_html);
 }
 
-void html_comments(struct post *post)
+void html_comments(struct post_old *post)
 {
 	cat(post, NULL, "story-comment-head", "html", repltab_story_html);
 
@@ -238,7 +238,7 @@ void html_comments(struct post *post)
 /************************************************************************/
 /*                                 SIDEBAR                              */
 /************************************************************************/
-static void __invoke_for_each_archive(struct post *post, void(*f)(struct post*, char*))
+static void __invoke_for_each_archive(struct post_old *post, void(*f)(struct post_old*, char*))
 {
 	sqlite3_stmt *stmt;
 	int ret;
@@ -253,12 +253,12 @@ static void __invoke_for_each_archive(struct post *post, void(*f)(struct post*, 
 	}
 }
 
-static void __sidebar_arch_item(struct post *post, char *archname)
+static void __sidebar_arch_item(struct post_old *post, char *archname)
 {
 	cat(post, archname, "sidebar-archive-item", "html", repltab_arch_html);
 }
 
-static void __tag_cloud(struct post *post)
+static void __tag_cloud(struct post_old *post)
 {
 	sqlite3_stmt *stmt;
 	int ret;
@@ -273,7 +273,7 @@ static void __tag_cloud(struct post *post)
 	}
 }
 
-void html_sidebar(struct post *post)
+void html_sidebar(struct post_old *post)
 {
 	open_db();
 
@@ -288,7 +288,7 @@ void html_sidebar(struct post *post)
 	cat(post, NULL, "sidebar-bottom", "html", repltab_story_html);
 }
 
-void html_save_comment(struct post *post, int notsaved)
+void html_save_comment(struct post_old *post, int notsaved)
 {
 	cat(post, NULL, "story-top", "html", repltab_story_html);
 
@@ -307,7 +307,7 @@ void html_save_comment(struct post *post, int notsaved)
 /************************************************************************/
 /*                             PAGE HEADER                              */
 /************************************************************************/
-void feed_header(struct post *post, char *fmt)
+void feed_header(struct post_old *post, char *fmt)
 {
 	cat(post, NULL, "header", fmt, repltab_story_html);
 }
@@ -315,7 +315,7 @@ void feed_header(struct post *post, char *fmt)
 /************************************************************************/
 /*                             PAGE FOOTER                              */
 /************************************************************************/
-void feed_footer(struct post *post, char *fmt)
+void feed_footer(struct post_old *post, char *fmt)
 {
 	cat(post, NULL, "footer", fmt, repltab_story_html);
 }

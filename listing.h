@@ -3,6 +3,6 @@
 
 #include "post.h"
 
-extern char *listing(struct post *post, char *fname);
+extern char *listing(struct post_old *post, char *fname);
 
 #endif

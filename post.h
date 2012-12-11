@@ -9,7 +9,7 @@ struct comment {
 	struct tm time;
 };
 
-struct post {
+struct post_old {
 	FILE *out;
 	int id;
 	int fmt;
@@ -35,24 +35,24 @@ struct post {
 #define XATTR_COMM_URL		"user.url"
 #define XATTR_COMM_IP		"user.remote_addr"
 
-extern int load_post(int postid, struct post *post, int preview);
-extern void dump_post(struct post *post);
-extern void destroy_post(struct post *post);
+extern int load_post(int postid, struct post_old *post, int preview);
+extern void dump_post(struct post_old *post);
+extern void destroy_post(struct post_old *post);
 
-extern int load_comment(struct post *post, int commid, struct comment *comm);
+extern int load_comment(struct post_old *post, int commid, struct comment *comm);
 extern void destroy_comment(struct comment *comm);
 
 struct repltab_entry;
 
-extern void cat_post(struct post *post);
-extern void cat_post_comment(struct post *post, struct comment *comm);
-extern void cat(struct post *post, void *data, char *tmpl, char *fmt,
+extern void cat_post(struct post_old *post);
+extern void cat_post_comment(struct post_old *post, struct comment *comm);
+extern void cat(struct post_old *post, void *data, char *tmpl, char *fmt,
 		struct repltab_entry *repltab);
 
-void __do_cat_post_fmt3(struct post *p, char *path);
+void __do_cat_post_fmt3(struct post_old *p, char *path);
 
-extern void invoke_for_each_comment(struct post *post,
-				    void(*f)(struct post*, struct comment*));
+extern void invoke_for_each_comment(struct post_old *post,
+				    void(*f)(struct post_old*, struct comment*));
 
 #define max(a,b)	((a)<(b)? (b) : (a))
 

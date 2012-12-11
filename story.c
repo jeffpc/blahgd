@@ -10,7 +10,7 @@
 int blahg_story(int p, int preview)
 {
 	struct timespec s,e;
-	struct post post;
+	struct post_old post;
 	int ret;
 
 	clock_gettime(CLOCK_REALTIME, &s);

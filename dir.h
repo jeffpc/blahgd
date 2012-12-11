@@ -8,8 +8,8 @@
 #define SORT_NUMERIC	0x00	/* default */
 #define SORT_STRING	0x02
 
-extern int sorted_readdir_loop(DIR *dir, struct post *post,
-			       void(*f)(struct post*, char*, void*),
+extern int sorted_readdir_loop(DIR *dir, struct post_old *post,
+			       void(*f)(struct post_old*, char*, void*),
 			       void *data, int updown, int start,
 			       int limit);
 

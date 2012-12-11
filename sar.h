@@ -5,10 +5,10 @@
 
 struct repltab_entry {
 	char what[16];
-	void (*f)(struct post*, void*);
+	void (*f)(struct post_old*, void*);
 };
 
-extern void sar(struct post *post, void *data, char *ibuf,
+extern void sar(struct post_old *post, void *data, char *ibuf,
 		int size, struct repltab_entry *repltab);
 
 extern struct repltab_entry *repltab_story_html;
