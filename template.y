@@ -77,7 +77,10 @@ words : words CHAR				{ $$ = concat($1, tostr($2)); }
 
 cmd : OCURLY name pipeline CCURLY		{ $$ = concat(strdup("PIPE-"), concat($2, $3)); }
     | OCURLY name FORMAT name CCURLY		{ $$ = concat(strdup("FMT-"), concat($2, $4)); }
-    | OCURLY name CCURLY			{ $$ = render_template(data->req, $2); }
+    | OCURLY name CCURLY			{
+							$$ = render_template(data->req, $2);
+							free($2);
+						}
     ;
 
 pipeline : pipeline pipe			{ $$ = concat($1, $2); }
