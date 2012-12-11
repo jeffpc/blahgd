@@ -40,6 +40,8 @@ struct req {
 	struct qs args;
 	char *buf;
 	char *head;
+
+	char *fmt;		/* format (e.g., "html") */
 };
 
 extern void req_head(struct req *req, char *header);

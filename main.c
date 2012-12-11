@@ -145,6 +145,7 @@ static void req_init(struct req *req)
 
 	req->buf  = NULL;
 	req->head = NULL;
+	req->fmt  = "html";
 	memset(&req->map, 0, sizeof(req->map));
 }
 
