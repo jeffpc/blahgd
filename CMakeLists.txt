@@ -27,10 +27,8 @@ else()
 	set(XMLRPC_LIBRARIES )
 endif()
 
-add_executable(blahg sar.c post.c xattr.c html.c dir.c fsm.c decode.c
-	listing.c main.c archive.c category.c comment.c feed.c index.c
-	story.c tag.c utils.c db.c ${PINGBACK_SRC} map.c ini.c avl.c
-	${FLEX_fmt3_OUTPUTS} ${BISON_fmt3_OUTPUTS}
+add_executable(blahg post.c main.c index.c
+	db.c ${PINGBACK_SRC} map.c ini.c avl.c
 	${FLEX_tmpl_OUTPUTS} ${BISON_tmpl_OUTPUTS}
 )
 

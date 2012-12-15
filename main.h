@@ -4,6 +4,8 @@
 #include <time.h>
 
 #include "avl.h"
+#include "config_opts.h"
+#include "post.h"
 
 enum {
 	PAGE_MALFORMED,
@@ -42,6 +44,13 @@ struct req {
 	char *head;
 
 	char *fmt;		/* format (e.g., "html") */
+
+	union {
+		struct {
+			int nposts;
+			struct post posts[HTML_INDEX_STORIES];
+		} index;
+	} u;
 };
 
 extern void req_head(struct req *req, char *header);

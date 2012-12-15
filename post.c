@@ -12,11 +12,11 @@
 #include <dirent.h>
 
 #include "post.h"
-#include "xattr.h"
-#include "sar.h"
-#include "dir.h"
+#include "avl.h"
+#include "map.h"
 #include "db.h"
 
+#if 0
 void cat(struct post_old *post, void *data, char *tmpl, char *fmt,
 	 struct repltab_entry *repltab)
 {
@@ -265,113 +265,77 @@ void invoke_for_each_comment(struct post_old *post, void(*f)(struct post_old*,
 
 	closedir(dir);
 }
+#endif
 
-int load_post(int postid, struct post_old *post, int preview)
+int load_post(int postid, struct post *post)
 {
 	char path[FILENAME_MAX];
-	char *buf1 = NULL;
 	int ret = 0;
+	sqlite3_stmt *stmt;
 
-	if (!preview)
-		snprintf(path, FILENAME_MAX, "data/posts/%d", postid);
-	else
-		snprintf(path, FILENAME_MAX, "data/pending-posts/%d",
-			 postid);
-
-	memset(&post->lasttime, 0, sizeof(struct tm));
+	snprintf(path, FILENAME_MAX, "data/posts/%d", postid);
 
 	post->id = postid;
-	post->path = strdup(path);
-	post->preview = preview;
-	if (!preview) {
-		sqlite3_stmt *stmt;
-		int ret;
 
-		open_db();
-		SQL(stmt, "SELECT title, time, fmt FROM posts WHERE id=?");
-		SQL_BIND_INT(stmt, 1, postid);
-		SQL_FOR_EACH(stmt) {
-			post->title = strdup(SQL_COL_STR(stmt, 0));
-			buf1        = strdup(SQL_COL_STR(stmt, 1));
-			post->fmt   = SQL_COL_INT(stmt, 2);
-		}
-
-		post->cats = NULL;
-		SQL(stmt, "SELECT cat FROM post_cats WHERE post=? ORDER BY cat");
-		SQL_BIND_INT(stmt, 1, postid);
-		SQL_FOR_EACH(stmt) {
-			const char *cat = strdup(SQL_COL_STR(stmt, 0));
-
-			if (!post->cats) {
-				post->cats = strdup(cat);
-			} else {
-				char *buf2;
-				int len;
-
-				len  = strlen(post->cats) + 1 + strlen(cat) + 1;
-				buf2 = malloc(len);
-				if (!buf2) {
-					ret = ENOMEM;
-					break;
-				}
-
-				snprintf(buf2, len, "%s,%s", post->cats, cat);
-				free(post->cats);
-				post->cats = buf2;
-			}
-		}
-
-		post->tags = NULL;
-		SQL(stmt, "SELECT tag FROM post_tags WHERE post=? ORDER BY tag");
-		SQL_BIND_INT(stmt, 1, postid);
-		SQL_FOR_EACH(stmt) {
-			const char *tag = strdup(SQL_COL_STR(stmt, 0));
-
-			if (!post->tags) {
-				post->tags = strdup(tag);
-			} else {
-				char *buf2;
-				int len;
-
-				len  = strlen(post->tags) + 1 + strlen(tag) + 1;
-				buf2 = malloc(len);
-				if (!buf2) {
-					ret = ENOMEM;
-					break;
-				}
-
-				snprintf(buf2, len, "%s,%s", post->tags, tag);
-				free(post->tags);
-				post->tags = buf2;
-			}
-		}
-	} else {
-		post->title = strdup("Post Preview");
-		post->cats  = strdup("preview");
-		buf1        = strdup("1970-01-01 00:00");
-		post->fmt   = 3;
+	open_db();
+	SQL(stmt, "SELECT title, time, fmt FROM posts WHERE id=?");
+	SQL_BIND_INT(stmt, 1, postid);
+	SQL_FOR_EACH(stmt) {
+		post->title = strdup(SQL_COL_STR(stmt, 0));
+		post->time  = SQL_COL_INT(stmt, 1);
+		post->fmt   = SQL_COL_INT(stmt, 2);
 	}
 
-	if (post->title && buf1 && (strlen(buf1) == 16)) {
-		/* "2005-01-02 03:03" */
-		strptime(buf1, "%Y-%m-%d %H:%M", &post->time);
-	} else
-		ret = ENOMEM;
+	post->tags = NULL;
+	SQL(stmt, "SELECT tag FROM post_tags WHERE post=? ORDER BY tag");
+	SQL_BIND_INT(stmt, 1, postid);
+	SQL_FOR_EACH(stmt) {
+		const char *tag = strdup(SQL_COL_STR(stmt, 0));
+
+		if (!post->tags) {
+			post->tags = strdup(tag);
+		} else {
+			char *buf2;
+			int len;
+
+			len  = strlen(post->tags) + 1 + strlen(tag) + 1;
+			buf2 = malloc(len);
+			if (!buf2) {
+				ret = ENOMEM;
+				break;
+			}
+
+			snprintf(buf2, len, "%s,%s", post->tags, tag);
+			free(post->tags);
+			post->tags = buf2;
+		}
+	}
 
 	if (ret)
 		destroy_post(post);
 
-	free(buf1);
 	return ret;
 }
 
-void destroy_post(struct post_old *post)
+void destroy_post(struct post *post)
 {
 	free(post->title);
-	free(post->cats);
 	free(post->tags);
 }
 
+static struct avl_root post_map;
+
+int init_post_map()
+{
+	if (post_map.cmp)
+		return 0;
+
+	init_map(&post_map);
+
+	return 0;
+}
+
+#if 0
 void dump_post(struct post_old *post)
 {
 	if (!post)
@@ -384,3 +348,4 @@ void dump_post(struct post_old *post)
 			post->time.tm_mday, post->time.tm_hour,
 			post->time.tm_min);
 }
+#endif

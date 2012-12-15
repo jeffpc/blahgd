@@ -50,6 +50,18 @@ static char *concat(char *a, char *b)
 
 	return ret;
 }
+
+char *foreach(struct req *req, char *var, char *tmpl)
+{
+	char *ret;
+
+	ret = strdup("");
+
+	if (!strcmp(var, "posts"))
+		ret = concat(ret, strdup("XXX"));
+
+	return ret;
+}
 %}
 
 %union {

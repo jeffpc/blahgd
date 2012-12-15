@@ -3,6 +3,20 @@
 
 #include <time.h>
 
+struct post {
+	/* from 'posts' table */
+	int id;
+	unsigned int time;
+	char *title;
+	int fmt;
+
+	/* from 'post_tags' table */
+	char *tags;
+
+	/* body */
+	char *body;
+};
+
 struct comment {
 	int id;
 	char *author;
@@ -35,9 +49,9 @@ struct post_old {
 #define XATTR_COMM_URL		"user.url"
 #define XATTR_COMM_IP		"user.remote_addr"
 
-extern int load_post(int postid, struct post_old *post, int preview);
+extern int load_post(int postid, struct post *post);
 extern void dump_post(struct post_old *post);
-extern void destroy_post(struct post_old *post);
+extern void destroy_post(struct post *post);
 
 extern int load_comment(struct post_old *post, int commid, struct comment *comm);
 extern void destroy_comment(struct comment *comm);

@@ -82,44 +82,6 @@ void html_story(struct post_old *post)
 /************************************************************************/
 void feed_index(struct post_old *post, char *fmt, int limit)
 {
-	sqlite3_stmt *stmt;
-	int ret;
-
-	open_db();
-	SQL(stmt, "SELECT id FROM posts ORDER BY time DESC LIMIT ? OFFSET ?");
-	SQL_BIND_INT(stmt, 1, limit);
-	SQL_BIND_INT(stmt, 2, post->page * limit);
-	SQL_FOR_EACH(stmt) {
-		struct post_old p;
-		int postid;
-
-		postid = SQL_COL_INT(stmt, 0);
-		p.out = post->out;
-
-		if (load_post(postid, &p, 0))
-			continue;
-
-		cat(&p, NULL, "story-top", fmt, repltab_story_html);
-		__invoke_for_each_post_tag(&p, __story_tag_item, fmt);
-		if (!strcmp("atom", fmt)) {
-			cat(&p, NULL, "story-middle-desc", "atom", repltab_story_html);
-			//cat_post_preview(&p);
-			cat_post(&p);
-			cat(&p, NULL, "story-bottom-desc", "atom", repltab_story_html);
-		}
-		cat(&p, NULL, "story-middle", fmt, repltab_story_html);
-		cat_post(&p);
-		cat(&p, NULL, "story-bottom", fmt, repltab_story_numcomment_html);
-
-		/* copy over the last time? */
-		if (tm_cmp(&post->lasttime, &p.time) < 0)
-			memcpy(&post->lasttime, &p.time, sizeof(struct tm));
-
-		destroy_post(&p);
-	}
-
-	if (!strcmp("html", fmt))
-		cat(post, NULL, "index-pager", fmt, repltab_story_html);
 }
 
 /************************************************************************/
@@ -127,50 +89,6 @@ void feed_index(struct post_old *post, char *fmt, int limit)
 /************************************************************************/
 void html_archive(struct post_old *post, int archid)
 {
-	char fromtime[32];
-	char totime[32];
-	sqlite3_stmt *stmt;
-	int toyear, tomonth;
-	int ret;
-
-	toyear = archid / 100;
-	tomonth = (archid % 100) + 1;
-	if (tomonth > 12) {
-		tomonth = 1;
-		toyear++;
-	}
-
-	snprintf(fromtime, sizeof(fromtime), "%04d-%02d-01 00:00",
-		 archid / 100, archid % 100);
-	snprintf(totime, sizeof(totime), "%04d-%02d-01 00:00",
-		 toyear, tomonth);
-
-	open_db();
-	SQL(stmt, "SELECT id FROM posts WHERE time>=? AND time<? ORDER BY time DESC LIMIT ? OFFSET ?");
-	SQL_BIND_STR(stmt, 1, fromtime);
-	SQL_BIND_STR(stmt, 2, totime);
-	SQL_BIND_INT(stmt, 3, HTML_ARCHIVE_STORIES);
-	SQL_BIND_INT(stmt, 4, post->page * HTML_ARCHIVE_STORIES);
-	SQL_FOR_EACH(stmt) {
-		struct post_old p;
-		int postid;
-
-		postid = SQL_COL_INT(stmt, 0);
-		p.out = post->out;
-
-		if (load_post(postid, &p, 0))
-			continue;
-
-		cat(&p, NULL, "story-top", "html", repltab_story_html);
-		__invoke_for_each_post_tag(&p, __story_tag_item, "html");
-		cat(&p, NULL, "story-middle", "html", repltab_story_html);
-		cat_post(&p);
-		cat(&p, NULL, "story-bottom", "html", repltab_story_numcomment_html);
-
-		destroy_post(&p);
-	}
-
-	cat(post, NULL, "archive-pager", "html", repltab_story_html);
 }
 
 /************************************************************************/
@@ -178,40 +96,6 @@ void html_archive(struct post_old *post, int archid)
 /************************************************************************/
 void html_tag(struct post_old *post, char *tagname, char *bydir, int numstories)
 {
-	char path[FILENAME_MAX];
-	sqlite3_stmt *stmt;
-	int ret;
-
-	open_db();
-	if (!strcmp(bydir, "tag"))
-		SQL(stmt, "SELECT post_tags.post FROM post_tags,posts WHERE post_tags.post=posts.id AND post_tags.tag=? ORDER BY posts.time DESC LIMIT ? OFFSET ?");
-	else
-		SQL(stmt, "SELECT post_cats.post FROM post_cats,posts WHERE post_cats.post=posts.id AND post_cats.cat=? ORDER BY posts.time DESC LIMIT ? OFFSET ?");
-
-	SQL_BIND_STR(stmt, 1, tagname);
-	SQL_BIND_INT(stmt, 2, numstories);
-	SQL_BIND_INT(stmt, 3, post->page * numstories);
-	SQL_FOR_EACH(stmt) {
-		struct post_old p;
-		int postid;
-
-		postid = SQL_COL_INT(stmt, 0);
-		p.out = post->out;
-
-		if (load_post(postid, &p, 0))
-			continue;
-
-		cat(&p, NULL, "story-top", "html", repltab_story_html);
-		__invoke_for_each_post_tag(&p, __story_tag_item, "html");
-		cat(&p, NULL, "story-middle", "html", repltab_story_html);
-		cat_post(&p);
-		cat(&p, NULL, "story-bottom", "html", repltab_story_numcomment_html);
-
-		destroy_post(&p);
-	}
-
-	snprintf(path, FILENAME_MAX, "%s-pager", bydir);
-	cat(post, NULL, path, "html", repltab_story_html);
 }
 
 /************************************************************************/

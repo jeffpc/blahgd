@@ -1,6 +1,7 @@
 #ifndef __DB_H
 #define __DB_H
 
+#include <stdlib.h>
 #include <sqlite3.h>
 
 extern sqlite3 *db;
@@ -15,7 +16,7 @@ extern int open_db();
 			fprintf(stderr, "Error %s:%d: %s (%d)\n", \
 				__FILE__, __LINE__, sqlite3_errmsg(db), \
 				ret); \
-			return 1; \
+			abort(); \
 		} \
 	} while(0)
 
@@ -27,7 +28,7 @@ extern int open_db();
 			fprintf(stderr, "Error %s:%d: %s (%d)\n", \
 				__FILE__, __LINE__, sqlite3_errmsg(db), \
 				ret); \
-			return; \
+			abort(); \
 		} \
 	} while(0)
 
@@ -39,7 +40,7 @@ extern int open_db();
 			fprintf(stderr, "Error %s:%d: %s (%d)\n", \
 				__FILE__, __LINE__, sqlite3_errmsg(db), \
 				ret); \
-			return; \
+			abort(); \
 		} \
 	} while(0)
 
@@ -51,7 +52,7 @@ extern int open_db();
 			fprintf(stderr, "Error %s:%d: %s (%d)\n", \
 				__FILE__, __LINE__, sqlite3_errmsg(db), \
 				ret); \
-			return 1; \
+			abort(); \
 		} \
 	} while(0)
 
@@ -62,7 +63,7 @@ extern int open_db();
 	sqlite3_column_int((s), (i))
 
 #define SQL_COL_STR(s, i)	\
-	sqlite3_column_text((s), (i))
+	((char*) sqlite3_column_text((s), (i)))
 
 #define SQL_COL_STR_LEN(s, i)	\
 	sqlite3_column_bytes((s), (i))

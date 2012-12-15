@@ -1,22 +1,17 @@
 #include <string.h>
+#include <errno.h>
 
 #include "map.h"
 
 #include "ini.h"
 
-static int __map_parser(void *user, const char *section, const char *name,
-			const char *value)
+int insert_map(struct avl_root *map, const char *name, const char *value)
 {
-	struct avl_root *map = user;
 	struct map *m;
-
-	/* skip everything not in the map section */
-	if (strcmp(section, "map"))
-		return 1;
 
 	m = malloc(sizeof(*m));
 	if (!m)
-		return 0;
+		return ENOMEM;
 
 	m->key = strdup(name);
 	m->value = strdup(value);
@@ -27,13 +22,26 @@ static int __map_parser(void *user, const char *section, const char *name,
 	if (avl_insert_node(map, &m->node))
 		goto err;
 
-	return 1;
+	return 0;
 
 err:
 	free(m->key);
 	free(m->value);
 	free(m);
-	return 0;
+
+	return ENOMEM;
+}
+
+static int __map_parser(void *user, const char *section, const char *name,
+			const char *value)
+{
+	struct avl_root *map = user;
+
+	/* skip everything not in the map section */
+	if (strcmp(section, "map"))
+		return 1;
+
+	return !insert_map(map, name, value);
 }
 
 static int map_cmp(struct avl_node *n1, struct avl_node *n2)
@@ -50,9 +58,14 @@ int load_map(struct avl_root *map, char *fmt)
 
 	snprintf(path, sizeof(path), "templates/%s/map", fmt);
 
-	AVL_ROOT_INIT(map, map_cmp, 0);
+	init_map(map);
 
 	return ini_parse(path, __map_parser, map);
+}
+
+void init_map(struct avl_root *map)
+{
+	AVL_ROOT_INIT(map, map_cmp, 0);
 }
 
 void free_map(struct avl_root *map)
