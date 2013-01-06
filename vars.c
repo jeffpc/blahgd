@@ -43,7 +43,7 @@ void vars_scope_pop(struct vars *vars)
 	// FIXME: just leaked memory
 }
 
-bool is_var(struct vars *vars, const char *name)
+struct var *var_lookup(struct vars *vars, const char *name)
 {
 	struct var key = {
 		.name = name,
@@ -54,10 +54,10 @@ bool is_var(struct vars *vars, const char *name)
 	for (scope = vars->cur; scope >= 0; scope--) {
 		node = avl_find_node(&vars->scopes[scope], &key.tree);
 		if (node)
-			return true;
+			return container_of(node, struct var, tree);
 	}
 
-	return false;
+	return NULL;
 }
 
 struct var *var_alloc(const char *name)

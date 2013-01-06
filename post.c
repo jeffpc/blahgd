@@ -277,7 +277,8 @@ int load_post(int postid, struct post *post)
 	snprintf(path, FILENAME_MAX, "data/posts/%d", postid);
 
 	post->id = postid;
-	post->body = NULL;
+	post->body = strdup("");
+	assert(post->body);
 
 	open_db();
 	SQL(stmt, "SELECT title, time, fmt FROM posts WHERE id=?");

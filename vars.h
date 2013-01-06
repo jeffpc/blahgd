@@ -1,8 +1,6 @@
 #ifndef __VARS_H
 #define __VARS_H
 
-#include <stdbool.h>
-
 #include "config.h"
 #include "avl.h"
 
@@ -40,10 +38,10 @@ extern void vars_scope_push(struct vars *vars);
 extern void vars_scope_pop(struct vars *vars);
 extern void vars_dump(struct vars *vars);
 
-extern bool is_var(struct vars *vars, const char *name);
-
 extern struct var *var_alloc(const char *name);
 extern void var_free(struct var *v);
+
+extern struct var *var_lookup(struct vars *vars, const char *name);
 
 extern int var_append(struct vars *vars, const char *name, struct var_val *vv);
 
