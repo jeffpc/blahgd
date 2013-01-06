@@ -69,10 +69,10 @@ char *foreach(struct req *req, char *var, char *tmpl)
 	char *ptr;
 };
 
-%token <c> OCURLY CCURLY PIPE FORMAT
-%token <c> LETTER CHAR
+%token <ptr> WORD
+%token <c> CHAR
 
-%type <ptr> words cmd pipeline pipe name
+%type <ptr> words cmd pipeline pipe
 
 %%
 
@@ -80,30 +80,26 @@ page : words					{ data->output = $1; }
      ;
 
 words : words CHAR				{ $$ = concat($1, tostr($2)); }
-      | words LETTER				{ $$ = concat($1, tostr($2)); }
-      | words PIPE				{ $$ = concat($1, tostr($2)); }
-      | words FORMAT				{ $$ = concat($1, tostr($2)); }
+      | words WORD				{ $$ = concat($1, $2); }
+      | words '|'				{ $$ = concat($1, strdup("|")); }
+      | words '%'				{ $$ = concat($1, strdup("%")); }
       | words cmd				{ $$ = concat($1, $2); }
       |						{ $$ = strdup(""); }
       ;
 
-cmd : OCURLY name pipeline CCURLY		{ $$ = concat(strdup("PIPE-"), concat($2, $3)); }
-    | OCURLY name FORMAT name CCURLY		{ $$ = concat(strdup("FMT-"), concat($2, $4)); }
-    | OCURLY name CCURLY			{
-							$$ = render_template(data->req, $2);
-							free($2);
-						}
+cmd : '{' WORD pipeline '}'		{ $$ = concat(strdup("PIPE-"), concat($2, $3)); }
+    | '{' WORD '%' WORD '}'		{ $$ = concat(strdup("FMT-"), concat($2, $4)); }
+    | '{' WORD '}'			{
+						$$ = render_template(data->req, $2);
+						free($2);
+					}
     ;
 
 pipeline : pipeline pipe			{ $$ = concat($1, $2); }
 	 | pipe					{ $$ = $1; }
          ;
 
-pipe : PIPE name				{ $$ = concat(strdup("P:"), $2); }
-     ;
-
-name : name LETTER				{ $$ = concat($1, tostr($2)); }
-     | LETTER					{ $$ = tostr($1); }
+pipe : '|' WORD				{ $$ = concat(strdup("P:"), $2); }
      ;
 
 %%

@@ -16,11 +16,8 @@ int tmpl_input_proc(char *buf, int size, yyscan_t scanner);
 %}
 
 %%
-"{"			{ yylval->c = *yytext; return OCURLY; }
-"}"			{ yylval->c = *yytext; return CCURLY; }
-"|"			{ yylval->c = *yytext; return PIPE; }
-"%"			{ yylval->c = *yytext; return FORMAT; }
-[A-Za-z0-9]		{ yylval->c = *yytext; return LETTER; }
+[{}|%]			{ return *yytext; }
+[A-Za-z0-9]+		{ yylval->ptr = strdup(yytext); return WORD; }
 [ \n\r\t]		{ yylval->c = *yytext; return CHAR; }
 .			{ yylval->c = *yytext; return CHAR; }
 %%
