@@ -18,6 +18,7 @@
 #include "vars.h"
 #include "main.h"
 #include "db.h"
+#include "parse.h"
 
 #if 0
 #define CATP_SKIP	0
@@ -145,9 +146,23 @@ void destroy_comment(struct comment *comm)
 }
 #endif
 
-static int __do_load_post_body_fmt3(struct post *post, const char *path)
+static int __do_load_post_body_fmt3(struct post *post, char *ibuf, size_t len)
 {
-	post->body = strdup("!!!FMT3!!!");
+	struct parser_output x;
+
+	x.req   = NULL;
+	x.input = ibuf;
+	x.len   = strlen(ibuf);
+	x.pos   = 0;
+
+	fmt3_lex_init(&x.scanner);
+	fmt3_set_extra(&x, x.scanner);
+
+	assert(fmt3_parse(&x) == 0);
+
+	fmt3_lex_destroy(x.scanner);
+
+	post->body = x.output;
 	assert(post->body);
 
 	return 0;
@@ -179,8 +194,6 @@ static int __load_post_body(struct post *post)
 	snprintf(path, FILENAME_MAX, "data/posts/%d/post.%s", post->id,
 		 exts[post->fmt]);
 
-	if (post->fmt == 3)
-		return __do_load_post_body_fmt3(post, path);
 
 	fd = open(path, O_RDONLY);
 	assert(fd != -1);
@@ -191,13 +204,16 @@ static int __load_post_body(struct post *post)
 	ibuf = mmap(NULL, statbuf.st_size, PROT_READ, MAP_SHARED, fd, 0);
 	assert(ibuf != MAP_FAILED);
 
-	__do_load_post_body(post, ibuf, statbuf.st_size);
+	if (post->fmt == 3)
+		ret = __do_load_post_body_fmt3(post, ibuf, statbuf.st_size);
+	else
+		ret = __do_load_post_body(post, ibuf, statbuf.st_size);
 
 	munmap(ibuf, statbuf.st_size);
 
 	close(fd);
 
-	return 0;
+	return ret;
 }
 
 static struct var *__int_var(const char *name, uint64_t val)

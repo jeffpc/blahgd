@@ -10,12 +10,12 @@
 
 #include "config.h"
 #include "vars.h"
+#include "render.h"
 
 #include "parse.h"
 
 #define scanner data->scanner
 
-extern char *render_template(struct req *req, const char *tmpl);
 extern int tmpl_lex(void *, void *);
 
 void yyerror(void *scan, char *e)

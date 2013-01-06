@@ -1,3 +1,7 @@
+%pure-parser
+%lex-param {void *scanner}
+%parse-param {struct parser_output *data}
+
 %{
 #include <stdio.h>
 #include <stdlib.h>
@@ -5,22 +9,22 @@
 #include <assert.h>
 
 #include "config.h"
-#include "post.h"
 #include "listing.h"
 
-static struct post *post;
+#include "parse.h"
 
-extern int yylex(void);
-extern void fmt3_restart(FILE*);
+#define scanner data->scanner
 
-void yyerror(char *e)
+extern int fmt3_lex(void *, void *);
+
+void yyerror(void *scan, char *e)
 {
-	fprintf(post->out, "Error: %s\n", e);
+	fprintf(stderr, "Error: %s\n", e);
 }
 
 void fmt3_error2(char *e, char *yytext)
 {
-	fprintf(post->out, "Error: %s (%s)\n", e, yytext);
+	fprintf(stderr, "Error: %s (%s)\n", e, yytext);
 }
 
 static char *concat(char *a, char *b)
@@ -69,7 +73,8 @@ static char *concat5(char *a, char *b, char *c, char *d, char *e)
 
 static char *__listing(char *txt, char *opt)
 {
-	return concat4("</p><pre>", "", listing(post, txt), "</pre><p>");
+	return strdup("LISTINGS ARE NOT YET IMPLEMENTED");
+	// return concat4("</p><pre>", "", listing(post, txt), "</pre><p>");
 }
 
 static char *process_cmd(char *cmd, char *txt, char *opt)
@@ -249,9 +254,9 @@ static char *special_char(char *txt)
 
 %%
 
-post : paragraphs			{ printf("%s\n", $1); }
-     | PAREND
-     | NLINE
+post : paragraphs			{ data->output = $1; }
+     | PAREND				{ data->output = strdup(""); }
+     | NLINE				{ data->output = strdup(""); }
      |
      ;
 
@@ -304,21 +309,3 @@ cmdarg : OCURLY paragraph CCURLY	{ $$ = $2; }
        ;
 
 %%
-
-void __do_cat_post_fmt3(struct post *p, char *path)
-{
-	FILE *f;
-
-	f = fopen(path, "r");
-	if (!f) {
-		fprintf(p->out, "post.tex open error\n");
-		return;
-	}
-
-	post = p;
-
-	fmt3_restart(f);
-
-	while (yyparse())
-		;
-}
