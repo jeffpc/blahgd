@@ -19,43 +19,6 @@
 #include "db.h"
 
 #if 0
-void cat(struct post_old *post, void *data, char *tmpl, char *fmt,
-	 struct repltab_entry *repltab)
-{
-	char path[FILENAME_MAX];
-	struct stat statbuf;
-	char *ibuf;
-	int ret;
-	int fd;
-
-	snprintf(path, sizeof(path), "templates/%s.%s", tmpl, fmt);
-
-	fd = open(path, O_RDONLY);
-	if (fd == -1) {
-		fprintf(post->out, "template (%s) open error\n", path);
-		return;
-	}
-
-	ret = fstat(fd, &statbuf);
-	if (ret == -1) {
-		fprintf(post->out, "fstat failed\n");
-		goto out_close;
-	}
-
-	ibuf = mmap(NULL, statbuf.st_size, PROT_READ, MAP_SHARED, fd, 0);
-	if (ibuf == MAP_FAILED) {
-		fprintf(post->out, "mmap failed\n");
-		goto out_close;
-	}
-
-	sar(post, data, ibuf, statbuf.st_size, repltab);
-
-	munmap(ibuf, statbuf.st_size);
-
-out_close:
-	close(fd);
-}
-
 #define CATP_SKIP	0
 #define CATP_ECHO	1
 #define CATP_PAR	2
@@ -112,60 +75,6 @@ static void __do_cat_post(struct post_old *post, char *ibuf, int len)
 		if (post->fmt != 2)
 			fwrite("</p>", 1, 4, post->out);
 	}
-}
-
-void cat_post(struct post_old *post)
-{
-	char *exts[4] = {
-		[0] = "txt",
-		[1] = "txt",
-		[2] = "txt",
-		[3] = "tex",
-	};
-
-	char path[FILENAME_MAX];
-	struct stat statbuf;
-	char *ibuf;
-	int ret;
-	int fd;
-
-	if (post->preview)
-		fprintf(post->out, "<p><strong>NOTE: This is only a preview."
-			" This post hasn't been published yet. The post's"
-			" title, categories, and publication time will"
-			" change.</strong></p>\n");
-
-	snprintf(path, FILENAME_MAX, "%s/post.%s", post->path, exts[post->fmt]);
-
-	if (post->fmt == 3) {
-		__do_cat_post_fmt3(post, path);
-		return;
-	}
-
-	fd = open(path, O_RDONLY);
-	if (fd == -1) {
-		fprintf(post->out, "post.txt open error\n");
-		return;
-	}
-
-	ret = fstat(fd, &statbuf);
-	if (ret == -1) {
-		fprintf(post->out, "fstat failed\n");
-		goto out_close;
-	}
-
-	ibuf = mmap(NULL, statbuf.st_size, PROT_READ, MAP_SHARED, fd, 0);
-	if (ibuf == MAP_FAILED) {
-		fprintf(post->out, "mmap failed\n");
-		goto out_close;
-	}
-
-	__do_cat_post(post, ibuf, statbuf.st_size);
-
-	munmap(ibuf, statbuf.st_size);
-
-out_close:
-	close(fd);
 }
 
 void cat_post_comment(struct post_old *post, struct comment *comm)
@@ -233,41 +142,61 @@ void destroy_comment(struct comment *comm)
 {
 	free(comm->author);
 }
-
-static void __each_comment_helper(struct post_old *post, char *name, void *data)
-{
-	void(*f)(struct post_old*, struct comment*) = data;
-	struct comment comm;
-	int commid;
-
-	commid = atoi(name);
-
-	if (load_comment(post, commid, &comm))
-		return;
-
-	f(post, &comm);
-
-	destroy_comment(&comm);
-}
-
-void invoke_for_each_comment(struct post_old *post, void(*f)(struct post_old*,
-							 struct comment*))
-{
-	char path[FILENAME_MAX];
-	DIR *dir;
-
-	snprintf(path, FILENAME_MAX, "%s/comments", post->path);
-
-	dir = opendir(path);
-	if (!dir)
-		return;
-
-	sorted_readdir_loop(dir, post, __each_comment_helper, f, SORT_ASC,
-			    0, -1);
-
-	closedir(dir);
-}
 #endif
+
+static int __do_load_post_body_fmt3(struct post *post, const char *path)
+{
+	post->body = strdup("!!!FMT3!!!");
+	assert(post->body);
+
+	return 0;
+}
+
+static int __do_load_post_body(struct post *post, char *ibuf, size_t len)
+{
+	post->body = strdup("!!!OLDFMT!!!");
+	assert(post->body);
+
+	return 0;
+}
+
+static int __load_post_body(struct post *post)
+{
+	static const char *exts[4] = {
+		[0] = "txt",
+		[1] = "txt",
+		[2] = "txt",
+		[3] = "tex",
+	};
+
+	char path[FILENAME_MAX];
+	struct stat statbuf;
+	char *ibuf;
+	int ret;
+	int fd;
+
+	snprintf(path, FILENAME_MAX, "data/posts/post.%s", exts[post->fmt]);
+
+	if (post->fmt == 3)
+		return __do_load_post_body_fmt3(post, path);
+
+	fd = open(path, O_RDONLY);
+	assert(fd != -1);
+
+	ret = fstat(fd, &statbuf);
+	assert(ret != -1);
+
+	ibuf = mmap(NULL, statbuf.st_size, PROT_READ, MAP_SHARED, fd, 0);
+	assert(ibuf != MAP_FAILED);
+
+	__do_load_post_body(post, ibuf, statbuf.st_size);
+
+	munmap(ibuf, statbuf.st_size);
+
+	close(fd);
+
+	return 0;
+}
 
 static struct var *__int_var(const char *name, uint64_t val)
 {
@@ -324,8 +253,7 @@ int load_post(struct req *req, int postid)
 	snprintf(path, FILENAME_MAX, "data/posts/%d", postid);
 
 	post.id = postid;
-	post.body = strdup("");
-	assert(post.body);
+	post.body = NULL;
 
 	open_db();
 	SQL(stmt, "SELECT title, time, fmt FROM posts WHERE id=?");
@@ -361,6 +289,9 @@ int load_post(struct req *req, int postid)
 			post.tags = buf2;
 		}
 	}
+
+	if (!err)
+		err = __load_post_body(&post);
 
 	if (err)
 		destroy_post(&post);
