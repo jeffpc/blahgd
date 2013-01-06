@@ -15,3 +15,20 @@ void vars_init(struct vars *vars)
 	AVL_ROOT_INIT(&vars->scopes[0], cmp, 0);
 	vars->cur = 0;
 }
+
+bool is_var(struct vars *vars, const char *name)
+{
+	struct var key = {
+		.name = name,
+	};
+	struct avl_node *node;
+	int scope;
+
+	for (scope = vars->cur; scope >= 0; scope--) {
+		node = avl_find_node(&vars->scopes[scope], &key.tree);
+		if (node)
+			return true;
+	}
+
+	return false;
+}

@@ -90,7 +90,10 @@ words : words CHAR				{ $$ = concat($1, tostr($2)); }
 cmd : '{' WORD pipeline '}'		{ $$ = concat(strdup("PIPE-"), concat($2, $3)); }
     | '{' WORD '%' WORD '}'		{ $$ = concat(strdup("FMT-"), concat($2, $4)); }
     | '{' WORD '}'			{
-						$$ = render_template(data->req, $2);
+						if (!is_var(&data->req->vars, $2))
+							$$ = render_template(data->req, $2);
+						else
+							$$ = strdup("VAR");
 						free($2);
 					}
     ;

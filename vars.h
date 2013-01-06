@@ -1,6 +1,8 @@
 #ifndef __VARS_H
 #define __VARS_H
 
+#include <stdbool.h>
+
 #include "config.h"
 #include "avl.h"
 
@@ -19,7 +21,7 @@ struct var_val {
 
 struct var {
 	struct avl_node tree;
-	char *name;
+	const char *name;
 	struct var_val val;
 };
 
@@ -29,5 +31,6 @@ struct vars {
 };
 
 extern void vars_init(struct vars *vars);
+extern bool is_var(struct vars *vars, const char *name);
 
 #endif
