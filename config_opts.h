@@ -20,6 +20,8 @@
 #define PHOTO_BASE_URL			"http://www.josefsipek.net/photos"
 
 #define VAR_MAX_SCOPES			10
+#define VAR_MAX_ARRAY_SIZE		10
+#define VAR_MAX_VARS_SIZE		10
 
 #endif
 

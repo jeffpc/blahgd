@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <time.h>
 #include <dirent.h>
+#include <assert.h>
 
 #include "post.h"
 #include "avl.h"
@@ -269,12 +270,14 @@ void invoke_for_each_comment(struct post_old *post, void(*f)(struct post_old*,
 int load_post(int postid, struct post *post)
 {
 	char path[FILENAME_MAX];
-	int ret = 0;
+	int ret;
+	int err;
 	sqlite3_stmt *stmt;
 
 	snprintf(path, FILENAME_MAX, "data/posts/%d", postid);
 
 	post->id = postid;
+	post->body = NULL;
 
 	open_db();
 	SQL(stmt, "SELECT title, time, fmt FROM posts WHERE id=?");
@@ -285,6 +288,7 @@ int load_post(int postid, struct post *post)
 		post->fmt   = SQL_COL_INT(stmt, 2);
 	}
 
+	err = 0;
 	post->tags = NULL;
 	SQL(stmt, "SELECT tag FROM post_tags WHERE post=? ORDER BY tag");
 	SQL_BIND_INT(stmt, 1, postid);
@@ -292,7 +296,7 @@ int load_post(int postid, struct post *post)
 		const char *tag = strdup(SQL_COL_STR(stmt, 0));
 
 		if (!post->tags) {
-			post->tags = strdup(tag);
+			post->tags = tag;
 		} else {
 			char *buf2;
 			int len;
@@ -300,7 +304,7 @@ int load_post(int postid, struct post *post)
 			len  = strlen(post->tags) + 1 + strlen(tag) + 1;
 			buf2 = malloc(len);
 			if (!buf2) {
-				ret = ENOMEM;
+				err = ENOMEM;
 				break;
 			}
 
@@ -310,10 +314,10 @@ int load_post(int postid, struct post *post)
 		}
 	}
 
-	if (ret)
+	if (err)
 		destroy_post(post);
 
-	return ret;
+	return err;
 }
 
 void destroy_post(struct post *post)
