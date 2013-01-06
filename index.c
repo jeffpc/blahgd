@@ -123,6 +123,7 @@ static void __store_vars(struct req *req, const char *var, struct post *post)
 	vv.vars[2] = __str_var("title", post->title);
 	vv.vars[3] = __str_var("tags", post->tags);
 	vv.vars[4] = __str_var("body", post->body);
+	vv.vars[5] = __int_var("numcom", 0);
 
 	assert(!var_append(&req->vars, "posts", &vv));
 }
