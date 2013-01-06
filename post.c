@@ -21,64 +21,6 @@
 #include "parse.h"
 
 #if 0
-#define CATP_SKIP	0
-#define CATP_ECHO	1
-#define CATP_PAR	2
-
-static void __do_cat_post(struct post_old *post, char *ibuf, int len)
-{
-	int sidx, eidx;
-	int state = CATP_SKIP;
-	char tmp;
-
-	for(eidx = sidx = 0; eidx < len; eidx++) {
-		tmp = ibuf[eidx];
-#if 0
-		printf("\n|'%c' %d| ",tmp, state);
-#endif
-
-		switch(state) {
-			case CATP_SKIP:
-				if (tmp != '\n') {
-					fwrite(ibuf+sidx, 1, eidx-sidx, post->out);
-					if (post->fmt != 2)
-						fwrite("<p>", 1, 3, post->out);
-					sidx = eidx;
-					state = CATP_ECHO;
-				}
-				break;
-
-			case CATP_ECHO:
-				if (tmp == '\n')
-					state = CATP_PAR;
-				break;
-
-			case CATP_PAR:
-				fwrite(ibuf+sidx, 1, eidx-sidx, post->out);
-				sidx = eidx;
-				if (tmp == '\n') {
-					if (post->fmt != 2)
-						fwrite("</p>\n", 1, 5, post->out);
-					state = CATP_SKIP;
-				} else if (post->fmt == 1) {
-					state = CATP_ECHO;
-				} else {
-					if (post->fmt != 2)
-						fwrite("<br/>\n", 1, 5, post->out);
-					state = CATP_ECHO;
-				}
-				break;
-
-		}
-	}
-
-	if (state != CATP_SKIP) {
-		fwrite(ibuf+sidx, 1, eidx-sidx, post->out);
-		if (post->fmt != 2)
-			fwrite("</p>", 1, 4, post->out);
-	}
-}
-
 void cat_post_comment(struct post_old *post, struct comment *comm)
 {
 	char path[FILENAME_MAX];
@@ -168,9 +110,85 @@ static int __do_load_post_body_fmt3(struct post *post, char *ibuf, size_t len)
 	return 0;
 }
 
+static char *cc(char *a, char *b, int blen)
+{
+	int alen;
+	char *ret;
+
+	alen = strlen(a);
+
+	ret = malloc(alen + blen + 1);
+	assert(ret);
+
+	memcpy(ret, a, alen);
+	memcpy(ret + alen, b, blen);
+	ret[alen + blen] = '\0';
+
+	return ret;
+}
+
+#define CATP_SKIP	0
+#define CATP_ECHO	1
+#define CATP_PAR	2
+
 static int __do_load_post_body(struct post *post, char *ibuf, size_t len)
 {
-	post->body = strdup("!!!OLDFMT!!!");
+	int sidx, eidx;
+	int state = CATP_SKIP;
+	char *ret;
+	char tmp;
+
+	ret = strdup("");
+	assert(ret);
+
+	for(eidx = sidx = 0; eidx < len; eidx++) {
+		tmp = ibuf[eidx];
+#if 0
+		printf("\n|'%c' %d| ",tmp, state);
+#endif
+
+		switch(state) {
+			case CATP_SKIP:
+				if (tmp != '\n') {
+					ret = cc(ret, ibuf + sidx, eidx - sidx);
+					if (post->fmt != 2)
+						ret = cc(ret, "<p>", 3);
+					sidx = eidx;
+					state = CATP_ECHO;
+				}
+				break;
+
+			case CATP_ECHO:
+				if (tmp == '\n')
+					state = CATP_PAR;
+				break;
+
+			case CATP_PAR:
+				ret = cc(ret, ibuf + sidx, eidx - sidx);
+				sidx = eidx;
+				if (tmp == '\n') {
+					if (post->fmt != 2)
+						ret = cc(ret, "</p>\n", 5);
+					state = CATP_SKIP;
+				} else if (post->fmt == 1) {
+					state = CATP_ECHO;
+				} else {
+					if (post->fmt != 2)
+						ret = cc(ret, "<br/>\n", 6);
+					state = CATP_ECHO;
+				}
+				break;
+
+		}
+	}
+
+	if (state != CATP_SKIP) {
+		ret = cc(ret, ibuf + sidx, eidx - sidx);
+		if (post->fmt != 2)
+			ret = cc(ret, "</p>", 4);
+	}
+
+	post->body = ret;
 	assert(post->body);
 
 	return 0;
