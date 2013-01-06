@@ -13,7 +13,6 @@
 
 #include "post.h"
 #include "avl.h"
-#include "map.h"
 #include "db.h"
 
 #if 0
@@ -321,18 +320,6 @@ void destroy_post(struct post *post)
 {
 	free(post->title);
 	free(post->tags);
-}
-
-static struct avl_root post_map;
-
-int init_post_map()
-{
-	if (post_map.cmp)
-		return 0;
-
-	init_map(&post_map);
-
-	return 0;
 }
 
 #if 0

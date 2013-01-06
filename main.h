@@ -6,6 +6,7 @@
 #include "avl.h"
 #include "config_opts.h"
 #include "post.h"
+#include "vars.h"
 
 enum {
 	PAGE_MALFORMED,
@@ -37,7 +38,7 @@ struct qs {
 struct req {
 	struct timespec start;
 
-	struct avl_root map;
+	struct vars vars;
 
 	struct qs args;
 	char *buf;

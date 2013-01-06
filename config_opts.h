@@ -19,5 +19,7 @@
 #define WIKI_BASE_URL			"http://en.wikipedia.org/wiki"
 #define PHOTO_BASE_URL			"http://www.josefsipek.net/photos"
 
+#define VAR_MAX_SCOPES			10
+
 #endif
 

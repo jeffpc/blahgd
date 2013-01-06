@@ -4,7 +4,6 @@
 #include <libgen.h>
 
 #include "main.h"
-#include "map.h"
 #include "post.h"
 #include "html.h"
 
@@ -137,12 +136,12 @@ static void req_init(struct req *req)
 	req->buf  = NULL;
 	req->head = NULL;
 	req->fmt  = "html";
-	memset(&req->map, 0, sizeof(req->map));
+
+	vars_init(&req->vars);
 }
 
 static void req_destroy(struct req *req)
 {
-	free_map(&req->map);
 }
 
 void req_head(struct req *req, char *header)

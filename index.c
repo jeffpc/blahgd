@@ -12,7 +12,6 @@
 #include "sar.h"
 #include "html.h"
 #include "main.h"
-#include "map.h"
 #include "config_opts.h"
 #include "parse.h"
 #include "db.h"
@@ -81,10 +80,6 @@ out_close:
 int render_page(struct req *req, char *tmpl)
 {
 	int ret;
-
-	ret = load_map(&req->map, req->fmt);
-	if (ret)
-		return ret;
 
 	printf("%s\n", __render(req, tmpl));
 
