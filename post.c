@@ -175,7 +175,8 @@ static int __load_post_body(struct post *post)
 	int ret;
 	int fd;
 
-	snprintf(path, FILENAME_MAX, "data/posts/post.%s", exts[post->fmt]);
+	snprintf(path, FILENAME_MAX, "data/posts/%d/post.%s", post->id,
+		 exts[post->fmt]);
 
 	if (post->fmt == 3)
 		return __do_load_post_body_fmt3(post, path);
@@ -269,7 +270,9 @@ int load_post(struct req *req, int postid)
 	SQL(stmt, "SELECT tag FROM post_tags WHERE post=? ORDER BY tag");
 	SQL_BIND_INT(stmt, 1, postid);
 	SQL_FOR_EACH(stmt) {
-		const char *tag = strdup(SQL_COL_STR(stmt, 0));
+		char *tag;
+
+		tag = strdup(SQL_COL_STR(stmt, 0));
 
 		if (!post.tags) {
 			post.tags = tag;
