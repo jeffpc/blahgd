@@ -15,6 +15,7 @@
 #include "main.h"
 #include "config_opts.h"
 #include "parse.h"
+#include "render.h"
 #include "db.h"
 
 static int __render_page(struct req *req, char *tmpl)
@@ -56,8 +57,6 @@ int blahg_index(struct req *req, int page)
 	vars_scope_push(&req->vars);
 
 	__load_posts(req, page);
-
-	vars_dump(&req->vars);
 
 	return __render_page(req, "{index}");
 }

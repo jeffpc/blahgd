@@ -3,6 +3,13 @@
 
 #include <time.h>
 
+#include "list.h"
+
+struct post_tag {
+	struct list_head list;
+	char *tag;
+};
+
 struct post {
 	/* from 'posts' table */
 	int id;
@@ -11,7 +18,7 @@ struct post {
 	int fmt;
 
 	/* from 'post_tags' table */
-	char *tags;
+	struct list_head tags;
 
 	/* body */
 	char *body;

@@ -52,18 +52,37 @@ static char *concat(char *a, char *b)
 	return ret;
 }
 
+static void __foreach_vars(struct vars *vars, struct var_val *vv)
+{
+	int j, k;
+
+	for (j = 0; j < VAR_MAX_VARS_SIZE; j++) {
+		if (!vv->vars[j])
+			continue;
+
+		for (k = 0; k < VAR_MAX_ARRAY_SIZE; k++) {
+			if (vv->vars[j]->val[k].type == VT_NIL)
+				continue;
+
+			var_append(vars, vv->vars[j]->name,
+				   &vv->vars[j]->val[k]);
+		}
+	}
+}
+
 char *foreach(struct req *req, char *var, char *tmpl)
 {
 	struct vars *vars = &req->vars;
 	struct var *v;
-	int i, j, k;
 	char *ret;
 	char *tmp;
+	int i;
 
 	ret = strdup("");
 
 	v = var_lookup(&req->vars, var);
-	assert(v);
+	if (!v)
+		return ret;
 
 	for (i = 0; i < VAR_MAX_ARRAY_SIZE; i++) {
 		struct var_val *vv = &v->val[i];
@@ -71,25 +90,20 @@ char *foreach(struct req *req, char *var, char *tmpl)
 		if (vv->type == VT_NIL)
 			continue;
 
-		assert(vv->type == VT_VARS);
-
 		vars_scope_push(vars);
 
-		for (j = 0; j < VAR_MAX_VARS_SIZE; j++) {
-			if (!vv->vars[j])
-				continue;
-
-			for (k = 0; k < VAR_MAX_ARRAY_SIZE; k++) {
-				if (vv->vars[j]->val[k].type == VT_NIL)
-					continue;
-
-				var_append(vars, vv->vars[j]->name,
-					   &vv->vars[j]->val[k]);
-			}
+		switch (vv->type) {
+			case VT_NIL:
+				assert(0);
+				break;
+			case VT_VARS:
+				__foreach_vars(vars, vv);
+				break;
+			case VT_STR:
+			case VT_INT:
+				var_append(vars, var, vv);
+				break;
 		}
-
-		fprintf(stderr, "%s (%d)\n", __func__, i);
-		vars_dump(vars);
 
 		tmp = render_template(req, tmpl);
 

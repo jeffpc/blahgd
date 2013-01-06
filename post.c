@@ -13,6 +13,7 @@
 #include <assert.h>
 
 #include "post.h"
+#include "list.h"
 #include "avl.h"
 #include "vars.h"
 #include "main.h"
@@ -226,6 +227,29 @@ static struct var *__str_var(const char *name, const char *val)
 	return v;
 }
 
+static struct var *__tag_var(const char *name, struct list_head *val)
+{
+	struct post_tag *cur, *tmp;
+	struct var *v;
+	int i;
+
+	v = var_alloc(name);
+	assert(v);
+
+	i = 0;
+	list_for_each_entry_safe(cur, tmp, val, list) {
+		assert(i < VAR_MAX_ARRAY_SIZE);
+
+		v->val[i].type = VT_STR;
+		v->val[i].str  = strdup(cur->tag);
+		assert(v->val[i].str);
+
+		i++;
+	}
+
+	return v;
+}
+
 static void __store_vars(struct req *req, const char *var, struct post *post)
 {
 	struct var_val vv;
@@ -236,7 +260,7 @@ static void __store_vars(struct req *req, const char *var, struct post *post)
 	vv.vars[0] = __int_var("id", post->id);
 	vv.vars[1] = __int_var("time", post->time);
 	vv.vars[2] = __str_var("title", post->title);
-	vv.vars[3] = __str_var("tags", post->tags);
+	vv.vars[3] = __tag_var("tags", &post->tags);
 	vv.vars[4] = __str_var("body", post->body);
 	vv.vars[5] = __int_var("numcom", 0);
 
@@ -255,6 +279,7 @@ int load_post(struct req *req, int postid)
 
 	post.id = postid;
 	post.body = NULL;
+	INIT_LIST_HEAD(&post.tags);
 
 	open_db();
 	SQL(stmt, "SELECT title, time, fmt FROM posts WHERE id=?");
@@ -266,31 +291,18 @@ int load_post(struct req *req, int postid)
 	}
 
 	err = 0;
-	post.tags = NULL;
 	SQL(stmt, "SELECT tag FROM post_tags WHERE post=? ORDER BY tag");
 	SQL_BIND_INT(stmt, 1, postid);
 	SQL_FOR_EACH(stmt) {
-		char *tag;
+		struct post_tag *tag;
 
-		tag = strdup(SQL_COL_STR(stmt, 0));
+		tag = malloc(sizeof(struct post_tag));
+		assert(tag);
 
-		if (!post.tags) {
-			post.tags = tag;
-		} else {
-			char *buf2;
-			int len;
+		tag->tag = strdup(SQL_COL_STR(stmt, 0));
+		assert(tag->tag);
 
-			len  = strlen(post.tags) + 1 + strlen(tag) + 1;
-			buf2 = malloc(len);
-			if (!buf2) {
-				err = ENOMEM;
-				break;
-			}
-
-			snprintf(buf2, len, "%s,%s", post.tags, tag);
-			free(post.tags);
-			post.tags = buf2;
-		}
+		list_add_tail(&tag->list, &post.tags);
 	}
 
 	if (!err)
@@ -307,7 +319,6 @@ int load_post(struct req *req, int postid)
 void destroy_post(struct post *post)
 {
 	free(post->title);
-	free(post->tags);
 }
 
 #if 0
