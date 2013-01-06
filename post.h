@@ -49,7 +49,9 @@ struct post_old {
 #define XATTR_COMM_URL		"user.url"
 #define XATTR_COMM_IP		"user.remote_addr"
 
-extern int load_post(int postid, struct post *post);
+struct req;
+
+extern int load_post(struct req *req, int postid);
 extern void dump_post(struct post_old *post);
 extern void destroy_post(struct post *post);
 

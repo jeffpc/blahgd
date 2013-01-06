@@ -84,50 +84,6 @@ int render_page(struct req *req, char *tmpl)
 	return 0;
 }
 
-static struct var *__int_var(const char *name, uint64_t val)
-{
-	struct var *v;
-
-	v = var_alloc(name);
-	assert(v);
-
-	v->val[0].type = VT_INT;
-	v->val[0].i    = val;
-
-	return v;
-}
-
-static struct var *__str_var(const char *name, const char *val)
-{
-	struct var *v;
-
-	v = var_alloc(name);
-	assert(v);
-
-	v->val[0].type = VT_STR;
-	v->val[0].str  = val ? strdup(val) : NULL;
-	assert(!val || v->val[0].str);
-
-	return v;
-}
-
-static void __store_vars(struct req *req, const char *var, struct post *post)
-{
-	struct var_val vv;
-
-	memset(&vv, 0, sizeof(vv));
-
-	vv.type    = VT_VARS;
-	vv.vars[0] = __int_var("id", post->id);
-	vv.vars[1] = __int_var("time", post->time);
-	vv.vars[2] = __str_var("title", post->title);
-	vv.vars[3] = __str_var("tags", post->tags);
-	vv.vars[4] = __str_var("body", post->body);
-	vv.vars[5] = __int_var("numcom", 0);
-
-	assert(!var_append(&req->vars, "posts", &vv));
-}
-
 static void __load_posts(struct req *req, int page)
 {
 	sqlite3_stmt *stmt;
@@ -144,10 +100,10 @@ static void __load_posts(struct req *req, int page)
 
 		postid = SQL_COL_INT(stmt, 0);
 
-		if (load_post(postid, &req->u.index.posts[req->u.index.nposts++]))
+		if (load_post(req, postid))
 			continue;
 
-		__store_vars(req, "posts", &req->u.index.posts[req->u.index.nposts-1]);
+		req->u.index.nposts++;
 	}
 }
 

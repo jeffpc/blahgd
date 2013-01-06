@@ -14,6 +14,8 @@
 
 #include "post.h"
 #include "avl.h"
+#include "vars.h"
+#include "main.h"
 #include "db.h"
 
 #if 0
@@ -267,56 +269,103 @@ void invoke_for_each_comment(struct post_old *post, void(*f)(struct post_old*,
 }
 #endif
 
-int load_post(int postid, struct post *post)
+static struct var *__int_var(const char *name, uint64_t val)
+{
+	struct var *v;
+
+	v = var_alloc(name);
+	assert(v);
+
+	v->val[0].type = VT_INT;
+	v->val[0].i    = val;
+
+	return v;
+}
+
+static struct var *__str_var(const char *name, const char *val)
+{
+	struct var *v;
+
+	v = var_alloc(name);
+	assert(v);
+
+	v->val[0].type = VT_STR;
+	v->val[0].str  = val ? strdup(val) : NULL;
+	assert(!val || v->val[0].str);
+
+	return v;
+}
+
+static void __store_vars(struct req *req, const char *var, struct post *post)
+{
+	struct var_val vv;
+
+	memset(&vv, 0, sizeof(vv));
+
+	vv.type    = VT_VARS;
+	vv.vars[0] = __int_var("id", post->id);
+	vv.vars[1] = __int_var("time", post->time);
+	vv.vars[2] = __str_var("title", post->title);
+	vv.vars[3] = __str_var("tags", post->tags);
+	vv.vars[4] = __str_var("body", post->body);
+	vv.vars[5] = __int_var("numcom", 0);
+
+	assert(!var_append(&req->vars, "posts", &vv));
+}
+
+int load_post(struct req *req, int postid)
 {
 	char path[FILENAME_MAX];
+	struct post post;
 	int ret;
 	int err;
 	sqlite3_stmt *stmt;
 
 	snprintf(path, FILENAME_MAX, "data/posts/%d", postid);
 
-	post->id = postid;
-	post->body = strdup("");
-	assert(post->body);
+	post.id = postid;
+	post.body = strdup("");
+	assert(post.body);
 
 	open_db();
 	SQL(stmt, "SELECT title, time, fmt FROM posts WHERE id=?");
 	SQL_BIND_INT(stmt, 1, postid);
 	SQL_FOR_EACH(stmt) {
-		post->title = strdup(SQL_COL_STR(stmt, 0));
-		post->time  = SQL_COL_INT(stmt, 1);
-		post->fmt   = SQL_COL_INT(stmt, 2);
+		post.title = strdup(SQL_COL_STR(stmt, 0));
+		post.time  = SQL_COL_INT(stmt, 1);
+		post.fmt   = SQL_COL_INT(stmt, 2);
 	}
 
 	err = 0;
-	post->tags = NULL;
+	post.tags = NULL;
 	SQL(stmt, "SELECT tag FROM post_tags WHERE post=? ORDER BY tag");
 	SQL_BIND_INT(stmt, 1, postid);
 	SQL_FOR_EACH(stmt) {
 		const char *tag = strdup(SQL_COL_STR(stmt, 0));
 
-		if (!post->tags) {
-			post->tags = tag;
+		if (!post.tags) {
+			post.tags = tag;
 		} else {
 			char *buf2;
 			int len;
 
-			len  = strlen(post->tags) + 1 + strlen(tag) + 1;
+			len  = strlen(post.tags) + 1 + strlen(tag) + 1;
 			buf2 = malloc(len);
 			if (!buf2) {
 				err = ENOMEM;
 				break;
 			}
 
-			snprintf(buf2, len, "%s,%s", post->tags, tag);
-			free(post->tags);
-			post->tags = buf2;
+			snprintf(buf2, len, "%s,%s", post.tags, tag);
+			free(post.tags);
+			post.tags = buf2;
 		}
 	}
 
 	if (err)
-		destroy_post(post);
+		destroy_post(&post);
+	else
+		__store_vars(req, "posts", &post);
 
 	return err;
 }

@@ -49,7 +49,6 @@ struct req {
 	union {
 		struct {
 			int nposts;
-			struct post posts[HTML_INDEX_STORIES];
 		} index;
 	} u;
 };
