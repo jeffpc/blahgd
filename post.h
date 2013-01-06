@@ -24,7 +24,6 @@ struct comment {
 };
 
 struct post_old {
-	FILE *out;
 	int id;
 	int fmt;
 	char *title;

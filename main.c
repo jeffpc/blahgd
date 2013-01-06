@@ -121,10 +121,9 @@ void disp_404(char *title, char *txt)
 	struct post_old post;
 
 	memset(&post, 0, sizeof(struct post_old));
-	post.out = stdout;
 	post.title = "Error";
 
-	fprintf(post.out, "Status: 404 Not Found\nContent-Type: text/html\n\n");
+	fprintf(stdout, "Status: 404 Not Found\nContent-Type: text/html\n\n");
 
 	exit(0);
 }
