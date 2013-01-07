@@ -39,7 +39,7 @@ static struct var_val *time_fxn(struct var_val *v)
 
 static struct var_val *date_fxn(struct var_val *v)
 {
-	return __datetime(v, "%B %d, %Y");
+	return __datetime(v, "%B %e, %Y");
 }
 
 static const struct pipestages stages[] = {
