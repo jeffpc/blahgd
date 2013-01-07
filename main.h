@@ -45,12 +45,6 @@ struct req {
 	char *head;
 
 	char *fmt;		/* format (e.g., "html") */
-
-	union {
-		struct {
-			int nposts;
-		} index;
-	} u;
 };
 
 extern void req_head(struct req *req, char *header);

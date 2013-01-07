@@ -31,8 +31,6 @@ static void __load_posts(struct req *req, int page)
 	sqlite3_stmt *stmt;
 	int ret;
 
-	req->u.index.nposts = 0;
-
 	open_db();
 	SQL(stmt, "SELECT id FROM posts ORDER BY time DESC LIMIT ? OFFSET ?");
 	SQL_BIND_INT(stmt, 1, HTML_INDEX_STORIES);
@@ -44,8 +42,6 @@ static void __load_posts(struct req *req, int page)
 
 		if (load_post(req, postid))
 			continue;
-
-		req->u.index.nposts++;
 	}
 }
 
