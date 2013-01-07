@@ -316,7 +316,7 @@ int load_post(struct req *req, int postid)
 	INIT_LIST_HEAD(&post.tags);
 
 	open_db();
-	SQL(stmt, "SELECT title, time, fmt FROM posts WHERE id=?");
+	SQL(stmt, "SELECT title, strftime(\"%s\", time), fmt FROM posts WHERE id=?");
 	SQL_BIND_INT(stmt, 1, postid);
 	SQL_FOR_EACH(stmt) {
 		post.title = strdup(SQL_COL_STR(stmt, 0));
