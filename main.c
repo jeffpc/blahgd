@@ -5,7 +5,6 @@
 
 #include "main.h"
 #include "post.h"
-#include "html.h"
 
 static char *nullterminate(char *s)
 {
