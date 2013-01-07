@@ -21,6 +21,7 @@
 
 static int __render_page(struct req *req, char *tmpl)
 {
+	printf("Content-type: text/html\n\n");
 	printf("%s\n", render_page(req, tmpl));
 
 	return 0;
