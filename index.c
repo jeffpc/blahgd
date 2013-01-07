@@ -14,6 +14,7 @@
 #include "html.h"
 #include "main.h"
 #include "config_opts.h"
+#include "sidebar.h"
 #include "parse.h"
 #include "render.h"
 #include "db.h"
@@ -72,6 +73,8 @@ int blahg_index(struct req *req, int page)
 	page = max(page, 0);
 
 	__store_vars(&req->vars, page);
+
+	sidebar(req);
 
 	vars_scope_push(&req->vars);
 
