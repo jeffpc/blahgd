@@ -48,11 +48,30 @@ static void __load_posts(struct req *req, int page)
 	}
 }
 
+static void __store_vars(struct vars *vars, int page)
+{
+	struct var_val vv;
+
+	memset(&vv, 0, sizeof(vv));
+
+	vv.type = VT_INT;
+	vv.i    = page - 1;
+
+	assert(!var_append(vars, "prevpage", &vv));
+
+	vv.type = VT_INT;
+	vv.i    = page + 1;
+
+	assert(!var_append(vars, "nextpage", &vv));
+}
+
 int blahg_index(struct req *req, int page)
 {
 	req_head(req, "Content-Type: text/html");
 
 	page = max(page, 0);
+
+	__store_vars(&req->vars, page);
 
 	vars_scope_push(&req->vars);
 
