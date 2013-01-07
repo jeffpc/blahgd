@@ -65,6 +65,12 @@ static void __store_vars(struct vars *vars, int page)
 	vv.i    = page + 1;
 
 	assert(!var_append(vars, "nextpage", &vv));
+
+        vv.type = VT_STR;
+        vv.str  = strdup("Blahg");
+        assert(vv.str);
+
+        assert(!var_append(vars, "title", &vv));
 }
 
 int blahg_index(struct req *req, int page)
