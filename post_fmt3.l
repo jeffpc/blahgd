@@ -49,7 +49,7 @@ int fmt3_input_proc(char *buf, int size, yyscan_t scanner)
 	struct parser_output *out;
 	int num;
 
-	out = (struct parser_output *) tmpl_get_extra(scanner);
+	out = (struct parser_output *) fmt3_get_extra(scanner);
 	num = out->len - out->pos;
 
 	if (num <= 0)
