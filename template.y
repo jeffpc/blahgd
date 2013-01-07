@@ -11,6 +11,7 @@
 #include "config.h"
 #include "vars.h"
 #include "render.h"
+#include "pipeline.h"
 
 #include "parse.h"
 
@@ -80,7 +81,7 @@ char *foreach(struct req *req, char *var, char *tmpl)
 
 	ret = strdup("");
 
-	v = var_lookup(&req->vars, var);
+	v = var_lookup(vars, var);
 	if (!v)
 		return ret;
 
@@ -115,26 +116,22 @@ char *foreach(struct req *req, char *var, char *tmpl)
 	return ret;
 }
 
-static char *print_var(struct var *v)
+static char *print_var_val(struct var_val *vv)
 {
 	char buf[32];
-	char *ret;
 	char *tmp;
-
-	ret = strdup("");
-	assert(ret);
 
 	tmp = NULL;
 
-	switch (v->val[0].type) {
+	switch (vv->type) {
 		case VT_NIL:
 			tmp = "NIL";
 			break;
 		case VT_STR:
-			tmp = v->val[0].str;
+			tmp = vv->str;
 			break;
 		case VT_INT:
-			snprintf(buf, sizeof(buf), "%llu", v->val[0].i);
+			snprintf(buf, sizeof(buf), "%llu", vv->i);
 			tmp = buf;
 			break;
 		case VT_VARS:
@@ -142,21 +139,53 @@ static char *print_var(struct var *v)
 			break;
 	}
 
-	ret = concat(ret, strdup(tmp));
+	return strdup(tmp);
+}
 
-	return ret;
+static char *print_var(struct var *v)
+{
+	return print_var_val(&v->val[0]);
+}
+
+static char *pipeline(struct req *req, char *var, struct pipeline *pipe)
+{
+	struct list_head line;
+	struct var_val *vv;
+	struct var *v;
+	struct pipeline *cur;
+	struct pipeline *tmp;
+
+	v = var_lookup(&req->vars, var);
+	if (!v)
+		return strdup("");
+
+	/* wedge the sentinel list head into the pipeline */
+	line.next = &pipe->pipe;
+	line.prev = pipe->pipe.prev;
+	pipe->pipe.prev->next = &line;
+	pipe->pipe.prev = &line;
+
+	vv = &v->val[0];
+
+	list_for_each_entry_safe(cur, tmp, &line, pipe) {
+		vv = cur->stage->f(vv);
+	}
+
+	return print_var_val(vv);
 }
 %}
 
 %union {
 	char c;
 	char *ptr;
+	struct pipeline *pipe;
 };
 
 %token <ptr> WORD
 %token <c> CHAR
 
-%type <ptr> words cmd pipeline pipe
+%type <ptr> words cmd
+%type <pipe> pipeline pipe
 
 %%
 
@@ -171,7 +200,7 @@ words : words CHAR				{ $$ = concat($1, tostr($2)); }
       |						{ $$ = strdup(""); }
       ;
 
-cmd : '{' WORD pipeline '}'		{ $$ = concat(strdup("PIPE-"), concat($2, $3)); }
+cmd : '{' WORD pipeline '}'		{ $$ = pipeline(data->req, $2, $3); }
     | '{' WORD '%' WORD '}'		{ $$ = foreach(data->req, $2, $4); }
     | '{' WORD '}'			{
 						struct var *var;
@@ -187,11 +216,14 @@ cmd : '{' WORD pipeline '}'		{ $$ = concat(strdup("PIPE-"), concat($2, $3)); }
 					}
     ;
 
-pipeline : pipeline pipe			{ $$ = concat($1, $2); }
-	 | pipe					{ $$ = $1; }
+pipeline : pipeline pipe		{
+						list_add_tail(&$2->pipe, &$1->pipe);
+						$$ = $1;
+					}
+	 | pipe				{ $$ = $1; }
          ;
 
-pipe : '|' WORD				{ $$ = concat(strdup("P:"), $2); }
+pipe : '|' WORD				{ $$ = pipestage($2); }
      ;
 
 %%
