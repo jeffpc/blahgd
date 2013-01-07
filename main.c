@@ -161,9 +161,10 @@ int main(int argc, char **argv)
 #endif
 
 	switch (request.args.page) {
-#if 0
 		case PAGE_ARCHIVE:
-			return blahg_archive(args.m, args.paged);
+			return blahg_archive(&request, request.args.m,
+					     request.args.paged);
+#if 0
 		case PAGE_CATEGORY:
 			return blahg_category(args.cat, args.paged);
 		case PAGE_TAG:
