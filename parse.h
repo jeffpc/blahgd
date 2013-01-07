@@ -10,8 +10,8 @@ struct parser_output {
 	char *output;
 
 	char *input;
-	int len;
-	int pos;
+	size_t len;
+	size_t pos;
 };
 
 #endif
