@@ -10,7 +10,6 @@
 #include <sys/mman.h>
 
 #include "post.h"
-#include "sar.h"
 #include "main.h"
 #include "config_opts.h"
 #include "sidebar.h"

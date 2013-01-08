@@ -1,7 +1,14 @@
+{story}
+
+<h2 id="comments">{numcom} Comments 
+	<a href="#postcomment" title="Leave a comment">&raquo;</a>
+</h2>
+
+<ol id="commentlist">
+{comments%comment}
 </ol>
 
-<p><a href='/?feed=atom&amp;p=@@POSTID@@'>Atom feed for comments on this post.</a> 
-</p>
+<p><a href='/?feed=atom&amp;p={id}'>Atom feed for comments on this post.</a></p>
 
 <div id="respond">
 <h2 id="postcomment">Leave a comment</h2>
@@ -22,7 +29,7 @@
 <p><textarea name="c" id="comment" cols="100%" rows="10" tabindex="4"></textarea></p>
 
 <p><input name="s" type="submit" id="submit" tabindex="5" value="Submit Comment" />
-<input type="hidden" name="i" value="@@POSTID@@" />
+<input type="hidden" name="i" value="{id}" />
 <input type="hidden" name="d" value="@@UNIXDATE@@" />
 </p>
 

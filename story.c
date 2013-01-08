@@ -1,48 +1,56 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <string.h>
 #include <time.h>
 
 #include "post.h"
-#include "sar.h"
-#include "html.h"
+#include "main.h"
+#include "render.h"
+#include "sidebar.h"
 
-int blahg_story(int p, int preview)
+static int __render_page(struct req *req, char *tmpl)
 {
-	struct timespec s,e;
-	struct post_old post;
-	int ret;
-
-	clock_gettime(CLOCK_REALTIME, &s);
-
-	post.out = stdout;
-
-	fprintf(post.out, "Content-Type: text/html\n\n");
-
-	if (p == -1) {
-		fprintf(post.out, "Invalid post #\n");
-		return 0;
-	}
-
-	ret = load_post(p, &post, preview);
-	if (ret) {
-		fprintf(post.out, "Gah! %d (postid=%d)\n", ret, p);
-		return 0;
-	}
-
-	feed_header(&post, "html");
-	html_story(&post);
-	if (!preview)
-		html_comments(&post);
-	html_sidebar(&post);
-	feed_footer(&post, "html");
-
-	destroy_post(&post);
-
-	clock_gettime(CLOCK_REALTIME, &e);
-
-	fprintf(post.out, "<!-- time to render: %ld.%09ld seconds -->\n", (int)e.tv_sec-s.tv_sec,
-		e.tv_nsec-s.tv_nsec+((e.tv_sec-s.tv_sec) ? 1000000000 : 0));
+	printf("Content-type: text/html\n\n");
+	printf("%s\n", render_page(req, tmpl));
 
 	return 0;
+}
+
+static void __store_title(struct vars *vars, const char *title)
+{
+	struct var_val vv;
+
+	memset(&vv, 0, sizeof(vv));
+
+        vv.type = VT_STR;
+        vv.str  = strdup(title);
+        assert(vv.str);
+
+        assert(!var_append(vars, "title", &vv));
+}
+
+static void __load_post(struct req *req, int p)
+{
+	assert(!load_post(req, p));
+
+	__store_title(&req->vars, "STORY");
+}
+
+int blahg_story(struct req *req, int p)
+{
+	if (p == -1) {
+		fprintf(stderr, "Invalid post #\n");
+		return 0;
+	}
+
+	req_head(req, "Content-Type: text/html");
+
+	sidebar(req);
+
+	vars_scope_push(&req->vars);
+
+	__load_post(req, p);
+
+	return __render_page(req, "{storyview}");
 }

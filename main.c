@@ -177,9 +177,9 @@ int main(int argc, char **argv)
 		case PAGE_INDEX:
 			ret = blahg_index(&request, request.args.paged);
 			break;
-#if 0
 		case PAGE_STORY:
-			return blahg_story(args.p, args.preview);
+			return blahg_story(&request, request.args.p);
+#if 0
 #ifdef USE_XMLRPC
 		case PAGE_XMLRPC:
 			return blahg_pingback();
