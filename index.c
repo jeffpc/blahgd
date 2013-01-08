@@ -101,12 +101,12 @@ static void __store_pages(struct vars *vars, int page)
 	memset(&vv, 0, sizeof(vv));
 
 	vv.type = VT_INT;
-	vv.i    = page - 1;
+	vv.i    = page + 1;
 
 	assert(!var_append(vars, "prevpage", &vv));
 
 	vv.type = VT_INT;
-	vv.i    = page + 1;
+	vv.i    = page - 1;
 
 	assert(!var_append(vars, "nextpage", &vv));
 }
