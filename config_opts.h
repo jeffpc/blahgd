@@ -23,5 +23,8 @@
 #define VAR_MAX_ARRAY_SIZE		100
 #define VAR_MAX_VARS_SIZE		10
 
+#define TAGCLOUD_MIN_SIZE		6
+#define TAGCLOUD_MAX_SIZE		20
+
 #endif
 

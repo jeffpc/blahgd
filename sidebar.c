@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <math.h>
 
 #include "main.h"
 #include "vars.h"
@@ -34,24 +35,49 @@ static struct var *__str_var(const char *name, const char *val)
 	return v;
 }
 
+static int __tag_size(int count, int cmin, int cmax)
+{
+	float size;
+
+	if (count <= cmin)
+		return TAGCLOUD_MIN_SIZE;
+
+	size  = (TAGCLOUD_MAX_SIZE - TAGCLOUD_MIN_SIZE) * (count - cmin);
+	size /= (float) (cmax - cmin);
+
+	return ceil(TAGCLOUD_MIN_SIZE + size);
+}
+
+#define TAG_COUNTS	"SELECT tag, count(1) as c FROM post_tags GROUP BY tag ORDER BY tag"
 static void tagcloud(struct req *req)
 {
 	struct var_val vv;
 	sqlite3_stmt *stmt;
+	int cmin, cmax;
 	int ret;
+
+	/* pacify gcc */
+	cmin = 0;
+	cmax = 0;
 
 	memset(&vv, 0, sizeof(vv));
 
 	vv.type = VT_VARS;
 
 	open_db();
-	SQL(stmt, "SELECT tag, count(1) FROM post_tags GROUP BY tag ORDER BY tag");
+	SQL(stmt, "SELECT min(c), max(c) FROM (" TAG_COUNTS ")");
+	SQL_FOR_EACH(stmt) {
+		cmin = SQL_COL_INT(stmt, 0);
+		cmax = SQL_COL_INT(stmt, 1);
+	}
+
+	SQL(stmt, TAG_COUNTS);
 	SQL_FOR_EACH(stmt) {
 		const char *tag;
 		uint64_t size;
 
 		tag  = SQL_COL_STR(stmt, 0);
-		size = SQL_COL_INT(stmt, 1) * 3;
+		size = __tag_size(SQL_COL_INT(stmt, 1), cmin, cmax);
 
 		vv.vars[0] = __str_var("name", tag);
 		vv.vars[1] = __int_var("size", size);
