@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "db.h"
-#include "config_opts.h"
+#include "config.h"
 
 sqlite3 *db;
 
