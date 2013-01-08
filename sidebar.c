@@ -48,7 +48,7 @@ static int __tag_size(int count, int cmin, int cmax)
 	return ceil(TAGCLOUD_MIN_SIZE + size);
 }
 
-#define TAG_COUNTS	"SELECT tag, count(1) as c FROM post_tags GROUP BY tag ORDER BY tag"
+#define TAG_COUNTS	"SELECT tag, count(1) as c FROM post_tags GROUP BY tag ORDER BY tag COLLATE NOCASE"
 static void tagcloud(struct req *req)
 {
 	struct var_val vv;
