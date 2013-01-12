@@ -15,7 +15,7 @@ static char *str_of_int(uint64_t v)
 	return NULL;
 }
 
-static char *__urlescape(char *in)
+static char *__urlescape_str(char *in)
 {
 	static const char hd[16] = "0123456789ABCDEF";
 
@@ -80,7 +80,61 @@ static char *__urlescape(char *in)
 	return out;
 }
 
-static struct var_val *urlescape_fxn(struct var_val *v)
+static char *__escape_str(char *in)
+{
+	char *out, *tmp;
+	int outlen;
+	char *s;
+
+	outlen = strlen(in);
+
+	for (s = in; *s; s++) {
+		char c = *s;
+
+		switch (c) {
+			case '<':
+			case '>':
+				/* "&lt;" "&gt;" */
+				outlen += 3;
+				break;
+			case '&':
+				/* "&amp;" */
+				outlen += 4;
+				break;
+		}
+	}
+
+	out = malloc(outlen + 1);
+	assert(out);
+
+	for (s = in, tmp = out; *s; s++, tmp++) {
+		unsigned char c = *s;
+
+		switch (c) {
+			case '<':
+				strcpy(tmp, "&lt;");
+				tmp += 3;
+				break;
+			case '>':
+				strcpy(tmp, "&gt;");
+				tmp += 3;
+				break;
+			case '&':
+				strcpy(tmp, "&amp;");
+				tmp += 4;
+				break;
+			default:
+				*tmp = c;
+				break;
+		}
+	}
+
+	*tmp = '\0';
+
+	return out;
+}
+
+static struct var_val *__escape(struct var_val *v, char *(*cvt)(char*))
 {
 	char *out;
 
@@ -98,7 +152,7 @@ static struct var_val *urlescape_fxn(struct var_val *v)
 			out = str_of_int(v->i);
 			break;
 		case VT_STR:
-			out = __urlescape(v->str);
+			out = cvt(v->str);
 			break;
 	}
 
@@ -111,6 +165,16 @@ static struct var_val *urlescape_fxn(struct var_val *v)
 	v->str  = out;
 
 	return v;
+}
+
+static struct var_val *urlescape_fxn(struct var_val *v)
+{
+	return __escape(v, __urlescape_str);
+}
+
+static struct var_val *escape_fxn(struct var_val *v)
+{
+	return __escape(v, __escape_str);
 }
 
 static struct var_val *__datetime(struct var_val *v, const char *fmt)
@@ -153,6 +217,7 @@ static struct var_val *zulu_fxn(struct var_val *v)
 
 static const struct pipestages stages[] = {
 	{ "urlescape", urlescape_fxn, },
+	{ "escape", escape_fxn, },
 	{ "time", time_fxn, },
 	{ "date", date_fxn, },
 	{ "zulu", zulu_fxn, },
