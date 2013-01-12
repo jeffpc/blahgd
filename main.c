@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 #include <libgen.h>
 
 #include "main.h"
@@ -127,6 +128,19 @@ void disp_404(char *title, char *txt)
 	exit(0);
 }
 
+static void __store_str(struct vars *vars, const char *key, char *val)
+{
+	struct var_val vv;
+
+	memset(&vv, 0, sizeof(vv));
+
+        vv.type = VT_STR;
+        vv.str  = strdup(val);
+        assert(vv.str);
+
+        assert(!var_append(vars, key, &vv));
+}
+
 static void req_init(struct req *req)
 {
 	clock_gettime(CLOCK_REALTIME, &req->start);
@@ -136,6 +150,8 @@ static void req_init(struct req *req)
 	req->fmt  = "html";
 
 	vars_init(&req->vars);
+
+	__store_str(&req->vars, "baseurl", BASE_URL);
 }
 
 static void req_destroy(struct req *req)

@@ -3,7 +3,7 @@
   xmlns="http://www.w3.org/2005/Atom"
   xmlns:thr="http://purl.org/syndication/thread/1.0"
   xml:lang="en"
-  xml:base="http://blahg.josefsipek.net/?feed=atom"
+  xml:base="{baseurl}/?feed=atom"
    >
 	<updated>{lastupdate|zulu}</updated>
 	<title type="text">Josef "Jeff" Sipek</title>
@@ -11,9 +11,9 @@
 
 	<generator uri="http://josefsipek.net/" version="0.20">Pile Of C</generator>
 
-	<link rel="alternate" type="text/html" href="http://blahg.josefsipek.net" />
-	<id>http://blahg.josefsipek.net/?feed=atom</id>
-	<link rel="self" type="application/atom+xml" href="http://blahg.josefsipek.net/?feed=atom" />
+	<link rel="alternate" type="text/html" href="{baseurl}" />
+	<id>{baseurl}/?feed=atom</id>
+	<link rel="self" type="application/atom+xml" href="{baseurl}/?feed=atom" />
 
 {posts%story}
 </feed>
