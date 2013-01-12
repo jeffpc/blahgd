@@ -40,9 +40,10 @@ extern void vars_dump(struct vars *vars);
 
 extern struct var *var_alloc(const char *name);
 extern void var_free(struct var *v);
-
+extern void var_dump(struct var *v, int indent);
 extern struct var *var_lookup(struct vars *vars, const char *name);
-
 extern int var_append(struct vars *vars, const char *name, struct var_val *vv);
+
+extern void var_val_dump(struct var_val *vv, int idx, int indent);
 
 #endif

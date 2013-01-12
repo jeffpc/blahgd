@@ -127,9 +127,7 @@ int var_append(struct vars *vars, const char *name, struct var_val *vv)
 	return E2BIG;
 }
 
-static void __var_dump(struct var *v, int indent);
-
-static void __var_val_dump(struct var_val *vv, int idx, int indent)
+void var_val_dump(struct var_val *vv, int idx, int indent)
 {
 	int i;
 
@@ -149,7 +147,7 @@ static void __var_val_dump(struct var_val *vv, int idx, int indent)
 			fprintf(stderr, "VARS\n");
 			for (i = 0; i < VAR_MAX_VARS_SIZE; i++)
 				if (vv->vars[i])
-					__var_dump(vv->vars[i], indent + 6);
+					var_dump(vv->vars[i], indent + 6);
 			break;
 		default:
 			fprintf(stderr, "Unknown type %d\n", vv->type);
@@ -157,7 +155,7 @@ static void __var_val_dump(struct var_val *vv, int idx, int indent)
 	}
 }
 
-static void __var_dump(struct var *v, int indent)
+void var_dump(struct var *v, int indent)
 {
 	int i;
 
@@ -165,14 +163,14 @@ static void __var_dump(struct var *v, int indent)
 
 	for (i = 0; i < VAR_MAX_ARRAY_SIZE; i++)
 		if (v->val[i].type != VT_NIL)
-			__var_val_dump(&v->val[i], i, indent);
+			var_val_dump(&v->val[i], i, indent);
 }
 
 static int __vars_dump(struct avl_node *node, void *data)
 {
 	struct var *v = container_of(node, struct var, tree);
 
-	__var_dump(v, 0);
+	var_dump(v, 0);
 
 	return 0;
 }
