@@ -50,7 +50,7 @@ struct req {
 extern void req_head(struct req *req, char *header);
 
 extern int blahg_archive(struct req *req, int m, int paged);
-extern int blahg_category(char *cat, int paged);
+extern int blahg_category(struct req *req, char *cat, int page);
 extern int blahg_tag(struct req *req, char *tag, int paged);
 extern int blahg_comment();
 extern int blahg_feed(char *feed, int p);

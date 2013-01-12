@@ -3,6 +3,7 @@
 #include <string.h>
 #include <time.h>
 #include <assert.h>
+#include <stdbool.h>
 
 #include "config.h"
 #include "db.h"
@@ -62,18 +63,24 @@ static void __store_pages(struct vars *vars, int page)
 	assert(!var_append(vars, "nextpage", &vv));
 }
 
-static void __load_posts_tag(struct req *req, int page, char *tag)
+static void __load_posts_tag(struct req *req, int page, char *tag, bool istag,
+			     int nstories)
 {
 	sqlite3_stmt *stmt;
 	int ret;
 
 	open_db();
-	SQL(stmt, "SELECT post_tags.post FROM post_tags,posts "
-	    "WHERE post_tags.post=posts.id AND post_tags.tag=? "
-	    "ORDER BY posts.time DESC LIMIT ? OFFSET ?");
+	if (istag)
+		SQL(stmt, "SELECT post_tags.post FROM post_tags,posts "
+		    "WHERE post_tags.post=posts.id AND post_tags.tag=? "
+		    "ORDER BY posts.time DESC LIMIT ? OFFSET ?");
+	else
+		SQL(stmt, "SELECT post_cats.post FROM post_cats,posts "
+		    "WHERE post_cats.post=posts.id AND post_cats.cat=? "
+		    "ORDER BY posts.time DESC LIMIT ? OFFSET ?");
 	SQL_BIND_STR(stmt, 1, tag);
-	SQL_BIND_INT(stmt, 2, HTML_TAG_STORIES);
-	SQL_BIND_INT(stmt, 3, page * HTML_TAG_STORIES);
+	SQL_BIND_INT(stmt, 2, nstories);
+	SQL_BIND_INT(stmt, 3, page * nstories);
 	SQL_FOR_EACH(stmt) {
 		int postid;
 
@@ -84,33 +91,36 @@ static void __load_posts_tag(struct req *req, int page, char *tag)
 	}
 }
 
-int blahg_tag(struct req *req, char *tag, int page)
+int __tagcat(struct req *req, char *tagcat, int page, char *tmpl, bool istag,
+	     int nstories)
 {
-	if (!tag) {
-		fprintf(stdout, "Invalid tag name\n");
-		return 0;
-	}
-
-	/*
-	 * SECURITY CHECK: make sure no one is trying to give us a '..' in
-	 * the path
-	 */
-	if (hasdotdot(tag)) {
-		fprintf(stdout, "Go away\n");
+	if (!tagcat) {
+		fprintf(stdout, "Invalid tag/category name\n");
 		return 0;
 	}
 
 	page = max(page, 0);
 
-	__store_title(&req->vars, tag);
+	__store_title(&req->vars, tagcat);
 	__store_pages(&req->vars, page);
-	__store_tag(&req->vars, tag);
+	__store_tag(&req->vars, tagcat);
 
 	sidebar(req);
 
 	vars_scope_push(&req->vars);
 
-	__load_posts_tag(req, page, tag);
+	__load_posts_tag(req, page, tagcat, istag, nstories);
 
-	return __render_page(req, "{tagindex}");
+	return __render_page(req, tmpl);
+}
+
+int blahg_tag(struct req *req, char *tag, int page)
+{
+	return __tagcat(req, tag, page, "{tagindex}", true, HTML_TAG_STORIES);
+}
+
+int blahg_category(struct req *req, char *cat, int page)
+{
+	return __tagcat(req, cat, page, "{catindex}", false,
+			HTML_CATEGORY_STORIES);
 }

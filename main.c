@@ -164,10 +164,9 @@ int main(int argc, char **argv)
 		case PAGE_ARCHIVE:
 			return blahg_archive(&request, request.args.m,
 					     request.args.paged);
-#if 0
 		case PAGE_CATEGORY:
-			return blahg_category(args.cat, args.paged);
-#endif
+			return blahg_category(&request, request.args.cat,
+					      request.args.paged);
 		case PAGE_TAG:
 			return blahg_tag(&request, request.args.tag,
 					 request.args.paged);
