@@ -11,7 +11,7 @@
 
 #include "post.h"
 #include "main.h"
-#include "config_opts.h"
+#include "config.h"
 #include "sidebar.h"
 #include "parse.h"
 #include "render.h"

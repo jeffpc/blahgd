@@ -4,7 +4,7 @@
 #include <time.h>
 
 #include "avl.h"
-#include "config_opts.h"
+#include "config.h"
 #include "post.h"
 #include "vars.h"
 
