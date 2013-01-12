@@ -82,7 +82,7 @@ static void tagcloud(struct req *req)
 		vv.vars[0] = __str_var("name", tag);
 		vv.vars[1] = __int_var("size", size);
 
-		assert(!var_append(&req->vars, "tags", &vv));
+		assert(!var_append(&req->vars, "tagcloud", &vv));
 	}
 }
 
