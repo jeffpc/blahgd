@@ -2,27 +2,92 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <assert.h>
 
 #include "config.h"
-#include "post.h"
-#include "sar.h"
-#include "html.h"
+#include "db.h"
+#include "render.h"
+#include "main.h"
 #include "utils.h"
+#include "sidebar.h"
 
-int blahg_tag(char *tag, int paged)
+static int __render_page(struct req *req, char *tmpl)
 {
-	struct timespec s,e;
-	struct post_old post;
+	printf("Content-type: text/html\n\n");
+	printf("%s\n", render_page(req, tmpl));
 
-	clock_gettime(CLOCK_REALTIME, &s);
+	return 0;
+}
 
-	memset(&post, 0, sizeof(struct post_old));
-	post.out = stdout;
+static void __store_title(struct vars *vars, const char *title)
+{
+	struct var_val vv;
 
-	fprintf(post.out, "Content-Type: text/html\n\n");
+	memset(&vv, 0, sizeof(vv));
 
+        vv.type = VT_STR;
+        vv.str  = strdup(title);
+        assert(vv.str);
+
+        assert(!var_append(vars, "title", &vv));
+}
+
+static void __store_tag(struct vars *vars, const char *tag)
+{
+	struct var_val vv;
+
+	memset(&vv, 0, sizeof(vv));
+
+        vv.type = VT_STR;
+        vv.str  = strdup(tag);
+        assert(vv.str);
+
+        assert(!var_append(vars, "tagid", &vv));
+}
+
+static void __store_pages(struct vars *vars, int page)
+{
+	struct var_val vv;
+
+	memset(&vv, 0, sizeof(vv));
+
+	vv.type = VT_INT;
+	vv.i    = page + 1;
+
+	assert(!var_append(vars, "prevpage", &vv));
+
+	vv.type = VT_INT;
+	vv.i    = page - 1;
+
+	assert(!var_append(vars, "nextpage", &vv));
+}
+
+static void __load_posts_tag(struct req *req, int page, char *tag)
+{
+	sqlite3_stmt *stmt;
+	int ret;
+
+	open_db();
+	SQL(stmt, "SELECT post_tags.post FROM post_tags,posts "
+	    "WHERE post_tags.post=posts.id AND post_tags.tag=? "
+	    "ORDER BY posts.time DESC LIMIT ? OFFSET ?");
+	SQL_BIND_STR(stmt, 1, tag);
+	SQL_BIND_INT(stmt, 2, HTML_TAG_STORIES);
+	SQL_BIND_INT(stmt, 3, page * HTML_TAG_STORIES);
+	SQL_FOR_EACH(stmt) {
+		int postid;
+
+		postid = SQL_COL_INT(stmt, 0);
+
+		if (load_post(req, postid))
+			continue;
+	}
+}
+
+int blahg_tag(struct req *req, char *tag, int page)
+{
 	if (!tag) {
-		fprintf(post.out, "Invalid tag name\n");
+		fprintf(stdout, "Invalid tag name\n");
 		return 0;
 	}
 
@@ -31,28 +96,21 @@ int blahg_tag(char *tag, int paged)
 	 * the path
 	 */
 	if (hasdotdot(tag)) {
-		fprintf(post.out, "Go away\n");
+		fprintf(stdout, "Go away\n");
 		return 0;
 	}
 
-	/* string cat name */
-	post.title = tag;
-	post.pagetype = post.title;
+	page = max(page, 0);
 
-	post.page = max(paged,0);
+	__store_title(&req->vars, tag);
+	__store_pages(&req->vars, page);
+	__store_tag(&req->vars, tag);
 
-	feed_header(&post, "html");
-	html_tag(&post, post.title, "tag", HTML_TAG_STORIES);
-	html_sidebar(&post);
-	feed_footer(&post, "html");
+	sidebar(req);
 
-	post.title = NULL;
-	destroy_post(&post);
+	vars_scope_push(&req->vars);
 
-	clock_gettime(CLOCK_REALTIME, &e);
+	__load_posts_tag(req, page, tag);
 
-	fprintf(post.out, "<!-- time to render: %ld.%09ld seconds -->\n", (int)e.tv_sec-s.tv_sec,
-		e.tv_nsec-s.tv_nsec+((e.tv_sec-s.tv_sec) ? 1000000000 : 0));
-
-	return 0;
+	return __render_page(req, "{tagindex}");
 }

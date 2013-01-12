@@ -167,8 +167,11 @@ int main(int argc, char **argv)
 #if 0
 		case PAGE_CATEGORY:
 			return blahg_category(args.cat, args.paged);
+#endif
 		case PAGE_TAG:
-			return blahg_tag(args.tag, args.paged);
+			return blahg_tag(&request, request.args.tag,
+					 request.args.paged);
+#if 0
 		case PAGE_COMMENT:
 			return blahg_comment();
 		case PAGE_FEED:
