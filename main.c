@@ -162,14 +162,17 @@ int main(int argc, char **argv)
 
 	switch (request.args.page) {
 		case PAGE_ARCHIVE:
-			return blahg_archive(&request, request.args.m,
-					     request.args.paged);
+			ret = blahg_archive(&request, request.args.m,
+					    request.args.paged);
+			break;
 		case PAGE_CATEGORY:
-			return blahg_category(&request, request.args.cat,
-					      request.args.paged);
+			ret = blahg_category(&request, request.args.cat,
+					     request.args.paged);
+			break;
 		case PAGE_TAG:
-			return blahg_tag(&request, request.args.tag,
-					 request.args.paged);
+			ret = blahg_tag(&request, request.args.tag,
+					request.args.paged);
+			break;
 #if 0
 		case PAGE_COMMENT:
 			return blahg_comment();
@@ -180,7 +183,8 @@ int main(int argc, char **argv)
 			ret = blahg_index(&request, request.args.paged);
 			break;
 		case PAGE_STORY:
-			return blahg_story(&request, request.args.p);
+			ret = blahg_story(&request, request.args.p);
+			break;
 #if 0
 #ifdef USE_XMLRPC
 		case PAGE_XMLRPC:
