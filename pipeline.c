@@ -10,20 +10,22 @@ static struct var_val *nop_fxn(struct var_val *v)
 	return v;
 }
 
-static struct var_val *urlescape_fxn(struct var_val *v)
+static char *str_of_int(uint64_t v)
 {
-	const char hd[16] = "0123456789ABCDEF";
+	return NULL;
+}
 
-	int outlen;
+static char *__urlescape(char *in)
+{
+	static const char hd[16] = "0123456789ABCDEF";
+
 	char *out, *tmp;
+	int outlen;
 	char *s;
 
-	assert(v->type == VT_STR);
-	assert(v->str);
+	outlen = strlen(in);
 
-	outlen = strlen(v->str);
-
-	for (s = v->str; *s; s++) {
+	for (s = in; *s; s++) {
 		char c = *s;
 
 		if (isalnum(c))
@@ -45,7 +47,7 @@ static struct var_val *urlescape_fxn(struct var_val *v)
 	out = malloc(outlen + 1);
 	assert(out);
 
-	for (s = v->str, tmp = out; *s; s++, tmp++) {
+	for (s = in, tmp = out; *s; s++, tmp++) {
 		unsigned char c = *s;
 
 		if (isalnum(c)) {
@@ -74,6 +76,33 @@ static struct var_val *urlescape_fxn(struct var_val *v)
 	}
 
 	*tmp = '\0';
+
+	return out;
+}
+
+static struct var_val *urlescape_fxn(struct var_val *v)
+{
+	char *out;
+
+	out = NULL;
+
+	switch (v->type) {
+		case VT_VARS:
+			var_val_dump(v, 0, 10);
+			assert(0);
+			break;
+		case VT_NIL:
+			out = strdup("");
+			break;
+		case VT_INT:
+			out = str_of_int(v->i);
+			break;
+		case VT_STR:
+			out = __urlescape(v->str);
+			break;
+	}
+
+	assert(out);
 
 	v = malloc(sizeof(struct var_val));
 	assert(v);
