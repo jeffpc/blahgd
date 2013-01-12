@@ -31,7 +31,7 @@ add_executable(blahg render.c post.c main.c
 	db.c ${PINGBACK_SRC} vars.c pipeline.c avl.c
 	${FLEX_tmpl_OUTPUTS} ${BISON_tmpl_OUTPUTS}
 	${FLEX_fmt3_OUTPUTS} ${BISON_fmt3_OUTPUTS}
-	index.c sidebar.c story.c tag.c
+	index.c sidebar.c story.c tag.c feed.c
 	listing.c utils.c
 )
 

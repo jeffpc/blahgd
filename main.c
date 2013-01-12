@@ -176,9 +176,10 @@ int main(int argc, char **argv)
 #if 0
 		case PAGE_COMMENT:
 			return blahg_comment();
-		case PAGE_FEED:
-			return blahg_feed(args.feed, args.p);
 #endif
+		case PAGE_FEED:
+			return blahg_feed(&request, request.args.feed,
+					  request.args.p);
 		case PAGE_INDEX:
 			ret = blahg_index(&request, request.args.paged);
 			break;

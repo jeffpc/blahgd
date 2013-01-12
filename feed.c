@@ -4,16 +4,50 @@
 #include <time.h>
 
 #include "main.h"
-#include "post.h"
-#include "sar.h"
-#include "html.h"
-#include "config_opts.h"
+#include "config.h"
+#include "render.h"
+#include "db.h"
 
-int blahg_feed(char *feed, int p)
+static int __render_page(struct req *req, char *tmpl)
 {
-	struct timespec s,e;
-	struct post_old post;
+	printf("Content-Type: application/atom+xml; charset=UTF-8\n\n");
+	printf("%s\n", render_page(req, tmpl));
 
+	return 0;
+}
+
+static void __load_posts(struct req *req, int page)
+{
+	sqlite3_stmt *stmt;
+	int ret;
+
+	open_db();
+	SQL(stmt, "SELECT id FROM posts ORDER BY time DESC LIMIT ? OFFSET ?");
+	SQL_BIND_INT(stmt, 1, FEED_INDEX_STORIES);
+	SQL_BIND_INT(stmt, 2, page * FEED_INDEX_STORIES);
+	SQL_FOR_EACH(stmt) {
+		int postid;
+
+		postid = SQL_COL_INT(stmt, 0);
+
+		if (load_post(req, postid))
+			continue;
+	}
+}
+
+static int __feed(struct req *req)
+{
+	req_head(req, "Content-Type: application/atom+xml; charset=UTF-8");
+
+	vars_scope_push(&req->vars);
+
+	__load_posts(req, 0);
+
+	return __render_page(req, "{feed}");
+}
+
+int blahg_feed(struct req *req, char *feed, int p)
+{
 	if (strcmp(feed, "atom"))
 		disp_404("Atom only",
 			 "When I first decided to write my own blogging "
@@ -31,25 +65,8 @@ int blahg_feed(char *feed, int p)
 			 "never got around to implementing.  You just found "
 			 "one of them.  Eventually, ");
 
-	clock_gettime(CLOCK_REALTIME, &s);
+	/* switch to atom */
+	req->fmt = "atom";
 
-	memset(&post, 0, sizeof(struct post_old));
-	post.out = stdout;
-	post.title = "Blahg";
-
-	fprintf(post.out, "Content-Type: application/atom+xml; charset=UTF-8\n\n");
-
-	feed_header(&post,"atom");
-	feed_index(&post, "atom", FEED_INDEX_STORIES);
-	feed_footer(&post,"atom");
-
-	post.title = NULL;
-	destroy_post(&post);
-
-	clock_gettime(CLOCK_REALTIME, &e);
-
-	fprintf(post.out, "<!-- time to render: %ld.%09ld seconds -->\n", (int)e.tv_sec-s.tv_sec,
-		e.tv_nsec-s.tv_nsec+((e.tv_sec-s.tv_sec) ? 1000000000 : 0));
-
-	return 0;
+	return __feed(req);
 }
