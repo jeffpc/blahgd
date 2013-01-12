@@ -93,6 +93,7 @@ static int __do_load_post_body_fmt3(struct post *post, char *ibuf, size_t len)
 	struct parser_output x;
 
 	x.req   = NULL;
+	x.post  = post;
 	x.input = ibuf;
 	x.len   = strlen(ibuf);
 	x.pos   = 0;
@@ -211,7 +212,6 @@ static int __load_post_body(struct post *post)
 
 	snprintf(path, FILENAME_MAX, "data/posts/%d/post.%s", post->id,
 		 exts[post->fmt]);
-
 
 	fd = open(path, O_RDONLY);
 	assert(fd != -1);

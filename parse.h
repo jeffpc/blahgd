@@ -2,9 +2,11 @@
 #define __PARSE_H
 
 #include "main.h"
+#include "post.h"
 
 struct parser_output {
 	struct req *req;
+	struct post *post;
 
 	void *scanner;
 	char *output;

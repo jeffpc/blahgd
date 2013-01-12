@@ -26,14 +26,14 @@
 						len++; \
 					} while(0)
 
-char *listing(struct post_old *post, char *fname)
+char *listing(struct post *post, char *fname)
 {
 	char path[FILENAME_MAX];
 	char *out;
 	int len, size;
 	FILE *in;
 
-	snprintf(path, FILENAME_MAX, "%s/%s", post->path, fname);
+	snprintf(path, FILENAME_MAX, "data/posts/%d/%s", post->id, fname);
 
 	in = fopen(path, "r");
 	if (!in) {

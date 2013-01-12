@@ -31,7 +31,7 @@ add_executable(blahg render.c post.c main.c index.c
 	db.c ${PINGBACK_SRC} vars.c pipeline.c avl.c
 	${FLEX_tmpl_OUTPUTS} ${BISON_tmpl_OUTPUTS}
 	${FLEX_fmt3_OUTPUTS} ${BISON_fmt3_OUTPUTS}
-	sidebar.c story.c
+	sidebar.c story.c listing.c
 )
 
 find_library(SQLITE_LIB sqlite3)

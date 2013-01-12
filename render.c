@@ -17,6 +17,7 @@ char *render_page(struct req *req, char *str)
 	struct parser_output x;
 
 	x.req   = req;
+	x.post  = NULL;
 	x.input = str;
 	x.len   = strlen(str);
 	x.pos   = 0;

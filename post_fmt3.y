@@ -71,13 +71,12 @@ static char *concat5(char *a, char *b, char *c, char *d, char *e)
 	return ret;
 }
 
-static char *__listing(char *txt, char *opt)
+static char *__listing(struct post *post, char *txt, char *opt)
 {
-	return strdup("LISTINGS ARE NOT YET IMPLEMENTED");
-	// return concat4("</p><pre>", "", listing(post, txt), "</pre><p>");
+	return concat4("</p><pre>", "", listing(post, txt), "</pre><p>");
 }
 
-static char *process_cmd(char *cmd, char *txt, char *opt)
+static char *process_cmd(struct post *post, char *cmd, char *txt, char *opt)
 {
 	if (!strcmp(cmd, "link"))
 		return concat5("<a href=\"", txt, "\">", opt ? opt : txt, "</a>");
@@ -107,7 +106,7 @@ static char *process_cmd(char *cmd, char *txt, char *opt)
 	}
 
 	if (!strcmp(cmd, "listing"))
-		return __listing(txt, opt);
+		return __listing(post, txt, opt);
 
 	if (!strcmp(cmd, "item")) {
 		// FIXME: we should keep track of what commands we've
@@ -288,8 +287,8 @@ thing : WORD				{ $$ = $1; }
       | BSLASH cmd			{ $$ = $2; }
       ;
 
-cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd($1, $3, $2); }
-    | WORD cmdarg		{ $$ = process_cmd($1, $2, NULL); }
+cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd(data->post, $1, $3, $2); }
+    | WORD cmdarg		{ $$ = process_cmd(data->post, $1, $2, NULL); }
     | BSLASH			{ $$ = strdup("<br/>"); }
     | OCURLY			{ $$ = $1; }
     | CCURLY			{ $$ = $1; }
