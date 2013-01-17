@@ -28,3 +28,16 @@ CREATE TABLE post_cats (
 	FOREIGN KEY(post) REFERENCES posts(id),
 	FOREIGN KEY(cat) REFERENCES cats(cat)
 );
+
+CREATE TABLE comments (
+	post INTEGER,
+	id INTEGER,
+	author VARCHAR,
+	email VARCHAR,
+	time TIMESTAMP,
+	remote_addr VARCHAR,
+	url VARCHAR,
+	moderated INTEGER,
+	PRIMARY KEY(post, id),
+	FOREIGN KEY(post) REFERENCES posts(id)
+);
