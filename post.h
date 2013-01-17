@@ -20,6 +20,9 @@ struct post {
 	/* from 'post_tags' table */
 	struct list_head tags;
 
+	/* from 'comments' table */
+	int numcom;
+
 	/* body */
 	char *body;
 };

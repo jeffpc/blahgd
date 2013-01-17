@@ -296,7 +296,7 @@ static void __store_vars(struct req *req, const char *var, struct post *post)
 	vv.vars[2] = __str_var("title", post->title);
 	vv.vars[3] = __tag_var("tags", &post->tags);
 	vv.vars[4] = __str_var("body", post->body);
-	vv.vars[5] = __int_var("numcom", 0);
+	vv.vars[5] = __int_var("numcom", post->numcom);
 
 	assert(!var_append(&req->vars, "posts", &vv));
 }
@@ -313,6 +313,7 @@ int load_post(struct req *req, int postid)
 
 	post.id = postid;
 	post.body = NULL;
+	post.numcom = 0;
 	INIT_LIST_HEAD(&post.tags);
 
 	open_db();
@@ -324,7 +325,6 @@ int load_post(struct req *req, int postid)
 		post.fmt   = SQL_COL_INT(stmt, 2);
 	}
 
-	err = 0;
 	SQL(stmt, "SELECT tag FROM post_tags WHERE post=? ORDER BY tag");
 	SQL_BIND_INT(stmt, 1, postid);
 	SQL_FOR_EACH(stmt) {
@@ -339,9 +339,13 @@ int load_post(struct req *req, int postid)
 		list_add_tail(&tag->list, &post.tags);
 	}
 
-	if (!err)
-		err = __load_post_body(&post);
+	SQL(stmt, "SELECT count(1) FROM comments WHERE post=?");
+	SQL_BIND_INT(stmt, 1, postid);
+	SQL_FOR_EACH(stmt) {
+		post.numcom = SQL_COL_INT(stmt, 0);
+	}
 
+	err = __load_post_body(&post);
 	if (err)
 		destroy_post(&post);
 	else
