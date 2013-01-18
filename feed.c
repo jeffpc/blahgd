@@ -2,12 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <assert.h>
 
 #include "main.h"
 #include "config.h"
 #include "render.h"
 #include "db.h"
+#include "error.h"
 
 static int __render_page(struct req *req, char *tmpl)
 {
@@ -49,7 +49,7 @@ static void __load_posts(struct req *req, int page)
 	vv.type = VT_INT;
 	vv.i    = maxtime;
 
-	assert(!var_append(&req->vars, "lastupdate", &vv));
+	ASSERT(!var_append(&req->vars, "lastupdate", &vv));
 }
 
 static int __feed(struct req *req)

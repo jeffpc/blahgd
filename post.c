@@ -10,7 +10,6 @@
 #include <fcntl.h>
 #include <time.h>
 #include <dirent.h>
-#include <assert.h>
 
 #include "post.h"
 #include "list.h"
@@ -19,6 +18,7 @@
 #include "main.h"
 #include "db.h"
 #include "parse.h"
+#include "error.h"
 
 static char *load_comment(struct post *post, int commid)
 {
@@ -33,13 +33,13 @@ static char *load_comment(struct post *post, int commid)
 		 commid);
 
 	fd = open(path, O_RDONLY);
-	assert(fd != -1);
+	ASSERT(fd != -1);
 
 	ret = fstat(fd, &statbuf);
-	assert(ret != -1);
+	ASSERT(ret != -1);
 
 	ibuf = mmap(NULL, statbuf.st_size, PROT_READ, MAP_SHARED, fd, 0);
-	assert(ibuf != MAP_FAILED);
+	ASSERT(ibuf != MAP_FAILED);
 
 	obuf = strdup(ibuf);
 
@@ -63,12 +63,12 @@ static int __do_load_post_body_fmt3(struct post *post, char *ibuf, size_t len)
 	fmt3_lex_init(&x.scanner);
 	fmt3_set_extra(&x, x.scanner);
 
-	assert(fmt3_parse(&x) == 0);
+	ASSERT(fmt3_parse(&x) == 0);
 
 	fmt3_lex_destroy(x.scanner);
 
 	post->body = x.output;
-	assert(post->body);
+	ASSERT(post->body);
 
 	return 0;
 }
@@ -81,7 +81,7 @@ static char *cc(char *a, char *b, int blen)
 	alen = strlen(a);
 
 	ret = malloc(alen + blen + 1);
-	assert(ret);
+	ASSERT(ret);
 
 	memcpy(ret, a, alen);
 	memcpy(ret + alen, b, blen);
@@ -102,7 +102,7 @@ static int __do_load_post_body(struct post *post, char *ibuf, size_t len)
 	char tmp;
 
 	ret = strdup("");
-	assert(ret);
+	ASSERT(ret);
 
 	for(eidx = sidx = 0; eidx < len; eidx++) {
 		tmp = ibuf[eidx];
@@ -152,7 +152,7 @@ static int __do_load_post_body(struct post *post, char *ibuf, size_t len)
 	}
 
 	post->body = ret;
-	assert(post->body);
+	ASSERT(post->body);
 
 	return 0;
 }
@@ -176,13 +176,13 @@ static int __load_post_body(struct post *post)
 		 exts[post->fmt]);
 
 	fd = open(path, O_RDONLY);
-	assert(fd != -1);
+	ASSERT(fd != -1);
 
 	ret = fstat(fd, &statbuf);
-	assert(ret != -1);
+	ASSERT(ret != -1);
 
 	ibuf = mmap(NULL, statbuf.st_size, PROT_READ, MAP_SHARED, fd, 0);
-	assert(ibuf != MAP_FAILED);
+	ASSERT(ibuf != MAP_FAILED);
 
 	if (post->fmt == 3)
 		ret = __do_load_post_body_fmt3(post, ibuf, statbuf.st_size);
@@ -219,7 +219,7 @@ static int __load_post_comments(struct post *post)
 		struct comment *comm;
 
 		comm = malloc(sizeof(struct comment));
-		assert(comm);
+		ASSERT(comm);
 
 		list_add_tail(&comm->list, &post->comments);
 
@@ -242,7 +242,7 @@ static struct var *__int_var(const char *name, uint64_t val)
 	struct var *v;
 
 	v = var_alloc(name);
-	assert(v);
+	ASSERT(v);
 
 	v->val[0].type = VT_INT;
 	v->val[0].i    = val;
@@ -255,11 +255,11 @@ static struct var *__str_var(const char *name, const char *val)
 	struct var *v;
 
 	v = var_alloc(name);
-	assert(v);
+	ASSERT(v);
 
 	v->val[0].type = VT_STR;
 	v->val[0].str  = val ? strdup(val) : NULL;
-	assert(!val || v->val[0].str);
+	ASSERT(!val || v->val[0].str);
 
 	return v;
 }
@@ -271,15 +271,15 @@ static struct var *__tag_var(const char *name, struct list_head *val)
 	int i;
 
 	v = var_alloc(name);
-	assert(v);
+	ASSERT(v);
 
 	i = 0;
 	list_for_each_entry_safe(cur, tmp, val, list) {
-		assert(i < VAR_MAX_ARRAY_SIZE);
+		ASSERT(i < VAR_MAX_ARRAY_SIZE);
 
 		v->val[i].type = VT_STR;
 		v->val[i].str  = strdup(cur->tag);
-		assert(v->val[i].str);
+		ASSERT(v->val[i].str);
 
 		i++;
 	}
@@ -294,11 +294,11 @@ static struct var *__com_var(const char *name, struct list_head *val)
 	int i;
 
 	v = var_alloc(name);
-	assert(v);
+	ASSERT(v);
 
 	i = 0;
 	list_for_each_entry_safe(cur, tmp, val, list) {
-		assert(i < VAR_MAX_ARRAY_SIZE);
+		ASSERT(i < VAR_MAX_ARRAY_SIZE);
 
 		v->val[i].type = VT_VARS;
 		v->val[i].vars[0] = __int_var("commid", cur->id);
@@ -330,7 +330,7 @@ static void __store_vars(struct req *req, const char *var, struct post *post)
 	vv.vars[5] = __int_var("numcom", post->numcom);
 	vv.vars[6] = __com_var("comments", &post->comments);
 
-	assert(!var_append(&req->vars, "posts", &vv));
+	ASSERT(!var_append(&req->vars, "posts", &vv));
 }
 
 int load_post(struct req *req, int postid)
@@ -364,10 +364,10 @@ int load_post(struct req *req, int postid)
 		struct post_tag *tag;
 
 		tag = malloc(sizeof(struct post_tag));
-		assert(tag);
+		ASSERT(tag);
 
 		tag->tag = strdup(SQL_COL_STR(stmt, 0));
-		assert(tag->tag);
+		ASSERT(tag->tag);
 
 		list_add_tail(&tag->list, &post.tags);
 	}

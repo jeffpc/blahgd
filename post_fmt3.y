@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 
 #include "config.h"
 #include "listing.h"
@@ -33,7 +32,7 @@ static char *concat(char *a, char *b)
 	char *ret;
 
 	ret = malloc(strlen(a) + strlen(b) + 1);
-	assert(ret);
+	ASSERT(ret);
 
 	strcpy(ret, a);
 	strcat(ret, b);
@@ -46,7 +45,7 @@ static char *concat4(char *a, char *b, char *c, char *d)
 	char *ret;
 
 	ret = malloc(strlen(a) + strlen(b) + strlen(c) + strlen(d) + 1);
-	assert(ret);
+	ASSERT(ret);
 
 	strcpy(ret, a);
 	strcat(ret, b);
@@ -61,7 +60,7 @@ static char *concat5(char *a, char *b, char *c, char *d, char *e)
 	char *ret;
 
 	ret = malloc(strlen(a) + strlen(b) + strlen(c) + strlen(d) + strlen(e) + 1);
-	assert(ret);
+	ASSERT(ret);
 
 	strcpy(ret, a);
 	strcat(ret, b);
@@ -92,17 +91,17 @@ static char *process_cmd(struct post *post, char *cmd, char *txt, char *opt)
 		return concat5("<img src=\"" PHOTO_BASE_URL "/", txt, "\" alt=\"", opt ? opt : "", "\" />");
 
 	if (!strcmp(cmd, "emph")) {
-		assert(!opt);
+		ASSERT(!opt);
 		return concat4("<em>", txt, "</em>", "");
 	}
 
 	if (!strcmp(cmd, "texttt")) {
-		assert(!opt);
+		ASSERT(!opt);
 		return concat4("<tt>", txt, "</tt>", "");
 	}
 
 	if (!strcmp(cmd, "textbf")) {
-		assert(!opt);
+		ASSERT(!opt);
 		return concat4("<strong>", txt, "</strong>", "");
 	}
 
@@ -122,22 +121,22 @@ static char *process_cmd(struct post *post, char *cmd, char *txt, char *opt)
 		int begin = !strcmp(cmd, "begin");
 
 		if (!strcmp(txt, "enumerate")) {
-			assert(!opt);
+			ASSERT(!opt);
 			return strdup(begin ? "</p><ol>" : "</ol><p>");
 		}
 
 		if (!strcmp(txt, "itemize")) {
-			assert(!opt);
+			ASSERT(!opt);
 			return strdup(begin ? "</p><ul>" : "</ul><p>");
 		}
 
 		if (!strcmp(txt, "description")) {
-			assert(!opt);
+			ASSERT(!opt);
 			return strdup(begin ? "</p><dl>" : "</dl><p>");
 		}
 
 		if (!strcmp(txt, "quote")) {
-			assert(!opt);
+			ASSERT(!opt);
 			return strdup(begin ? "</p><blockquote><p>" :
 					      "</p></blockquote><p>");
 		}
@@ -149,17 +148,17 @@ static char *process_cmd(struct post *post, char *cmd, char *txt, char *opt)
 		return concat5("<abbr title=\"", opt ? opt : txt, "\">", txt, "</abbr>");
 
 	if (!strcmp(cmd, "section")) {
-		assert(!opt);
+		ASSERT(!opt);
 		return concat4("</p><h4>", txt, "</h4><p>", "");
 	}
 
 	if (!strcmp(cmd, "subsection")) {
-		assert(!opt);
+		ASSERT(!opt);
 		return concat4("</p><h5>", txt, "</h5><p>", "");
 	}
 
 	if (!strcmp(cmd, "subsubsection")) {
-		assert(!opt);
+		ASSERT(!opt);
 		return concat4("</p><h6>", txt, "</h6><p>", "");
 	}
 
@@ -170,14 +169,14 @@ static char *process_cmd(struct post *post, char *cmd, char *txt, char *opt)
 	}
 
 	if (!strcmp(cmd, "bug")) {
-		assert(!opt);
+		ASSERT(!opt);
 		return concat5("<a href=\"" BUG_BASE_URL "/", txt,
 			"\"><img src=\"/bug.png\" alt=\"bug #\" />&nbsp;",
 			txt, "</a>");
 	}
 
 	if (!strcmp(cmd, "degree")) {
-		assert(!opt);
+		ASSERT(!opt);
 		return concat4("\xc2\xb0", txt, "", "");
 	}
 
@@ -193,7 +192,7 @@ static char *dash(int len)
 		[3] = "&mdash;",
 	};
 
-	assert(len <= 3);
+	ASSERT(len <= 3);
 
 	return strdup(ret[len]);
 }
@@ -206,7 +205,7 @@ static char *oquote(int len)
 		[2] = "&ldquo;",
 	};
 
-	assert(len <= 2);
+	ASSERT(len <= 2);
 
 	return strdup(ret[len]);
 }
@@ -219,7 +218,7 @@ static char *cquote(int len)
 		[2] = "&rdquo;",
 	};
 
-	assert(len <= 2);
+	ASSERT(len <= 2);
 
 	return strdup(ret[len]);
 }

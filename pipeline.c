@@ -1,9 +1,9 @@
-#include <assert.h>
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
 
 #include "pipeline.h"
+#include "error.h"
 
 static struct var_val *nop_fxn(struct var_val *v)
 {
@@ -45,7 +45,7 @@ static char *__urlescape_str(char *in)
 	}
 
 	out = malloc(outlen + 1);
-	assert(out);
+	ASSERT(out);
 
 	for (s = in, tmp = out; *s; s++, tmp++) {
 		unsigned char c = *s;
@@ -105,7 +105,7 @@ static char *__escape_str(char *in)
 	}
 
 	out = malloc(outlen + 1);
-	assert(out);
+	ASSERT(out);
 
 	for (s = in, tmp = out; *s; s++, tmp++) {
 		unsigned char c = *s;
@@ -143,7 +143,7 @@ static struct var_val *__escape(struct var_val *v, char *(*cvt)(char*))
 	switch (v->type) {
 		case VT_VARS:
 			var_val_dump(v, 0, 10);
-			assert(0);
+			ASSERT(0);
 			break;
 		case VT_NIL:
 			out = strdup("");
@@ -156,10 +156,10 @@ static struct var_val *__escape(struct var_val *v, char *(*cvt)(char*))
 			break;
 	}
 
-	assert(out);
+	ASSERT(out);
 
 	v = malloc(sizeof(struct var_val));
-	assert(v);
+	ASSERT(v);
 
 	v->type = VT_STR;
 	v->str  = out;
@@ -183,7 +183,7 @@ static struct var_val *__datetime(struct var_val *v, const char *fmt)
 	struct tm tm;
 	time_t ts;
 
-	assert(v->type == VT_INT);
+	ASSERT(v->type == VT_INT);
 
 	ts = v->i;
 	gmtime_r(&ts, &tm);
@@ -191,11 +191,11 @@ static struct var_val *__datetime(struct var_val *v, const char *fmt)
 
 
 	v = malloc(sizeof(struct var_val));
-	assert(v);
+	ASSERT(v);
 
 	v->type = VT_STR;
 	v->str  = strdup(buf);
-	assert(v->str);
+	ASSERT(v->str);
 
 	return v;
 }
@@ -232,7 +232,7 @@ struct pipeline *pipestage(char *name)
 	int i;
 
 	pipe = malloc(sizeof(struct pipeline));
-	assert(pipe);
+	ASSERT(pipe);
 
 	INIT_LIST_HEAD(&pipe->pipe);
 	pipe->stage = &nop;

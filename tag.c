@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <assert.h>
 #include <stdbool.h>
 
 #include "config.h"
@@ -11,6 +10,7 @@
 #include "main.h"
 #include "utils.h"
 #include "sidebar.h"
+#include "error.h"
 
 static int __render_page(struct req *req, char *tmpl)
 {
@@ -28,9 +28,9 @@ static void __store_title(struct vars *vars, const char *title)
 
         vv.type = VT_STR;
         vv.str  = strdup(title);
-        assert(vv.str);
+        ASSERT(vv.str);
 
-        assert(!var_append(vars, "title", &vv));
+        ASSERT(!var_append(vars, "title", &vv));
 }
 
 static void __store_tag(struct vars *vars, const char *tag)
@@ -41,9 +41,9 @@ static void __store_tag(struct vars *vars, const char *tag)
 
         vv.type = VT_STR;
         vv.str  = strdup(tag);
-        assert(vv.str);
+        ASSERT(vv.str);
 
-        assert(!var_append(vars, "tagid", &vv));
+        ASSERT(!var_append(vars, "tagid", &vv));
 }
 
 static void __store_pages(struct vars *vars, int page)
@@ -55,12 +55,12 @@ static void __store_pages(struct vars *vars, int page)
 	vv.type = VT_INT;
 	vv.i    = page + 1;
 
-	assert(!var_append(vars, "prevpage", &vv));
+	ASSERT(!var_append(vars, "prevpage", &vv));
 
 	vv.type = VT_INT;
 	vv.i    = page - 1;
 
-	assert(!var_append(vars, "nextpage", &vv));
+	ASSERT(!var_append(vars, "nextpage", &vv));
 }
 
 static void __load_posts_tag(struct req *req, int page, char *tag, bool istag,

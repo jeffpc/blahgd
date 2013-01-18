@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <string.h>
 #include <time.h>
 
@@ -8,6 +7,7 @@
 #include "main.h"
 #include "render.h"
 #include "sidebar.h"
+#include "error.h"
 
 static int __render_page(struct req *req, char *tmpl)
 {
@@ -25,14 +25,14 @@ static void __store_title(struct vars *vars, const char *title)
 
         vv.type = VT_STR;
         vv.str  = strdup(title);
-        assert(vv.str);
+        ASSERT(vv.str);
 
-        assert(!var_append(vars, "title", &vv));
+        ASSERT(!var_append(vars, "title", &vv));
 }
 
 static void __load_post(struct req *req, int p)
 {
-	assert(!load_post(req, p));
+	ASSERT(!load_post(req, p));
 
 	__store_title(&req->vars, "STORY");
 }

@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 
 #include "config.h"
 #include "vars.h"
@@ -30,7 +29,7 @@ static char *tostr(char c)
 	char *ret;
 
 	ret = malloc(2);
-	assert(ret);
+	ASSERT(ret);
 
 	ret[0] = c;
 	ret[1] = '\0';
@@ -43,7 +42,7 @@ static char *concat(char *a, char *b)
 	char *ret;
 
 	ret = malloc(strlen(a) + strlen(b) + 1);
-	assert(ret);
+	ASSERT(ret);
 
 	strcpy(ret, a);
 	strcat(ret, b);
@@ -96,7 +95,7 @@ char *foreach(struct req *req, char *var, char *tmpl)
 
 		switch (vv->type) {
 			case VT_NIL:
-				assert(0);
+				ASSERT(0);
 				break;
 			case VT_VARS:
 				__foreach_vars(vars, vv);

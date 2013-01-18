@@ -1,9 +1,9 @@
 #include <string.h>
-#include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 
 #include "vars.h"
+#include "error.h"
 
 static int cmp(struct avl_node *aa, struct avl_node *ab)
 {
@@ -29,7 +29,7 @@ void vars_scope_push(struct vars *vars)
 {
 	vars->cur++;
 
-	assert(vars->cur < VAR_MAX_SCOPES);
+	ASSERT(vars->cur < VAR_MAX_SCOPES);
 
 	__init_scope(vars);
 }
@@ -38,7 +38,7 @@ void vars_scope_pop(struct vars *vars)
 {
 	vars->cur--;
 
-	assert(vars->cur >= 0);
+	ASSERT(vars->cur >= 0);
 
 	// FIXME: just leaked memory
 }

@@ -4,7 +4,6 @@
 #include <time.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <assert.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
@@ -16,6 +15,7 @@
 #include "parse.h"
 #include "render.h"
 #include "db.h"
+#include "error.h"
 
 static int __render_page(struct req *req, char *tmpl)
 {
@@ -88,9 +88,9 @@ static void __store_title(struct vars *vars, const char *title)
 
         vv.type = VT_STR;
         vv.str  = strdup(title);
-        assert(vv.str);
+        ASSERT(vv.str);
 
-        assert(!var_append(vars, "title", &vv));
+        ASSERT(!var_append(vars, "title", &vv));
 }
 
 static void __store_pages(struct vars *vars, int page)
@@ -102,12 +102,12 @@ static void __store_pages(struct vars *vars, int page)
 	vv.type = VT_INT;
 	vv.i    = page + 1;
 
-	assert(!var_append(vars, "prevpage", &vv));
+	ASSERT(!var_append(vars, "prevpage", &vv));
 
 	vv.type = VT_INT;
 	vv.i    = page - 1;
 
-	assert(!var_append(vars, "nextpage", &vv));
+	ASSERT(!var_append(vars, "nextpage", &vv));
 }
 
 static void __store_archid(struct vars *vars, int archid)
@@ -119,7 +119,7 @@ static void __store_archid(struct vars *vars, int archid)
 	vv.type = VT_INT;
 	vv.i    = archid;
 
-	assert(!var_append(vars, "archid", &vv));
+	ASSERT(!var_append(vars, "archid", &vv));
 }
 
 int blahg_index(struct req *req, int page)

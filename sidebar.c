@@ -1,19 +1,19 @@
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
 #include <math.h>
 
 #include "main.h"
 #include "vars.h"
 #include "db.h"
 #include "sidebar.h"
+#include "error.h"
 
 static struct var *__int_var(const char *name, uint64_t val)
 {
 	struct var *v;
 
 	v = var_alloc(name);
-	assert(v);
+	ASSERT(v);
 
 	v->val[0].type = VT_INT;
 	v->val[0].i    = val;
@@ -26,11 +26,11 @@ static struct var *__str_var(const char *name, const char *val)
 	struct var *v;
 
 	v = var_alloc(name);
-	assert(v);
+	ASSERT(v);
 
 	v->val[0].type = VT_STR;
 	v->val[0].str  = val ? strdup(val) : NULL;
-	assert(!val || v->val[0].str);
+	ASSERT(!val || v->val[0].str);
 
 	return v;
 }
@@ -85,7 +85,7 @@ static void tagcloud(struct req *req)
 		vv.vars[1] = __int_var("size", size);
 		vv.vars[2] = __int_var("count", count);
 
-		assert(!var_append(&req->vars, "tagcloud", &vv));
+		ASSERT(!var_append(&req->vars, "tagcloud", &vv));
 	}
 }
 
@@ -119,7 +119,7 @@ static void archive(struct req *req)
 		vv.vars[0] = __int_var("name", archid);
 		vv.vars[1] = __str_var("desc", buf);
 
-		assert(!var_append(&req->vars, "archives", &vv));
+		ASSERT(!var_append(&req->vars, "archives", &vv));
 	}
 }
 

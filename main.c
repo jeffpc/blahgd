@@ -1,13 +1,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
 #include <libgen.h>
 #include <syslog.h>
 
 #include "main.h"
 #include "decode.h"
 #include "post.h"
+#include "error.h"
 
 static char *nullterminate(char *s)
 {
@@ -140,9 +140,9 @@ static void __store_str(struct vars *vars, const char *key, char *val)
 
         vv.type = VT_STR;
         vv.str  = strdup(val);
-        assert(vv.str);
+        ASSERT(vv.str);
 
-        assert(!var_append(vars, key, &vv));
+        ASSERT(!var_append(vars, key, &vv));
 }
 
 static void req_init(struct req *req)

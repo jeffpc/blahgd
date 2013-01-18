@@ -4,7 +4,6 @@
 #include <time.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <assert.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
@@ -26,7 +25,7 @@ char *render_page(struct req *req, char *str)
 	tmpl_lex_init(&x.scanner);
 	tmpl_set_extra(&x, x.scanner);
 
-	assert(tmpl_parse(&x) == 0);
+	ASSERT(tmpl_parse(&x) == 0);
 
 	tmpl_lex_destroy(x.scanner);
 
