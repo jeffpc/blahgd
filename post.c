@@ -20,73 +20,35 @@
 #include "db.h"
 #include "parse.h"
 
-#if 0
-void cat_post_comment(struct post_old *post, struct comment *comm)
+static char *load_comment(struct post *post, int commid)
 {
 	char path[FILENAME_MAX];
 	struct stat statbuf;
 	char *ibuf;
+	char *obuf;
 	int ret;
 	int fd;
 
-	snprintf(path, FILENAME_MAX, "%s/comments/%d/text.txt", post->path,
-		 comm->id);
+	snprintf(path, FILENAME_MAX, "data/posts/%d/comments/%d/text.txt", post->id,
+		 commid);
 
 	fd = open(path, O_RDONLY);
-	if (fd == -1) {
-		fprintf(post->out, "post.txt open error\n");
-		return;
-	}
+	assert(fd != -1);
 
 	ret = fstat(fd, &statbuf);
-	if (ret == -1) {
-		fprintf(post->out, "fstat failed\n");
-		goto out_close;
-	}
+	assert(ret != -1);
 
 	ibuf = mmap(NULL, statbuf.st_size, PROT_READ, MAP_SHARED, fd, 0);
-	if (ibuf == MAP_FAILED) {
-		fprintf(post->out, "mmap failed\n");
-		goto out_close;
-	}
+	assert(ibuf != MAP_FAILED);
 
-	__do_cat_post(post, ibuf, statbuf.st_size);
+	obuf = strdup(ibuf);
 
 	munmap(ibuf, statbuf.st_size);
 
-out_close:
 	close(fd);
+
+	return obuf;
 }
-
-int load_comment(struct post_old *post, int commid, struct comment *comm)
-{
-	char path[FILENAME_MAX];
-	char *buf;
-
-	snprintf(path, FILENAME_MAX, "%s/comments/%d", post->path, commid);
-
-	comm->id = commid;
-	comm->author = safe_getxattr(path, XATTR_COMM_AUTHOR);
-	buf          = safe_getxattr(path, XATTR_TIME);
-
-	if (comm->author && buf && (strlen(buf) == 16)) {
-		/* "2005-01-02 03:03" */
-		strptime(buf, "%Y-%m-%d %H:%M", &comm->time);
-
-		free(buf);
-
-		return 0;
-	}
-
-	free(buf);
-	return ENOMEM;
-}
-
-void destroy_comment(struct comment *comm)
-{
-	free(comm->author);
-}
-#endif
 
 static int __do_load_post_body_fmt3(struct post *post, char *ibuf, size_t len)
 {
@@ -234,6 +196,47 @@ static int __load_post_body(struct post *post)
 	return ret;
 }
 
+static char *__dup(const char *s)
+{
+	if (!s)
+		return NULL;
+
+	return strdup(s);
+}
+
+static int __load_post_comments(struct post *post)
+{
+	sqlite3_stmt *stmt;
+	int ret;
+
+	post->numcom = 0;
+
+	SQL(stmt, "SELECT id, author, email, strftime(\"%s\", time), "
+	    "remote_addr, url FROM comments WHERE post=? AND moderated=1 "
+	    "ORDER BY id");
+	SQL_BIND_INT(stmt, 1, post->id);
+	SQL_FOR_EACH(stmt) {
+		struct comment *comm;
+
+		comm = malloc(sizeof(struct comment));
+		assert(comm);
+
+		list_add_tail(&comm->list, &post->comments);
+
+		comm->id     = SQL_COL_INT(stmt, 0);
+		comm->author = __dup(SQL_COL_STR(stmt, 1));
+		comm->email  = __dup(SQL_COL_STR(stmt, 2));
+		comm->time   = SQL_COL_INT(stmt, 3);
+		comm->ip     = __dup(SQL_COL_STR(stmt, 4));
+		comm->url    = __dup(SQL_COL_STR(stmt, 5));
+		comm->body   = load_comment(post, comm->id);
+
+		post->numcom++;
+	}
+
+	return 0;
+}
+
 static struct var *__int_var(const char *name, uint64_t val)
 {
 	struct var *v;
@@ -284,6 +287,34 @@ static struct var *__tag_var(const char *name, struct list_head *val)
 	return v;
 }
 
+static struct var *__com_var(const char *name, struct list_head *val)
+{
+	struct comment *cur, *tmp;
+	struct var *v;
+	int i;
+
+	v = var_alloc(name);
+	assert(v);
+
+	i = 0;
+	list_for_each_entry_safe(cur, tmp, val, list) {
+		assert(i < VAR_MAX_ARRAY_SIZE);
+
+		v->val[i].type = VT_VARS;
+		v->val[i].vars[0] = __int_var("commid", cur->id);
+		v->val[i].vars[1] = __int_var("commtime", cur->time);
+		v->val[i].vars[2] = __str_var("commauthor", cur->author);
+		v->val[i].vars[3] = __str_var("commemail", cur->email);
+		v->val[i].vars[4] = __str_var("commip", cur->ip);
+		v->val[i].vars[5] = __str_var("commurl", cur->url);
+		v->val[i].vars[6] = __str_var("commbody", cur->body);
+
+		i++;
+	}
+
+	return v;
+}
+
 static void __store_vars(struct req *req, const char *var, struct post *post)
 {
 	struct var_val vv;
@@ -297,6 +328,7 @@ static void __store_vars(struct req *req, const char *var, struct post *post)
 	vv.vars[3] = __tag_var("tags", &post->tags);
 	vv.vars[4] = __str_var("body", post->body);
 	vv.vars[5] = __int_var("numcom", post->numcom);
+	vv.vars[6] = __com_var("comments", &post->comments);
 
 	assert(!var_append(&req->vars, "posts", &vv));
 }
@@ -315,6 +347,7 @@ int load_post(struct req *req, int postid)
 	post.body = NULL;
 	post.numcom = 0;
 	INIT_LIST_HEAD(&post.tags);
+	INIT_LIST_HEAD(&post.comments);
 
 	open_db();
 	SQL(stmt, "SELECT title, strftime(\"%s\", time), fmt FROM posts WHERE id=?");
@@ -339,13 +372,11 @@ int load_post(struct req *req, int postid)
 		list_add_tail(&tag->list, &post.tags);
 	}
 
-	SQL(stmt, "SELECT count(1) FROM comments WHERE post=?");
-	SQL_BIND_INT(stmt, 1, postid);
-	SQL_FOR_EACH(stmt) {
-		post.numcom = SQL_COL_INT(stmt, 0);
-	}
+	err = __load_post_comments(&post);
 
-	err = __load_post_body(&post);
+	if (!err)
+		err = __load_post_body(&post);
+
 	if (err)
 		destroy_post(&post);
 	else
