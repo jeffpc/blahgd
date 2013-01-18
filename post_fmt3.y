@@ -10,6 +10,7 @@
 
 #include "config.h"
 #include "listing.h"
+#include "error.h"
 
 #include "parse.h"
 
@@ -19,12 +20,12 @@ extern int fmt3_lex(void *, void *);
 
 void yyerror(void *scan, char *e)
 {
-	fprintf(stderr, "Error: %s\n", e);
+	LOG("Error: %s", e);
 }
 
 void fmt3_error2(char *e, char *yytext)
 {
-	fprintf(stderr, "Error: %s (%s)\n", e, yytext);
+	LOG("Error: %s (%s)", e, yytext);
 }
 
 static char *concat(char *a, char *b)

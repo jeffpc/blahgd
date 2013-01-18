@@ -16,8 +16,8 @@ int open_db()
 
 	ret = sqlite3_open(DB_FILE, &db);
 	if (ret != SQLITE_OK) {
-		fprintf(stderr, "Database '%s' open failed: %s (%d)\n",
-			DB_FILE, sqlite3_errmsg(db), ret);
+		LOG("Database '%s' open failed: %s (%d)",
+		    DB_FILE, sqlite3_errmsg(db), ret);
 		return 1;
 	}
 

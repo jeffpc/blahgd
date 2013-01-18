@@ -95,7 +95,8 @@ int __tagcat(struct req *req, char *tagcat, int page, char *tmpl, bool istag,
 	     int nstories)
 {
 	if (!tagcat) {
-		fprintf(stdout, "Invalid tag/category name\n");
+		printf("Content-type: text/plain\n\n");
+		printf("Invalid tag/category name\n");
 		return 0;
 	}
 

@@ -3,6 +3,7 @@
 #include <string.h>
 #include <assert.h>
 #include <libgen.h>
+#include <syslog.h>
 
 #include "main.h"
 #include "post.h"
@@ -167,6 +168,8 @@ int main(int argc, char **argv)
 {
 	struct req request;
 	int ret;
+
+	openlog("blahg", LOG_NDELAY | LOG_PID, LOG_LOCAL0);
 
 	req_init(&request);
 

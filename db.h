@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <sqlite3.h>
 
+#include "error.h"
+
 extern sqlite3 *db;
 
 extern int open_db();
@@ -13,7 +15,7 @@ extern int open_db();
 		int ret; \
 		ret = sqlite3_prepare_v2(db, (sql), strlen(sql) + 1, &(s), NULL); \
 		if (ret != SQLITE_OK) { \
-			fprintf(stderr, "Error %s:%d: %s (%d)\n", \
+			LOG("Error %s:%d: %s (%d)", \
 				__FILE__, __LINE__, sqlite3_errmsg(db), \
 				ret); \
 			abort(); \
@@ -25,7 +27,7 @@ extern int open_db();
 		int ret; \
 		ret = sqlite3_bind_int((s), (i), (v)); \
 		if (ret != SQLITE_OK) { \
-			fprintf(stderr, "Error %s:%d: %s (%d)\n", \
+			LOG("Error %s:%d: %s (%d)", \
 				__FILE__, __LINE__, sqlite3_errmsg(db), \
 				ret); \
 			abort(); \
@@ -37,7 +39,7 @@ extern int open_db();
 		int ret; \
 		ret = sqlite3_bind_text((s), (i), (v), strlen(v), SQLITE_TRANSIENT); \
 		if (ret != SQLITE_OK) { \
-			fprintf(stderr, "Error %s:%d: %s (%d)\n", \
+			LOG("Error %s:%d: %s (%d)", \
 				__FILE__, __LINE__, sqlite3_errmsg(db), \
 				ret); \
 			abort(); \
@@ -49,7 +51,7 @@ extern int open_db();
 		int ret; \
 		ret = sqlite3_step(s); \
 		if (ret != SQLITE_DONE) { \
-			fprintf(stderr, "Error %s:%d: %s (%d)\n", \
+			LOG("Error %s:%d: %s (%d)", \
 				__FILE__, __LINE__, sqlite3_errmsg(db), \
 				ret); \
 			abort(); \

@@ -11,6 +11,7 @@
 
 #include "render.h"
 #include "parse.h"
+#include "error.h"
 
 char *render_page(struct req *req, char *str)
 {
@@ -45,7 +46,7 @@ char *render_template(struct req *req, const char *tmpl)
 
 	fd = open(path, O_RDONLY);
 	if (fd == -1) {
-		fprintf(stderr, "template (%s) open error\n", path);
+		LOG("template (%s) open error", path);
 		return NULL;
 	}
 
@@ -53,13 +54,13 @@ char *render_template(struct req *req, const char *tmpl)
 
 	ret = fstat(fd, &statbuf);
 	if (ret == -1) {
-		fprintf(stderr, "fstat failed\n");
+		LOG("fstat failed");
 		goto out_close;
 	}
 
 	buf = mmap(NULL, statbuf.st_size + 4096, PROT_READ, MAP_SHARED, fd, 0);
 	if (buf == MAP_FAILED) {
-		fprintf(stderr, "mmap failed\n");
+		LOG("mmap failed");
 		goto out_close;
 	}
 

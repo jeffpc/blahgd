@@ -10,6 +10,7 @@
 
 #include "config.h"
 #include "vars.h"
+#include "error.h"
 #include "render.h"
 #include "pipeline.h"
 
@@ -21,7 +22,7 @@ extern int tmpl_lex(void *, void *);
 
 void yyerror(void *scan, char *e)
 {
-	fprintf(stderr, "Error: %s\n", e);
+	LOG("Error: %s", e);
 }
 
 static char *tostr(char c)
