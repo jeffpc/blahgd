@@ -30,6 +30,6 @@
 #define VAR_MAX_VARS_SIZE		10
 
 #define TAGCLOUD_MIN_SIZE		6
-#define TAGCLOUD_MAX_SIZE		20
+#define TAGCLOUD_MAX_SIZE		18
 
 #endif
