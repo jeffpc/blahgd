@@ -33,6 +33,7 @@ add_executable(blahg render.c post.c main.c
 	${FLEX_fmt3_OUTPUTS} ${BISON_fmt3_OUTPUTS}
 	index.c sidebar.c story.c tag.c feed.c
 	listing.c utils.c
+	decode.c fsm.c
 )
 
 find_library(SQLITE_LIB sqlite3)

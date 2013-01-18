@@ -6,6 +6,7 @@
 #include <syslog.h>
 
 #include "main.h"
+#include "decode.h"
 #include "post.h"
 
 static char *nullterminate(char *s)
@@ -81,10 +82,12 @@ static void parse_qs(char *qs, struct req *req)
 		qs += len;
 		tmp = nullterminate(qs);
 
-		if (iptr)
+		if (iptr) {
 			*iptr = atoi(qs);
-		else if (cptr)
+		} else if (cptr) {
+			urldecode(qs, strlen(qs), qs);
 			*cptr = qs;
+		}
 
 		qs = tmp;
 	}
