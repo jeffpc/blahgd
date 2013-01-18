@@ -2,6 +2,8 @@
 #define __MAIN_H
 
 #include <time.h>
+#include <stdint.h>
+#include <stdbool.h>
 
 #include "avl.h"
 #include "config.h"
@@ -36,8 +38,6 @@ struct qs {
 };
 
 struct req {
-	struct timespec start;
-
 	struct vars vars;
 
 	struct qs args;
@@ -45,6 +45,10 @@ struct req {
 	char *head;
 
 	char *fmt;		/* format (e.g., "html") */
+
+	/* request latency calculation */
+	bool dump_latency;
+	uint64_t start;
 };
 
 extern void req_head(struct req *req, char *header);
@@ -61,5 +65,14 @@ extern int blahg_pingback();
 #endif
 
 extern void disp_404(char *title, char *txt);
+
+static inline uint64_t gettime()
+{
+	struct timespec ts;
+
+	clock_gettime(CLOCK_REALTIME, &ts);
+
+	return ts.tv_sec * 1000000000ULL + ts.tv_nsec;
+}
 
 #endif

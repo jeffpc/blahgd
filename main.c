@@ -144,11 +144,11 @@ static void __store_str(struct vars *vars, const char *key, char *val)
 
 static void req_init(struct req *req)
 {
-	clock_gettime(CLOCK_REALTIME, &req->start);
-
-	req->buf  = NULL;
-	req->head = NULL;
-	req->fmt  = "html";
+	req->dump_latency = true;
+	req->start = gettime();
+	req->buf   = NULL;
+	req->head  = NULL;
+	req->fmt   = "html";
 
 	vars_init(&req->vars);
 
@@ -157,6 +157,15 @@ static void req_init(struct req *req)
 
 static void req_destroy(struct req *req)
 {
+	if (req->dump_latency) {
+		uint64_t delta;
+
+		delta = gettime() - req->start;
+
+		printf("<!-- time to render: %lu.%09lu seconds -->\n",
+		       delta / 1000000000UL,
+		       delta % 1000000000UL);
+	}
 }
 
 void req_head(struct req *req, char *header)
@@ -215,7 +224,6 @@ int main(int argc, char **argv)
 			return blahg_malformed(&request, argc, argv);
 	}
 
-	// FIXME: calculate request latency
 	req_destroy(&request);
 
 	return ret;
