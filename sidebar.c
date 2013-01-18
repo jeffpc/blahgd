@@ -74,13 +74,16 @@ static void tagcloud(struct req *req)
 	SQL(stmt, TAG_COUNTS);
 	SQL_FOR_EACH(stmt) {
 		const char *tag;
+		uint64_t count;
 		uint64_t size;
 
-		tag  = SQL_COL_STR(stmt, 0);
-		size = __tag_size(SQL_COL_INT(stmt, 1), cmin, cmax);
+		tag   = SQL_COL_STR(stmt, 0);
+		count = SQL_COL_INT(stmt, 1);
+		size  = __tag_size(count, cmin, cmax);
 
 		vv.vars[0] = __str_var("name", tag);
 		vv.vars[1] = __int_var("size", size);
+		vv.vars[2] = __int_var("count", count);
 
 		assert(!var_append(&req->vars, "tagcloud", &vv));
 	}
