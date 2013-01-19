@@ -14,7 +14,8 @@ void __my_log(const char *fmt, ...)
 	vsnprintf(msg, sizeof(msg), fmt, ap);
 
 	syslog(LOG_LOCAL0 | LOG_CRIT, "%s", msg);
-	fprintf(stderr, "%s\n", msg);
+
+	va_end(ap);
 }
 
 int __my_assfail(const char *a, const char *f, int l)
