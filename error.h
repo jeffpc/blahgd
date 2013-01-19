@@ -15,7 +15,7 @@ extern int __my_assfail3(const char *a, uintmax_t lv, const char *op,
 	do {								\
 		uint64_t lhs = (l);					\
 		uint64_t rhs = (r);					\
-		if (!(hs op rhs))					\
+		if (!(lhs op rhs))					\
 			__my_assfail3(#l " " #op " " #r, lhs, #op, rhs,	\
 				      __FILE__, __LINE__);		\
 	} while(0)
