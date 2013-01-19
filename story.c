@@ -37,10 +37,12 @@ static int __load_post(struct req *req, int p)
 
 	ret = load_post(req, p);
 
-	if (ret)
+	if (ret) {
+		LOG("failed to load post #%d", p);
 		__store_title(&req->vars, "not found");
-	else
+	} else {
 		__store_title(&req->vars, "STORY");
+	}
 
 	return ret;
 }
