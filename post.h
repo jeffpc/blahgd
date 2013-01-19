@@ -12,7 +12,7 @@ struct post_tag {
 
 struct comment {
 	struct list_head list;
-	int id;
+	unsigned int id;
 	char *author;
 	char *email;
 	unsigned int time;
@@ -24,17 +24,17 @@ struct comment {
 
 struct post {
 	/* from 'posts' table */
-	int id;
+	unsigned int id;
 	unsigned int time;
 	char *title;
-	int fmt;
+	unsigned int fmt;
 
 	/* from 'post_tags' table */
 	struct list_head tags;
 
 	/* from 'comments' table */
 	struct list_head comments;
-	int numcom;
+	unsigned int numcom;
 
 	/* body */
 	char *body;

@@ -173,6 +173,8 @@ static int __load_post_body(struct post *post)
 	int ret;
 	int fd;
 
+	ASSERT3U(post->fmt, <=, 3);
+
 	snprintf(path, FILENAME_MAX, "data/posts/%d/post.%s", post->id,
 		 exts[post->fmt]);
 
@@ -197,14 +199,6 @@ static int __load_post_body(struct post *post)
 	return ret;
 }
 
-static char *__dup(const char *s)
-{
-	if (!s)
-		return NULL;
-
-	return xstrdup(s);
-}
-
 static int __load_post_comments(struct post *post)
 {
 	sqlite3_stmt *stmt;
@@ -225,11 +219,11 @@ static int __load_post_comments(struct post *post)
 		list_add_tail(&comm->list, &post->comments);
 
 		comm->id     = SQL_COL_INT(stmt, 0);
-		comm->author = __dup(SQL_COL_STR(stmt, 1));
-		comm->email  = __dup(SQL_COL_STR(stmt, 2));
+		comm->author = xstrdup(SQL_COL_STR(stmt, 1));
+		comm->email  = xstrdup(SQL_COL_STR(stmt, 2));
 		comm->time   = SQL_COL_INT(stmt, 3);
-		comm->ip     = __dup(SQL_COL_STR(stmt, 4));
-		comm->url    = __dup(SQL_COL_STR(stmt, 5));
+		comm->ip     = xstrdup(SQL_COL_STR(stmt, 4));
+		comm->url    = xstrdup(SQL_COL_STR(stmt, 5));
 		comm->body   = load_comment(post, comm->id);
 
 		post->numcom++;
@@ -345,6 +339,7 @@ int load_post(struct req *req, int postid)
 	snprintf(path, FILENAME_MAX, "data/posts/%d", postid);
 
 	post.id = postid;
+	post.title = NULL;
 	post.body = NULL;
 	post.numcom = 0;
 	INIT_LIST_HEAD(&post.tags);
@@ -357,6 +352,11 @@ int load_post(struct req *req, int postid)
 		post.title = xstrdup(SQL_COL_STR(stmt, 0));
 		post.time  = SQL_COL_INT(stmt, 1);
 		post.fmt   = SQL_COL_INT(stmt, 2);
+	}
+
+	if (!post.title) {
+		err = ENOENT;
+		goto err;
 	}
 
 	SQL(stmt, "SELECT tag FROM post_tags WHERE post=? ORDER BY tag");
@@ -378,6 +378,7 @@ int load_post(struct req *req, int postid)
 	if (!err)
 		err = __load_post_body(&post);
 
+err:
 	if (err)
 		destroy_post(&post);
 	else
