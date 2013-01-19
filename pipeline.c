@@ -4,6 +4,7 @@
 
 #include "pipeline.h"
 #include "error.h"
+#include "utils.h"
 
 static struct var_val *nop_fxn(struct var_val *v)
 {
@@ -146,7 +147,7 @@ static struct var_val *__escape(struct var_val *v, char *(*cvt)(char*))
 			ASSERT(0);
 			break;
 		case VT_NIL:
-			out = strdup("");
+			out = xstrdup("");
 			break;
 		case VT_INT:
 			out = str_of_int(v->i);
@@ -194,7 +195,7 @@ static struct var_val *__datetime(struct var_val *v, const char *fmt)
 	ASSERT(v);
 
 	v->type = VT_STR;
-	v->str  = strdup(buf);
+	v->str  = xstrdup(buf);
 	ASSERT(v->str);
 
 	return v;

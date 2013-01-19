@@ -12,6 +12,7 @@
 #include "error.h"
 #include "render.h"
 #include "pipeline.h"
+#include "utils.h"
 
 #include "parse.h"
 
@@ -79,7 +80,7 @@ char *foreach(struct req *req, char *var, char *tmpl)
 	char *tmp;
 	int i;
 
-	ret = strdup("");
+	ret = xstrdup("");
 
 	v = var_lookup(vars, var);
 	if (!v)
@@ -139,7 +140,7 @@ static char *print_var_val(struct var_val *vv)
 			break;
 	}
 
-	return strdup(tmp);
+	return xstrdup(tmp);
 }
 
 static char *print_var(struct var *v)
@@ -157,7 +158,7 @@ static char *pipeline(struct req *req, char *var, struct pipeline *pipe)
 
 	v = var_lookup(&req->vars, var);
 	if (!v)
-		return strdup("");
+		return xstrdup("");
 
 	/* wedge the sentinel list head into the pipeline */
 	line.next = &pipe->pipe;
@@ -194,10 +195,10 @@ page : words					{ data->output = $1; }
 
 words : words CHAR				{ $$ = concat($1, tostr($2)); }
       | words WORD				{ $$ = concat($1, $2); }
-      | words '|'				{ $$ = concat($1, strdup("|")); }
-      | words '%'				{ $$ = concat($1, strdup("%")); }
+      | words '|'				{ $$ = concat($1, xstrdup("|")); }
+      | words '%'				{ $$ = concat($1, xstrdup("%")); }
       | words cmd				{ $$ = concat($1, $2); }
-      |						{ $$ = strdup(""); }
+      |						{ $$ = xstrdup(""); }
       ;
 
 cmd : '{' WORD pipeline '}'		{ $$ = pipeline(data->req, $2, $3); }

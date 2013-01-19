@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "listing.h"
+#include "utils.h"
 
 #define PAGE 4096
 
@@ -38,7 +39,7 @@ char *listing(struct post *post, char *fname)
 	in = fopen(path, "r");
 	if (!in) {
 		snprintf(path, FILENAME_MAX, "Failed to open listing file '%s'.", fname);
-		return strdup(path);
+		return xstrdup(path);
 	}
 
 	len = 0;
@@ -76,5 +77,5 @@ char *listing(struct post *post, char *fname)
 err_mem:
 	snprintf(path, FILENAME_MAX, "Falied to allocate memory for buffer "
 		 "(len %d, size %d bytes).", len, size);
-	return strdup(path);
+	return xstrdup(path);
 }

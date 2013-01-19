@@ -8,6 +8,7 @@
 #include "decode.h"
 #include "post.h"
 #include "error.h"
+#include "utils.h"
 
 static char *nullterminate(char *s)
 {
@@ -139,7 +140,7 @@ static void __store_str(struct vars *vars, const char *key, char *val)
 	memset(&vv, 0, sizeof(vv));
 
         vv.type = VT_STR;
-        vv.str  = strdup(val);
+        vv.str  = xstrdup(val);
         ASSERT(vv.str);
 
         ASSERT(!var_append(vars, key, &vv));

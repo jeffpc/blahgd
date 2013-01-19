@@ -2,6 +2,7 @@
 #define __ERROR_H
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <syslog.h>
 
 #define LOG(...)	\

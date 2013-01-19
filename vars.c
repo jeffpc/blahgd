@@ -4,6 +4,7 @@
 
 #include "vars.h"
 #include "error.h"
+#include "utils.h"
 
 static int cmp(struct avl_node *aa, struct avl_node *ab)
 {
@@ -70,7 +71,7 @@ struct var *var_alloc(const char *name)
 
 	memset(v, 0, sizeof(struct var));
 
-	v->name = strdup(name);
+	v->name = xstrdup(name);
 	if (!v->name) {
 		free(v);
 		return NULL;

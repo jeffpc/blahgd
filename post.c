@@ -19,6 +19,7 @@
 #include "db.h"
 #include "parse.h"
 #include "error.h"
+#include "utils.h"
 
 static char *load_comment(struct post *post, int commid)
 {
@@ -41,7 +42,7 @@ static char *load_comment(struct post *post, int commid)
 	ibuf = mmap(NULL, statbuf.st_size, PROT_READ, MAP_SHARED, fd, 0);
 	ASSERT(ibuf != MAP_FAILED);
 
-	obuf = strdup(ibuf);
+	obuf = xstrdup(ibuf);
 
 	munmap(ibuf, statbuf.st_size);
 
@@ -101,7 +102,7 @@ static int __do_load_post_body(struct post *post, char *ibuf, size_t len)
 	char *ret;
 	char tmp;
 
-	ret = strdup("");
+	ret = xstrdup("");
 	ASSERT(ret);
 
 	for(eidx = sidx = 0; eidx < len; eidx++) {
@@ -201,7 +202,7 @@ static char *__dup(const char *s)
 	if (!s)
 		return NULL;
 
-	return strdup(s);
+	return xstrdup(s);
 }
 
 static int __load_post_comments(struct post *post)
@@ -258,7 +259,7 @@ static struct var *__str_var(const char *name, const char *val)
 	ASSERT(v);
 
 	v->val[0].type = VT_STR;
-	v->val[0].str  = val ? strdup(val) : NULL;
+	v->val[0].str  = xstrdup(val);
 	ASSERT(!val || v->val[0].str);
 
 	return v;
@@ -278,7 +279,7 @@ static struct var *__tag_var(const char *name, struct list_head *val)
 		ASSERT(i < VAR_MAX_ARRAY_SIZE);
 
 		v->val[i].type = VT_STR;
-		v->val[i].str  = strdup(cur->tag);
+		v->val[i].str  = xstrdup(cur->tag);
 		ASSERT(v->val[i].str);
 
 		i++;
@@ -353,7 +354,7 @@ int load_post(struct req *req, int postid)
 	SQL(stmt, "SELECT title, strftime(\"%s\", time), fmt FROM posts WHERE id=?");
 	SQL_BIND_INT(stmt, 1, postid);
 	SQL_FOR_EACH(stmt) {
-		post.title = strdup(SQL_COL_STR(stmt, 0));
+		post.title = xstrdup(SQL_COL_STR(stmt, 0));
 		post.time  = SQL_COL_INT(stmt, 1);
 		post.fmt   = SQL_COL_INT(stmt, 2);
 	}
@@ -366,7 +367,7 @@ int load_post(struct req *req, int postid)
 		tag = malloc(sizeof(struct post_tag));
 		ASSERT(tag);
 
-		tag->tag = strdup(SQL_COL_STR(stmt, 0));
+		tag->tag = xstrdup(SQL_COL_STR(stmt, 0));
 		ASSERT(tag->tag);
 
 		list_add_tail(&tag->list, &post.tags);

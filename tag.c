@@ -27,7 +27,7 @@ static void __store_title(struct vars *vars, const char *title)
 	memset(&vv, 0, sizeof(vv));
 
         vv.type = VT_STR;
-        vv.str  = strdup(title);
+        vv.str  = xstrdup(title);
         ASSERT(vv.str);
 
         ASSERT(!var_append(vars, "title", &vv));
@@ -40,7 +40,7 @@ static void __store_tag(struct vars *vars, const char *tag)
 	memset(&vv, 0, sizeof(vv));
 
         vv.type = VT_STR;
-        vv.str  = strdup(tag);
+        vv.str  = xstrdup(tag);
         ASSERT(vv.str);
 
         ASSERT(!var_append(vars, "tagid", &vv));

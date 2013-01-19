@@ -8,6 +8,7 @@
 #include "render.h"
 #include "sidebar.h"
 #include "error.h"
+#include "utils.h"
 
 static int __render_page(struct req *req, char *tmpl)
 {
@@ -24,7 +25,7 @@ static void __store_title(struct vars *vars, const char *title)
 	memset(&vv, 0, sizeof(vv));
 
         vv.type = VT_STR;
-        vv.str  = strdup(title);
+        vv.str  = xstrdup(title);
         ASSERT(vv.str);
 
         ASSERT(!var_append(vars, "title", &vv));

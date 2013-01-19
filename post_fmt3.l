@@ -7,6 +7,7 @@
 #include <stdlib.h>
 
 #include "parse.h"
+#include "utils.h"
 
 #include "post_fmt3.tab.h"
 
@@ -18,29 +19,29 @@ int fmt3_input_proc(char *buf, int size, yyscan_t scanner);
 %}
 
 %%
-\n\n[ \t\n]*		{ yylval->ptr = strdup(yytext); return PAREND; }
-\n			{ yylval->ptr = strdup(yytext); return NLINE; }
-[ \t]+			{ yylval->ptr = strdup(yytext); return WSPACE; }
-"\\"			{ yylval->ptr = strdup(yytext); return BSLASH; }
-"{"			{ yylval->ptr = strdup(yytext); return OCURLY; }
-"}"			{ yylval->ptr = strdup(yytext); return CCURLY; }
-"["			{ yylval->ptr = strdup(yytext); return OBRACE; }
-"]"			{ yylval->ptr = strdup(yytext); return CBRACE; }
-"&"			{ yylval->ptr = strdup(yytext); return AMP; }
-"_"			{ yylval->ptr = strdup(yytext); return USCORE; }
-"%"			{ yylval->ptr = strdup(yytext); return PERCENT; }
-"$"			{ yylval->ptr = strdup(yytext); return DOLLAR; }
-"~"			{ yylval->ptr = strdup(yytext); return TILDE; }
-"|"			{ yylval->ptr = strdup(yytext); return PIPE; }
-\.{3}			{ yylval->ptr = strdup(yytext); return ELLIPSIS; }
--{1,3}			{ yylval->ptr = strdup(yytext); return DASH; }
-`{1,2}			{ yylval->ptr = strdup(yytext); return OQUOT; }
-'{1,2}			{ yylval->ptr = strdup(yytext); return CQUOT; }
-[".,()/=<>!:;\+?@*#]	{ yylval->ptr = strdup(yytext); return SCHAR; }
-[\xe0-\xef]		{ yylval->ptr = strdup(yytext); return UTF8FIRST3; }
-[\xc0-\xdf]		{ yylval->ptr = strdup(yytext); return UTF8FIRST2; }
-[\x80-\xbf]		{ yylval->ptr = strdup(yytext); return UTF8REST; }
-[A-Za-z0-9]+		{ yylval->ptr = strdup(yytext); return WORD; }
+\n\n[ \t\n]*		{ yylval->ptr = xstrdup(yytext); return PAREND; }
+\n			{ yylval->ptr = xstrdup(yytext); return NLINE; }
+[ \t]+			{ yylval->ptr = xstrdup(yytext); return WSPACE; }
+"\\"			{ yylval->ptr = xstrdup(yytext); return BSLASH; }
+"{"			{ yylval->ptr = xstrdup(yytext); return OCURLY; }
+"}"			{ yylval->ptr = xstrdup(yytext); return CCURLY; }
+"["			{ yylval->ptr = xstrdup(yytext); return OBRACE; }
+"]"			{ yylval->ptr = xstrdup(yytext); return CBRACE; }
+"&"			{ yylval->ptr = xstrdup(yytext); return AMP; }
+"_"			{ yylval->ptr = xstrdup(yytext); return USCORE; }
+"%"			{ yylval->ptr = xstrdup(yytext); return PERCENT; }
+"$"			{ yylval->ptr = xstrdup(yytext); return DOLLAR; }
+"~"			{ yylval->ptr = xstrdup(yytext); return TILDE; }
+"|"			{ yylval->ptr = xstrdup(yytext); return PIPE; }
+\.{3}			{ yylval->ptr = xstrdup(yytext); return ELLIPSIS; }
+-{1,3}			{ yylval->ptr = xstrdup(yytext); return DASH; }
+`{1,2}			{ yylval->ptr = xstrdup(yytext); return OQUOT; }
+'{1,2}			{ yylval->ptr = xstrdup(yytext); return CQUOT; }
+[".,()/=<>!:;\+?@*#]	{ yylval->ptr = xstrdup(yytext); return SCHAR; }
+[\xe0-\xef]		{ yylval->ptr = xstrdup(yytext); return UTF8FIRST3; }
+[\xc0-\xdf]		{ yylval->ptr = xstrdup(yytext); return UTF8FIRST2; }
+[\x80-\xbf]		{ yylval->ptr = xstrdup(yytext); return UTF8REST; }
+[A-Za-z0-9]+		{ yylval->ptr = xstrdup(yytext); return WORD; }
 .|\n			{ fmt3_error2("post text contains invalid characters", yytext); yyterminate(); }
 %%
 

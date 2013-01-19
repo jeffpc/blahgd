@@ -7,6 +7,7 @@
 #include "db.h"
 #include "sidebar.h"
 #include "error.h"
+#include "utils.h"
 
 static struct var *__int_var(const char *name, uint64_t val)
 {
@@ -29,7 +30,7 @@ static struct var *__str_var(const char *name, const char *val)
 	ASSERT(v);
 
 	v->val[0].type = VT_STR;
-	v->val[0].str  = val ? strdup(val) : NULL;
+	v->val[0].str  = xstrdup(val);
 	ASSERT(!val || v->val[0].str);
 
 	return v;

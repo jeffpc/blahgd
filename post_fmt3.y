@@ -10,6 +10,7 @@
 #include "config.h"
 #include "listing.h"
 #include "error.h"
+#include "utils.h"
 
 #include "parse.h"
 
@@ -122,22 +123,22 @@ static char *process_cmd(struct post *post, char *cmd, char *txt, char *opt)
 
 		if (!strcmp(txt, "enumerate")) {
 			ASSERT(!opt);
-			return strdup(begin ? "</p><ol>" : "</ol><p>");
+			return xstrdup(begin ? "</p><ol>" : "</ol><p>");
 		}
 
 		if (!strcmp(txt, "itemize")) {
 			ASSERT(!opt);
-			return strdup(begin ? "</p><ul>" : "</ul><p>");
+			return xstrdup(begin ? "</p><ul>" : "</ul><p>");
 		}
 
 		if (!strcmp(txt, "description")) {
 			ASSERT(!opt);
-			return strdup(begin ? "</p><dl>" : "</dl><p>");
+			return xstrdup(begin ? "</p><dl>" : "</dl><p>");
 		}
 
 		if (!strcmp(txt, "quote")) {
 			ASSERT(!opt);
-			return strdup(begin ? "</p><blockquote><p>" :
+			return xstrdup(begin ? "</p><blockquote><p>" :
 					      "</p></blockquote><p>");
 		}
 
@@ -194,7 +195,7 @@ static char *dash(int len)
 
 	ASSERT(len <= 3);
 
-	return strdup(ret[len]);
+	return xstrdup(ret[len]);
 }
 
 static char *oquote(int len)
@@ -207,7 +208,7 @@ static char *oquote(int len)
 
 	ASSERT(len <= 2);
 
-	return strdup(ret[len]);
+	return xstrdup(ret[len]);
 }
 
 static char *cquote(int len)
@@ -220,7 +221,7 @@ static char *cquote(int len)
 
 	ASSERT(len <= 2);
 
-	return strdup(ret[len]);
+	return xstrdup(ret[len]);
 }
 
 static char *special_char(char *txt)
@@ -236,7 +237,7 @@ static char *special_char(char *txt)
 			break;
 	}
 
-	return strdup(ret);
+	return xstrdup(ret);
 }
 
 %}
@@ -254,8 +255,8 @@ static char *special_char(char *txt)
 %%
 
 post : paragraphs			{ data->output = $1; }
-     | PAREND				{ data->output = strdup(""); }
-     | NLINE				{ data->output = strdup(""); }
+     | PAREND				{ data->output = xstrdup(""); }
+     | NLINE				{ data->output = xstrdup(""); }
      |
      ;
 
@@ -282,19 +283,19 @@ thing : WORD				{ $$ = $1; }
       | OQUOT				{ $$ = oquote(strlen($1)); }
       | CQUOT				{ $$ = cquote(strlen($1)); }
       | SCHAR				{ $$ = special_char($1); }
-      | ELLIPSIS			{ $$ = strdup("&hellip;"); }
-      | TILDE				{ $$ = strdup("&nbsp;"); }
+      | ELLIPSIS			{ $$ = xstrdup("&hellip;"); }
+      | TILDE				{ $$ = xstrdup("&nbsp;"); }
       | BSLASH cmd			{ $$ = $2; }
       ;
 
 cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd(data->post, $1, $3, $2); }
     | WORD cmdarg		{ $$ = process_cmd(data->post, $1, $2, NULL); }
-    | BSLASH			{ $$ = strdup("<br/>"); }
+    | BSLASH			{ $$ = xstrdup("<br/>"); }
     | OCURLY			{ $$ = $1; }
     | CCURLY			{ $$ = $1; }
     | OBRACE			{ $$ = $1; }
     | CBRACE			{ $$ = $1; }
-    | AMP			{ $$ = strdup("&amp;"); }
+    | AMP			{ $$ = xstrdup("&amp;"); }
     | USCORE			{ $$ = $1; }
     | PERCENT			{ $$ = $1; }
     | DOLLAR			{ $$ = $1; }
