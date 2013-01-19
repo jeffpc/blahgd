@@ -31,11 +31,18 @@ static void __store_title(struct vars *vars, const char *title)
         ASSERT(!var_append(vars, "title", &vv));
 }
 
-static void __load_post(struct req *req, int p)
+static int __load_post(struct req *req, int p)
 {
-	ASSERT(!load_post(req, p));
+	int ret;
 
-	__store_title(&req->vars, "STORY");
+	ret = load_post(req, p);
+
+	if (ret)
+		__store_title(&req->vars, "not found");
+	else
+		__store_title(&req->vars, "STORY");
+
+	return ret;
 }
 
 int blahg_story(struct req *req, int p)
@@ -51,7 +58,8 @@ int blahg_story(struct req *req, int p)
 
 	vars_scope_push(&req->vars);
 
-	__load_post(req, p);
+	if (__load_post(req, p))
+		return __render_page(req, "{404}");
 
 	return __render_page(req, "{storyview}");
 }
