@@ -179,13 +179,18 @@ static int __load_post_body(struct post *post)
 		 exts[post->fmt]);
 
 	fd = open(path, O_RDONLY);
-	ASSERT(fd != -1);
+	if (fd == -1)
+		return errno;
 
 	ret = fstat(fd, &statbuf);
-	ASSERT(ret != -1);
+	if (ret == -1)
+		goto err_close;
 
 	ibuf = mmap(NULL, statbuf.st_size, PROT_READ, MAP_SHARED, fd, 0);
-	ASSERT(ibuf != MAP_FAILED);
+	if (ibuf == MAP_FAILED) {
+		ret = errno;
+		goto err_close;
+	}
 
 	if (post->fmt == 3)
 		ret = __do_load_post_body_fmt3(post, ibuf, statbuf.st_size);
@@ -194,6 +199,7 @@ static int __load_post_body(struct post *post)
 
 	munmap(ibuf, statbuf.st_size);
 
+err_close:
 	close(fd);
 
 	return ret;
