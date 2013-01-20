@@ -6,6 +6,7 @@
 #include "error.h"
 
 extern int hasdotdot(char *path);
+extern int xread(int fd, void *buf, size_t nbyte);
 
 static inline char *xstrdup_def(const char *s, const char *def)
 {

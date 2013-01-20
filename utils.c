@@ -1,3 +1,6 @@
+#include <unistd.h>
+#include <errno.h>
+
 #include "utils.h"
 
 #define HDD_START	0
@@ -37,4 +40,31 @@ int hasdotdot(char *path)
 	}
 
 	return (state == HDD_2DOT);
+}
+
+int xread(int fd, void *buf, size_t nbyte)
+{
+	char *ptr = buf;
+	size_t total;
+	int ret;
+
+	total = 0;
+
+	while (nbyte) {
+		ret = read(fd, ptr, nbyte);
+		if (ret < 0) {
+			LOG("%s: failed to read %u bytes from fd %d: %s",
+			    __func__, nbyte, fd, strerror(errno));
+			return -errno;
+		}
+
+		if (ret == 0)
+			break;
+
+		nbyte -= ret;
+		total += ret;
+		ptr   += ret;
+	}
+
+	return total;
 }
