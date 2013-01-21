@@ -236,7 +236,7 @@ static int __load_post_comments(struct post *post)
 		list_add_tail(&comm->list, &post->comments);
 
 		comm->id     = SQL_COL_INT(stmt, 0);
-		comm->author = xstrdup(SQL_COL_STR(stmt, 1));
+		comm->author = xstrdup_def(SQL_COL_STR(stmt, 1), "[unknown]");
 		comm->email  = xstrdup(SQL_COL_STR(stmt, 2));
 		comm->time   = SQL_COL_INT(stmt, 3);
 		comm->ip     = xstrdup(SQL_COL_STR(stmt, 4));
