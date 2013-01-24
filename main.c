@@ -154,6 +154,8 @@ static void req_init(struct req *req)
 	req->head  = NULL;
 	req->fmt   = "html";
 
+	req->status = 200;
+
 	vars_init(&req->vars);
 
 	__store_str(&req->vars, "baseurl", BASE_URL);

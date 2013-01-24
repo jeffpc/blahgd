@@ -40,6 +40,8 @@ struct qs {
 struct req {
 	struct vars vars;
 
+	unsigned int status;
+
 	struct qs args;
 	char *buf;
 	char *head;
