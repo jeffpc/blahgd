@@ -11,6 +11,7 @@
 #include "listing.h"
 #include "error.h"
 #include "utils.h"
+#include "mangle.h"
 
 #include "parse.h"
 
@@ -79,7 +80,12 @@ static char *__listing(struct post *post, char *txt, char *opt)
 
 static char *verbatim(char *txt)
 {
-	return concat4("</p><pre>", txt, "</pre><p>", "");
+	char *escaped;
+
+	escaped = mangle_htmlescape(txt);
+	ASSERT(escaped);
+
+	return concat4("</p><pre>", escaped, "</pre><p>", "");
 }
 
 static char *process_cmd(struct post *post, char *cmd, char *txt, char *opt)
