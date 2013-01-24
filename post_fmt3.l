@@ -18,7 +18,14 @@ extern void fmt3_error2(char *, char *);
 int fmt3_input_proc(char *buf, int size, yyscan_t scanner);
 %}
 
+%x VERBATIM
+
 %%
+"\\begin{verbatim}"		{ BEGIN(VERBATIM); return VERBSTART; }
+<VERBATIM>"\\end{verbatim}"	{ BEGIN(INITIAL); return VERBEND; }
+<VERBATIM>.			{ yylval->ptr = xstrdup(yytext); return VERBTEXT; }
+<VERBATIM>.|\n			{ yylval->ptr = xstrdup(yytext); return VERBTEXT; }
+
 \n\n[ \t\n]*		{ yylval->ptr = xstrdup(yytext); return PAREND; }
 \n			{ yylval->ptr = xstrdup(yytext); return NLINE; }
 [ \t]+			{ yylval->ptr = xstrdup(yytext); return WSPACE; }

@@ -77,6 +77,11 @@ static char *__listing(struct post *post, char *txt, char *opt)
 	return concat4("</p><pre>", "", listing(post, txt), "</pre><p>");
 }
 
+static char *verbatim(char *txt)
+{
+	return concat4("</p><pre>", txt, "</pre><p>", "");
+}
+
 static char *process_cmd(struct post *post, char *cmd, char *txt, char *opt)
 {
 	if (!strcmp(cmd, "link"))
@@ -249,8 +254,11 @@ static char *special_char(char *txt)
 %token <ptr> PAREND NLINE WSPACE BSLASH OCURLY CCURLY OBRACE CBRACE AMP
 %token <ptr> USCORE PERCENT DOLLAR TILDE DASH OQUOT CQUOT SCHAR ELLIPSIS
 %token <ptr> UTF8FIRST3 UTF8FIRST2 UTF8REST WORD PIPE
+%token <ptr> VERBTEXT
+%token VERBSTART VERBEND
 
 %type <ptr> paragraphs paragraph line thing cmd cmdarg optcmdarg
+%type <ptr> verb
 
 %%
 
@@ -286,6 +294,7 @@ thing : WORD				{ $$ = $1; }
       | ELLIPSIS			{ $$ = xstrdup("&hellip;"); }
       | TILDE				{ $$ = xstrdup("&nbsp;"); }
       | BSLASH cmd			{ $$ = $2; }
+      | VERBSTART verb VERBEND		{ $$ = verbatim($2); }
       ;
 
 cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd(data->post, $1, $3, $2); }
@@ -307,5 +316,8 @@ optcmdarg : OBRACE paragraph CBRACE	{ $$ = $2; }
 
 cmdarg : OCURLY paragraph CCURLY	{ $$ = $2; }
        ;
+
+verb : verb VERBTEXT			{ $$ = concat($1, $2); }
+     | VERBTEXT				{ $$ = $1; }
 
 %%
