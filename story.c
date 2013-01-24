@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <errno.h>
 
 #include "post.h"
 #include "main.h"
@@ -38,7 +39,8 @@ static int __load_post(struct req *req, int p)
 	ret = load_post(req, p);
 
 	if (ret) {
-		LOG("failed to load post #%d", p);
+		LOG("failed to load post #%d: %s (%d)", p, strerror(ret),
+		    ret);
 		__store_title(&req->vars, "not found");
 	} else {
 		__store_title(&req->vars, "STORY");
