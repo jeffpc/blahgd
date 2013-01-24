@@ -11,14 +11,6 @@
 #include "error.h"
 #include "utils.h"
 
-static int __render_page(struct req *req, char *tmpl)
-{
-	printf("Content-type: text/html\n\n");
-	printf("%s\n", render_page(req, tmpl));
-
-	return 0;
-}
-
 static void __store_title(struct vars *vars, const char *title)
 {
 	struct var_val vv;
@@ -63,7 +55,9 @@ int blahg_story(struct req *req, int p)
 	vars_scope_push(&req->vars);
 
 	if (__load_post(req, p))
-		return __render_page(req, "{404}");
+		req->body = render_page(req, "{404}");
+	else
+		req->body = render_page(req, "{storyview}");
 
-	return __render_page(req, "{storyview}");
+	return 0;
 }

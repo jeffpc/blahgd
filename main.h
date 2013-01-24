@@ -49,8 +49,8 @@ struct req {
 	unsigned int status;
 
 	struct qs args;
-	char *buf;
 	struct list_head headers;
+	char *body;
 
 	char *fmt;		/* format (e.g., "html") */
 

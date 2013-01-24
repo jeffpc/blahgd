@@ -9,14 +9,6 @@
 #include "db.h"
 #include "error.h"
 
-static int __render_page(struct req *req, char *tmpl)
-{
-	printf("Content-Type: application/atom+xml; charset=UTF-8\n\n");
-	printf("%s\n", render_page(req, tmpl));
-
-	return 0;
-}
-
 static void __load_posts(struct req *req, int page)
 {
 	struct var_val vv;
@@ -60,7 +52,8 @@ static int __feed(struct req *req)
 
 	__load_posts(req, 0);
 
-	return __render_page(req, "{feed}");
+	req->body = render_page(req, "{feed}");
+	return 0;
 }
 
 int blahg_feed(struct req *req, char *feed, int p)

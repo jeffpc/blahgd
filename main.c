@@ -150,7 +150,7 @@ static void req_init(struct req *req)
 {
 	req->dump_latency = true;
 	req->start = gettime();
-	req->buf   = NULL;
+	req->body  = NULL;
 	req->fmt   = "html";
 	INIT_LIST_HEAD(&req->headers);
 
@@ -163,6 +163,16 @@ static void req_init(struct req *req)
 
 static void req_destroy(struct req *req)
 {
+	struct header *cur, *tmp;
+
+	printf("Status: %u\n", req->status);
+
+	list_for_each_entry_safe(cur, tmp, &req->headers, list) {
+		printf("%s: %s\n", cur->name, cur->val);
+	}
+
+	printf("\n%s\n", req->body);
+
 	if (req->dump_latency) {
 		uint64_t delta;
 
@@ -181,6 +191,7 @@ void req_head(struct req *req, char *name, char *val)
 	list_for_each_entry_safe(cur, tmp, &req->headers, list) {
 		if (!strcmp(cur->name, name)) {
 			free(cur->val);
+			list_del(&cur->list);
 			goto set;
 		}
 	}
@@ -192,6 +203,7 @@ void req_head(struct req *req, char *name, char *val)
 
 set:
 	cur->val  = xstrdup(val);
+	list_add_tail(&cur->list, &req->headers);
 }
 
 int main(int argc, char **argv)

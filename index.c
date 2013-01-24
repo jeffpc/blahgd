@@ -18,14 +18,6 @@
 #include "error.h"
 #include "utils.h"
 
-static int __render_page(struct req *req, char *tmpl)
-{
-	printf("Content-type: text/html\n\n");
-	printf("%s\n", render_page(req, tmpl));
-
-	return 0;
-}
-
 static void __load_posts(struct req *req, int page)
 {
 	sqlite3_stmt *stmt;
@@ -138,7 +130,8 @@ int blahg_index(struct req *req, int page)
 
 	__load_posts(req, page);
 
-	return __render_page(req, "{index}");
+	req->body = render_page(req, "{index}");
+	return 0;
 }
 
 static int validate_arch_id(int arch)
@@ -179,5 +172,6 @@ int blahg_archive(struct req *req, int m, int page)
 
 	__load_posts_archive(req, page, m);
 
-	return __render_page(req, "{archive}");
+	req->body = render_page(req, "{archive}");
+	return 0;
 }

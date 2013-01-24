@@ -12,14 +12,6 @@
 #include "sidebar.h"
 #include "error.h"
 
-static int __render_page(struct req *req, char *tmpl)
-{
-	printf("Content-type: text/html\n\n");
-	printf("%s\n", render_page(req, tmpl));
-
-	return 0;
-}
-
 static void __store_title(struct vars *vars, const char *title)
 {
 	struct var_val vv;
@@ -112,7 +104,8 @@ int __tagcat(struct req *req, char *tagcat, int page, char *tmpl, bool istag,
 
 	__load_posts_tag(req, page, tagcat, istag, nstories);
 
-	return __render_page(req, tmpl);
+	req->body = render_page(req, tmpl);
+	return 0;
 }
 
 int blahg_tag(struct req *req, char *tag, int page)
