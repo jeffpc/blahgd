@@ -25,40 +25,19 @@ static char *load_comment(struct post *post, int commid)
 {
 	char *err_msg;
 	char path[FILENAME_MAX];
-	struct stat statbuf;
 	char *out;
-	int ret;
-	int fd;
 
 	err_msg = xstrdup("Error: could not load comment text.");
-	out = err_msg;
 
 	snprintf(path, FILENAME_MAX, "data/posts/%d/comments/%d/text.txt", post->id,
 		 commid);
 
-	fd = open(path, O_RDONLY);
-	if (fd == -1)
-		goto err;
-
-	ret = fstat(fd, &statbuf);
-	if (ret == -1)
-		goto err_close;
-
-	out = malloc(statbuf.st_size + 1);
+	out = read_file(path);
 	if (!out)
-		goto err_close;
-
-	ret = xread(fd, out, statbuf.st_size);
-	if (ret != statbuf.st_size) {
-		free(out);
 		out = err_msg;
-	} else {
-		out[statbuf.st_size] = '\0';
-	}
+	else
+		free(err_msg);
 
-err_close:
-	close(fd);
-err:
 	return out;
 }
 

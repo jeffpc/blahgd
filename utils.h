@@ -7,6 +7,7 @@
 
 extern int hasdotdot(char *path);
 extern int xread(int fd, void *buf, size_t nbyte);
+extern char *read_file(const char *fname);
 
 static inline char *xstrdup_def(const char *s, const char *def)
 {

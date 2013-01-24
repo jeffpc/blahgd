@@ -1,5 +1,12 @@
 #include <unistd.h>
 #include <errno.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include "utils.h"
 
@@ -67,4 +74,40 @@ int xread(int fd, void *buf, size_t nbyte)
 	}
 
 	return total;
+}
+
+char *read_file(const char *fname)
+{
+	struct stat statbuf;
+	char *out;
+	int ret;
+	int fd;
+
+	out = NULL;
+
+	fd = open(fname, O_RDONLY);
+	if (fd == -1)
+		goto err;
+
+	ret = fstat(fd, &statbuf);
+	if (ret == -1)
+		goto err_close;
+
+	out = malloc(statbuf.st_size + 1);
+	if (!out)
+		goto err_close;
+
+	ret = xread(fd, out, statbuf.st_size);
+	if (ret != statbuf.st_size) {
+		free(out);
+		out = NULL;
+	} else {
+		out[statbuf.st_size] = '\0';
+	}
+
+err_close:
+	close(fd);
+
+err:
+	return out;
 }
