@@ -5,6 +5,7 @@
 #include "pipeline.h"
 #include "error.h"
 #include "utils.h"
+#include "mangle.h"
 
 static struct var_val *nop_fxn(struct var_val *v)
 {
@@ -81,60 +82,6 @@ static char *__urlescape_str(char *in)
 	return out;
 }
 
-static char *__escape_str(char *in)
-{
-	char *out, *tmp;
-	int outlen;
-	char *s;
-
-	outlen = strlen(in);
-
-	for (s = in; *s; s++) {
-		char c = *s;
-
-		switch (c) {
-			case '<':
-			case '>':
-				/* "&lt;" "&gt;" */
-				outlen += 3;
-				break;
-			case '&':
-				/* "&amp;" */
-				outlen += 4;
-				break;
-		}
-	}
-
-	out = malloc(outlen + 1);
-	ASSERT(out);
-
-	for (s = in, tmp = out; *s; s++, tmp++) {
-		unsigned char c = *s;
-
-		switch (c) {
-			case '<':
-				strcpy(tmp, "&lt;");
-				tmp += 3;
-				break;
-			case '>':
-				strcpy(tmp, "&gt;");
-				tmp += 3;
-				break;
-			case '&':
-				strcpy(tmp, "&amp;");
-				tmp += 4;
-				break;
-			default:
-				*tmp = c;
-				break;
-		}
-	}
-
-	*tmp = '\0';
-
-	return out;
-}
-
 static struct var_val *__escape(struct var_val *v, char *(*cvt)(char*))
 {
 	char *out;
@@ -175,7 +122,7 @@ static struct var_val *urlescape_fxn(struct var_val *v)
 
 static struct var_val *escape_fxn(struct var_val *v)
 {
-	return __escape(v, __escape_str);
+	return __escape(v, mangle_htmlescape);
 }
 
 static struct var_val *__datetime(struct var_val *v, const char *fmt)
