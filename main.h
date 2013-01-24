@@ -37,6 +37,12 @@ struct qs {
 	char *comment;
 };
 
+struct header {
+	struct list_head list;
+	char *name;
+	char *val;
+};
+
 struct req {
 	struct vars vars;
 
@@ -44,7 +50,7 @@ struct req {
 
 	struct qs args;
 	char *buf;
-	char *head;
+	struct list_head headers;
 
 	char *fmt;		/* format (e.g., "html") */
 
@@ -53,7 +59,7 @@ struct req {
 	uint64_t start;
 };
 
-extern void req_head(struct req *req, char *header);
+extern void req_head(struct req *req, char *name, char *val);
 
 extern int blahg_archive(struct req *req, int m, int paged);
 extern int blahg_category(struct req *req, char *cat, int page);

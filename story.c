@@ -56,7 +56,7 @@ int blahg_story(struct req *req, int p)
 		return 0;
 	}
 
-	req_head(req, "Content-Type: text/html");
+	req_head(req, "Content-Type", "text/html");
 
 	sidebar(req);
 

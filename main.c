@@ -151,8 +151,8 @@ static void req_init(struct req *req)
 	req->dump_latency = true;
 	req->start = gettime();
 	req->buf   = NULL;
-	req->head  = NULL;
 	req->fmt   = "html";
+	INIT_LIST_HEAD(&req->headers);
 
 	req->status = 200;
 
@@ -174,9 +174,24 @@ static void req_destroy(struct req *req)
 	}
 }
 
-void req_head(struct req *req, char *header)
+void req_head(struct req *req, char *name, char *val)
 {
-#warning header output not yet implemented
+	struct header *cur, *tmp;
+
+	list_for_each_entry_safe(cur, tmp, &req->headers, list) {
+		if (!strcmp(cur->name, name)) {
+			free(cur->val);
+			goto set;
+		}
+	}
+
+	cur = malloc(sizeof(struct header));
+	ASSERT(cur);
+
+	cur->name = xstrdup(name);
+
+set:
+	cur->val  = xstrdup(val);
 }
 
 int main(int argc, char **argv)
@@ -191,7 +206,7 @@ int main(int argc, char **argv)
 	parse_qs(getenv("QUERY_STRING"), &request);
 
 #ifdef USE_XMLRPC
-	req_head(&request, "X-Pingback: " BASE_URL "/?xmlrpc=1");
+	req_head(&request, "X-Pingback", BASE_URL "/?xmlrpc=1");
 #endif
 
 	switch (request.args.page) {

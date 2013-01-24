@@ -54,7 +54,7 @@ static void __load_posts(struct req *req, int page)
 
 static int __feed(struct req *req)
 {
-	req_head(req, "Content-Type: application/atom+xml; charset=UTF-8");
+	req_head(req, "Content-Type", "application/atom+xml; charset=UTF-8");
 
 	vars_scope_push(&req->vars);
 
