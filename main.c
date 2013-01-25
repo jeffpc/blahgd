@@ -125,7 +125,9 @@ static int blahg_malformed(struct req *req, int argc, char **argv)
 
 int R404(struct req *req, char *tmpl)
 {
-	LOG("Sending 404 (tmpl: '%s')", tmpl);
+	tmpl = tmpl ? tmpl : "{404}";
+
+	LOG("status 404 (tmpl: '%s')", tmpl);
 
 	req_head(req, "Content-Type", "text/html");
 
@@ -136,7 +138,7 @@ int R404(struct req *req, char *tmpl)
 
 	sidebar(req);
 
-	req->body   = render_page(req, tmpl);
+	req->body = render_page(req, tmpl);
 
 	return 0;
 }
