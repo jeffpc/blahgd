@@ -9,6 +9,8 @@
 #include "post.h"
 #include "error.h"
 #include "utils.h"
+#include "render.h"
+#include "sidebar.h"
 
 static char *nullterminate(char *s)
 {
@@ -121,16 +123,22 @@ static int blahg_malformed(struct req *req, int argc, char **argv)
 	return 0;
 }
 
-void disp_404(char *title, char *txt)
+int R404(struct req *req, char *tmpl)
 {
-	struct post_old post;
+	LOG("Sending 404 (tmpl: '%s')", tmpl);
 
-	memset(&post, 0, sizeof(struct post_old));
-	post.title = "Error";
+	req_head(req, "Content-Type", "text/html");
 
-	fprintf(stdout, "Status: 404 Not Found\nContent-Type: text/html\n\n");
+	req->status = 404;
+	req->fmt    = "html";
 
-	exit(0);
+	vars_scope_push(&req->vars);
+
+	sidebar(req);
+
+	req->body   = render_page(req, tmpl);
+
+	return 0;
 }
 
 static void __store_str(struct vars *vars, const char *key, char *val)
@@ -239,8 +247,9 @@ int main(int argc, char **argv)
 			return blahg_comment();
 #endif
 		case PAGE_FEED:
-			return blahg_feed(&request, request.args.feed,
-					  request.args.p);
+			ret = blahg_feed(&request, request.args.feed,
+					 request.args.p);
+			break;
 		case PAGE_INDEX:
 			ret = blahg_index(&request, request.args.paged);
 			break;

@@ -18,7 +18,7 @@ int tmpl_input_proc(char *buf, int size, yyscan_t scanner);
 
 %%
 [{}|%]			{ return *yytext; }
-[A-Za-z0-9]+		{ yylval->ptr = xstrdup(yytext); return WORD; }
+[A-Za-z0-9_]+		{ yylval->ptr = xstrdup(yytext); return WORD; }
 [ \n\r\t]		{ yylval->c = *yytext; return CHAR; }
 .			{ yylval->c = *yytext; return CHAR; }
 %%

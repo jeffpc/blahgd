@@ -72,7 +72,7 @@ extern int blahg_story(struct req *req, int p);
 extern int blahg_pingback();
 #endif
 
-extern void disp_404(char *title, char *txt);
+extern int R404(struct req *req, char *tmpl);
 
 static inline uint64_t gettime()
 {

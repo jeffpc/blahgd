@@ -55,9 +55,9 @@ int blahg_story(struct req *req, int p)
 	vars_scope_push(&req->vars);
 
 	if (__load_post(req, p))
-		req->body = render_page(req, "{404}");
-	else
-		req->body = render_page(req, "{storyview}");
+		return R404(req, "{error_story_not_found}");
+
+	req->body = render_page(req, "{storyview}");
 
 	return 0;
 }

@@ -59,21 +59,10 @@ static int __feed(struct req *req)
 int blahg_feed(struct req *req, char *feed, int p)
 {
 	if (strcmp(feed, "atom"))
-		disp_404("Atom only",
-			 "When I first decided to write my own blogging "
-			 "system, I made a decision that the only feed type "
-			 "I'd support (at least for now) would be the Atom "
-			 "format.  Yes, there are a lot of RSS and RSS2 feeds "
-			 "out there, but it seems to be the case that Atom is "
-			 "just as supported (and a bit easier to generate). "
-			 "Feel free to contact me if you cannot live without "
-			 "a non-Atom feed.");
+		return R404(req, "{error_atom_only}");
 
 	if (p != -1)
-		disp_404("Comment feed not yet supported",
-			 "It turns out that there are some features that I "
-			 "never got around to implementing.  You just found "
-			 "one of them.  Eventually, ");
+		return R404(req, "{error_comment_feed}");
 
 	/* switch to atom */
 	req->fmt = "atom";
