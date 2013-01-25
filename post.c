@@ -306,7 +306,8 @@ static struct var *__com_var(const char *name, struct list_head *val)
 	return v;
 }
 
-static void __store_vars(struct req *req, const char *var, struct post *post)
+static void __store_vars(struct req *req, const char *var, struct post *post,
+			 const char *titlevar)
 {
 	struct var_val vv;
 
@@ -322,9 +323,17 @@ static void __store_vars(struct req *req, const char *var, struct post *post)
 	vv.vars[6] = __com_var("comments", &post->comments);
 
 	ASSERT(!var_append(&req->vars, "posts", &vv));
+
+	if (titlevar) {
+		vv.type = VT_STR;
+		vv.str  = xstrdup(post->title);
+		ASSERT(vv.str);
+
+		ASSERT(!var_append(&req->vars, titlevar, &vv));
+	}
 }
 
-int load_post(struct req *req, int postid)
+int load_post(struct req *req, int postid, const char *titlevar)
 {
 	char path[FILENAME_MAX];
 	struct post post;
@@ -378,7 +387,7 @@ err:
 	if (err)
 		destroy_post(&post);
 	else
-		__store_vars(req, "posts", &post);
+		__store_vars(req, "posts", &post, titlevar);
 
 	return err;
 }

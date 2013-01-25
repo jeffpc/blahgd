@@ -67,7 +67,7 @@ struct post_old {
 
 struct req;
 
-extern int load_post(struct req *req, int postid);
+extern int load_post(struct req *req, int postid, const char *titlevar);
 extern void dump_post(struct post_old *post);
 extern void destroy_post(struct post *post);
 

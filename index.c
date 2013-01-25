@@ -32,7 +32,7 @@ static void __load_posts(struct req *req, int page)
 
 		postid = SQL_COL_INT(stmt, 0);
 
-		if (load_post(req, postid))
+		if (load_post(req, postid, NULL))
 			continue;
 	}
 }
@@ -68,7 +68,7 @@ static void __load_posts_archive(struct req *req, int page, int archid)
 
 		postid = SQL_COL_INT(stmt, 0);
 
-		if (load_post(req, postid))
+		if (load_post(req, postid, NULL))
 			continue;
 	}
 }
