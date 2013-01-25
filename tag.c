@@ -12,6 +12,49 @@
 #include "sidebar.h"
 #include "error.h"
 
+static const char *wordpress_catn[] = {
+	[1]  = "miscellaneous",
+	[2]  = "programming/kernel",
+	[3]  = "school",
+	[4]  = "work",
+	[5]  = "random",
+	[6]  = "programming",
+	[7]  = "events/ols-2005",
+	[8]  = "events",
+	[9]  = "rants",
+	[10] = "movies",
+	[11] = "humor",
+	[13] = "star-trek",
+	[15] = "star-trek/tng",
+	[16] = "star-trek/tos",
+	[17] = "legal",
+	[18] = "star-trek/voy",
+	[19] = "star-trek/ent",
+	[20] = "events/ols-2006",
+	[21] = "fsl",
+	[22] = "fsl/unionfs",
+	[23] = "stargate/sg-1",
+	[24] = "open-source",
+	[25] = "astronomy",
+	[26] = "programming/vcs",
+	[27] = "programming/vcs/git",
+	[28] = "programming/vcs/mercurial",
+	[29] = "events/ols-2007",
+	[30] = "programming/vcs/guilt",
+	[31] = "photography",
+	[34] = "music",
+	[35] = "programming/mainframes",
+	[36] = "events/sc-07",
+	[39] = "hvf",
+	[40] = "events/ols-2008",
+	[41] = "sysadmin",
+	[42] = "documentation",
+	[43] = "stargate",
+};
+
+#define MIN_CATN 1
+#define MAX_CATN 43
+
 static void __store_title(struct vars *vars, const char *title)
 {
 	struct var_val vv;
@@ -55,8 +98,8 @@ static void __store_pages(struct vars *vars, int page)
 	ASSERT(!var_append(vars, "nextpage", &vv));
 }
 
-static void __load_posts_tag(struct req *req, int page, char *tag, bool istag,
-			     int nstories)
+static void __load_posts_tag(struct req *req, int page, const char *tag,
+			     bool istag, int nstories)
 {
 	sqlite3_stmt *stmt;
 	int ret;
@@ -83,14 +126,11 @@ static void __load_posts_tag(struct req *req, int page, char *tag, bool istag,
 	}
 }
 
-int __tagcat(struct req *req, char *tagcat, int page, char *tmpl, bool istag,
-	     int nstories)
+int __tagcat(struct req *req, const char *tagcat, int page, char *tmpl,
+	     bool istag, int nstories)
 {
-	if (!tagcat) {
-		printf("Content-type: text/plain\n\n");
-		printf("Invalid tag/category name\n");
-		return 0;
-	}
+	if (!tagcat)
+		return R404(req, NULL);
 
 	page = max(page, 0);
 
@@ -115,6 +155,13 @@ int blahg_tag(struct req *req, char *tag, int page)
 
 int blahg_category(struct req *req, char *cat, int page)
 {
-	return __tagcat(req, cat, page, "{catindex}", false,
-			HTML_CATEGORY_STORIES);
+	int catn;
+
+	/* wordpress cat name */
+	catn = atoi(cat);
+	if (catn && ((catn < MIN_CATN) || (catn > MAX_CATN)))
+		return R404(req, NULL);
+
+	return __tagcat(req, catn ? wordpress_catn[catn] : cat, page,
+			"{catindex}", false, HTML_CATEGORY_STORIES);
 }
