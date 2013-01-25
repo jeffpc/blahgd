@@ -228,33 +228,6 @@ static int __load_post_comments(struct post *post)
 	return 0;
 }
 
-static struct var *__int_var(const char *name, uint64_t val)
-{
-	struct var *v;
-
-	v = var_alloc(name);
-	ASSERT(v);
-
-	v->val[0].type = VT_INT;
-	v->val[0].i    = val;
-
-	return v;
-}
-
-static struct var *__str_var(const char *name, const char *val)
-{
-	struct var *v;
-
-	v = var_alloc(name);
-	ASSERT(v);
-
-	v->val[0].type = VT_STR;
-	v->val[0].str  = xstrdup(val);
-	ASSERT(!val || v->val[0].str);
-
-	return v;
-}
-
 static struct var *__tag_var(const char *name, struct list_head *val)
 {
 	struct post_tag *cur, *tmp;
@@ -292,13 +265,13 @@ static struct var *__com_var(const char *name, struct list_head *val)
 		ASSERT(i < VAR_MAX_ARRAY_SIZE);
 
 		v->val[i].type = VT_VARS;
-		v->val[i].vars[0] = __int_var("commid", cur->id);
-		v->val[i].vars[1] = __int_var("commtime", cur->time);
-		v->val[i].vars[2] = __str_var("commauthor", cur->author);
-		v->val[i].vars[3] = __str_var("commemail", cur->email);
-		v->val[i].vars[4] = __str_var("commip", cur->ip);
-		v->val[i].vars[5] = __str_var("commurl", cur->url);
-		v->val[i].vars[6] = __str_var("commbody", cur->body);
+		v->val[i].vars[0] = VAR_ALLOC_INT("commid", cur->id);
+		v->val[i].vars[1] = VAR_ALLOC_INT("commtime", cur->time);
+		v->val[i].vars[2] = VAR_ALLOC_STR("commauthor", cur->author);
+		v->val[i].vars[3] = VAR_ALLOC_STR("commemail", cur->email);
+		v->val[i].vars[4] = VAR_ALLOC_STR("commip", cur->ip);
+		v->val[i].vars[5] = VAR_ALLOC_STR("commurl", cur->url);
+		v->val[i].vars[6] = VAR_ALLOC_STR("commbody", cur->body);
 
 		i++;
 	}
@@ -314,12 +287,12 @@ static void __store_vars(struct req *req, const char *var, struct post *post,
 	memset(&vv, 0, sizeof(vv));
 
 	vv.type    = VT_VARS;
-	vv.vars[0] = __int_var("id", post->id);
-	vv.vars[1] = __int_var("time", post->time);
-	vv.vars[2] = __str_var("title", post->title);
+	vv.vars[0] = VAR_ALLOC_INT("id", post->id);
+	vv.vars[1] = VAR_ALLOC_INT("time", post->time);
+	vv.vars[2] = VAR_ALLOC_STR("title", post->title);
 	vv.vars[3] = __tag_var("tags", &post->tags);
-	vv.vars[4] = __str_var("body", post->body);
-	vv.vars[5] = __int_var("numcom", post->numcom);
+	vv.vars[4] = VAR_ALLOC_STR("body", post->body);
+	vv.vars[5] = VAR_ALLOC_INT("numcom", post->numcom);
 	vv.vars[6] = __com_var("comments", &post->comments);
 
 	ASSERT(!var_append(&req->vars, "posts", &vv));

@@ -9,33 +9,6 @@
 #include "error.h"
 #include "utils.h"
 
-static struct var *__int_var(const char *name, uint64_t val)
-{
-	struct var *v;
-
-	v = var_alloc(name);
-	ASSERT(v);
-
-	v->val[0].type = VT_INT;
-	v->val[0].i    = val;
-
-	return v;
-}
-
-static struct var *__str_var(const char *name, const char *val)
-{
-	struct var *v;
-
-	v = var_alloc(name);
-	ASSERT(v);
-
-	v->val[0].type = VT_STR;
-	v->val[0].str  = xstrdup(val);
-	ASSERT(!val || v->val[0].str);
-
-	return v;
-}
-
 static int __tag_size(int count, int cmin, int cmax)
 {
 	float size;
@@ -82,9 +55,9 @@ static void tagcloud(struct req *req)
 		count = SQL_COL_INT(stmt, 1);
 		size  = __tag_size(count, cmin, cmax);
 
-		vv.vars[0] = __str_var("name", tag);
-		vv.vars[1] = __int_var("size", size);
-		vv.vars[2] = __int_var("count", count);
+		vv.vars[0] = VAR_ALLOC_STR("name", tag);
+		vv.vars[1] = VAR_ALLOC_INT("size", size);
+		vv.vars[2] = VAR_ALLOC_INT("count", count);
 
 		ASSERT(!var_append(&req->vars, "tagcloud", &vv));
 	}
@@ -117,8 +90,8 @@ static void archive(struct req *req)
 		snprintf(buf, sizeof(buf), "%s %d", months[(archid % 100) - 1],
 			 archid / 100);
 
-		vv.vars[0] = __int_var("name", archid);
-		vv.vars[1] = __str_var("desc", buf);
+		vv.vars[0] = VAR_ALLOC_INT("name", archid);
+		vv.vars[1] = VAR_ALLOC_STR("desc", buf);
 
 		ASSERT(!var_append(&req->vars, "archives", &vv));
 	}

@@ -3,6 +3,7 @@
 
 #include "config.h"
 #include "avl.h"
+#include "utils.h"
 
 enum var_type {
 	VT_NIL = 0,	/* invalid */
@@ -45,5 +46,49 @@ extern struct var *var_lookup(struct vars *vars, const char *name);
 extern int var_append(struct vars *vars, const char *name, struct var_val *vv);
 
 extern void var_val_dump(struct var_val *vv, int idx, int indent);
+
+static inline struct var *var_alloc_int(const char *name, uint64_t val)
+{
+	struct var *v;
+
+	v = var_alloc(name);
+	if (!v)
+		return NULL;
+
+	v->val[0].type = VT_INT;
+	v->val[0].i    = val;
+
+	return v;
+}
+
+static inline struct var *var_alloc_str(const char *name, const char *val)
+{
+	struct var *v;
+
+	v = var_alloc(name);
+	if (!v)
+		return NULL;
+
+	v->val[0].type = VT_STR;
+	v->val[0].str  = xstrdup(val);
+
+	if (!v->val[0].str) {
+		free(v);
+		return NULL;
+	}
+
+	return v;
+}
+
+#define __VAR_ALLOC(n, v, t)			\
+	({					\
+		struct var *_x;			\
+		_x = var_alloc_##t((n), (v));	\
+		ASSERT(_x);			\
+		_x;				\
+	})
+
+#define VAR_ALLOC_INT(n, v)	__VAR_ALLOC((n), (v), int)
+#define VAR_ALLOC_STR(n, v)	__VAR_ALLOC((n), (v), str)
 
 #endif
