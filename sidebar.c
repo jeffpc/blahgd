@@ -22,7 +22,6 @@ static int __tag_size(int count, int cmin, int cmax)
 	return ceil(TAGCLOUD_MIN_SIZE + size);
 }
 
-#define TAG_COUNTS	"SELECT tag, count(1) as c FROM post_tags GROUP BY tag HAVING c > 1 ORDER BY tag COLLATE NOCASE"
 static void tagcloud(struct req *req)
 {
 	struct var_val vv;
@@ -39,13 +38,13 @@ static void tagcloud(struct req *req)
 	vv.type = VT_VARS;
 
 	open_db();
-	SQL(stmt, "SELECT min(c), max(c) FROM (" TAG_COUNTS ")");
+	SQL(stmt, "SELECT min(cnt), max(cnt) FROM tagcloud");
 	SQL_FOR_EACH(stmt) {
 		cmin = SQL_COL_INT(stmt, 0);
 		cmax = SQL_COL_INT(stmt, 1);
 	}
 
-	SQL(stmt, TAG_COUNTS);
+	SQL(stmt, "SELECT tag, cnt FROM tagcloud WHERE cnt > 1 ORDER BY tag COLLATE NOCASE");
 	SQL_FOR_EACH(stmt) {
 		const char *tag;
 		uint64_t count;

@@ -5,28 +5,18 @@ CREATE TABLE posts (
 	fmt INTEGER
 );
 
-CREATE TABLE tags (
-	tag VARCHAR PRIMARY KEY
-);
-
 CREATE TABLE post_tags (
 	post INTEGER,
 	tag VARCHAR,
 	PRIMARY KEY(post, tag),
-	FOREIGN KEY(post) REFERENCES posts(id),
-	FOREIGN KEY(tag) REFERENCES tags(tag)
-);
-
-CREATE TABLE cats (
-	cat VARCHAR PRIMARY KEY
+	FOREIGN KEY(post) REFERENCES posts(id)
 );
 
 CREATE TABLE post_cats (
 	post INTEGER,
 	cat VARCHAR,
 	PRIMARY KEY(post, cat),
-	FOREIGN KEY(post) REFERENCES posts(id),
-	FOREIGN KEY(cat) REFERENCES cats(cat)
+	FOREIGN KEY(post) REFERENCES posts(id)
 );
 
 CREATE TABLE comments (
@@ -41,3 +31,32 @@ CREATE TABLE comments (
 	PRIMARY KEY(post, id),
 	FOREIGN KEY(post) REFERENCES posts(id)
 );
+
+-- cached sidebar info
+CREATE TABLE tagcloud (
+	tag VARCHAR,
+	cnt INTEGER,
+	PRIMARY KEY(tag)
+);
+
+CREATE INDEX tagcloud_idx on tagcloud (tag COLLATE NOCASE ASC);
+
+CREATE TRIGGER update_tagcloud_1 AFTER INSERT ON post_tags
+BEGIN
+	INSERT OR REPLACE INTO tagcloud (tag, cnt)
+		SELECT tag, count(1) as cnt FROM post_tags WHERE tag = NEW.tag GROUP BY tag;
+END;
+
+CREATE TRIGGER update_tagcloud_2 AFTER DELETE ON post_tags
+BEGIN
+	INSERT OR REPLACE INTO tagcloud (tag, cnt)
+		SELECT tag, count(1) as cnt FROM post_tags WHERE tag = OLD.tag GROUP BY tag;
+END;
+
+CREATE TRIGGER update_tagcloud_3 AFTER UPDATE ON post_tags
+BEGIN
+	INSERT OR REPLACE INTO tagcloud (tag, cnt)
+		SELECT tag, count(1) as cnt FROM post_tags WHERE tag = NEW.tag GROUP BY tag;
+	INSERT OR REPLACE INTO tagcloud (tag, cnt)
+		SELECT tag, count(1) as cnt FROM post_tags WHERE tag = OLD.tag GROUP BY tag;
+END;
