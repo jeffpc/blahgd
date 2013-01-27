@@ -192,6 +192,12 @@ static char *process_cmd(struct post *post, char *cmd, char *txt, char *opt)
 		return concat4("\xc2\xb0", txt, "", "");
 	}
 
+	if (!strcmp(cmd, "tag") ||
+	    !strcmp(cmd, "title")) {
+		ASSERT(!opt);
+		return xstrdup("");
+	}
+
 	return concat4("[INVAL CMD", txt, "]", "");
 }
 
