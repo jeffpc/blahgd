@@ -111,18 +111,6 @@ static void parse_qs(char *qs, struct req *req)
 		args->page = PAGE_STORY;
 }
 
-static int blahg_malformed(struct req *req, int argc, char **argv)
-{
-	printf("Content-Type: text/plain\n\n");
-	printf("There has been an error processing your request.  The site "
-	       "administrator has\nbeen notified.\n\nSorry for the "
-	       "inconvenience.\n\nJosef 'Jeff' Sipek.\n");
-
-	// FIXME: send $SCRIPT_URL, $PATH_INFO, and $QUERY_STRING via email
-
-	return 0;
-}
-
 int R404(struct req *req, char *tmpl)
 {
 	tmpl = tmpl ? tmpl : "{404}";
@@ -265,7 +253,9 @@ int main(int argc, char **argv)
 #endif
 #endif
 		default:
-			return blahg_malformed(&request, argc, argv);
+			// FIXME: send $SCRIPT_URL, $PATH_INFO, and $QUERY_STRING via email
+			ret = R404(&request, NULL);
+			break;
 	}
 
 	req_destroy(&request);
