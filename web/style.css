@@ -238,15 +238,16 @@ ul.post-meta span.post-meta-key {
 	padding-left: 12px;
 }
 
-#tagcloud a {
+#tagcloud {
 	line-height: 100%;
-	margin: 0;
-	padding: 0;
-	border: 0;
-	margin-top: 0;
+}
+
+#tagcloud a {
+	margin: 0px;
+	padding: 0px;
+	border: 0px;
 	font: normal normal 12px/115% sans-serif;
 	letter-spacing: 0;
-	padding-left: 1px;
 	color: #000;
 	text-decoration: none;
 	text-transform: lowercase;
