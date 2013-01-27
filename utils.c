@@ -76,6 +76,33 @@ int xread(int fd, void *buf, size_t nbyte)
 	return total;
 }
 
+int xwrite(int fd, void *buf, size_t nbyte)
+{
+	char *ptr = buf;
+	size_t total;
+	int ret;
+
+	total = 0;
+
+	while (nbyte) {
+		ret = write(fd, ptr, nbyte);
+		if (ret < 0) {
+			LOG("%s: failed to write %u bytes to fd %d: %s",
+			    __func__, nbyte, fd, strerror(errno));
+			return -errno;
+		}
+
+		if (ret == 0)
+			break;
+
+		nbyte -= ret;
+		total += ret;
+		ptr   += ret;
+	}
+
+	return total;
+}
+
 char *read_file(const char *fname)
 {
 	struct stat statbuf;
