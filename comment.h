@@ -1,7 +1,7 @@
 #ifndef __COMMENT_H
 #define __COMMENT_H
 
-extern int write_out_comment(struct post_old *post, int id, struct timespec *now,
-			     char *author, char *email, char *url, char *comment);
+extern int write_out_comment(struct req *req, int id, char *author, char *email,
+			     char *url, char *comment);
 
 #endif

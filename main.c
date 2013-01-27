@@ -33,10 +33,10 @@ static void parse_qs(char *qs, struct req *req)
 	args->paged = -1;
 	args->m = -1;
 	args->xmlrpc = 0;
+	args->comment = 0;
 	args->cat = NULL;
 	args->tag = NULL;
 	args->feed = NULL;
-	args->comment = NULL;
 	args->preview = 0;
 
 	if (!qs)
@@ -69,7 +69,7 @@ static void parse_qs(char *qs, struct req *req)
 			cptr = &args->feed;
 			len = 5;
 		} else if (!strncmp(qs, "comment=", 8)) {
-			cptr = &args->comment;
+			iptr = &args->comment;
 			len = 8;
 		} else if (!strncmp(qs, "preview=", 8)) {
 			iptr = &args->preview;
@@ -144,6 +144,18 @@ static void __store_str(struct vars *vars, const char *key, char *val)
         ASSERT(!var_append(vars, key, &vv));
 }
 
+static void __store_int(struct vars *vars, const char *key, uint64_t val)
+{
+	struct var_val vv;
+
+	memset(&vv, 0, sizeof(vv));
+
+        vv.type = VT_INT;
+        vv.i    = val;
+
+        ASSERT(!var_append(vars, key, &vv));
+}
+
 static void req_init(struct req *req)
 {
 	req->dump_latency = true;
@@ -157,6 +169,7 @@ static void req_init(struct req *req)
 	vars_init(&req->vars);
 
 	__store_str(&req->vars, "baseurl", BASE_URL);
+	__store_int(&req->vars, "now", gettime());
 }
 
 static void req_destroy(struct req *req)
@@ -232,10 +245,9 @@ int main(int argc, char **argv)
 			ret = blahg_tag(&request, request.args.tag,
 					request.args.paged);
 			break;
-#if 0
 		case PAGE_COMMENT:
-			return blahg_comment();
-#endif
+			ret = blahg_comment(&request);
+			break;
 		case PAGE_FEED:
 			ret = blahg_feed(&request, request.args.feed,
 					 request.args.p);

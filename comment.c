@@ -10,13 +10,13 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include "main.h"
+#include "sidebar.h"
+#include "render.h"
+
 #include "config.h"
-#include "post.h"
 #include "comment.h"
-#include "sar.h"
 #include "decode.h"
-#include "html.h"
-#include "xattr.h"
 
 #define SHORT_BUF_LEN		128
 #define MEDIUM_BUF_LEN		256
@@ -39,84 +39,7 @@
 #define SC_ID_EQ		17
 #define SC_ERROR		20
 
-static int __write(int fd, char *buf, int len)
-{
-	int ret;
-	int offset = 0;
-
-	while(offset < len) {
-		ret = write(fd, buf+offset, len-offset);
-		if (ret < 0) {
-			printf("Write error! %s (%d)\n", strerror(errno), errno);
-			return 1;
-		}
-
-		offset += ret;
-	}
-	return 0;
-}
-
-static void comment_error_log(char *fmt, ...)
-{
-#ifndef HAVE_FLOCK
-	struct flock fl;
-#endif
-	char msg[4096];
-	va_list args;
-	int ret, len;
-	int fd;
-
-	time_t now;
-
-	now = time(NULL);
-
-	len = strftime(msg, 4096, "%a %b %d %H:%M:%S %Y:  ",
-		       localtime(&now));
-
-	va_start(args, fmt);
-	len += vsnprintf(msg+len, 4096-len, fmt, args);
-	va_end(args);
-
-	fd = open(ERROR_LOG_FILE, O_WRONLY | O_APPEND | O_CREAT, 0644);
-	if (fd == -1) {
-		fprintf(stderr, "%s: Failed to open log file\n", __func__);
-		return;
-	}
-
-#ifdef HAVE_FLOCK
-	ret = flock(fd, LOCK_EX);
-#else
-	fl.l_type = F_WRLCK;
-	fl.l_start = 0;
-	fl.l_whence = SEEK_SET;
-	fl.l_start = 0;
-	fl.l_len = 0;
-	fl.l_pid = getpid();
-	ret = fcntl(fd, F_SETLKW, &fl);
-#endif
-	if (ret == -1) {
-		fprintf(stderr, "%s: Failed to lock log file\n", __func__);
-		goto out;
-	}
-
-	ret = write(fd, msg, len);
-
-out:
-#ifdef HAVE_FLOCK
-	flock(fd, LOCK_UN);
-#else
-	fl.l_type = F_UNLCK;
-	fl.l_start = 0;
-	fl.l_whence = SEEK_SET;
-	fl.l_start = 0;
-	fl.l_len = 0;
-	fl.l_pid = getpid();
-	fcntl(fd, F_SETLK, &fl);
-#endif
-	close(fd);
-}
-
-int write_out_comment(struct post_old *post, int id, struct timespec *now, char *author, char *email,
+int write_out_comment(struct req *req, int id, char *author, char *email,
 		      char *url, char *comment)
 {
 	char curdate[32];
@@ -128,44 +51,47 @@ int write_out_comment(struct post_old *post, int id, struct timespec *now, char 
 	int result = 1;
 	int fd;
 
-	time_t tmp_t;
-	struct tm *tmp_tm;
+	uint64_t now, now_nsec;
+	time_t now_sec;
+	struct tm *now_tm;
 
-	ret = load_post(id, post, 0);
+	ret = load_post(req, id, NULL);
 	if (ret) {
-		comment_error_log("Gah! %d (postid=%d)\n", ret, id);
+		LOG("Gah! %d (postid=%d)", ret, id);
 		return 1;
 	}
 
 	if ((strlen(author) == 0) || (strlen(comment) == 0)) {
-		comment_error_log("You must fill in name, and comment (postid=%d)\n", id);
+		LOG("You must fill in name, and comment (postid=%d)", id);
 		return 1;
 	}
 
-	tmp_t = now->tv_sec;
-	tmp_tm = gmtime(&tmp_t);
-	if (!tmp_tm)
+	now = gettime();
+	now_sec  = now / 1000000000UL;
+	now_nsec = now % 1000000000UL;
+	now_tm = gmtime(&now_sec);
+	if (!now_tm)
 		return 1;
 
-	strftime(curdate, 31, "%Y-%m-%d %H:%M", tmp_tm);
+	strftime(curdate, 31, "%Y-%m-%d %H:%M", now_tm);
 
-	snprintf(path, FILENAME_MAX, "data/pending-comments/%d-%08lx.%08lx.%04xW",
-		 id, now->tv_sec, now->tv_nsec, (unsigned) getpid());
+	snprintf(path, FILENAME_MAX, "data/pending-comments/%d-%08lx.%08lx.%05xW",
+		 id, now_sec, now_nsec, (unsigned) getpid());
 
 	dirpath = strdup(path);
 	newdirpath = strdup(path);
 	if (!dirpath || !newdirpath) {
-		comment_error_log("Eeeep...ENOMEM\n");
+		LOG("Eeeep...ENOMEM");
 		return 1;
 	}
 
 	if (mkdir(dirpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == -1) {
-		comment_error_log("Ow, could not create directory: %d (%s) '%s'\n", errno, strerror(errno), dirpath);
+		LOG("Ow, could not create directory: %d (%s) '%s'", errno, strerror(errno), dirpath);
 		goto out_free;
 	}
 
 	if ((strlen(path) + strlen("/text.txt")) >= FILENAME_MAX) {
-		comment_error_log("Uf...filename too long!\n");
+		LOG("Uf...filename too long!");
 		goto out_free;
 	}
 
@@ -173,14 +99,15 @@ int write_out_comment(struct post_old *post, int id, struct timespec *now, char 
 
 	if ((fd = open(path, O_WRONLY | O_CREAT | O_EXCL,
 		       S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1) {
-		comment_error_log("Couldn't create file ... :( %d (%s) '%s'\n",
+		LOG("Couldn't create file ... :( %d (%s) '%s'",
 				  errno, strerror(errno), path);
 		goto out_free;
 	}
 
-	if (__write(fd, comment, strlen(comment)) != 0)
+	if (xwrite(fd, comment, strlen(comment)) != 0)
 		goto out;
 
+#if 0
 	safe_setxattr(dirpath, XATTR_COMM_AUTHOR, author,
 		      strlen(author));
 	safe_setxattr(dirpath, XATTR_TIME, curdate, strlen(curdate));
@@ -190,16 +117,24 @@ int write_out_comment(struct post_old *post, int id, struct timespec *now, char 
 	if (url && url[0])
 		safe_setxattr(dirpath, XATTR_COMM_URL, url, strlen(url));
 
-	remote_addr = getenv("REMOTE_ADDR");
-	if (remote_addr)
+	remote_addr = getenv("HTTP_X_REAL_IP");
+	if (remote_addr) {
 		safe_setxattr(dirpath, XATTR_COMM_IP, remote_addr,
 			      strlen(remote_addr));
+	} else {
+		remote_addr = getenv("REMOTE_ADDR");
+		if (remote_addr)
+			safe_setxattr(dirpath, XATTR_COMM_IP, remote_addr,
+				      strlen(remote_addr));
+	}
+#endif
+	// FIXME: store metadata
 
 	newdirpath[strlen(newdirpath)-1] = '\0';
 
 	ret = rename(dirpath, newdirpath);
 	if (ret) {
-		comment_error_log("Could not rename '%s' to '%s' %d (%s)\n",
+		LOG("Could not rename '%s' to '%s' %d (%s)",
 				  dirpath, newdirpath, errno,
 				  strerror(errno));
 		goto out;
@@ -216,10 +151,16 @@ out_free:
 	return result;
 }
 
-static int save_comment(struct post_old *post)
+#define COPYCHAR(ob, oi, c)	do { \
+					ob[oi] = (c); \
+					oi++; \
+				} while(0)
+
+static int save_comment(struct req *req)
 {
 	int in;
 	char tmp;
+	uint64_t now, deltat;
 
 	int state;
 
@@ -231,10 +172,8 @@ static int save_comment(struct post_old *post)
 	int url_len = 0;
 	char comment_buf[LONG_BUF_LEN];
 	int comment_len = 0;
-	time_t date = 0;
+	uint64_t date = 0;
 	int id = 0;
-
-	struct timespec now;
 
 	author_buf[0] = '\0'; /* better be paranoid */
 	email_buf[0] = '\0'; /* better be paranoid */
@@ -245,7 +184,7 @@ static int save_comment(struct post_old *post)
 		tmp = in;
 
 #if 0
-		fprintf(post->out, "|'%c' %d|\n", tmp, state);
+		LOG("|'%c' %d|", tmp, state);
 #endif
 
 		switch(state) {
@@ -358,19 +297,21 @@ static int save_comment(struct post_old *post)
 			break;
 	}
 
-#if 0
-	fprintf(post->out, "author: \"%s\"\n", author_buf);
-	fprintf(post->out, "email: \"%s\"\n", email_buf);
-	fprintf(post->out, "url: \"%s\"\n", url_buf);
-	fprintf(post->out, "comment: \"%s\"\n", comment_buf);
-	fprintf(post->out, "date: %lu\n", date);
-	fprintf(post->out, "id: %d\n", id);
+#if 1
+	LOG("author: \"%s\"", author_buf);
+	LOG("email: \"%s\"", email_buf);
+	LOG("url: \"%s\"", url_buf);
+	LOG("comment: \"%s\"", comment_buf);
+	LOG("date: %lu", date);
+	LOG("id: %d", id);
 #endif
 
-	clock_gettime(CLOCK_REALTIME, &now);
-	if ((now.tv_sec > (date+COMMENT_MAX_DELAY)) || (now.tv_sec < (date+COMMENT_MIN_DELAY))) {
-		comment_error_log("Flash-gordon or geriatric was here... load:%lu comment:%lu delta:%lu postid:%d\n",
-				  date, now.tv_sec, now.tv_sec - date, id);
+	now = gettime();
+	deltat = now - date;
+
+	if ((deltat > COMMENT_MAX_DELAY) || (deltat < COMMENT_MIN_DELAY)) {
+		LOG("Flash-gordon or geriatric was here... load:%lu comment:%lu delta:%lu postid:%d",
+				  date, now, deltat, id);
 		return 1;
 	}
 
@@ -381,47 +322,32 @@ static int save_comment(struct post_old *post)
 	urldecode(url_buf, strlen(url_buf), url_buf);
 
 	if (strlen(email_buf) == 0) {
-		comment_error_log("You must fill in name, email, and comment (postid=%d)\n", id);
+		LOG("You must fill in name, email, and comment (postid=%d)", id);
 		return 1;
 	}
 
-	return write_out_comment(post, id, &now, author_buf, email_buf, url_buf, comment_buf);
+	return write_out_comment(req, id, author_buf, email_buf, url_buf, comment_buf);
 }
 
-int blahg_comment()
+int blahg_comment(struct req *req)
 {
-	struct timespec s,e;
-	struct post_old post;
-	int res;
+	char *tmpl;
+	int ret;
 
-	clock_gettime(CLOCK_REALTIME, &s);
+	req_head(req, "Content-Type", "text/html");
 
-	post.out = stdout;
-	post.id  = 0;
-	post.time.tm_year = 0;
-	post.time.tm_mon = 0;
-	post.time.tm_mday = 1;
+	sidebar(req);
 
-	fprintf(post.out, "Content-Type: text/html\n\n");
+	vars_scope_push(&req->vars);
 
-	res = save_comment(&post);
+	ret = save_comment(req);
+	if (ret) {
+		tmpl = "{comment_error}";
+		// FIXME: __store_title(&req->vars, "Error");
+	} else {
+		tmpl = "{comment_save}";
+	}
 
-	if (res && !post.title)
-		post.title = "Erorr";
-
-	feed_header(&post, "html");
-	html_save_comment(&post, res);
-	html_sidebar(&post);
-	feed_footer(&post, "html");
-
-	if (res)
-		post.title = NULL; // NOTE: This might actually leak some memory
-	destroy_post(&post);
-
-	clock_gettime(CLOCK_REALTIME, &e);
-
-	fprintf(post.out, "<!-- time to render: %ld.%09ld seconds -->\n", (int)e.tv_sec-s.tv_sec,
-		e.tv_nsec-s.tv_nsec+((e.tv_sec-s.tv_sec) ? 1000000000 : 0));
-
+	req->body = render_page(req, tmpl);
 	return 0;
 }

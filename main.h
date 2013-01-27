@@ -31,10 +31,10 @@ struct qs {
 	int m;
 	int preview;
 	int xmlrpc;
+	int comment;
 	char *cat;
 	char *tag;
 	char *feed;
-	char *comment;
 };
 
 struct header {
@@ -64,7 +64,7 @@ extern void req_head(struct req *req, char *name, char *val);
 extern int blahg_archive(struct req *req, int m, int paged);
 extern int blahg_category(struct req *req, char *cat, int page);
 extern int blahg_tag(struct req *req, char *tag, int paged);
-extern int blahg_comment();
+extern int blahg_comment(struct req *req);
 extern int blahg_feed(struct req *req, char *feed, int p);
 extern int blahg_index(struct req *req, int paged);
 extern int blahg_story(struct req *req, int p);
