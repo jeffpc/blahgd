@@ -13,10 +13,12 @@
 #include "main.h"
 #include "sidebar.h"
 #include "render.h"
+#include "db.h"
 
 #include "config.h"
 #include "comment.h"
 #include "decode.h"
+#include "error.h"
 
 #define SHORT_BUF_LEN		128
 #define MEDIUM_BUF_LEN		256
@@ -42,14 +44,15 @@
 int write_out_comment(struct req *req, int id, char *author, char *email,
 		      char *url, char *comment)
 {
+	char basepath[FILENAME_MAX];
+	char dirpath[FILENAME_MAX];
+	char textpath[FILENAME_MAX];
+	char sqlpath[FILENAME_MAX];
+
 	char curdate[32];
-	char path[FILENAME_MAX];
-	char *dirpath = NULL;
-	char *newdirpath = NULL;
 	char *remote_addr; /* yes, this is a pointer */
 	int ret;
-	int result = 1;
-	int fd;
+	char *sql;
 
 	uint64_t now, now_nsec;
 	time_t now_sec;
@@ -75,80 +78,59 @@ int write_out_comment(struct req *req, int id, char *author, char *email,
 
 	strftime(curdate, 31, "%Y-%m-%d %H:%M", now_tm);
 
-	snprintf(path, FILENAME_MAX, "data/pending-comments/%d-%08lx.%08lx.%05xW",
+	snprintf(basepath, FILENAME_MAX, "data/pending-comments/%d-%08lx.%08lx.%05x",
 		 id, now_sec, now_nsec, (unsigned) getpid());
 
-	dirpath = strdup(path);
-	newdirpath = strdup(path);
-	if (!dirpath || !newdirpath) {
-		LOG("Eeeep...ENOMEM");
-		return 1;
-	}
+	snprintf(dirpath,  FILENAME_MAX, "%sW", basepath);
+	snprintf(textpath, FILENAME_MAX, "%s/text.txt", dirpath);
+	snprintf(sqlpath,  FILENAME_MAX, "%s/meta.sql", dirpath);
+
+	ASSERT3U(strlen(dirpath),  <, FILENAME_MAX - 1);
+	ASSERT3U(strlen(textpath), <, FILENAME_MAX - 1);
+	ASSERT3U(strlen(sqlpath),  <, FILENAME_MAX - 1);
 
 	if (mkdir(dirpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == -1) {
 		LOG("Ow, could not create directory: %d (%s) '%s'", errno, strerror(errno), dirpath);
-		goto out_free;
+		return 1;
 	}
 
-	if ((strlen(path) + strlen("/text.txt")) >= FILENAME_MAX) {
-		LOG("Uf...filename too long!");
-		goto out_free;
+	ret = write_file(textpath, comment, strlen(comment));
+	if (ret) {
+		LOG("Couldn't write file ... :( %d (%s) '%s'",
+				  errno, strerror(errno), textpath);
+		return 1;
 	}
-
-	strcat(path, "/text.txt");
-
-	if ((fd = open(path, O_WRONLY | O_CREAT | O_EXCL,
-		       S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1) {
-		LOG("Couldn't create file ... :( %d (%s) '%s'",
-				  errno, strerror(errno), path);
-		goto out_free;
-	}
-
-	if (xwrite(fd, comment, strlen(comment)) != 0)
-		goto out;
-
-#if 0
-	safe_setxattr(dirpath, XATTR_COMM_AUTHOR, author,
-		      strlen(author));
-	safe_setxattr(dirpath, XATTR_TIME, curdate, strlen(curdate));
-	safe_setxattr(dirpath, XATTR_COMM_EMAIL, email,
-		      strlen(email));
-
-	if (url && url[0])
-		safe_setxattr(dirpath, XATTR_COMM_URL, url, strlen(url));
 
 	remote_addr = getenv("HTTP_X_REAL_IP");
-	if (remote_addr) {
-		safe_setxattr(dirpath, XATTR_COMM_IP, remote_addr,
-			      strlen(remote_addr));
-	} else {
+	if (!remote_addr)
 		remote_addr = getenv("REMOTE_ADDR");
-		if (remote_addr)
-			safe_setxattr(dirpath, XATTR_COMM_IP, remote_addr,
-				      strlen(remote_addr));
+
+	sql = sqlite3_mprintf("INSERT INTO comments "
+			      "(post, id, author, email, time, "
+			      "remote_addr, url, moderated) VALUES "
+			      "(%d, %d, %Q, %Q, %Q, %Q, %Q, 0);",
+			      id, 0, author, email, curdate,
+			      remote_addr, url);
+
+	ret = write_file(sqlpath, sql, strlen(sql));
+
+	sqlite3_free(sql);
+
+	if (ret) {
+		LOG("Couldn't write file ... :( %d (%s) '%s'",
+				  errno, strerror(errno), textpath);
+		return 1;
 	}
-#endif
-	// FIXME: store metadata
 
-	newdirpath[strlen(newdirpath)-1] = '\0';
-
-	ret = rename(dirpath, newdirpath);
+	ret = rename(dirpath, basepath);
 	if (ret) {
 		LOG("Could not rename '%s' to '%s' %d (%s)",
-				  dirpath, newdirpath, errno,
+				  dirpath, basepath, errno,
 				  strerror(errno));
-		goto out;
+		return 1;
 	}
 
-	result = 0;
-
-out:
-	close(fd);
-out_free:
-	free(dirpath);
-	free(newdirpath);
-
-	return result;
+	return 0;
 }
 
 #define COPYCHAR(ob, oi, c)	do { \
@@ -297,7 +279,7 @@ static int save_comment(struct req *req)
 			break;
 	}
 
-#if 1
+#if 0
 	LOG("author: \"%s\"", author_buf);
 	LOG("email: \"%s\"", email_buf);
 	LOG("url: \"%s\"", url_buf);
@@ -345,7 +327,7 @@ int blahg_comment(struct req *req)
 		tmpl = "{comment_error}";
 		// FIXME: __store_title(&req->vars, "Error");
 	} else {
-		tmpl = "{comment_save}";
+		tmpl = "{comment_saved}";
 	}
 
 	req->body = render_page(req, tmpl);

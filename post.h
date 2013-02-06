@@ -56,15 +56,6 @@ struct post_old {
 	struct tm lasttime; /* date/time of the last update */
 };
 
-#define XATTR_TITLE		"user.post_title"
-#define XATTR_CATS		"user.post_cats"
-#define XATTR_TIME		"user.post_time"
-#define XATTR_FMT		"user.post_fmt"
-#define XATTR_COMM_AUTHOR	"user.author"
-#define XATTR_COMM_EMAIL	"user.email"
-#define XATTR_COMM_URL		"user.url"
-#define XATTR_COMM_IP		"user.remote_addr"
-
 struct req;
 
 extern int load_post(struct req *req, int postid, const char *titlevar);
