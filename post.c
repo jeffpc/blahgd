@@ -44,6 +44,7 @@ static char *load_comment(struct post *post, int commid)
 static int __do_load_post_body_fmt3(struct post *post, char *ibuf, size_t len)
 {
 	struct parser_output x;
+	int ret;
 
 	x.req   = NULL;
 	x.post  = post;
@@ -54,7 +55,12 @@ static int __do_load_post_body_fmt3(struct post *post, char *ibuf, size_t len)
 	fmt3_lex_init(&x.scanner);
 	fmt3_set_extra(&x, x.scanner);
 
-	ASSERT(fmt3_parse(&x) == 0);
+	ret = fmt3_parse(&x);
+
+	if (ret) {
+		LOG("failed to parse post id %u", post->id);
+		ASSERT(0);
+	}
 
 	fmt3_lex_destroy(x.scanner);
 
