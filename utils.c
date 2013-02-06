@@ -76,9 +76,9 @@ int xread(int fd, void *buf, size_t nbyte)
 	return total;
 }
 
-int xwrite(int fd, void *buf, size_t nbyte)
+int xwrite(int fd, const void *buf, size_t nbyte)
 {
-	char *ptr = buf;
+	const char *ptr = buf;
 	size_t total;
 	int ret;
 
@@ -137,4 +137,22 @@ err_close:
 
 err:
 	return out;
+}
+
+int write_file(const char *fname, const char *data, size_t len)
+{
+	int ret;
+	int fd;
+
+	fd = open(fname, O_WRONLY | O_CREAT | O_EXCL,
+		  S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+
+	if (fd == -1)
+		return 1;
+
+	ret = xwrite(fd, data, len);
+
+	close(fd);
+
+	return ret != len;
 }
