@@ -163,12 +163,18 @@ static struct var_val *zulu_fxn(struct var_val *v)
 	return __datetime(v, "%Y-%m-%dT%H:%M:%SZ");
 }
 
+static struct var_val *rfc822_fxn(struct var_val *v)
+{
+	return __datetime(v, "%a, %e %b %Y %H:%M:%S +0000");
+}
+
 static const struct pipestages stages[] = {
 	{ "urlescape", urlescape_fxn, },
 	{ "escape", escape_fxn, },
 	{ "time", time_fxn, },
 	{ "date", date_fxn, },
 	{ "zulu", zulu_fxn, },
+	{ "rfc822", rfc822_fxn, },
 	{ NULL, },
 };
 
