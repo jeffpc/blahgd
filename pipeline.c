@@ -165,7 +165,7 @@ static struct var_val *zulu_fxn(struct var_val *v)
 
 static struct var_val *rfc822_fxn(struct var_val *v)
 {
-	return __datetime(v, "%a, %e %b %Y %H:%M:%S +0000");
+	return __datetime(v, "%a, %d %b %Y %H:%M:%S +0000");
 }
 
 static const struct pipestages stages[] = {
