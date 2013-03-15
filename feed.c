@@ -47,9 +47,9 @@ static void __load_posts(struct req *req, int page)
 static int __feed(struct req *req)
 {
 	if (!strcmp(req->fmt, "atom"))
-		req_head(req, "Content-Type", "application/atom+xml; charset=UTF-8");
+		req_head(req, "Content-Type", "application/atom+xml");
 	else if (!strcmp(req->fmt, "rss2"))
-		req_head(req, "Content-Type", "application/xhtml+xml; charset=UTF-8");
+		req_head(req, "Content-Type", "application/rss+xml");
 
 	vars_scope_push(&req->vars);
 
