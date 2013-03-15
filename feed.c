@@ -46,7 +46,10 @@ static void __load_posts(struct req *req, int page)
 
 static int __feed(struct req *req)
 {
-	req_head(req, "Content-Type", "application/atom+xml; charset=UTF-8");
+	if (!strcmp(req->fmt, "atom"))
+		req_head(req, "Content-Type", "application/atom+xml; charset=UTF-8");
+	else if (!strcmp(req->fmt, "rss2"))
+		req_head(req, "Content-Type", "application/xhtml+xml; charset=UTF-8");
 
 	vars_scope_push(&req->vars);
 
@@ -58,14 +61,15 @@ static int __feed(struct req *req)
 
 int blahg_feed(struct req *req, char *feed, int p)
 {
-	if (strcmp(feed, "atom"))
-		return R404(req, "{error_atom_only}");
+	if (strcmp(feed, "atom") &&
+	    strcmp(feed, "rss2"))
+		return R404(req, "{error_unsupported_feed_fmt}");
 
 	if (p != -1)
 		return R404(req, "{error_comment_feed}");
 
-	/* switch to atom */
-	req->fmt = "atom";
+	/* switch to to the right type */
+	req->fmt = feed;
 
 	return __feed(req);
 }
