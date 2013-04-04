@@ -12,53 +12,94 @@
 #include <dirent.h>
 
 #include "post.h"
-#include "xattr.h"
-#include "sar.h"
-#include "dir.h"
+#include "list.h"
+#include "avl.h"
+#include "vars.h"
+#include "main.h"
+#include "db.h"
+#include "parse.h"
+#include "error.h"
+#include "utils.h"
 
-void cat(struct post *post, void *data, char *tmpl,
-	 struct repltab_entry *repltab)
+static char *load_comment(struct post *post, int commid)
 {
-	struct stat statbuf;
-	char *ibuf;
+	char *err_msg;
+	char path[FILENAME_MAX];
+	char *out;
+
+	err_msg = xstrdup("Error: could not load comment text.");
+
+	snprintf(path, FILENAME_MAX, "data/posts/%d/comments/%d/text.txt", post->id,
+		 commid);
+
+	out = read_file(path);
+	if (!out)
+		out = err_msg;
+	else
+		free(err_msg);
+
+	return out;
+}
+
+static int __do_load_post_body_fmt3(struct post *post, char *ibuf, size_t len)
+{
+	struct parser_output x;
 	int ret;
-	int fd;
 
-	fd = open(tmpl, O_RDONLY);
-	if (fd == -1) {
-		fprintf(post->out, "template open error\n");
-		return;
+	x.req   = NULL;
+	x.post  = post;
+	x.input = ibuf;
+	x.len   = strlen(ibuf);
+	x.pos   = 0;
+
+	fmt3_lex_init(&x.scanner);
+	fmt3_set_extra(&x, x.scanner);
+
+	ret = fmt3_parse(&x);
+
+	if (ret) {
+		LOG("failed to parse post id %u", post->id);
+		ASSERT(0);
 	}
 
-	ret = fstat(fd, &statbuf);
-	if (ret == -1) {
-		fprintf(post->out, "fstat failed\n");
-		goto out_close;
-	}
+	fmt3_lex_destroy(x.scanner);
 
-	ibuf = mmap(NULL, statbuf.st_size, PROT_READ, MAP_SHARED, fd, 0);
-	if (ibuf == MAP_FAILED) {
-		fprintf(post->out, "mmap failed\n");
-		goto out_close;
-	}
+	post->body = x.output;
+	ASSERT(post->body);
 
-	sar(post, data, ibuf, statbuf.st_size, repltab);
+	return 0;
+}
 
-	munmap(ibuf, statbuf.st_size);
+static char *cc(char *a, char *b, int blen)
+{
+	int alen;
+	char *ret;
 
-out_close:
-	close(fd);
+	alen = strlen(a);
+
+	ret = malloc(alen + blen + 1);
+	ASSERT(ret);
+
+	memcpy(ret, a, alen);
+	memcpy(ret + alen, b, blen);
+	ret[alen + blen] = '\0';
+
+	return ret;
 }
 
 #define CATP_SKIP	0
 #define CATP_ECHO	1
 #define CATP_PAR	2
 
-static void __do_cat_post(struct post *post, char *ibuf, int len)
+static int __do_load_post_body(struct post *post, char *ibuf, size_t len)
 {
 	int sidx, eidx;
 	int state = CATP_SKIP;
+	char *ret;
 	char tmp;
+
+	ret = xstrdup("");
+	ASSERT(ret);
 
 	for(eidx = sidx = 0; eidx < len; eidx++) {
 		tmp = ibuf[eidx];
@@ -69,9 +110,9 @@ static void __do_cat_post(struct post *post, char *ibuf, int len)
 		switch(state) {
 			case CATP_SKIP:
 				if (tmp != '\n') {
-					fwrite(ibuf+sidx, 1, eidx-sidx, post->out);
+					ret = cc(ret, ibuf + sidx, eidx - sidx);
 					if (post->fmt != 2)
-						fwrite("<p>", 1, 3, post->out);
+						ret = cc(ret, "<p>", 3);
 					sidx = eidx;
 					state = CATP_ECHO;
 				}
@@ -83,17 +124,17 @@ static void __do_cat_post(struct post *post, char *ibuf, int len)
 				break;
 
 			case CATP_PAR:
-				fwrite(ibuf+sidx, 1, eidx-sidx, post->out);
+				ret = cc(ret, ibuf + sidx, eidx - sidx);
 				sidx = eidx;
 				if (tmp == '\n') {
 					if (post->fmt != 2)
-						fwrite("</p>\n", 1, 5, post->out);
+						ret = cc(ret, "</p>\n", 5);
 					state = CATP_SKIP;
 				} else if (post->fmt == 1) {
 					state = CATP_ECHO;
 				} else {
 					if (post->fmt != 2)
-						fwrite("<br/>\n", 1, 5, post->out);
+						ret = cc(ret, "<br/>\n", 6);
 					state = CATP_ECHO;
 				}
 				break;
@@ -102,15 +143,20 @@ static void __do_cat_post(struct post *post, char *ibuf, int len)
 	}
 
 	if (state != CATP_SKIP) {
-		fwrite(ibuf+sidx, 1, eidx-sidx, post->out);
+		ret = cc(ret, ibuf + sidx, eidx - sidx);
 		if (post->fmt != 2)
-			fwrite("</p>", 1, 4, post->out);
+			ret = cc(ret, "</p>", 4);
 	}
+
+	post->body = ret;
+	ASSERT(post->body);
+
+	return 0;
 }
 
-void cat_post(struct post *post)
+static int __load_post_body(struct post *post)
 {
-	char *exts[4] = {
+	static const char *exts[4] = {
 		[0] = "txt",
 		[1] = "txt",
 		[2] = "txt",
@@ -123,207 +169,224 @@ void cat_post(struct post *post)
 	int ret;
 	int fd;
 
-	if (post->preview)
-		fprintf(post->out, "<p><strong>NOTE: This is only a preview."
-			" This post hasn't been published yet. The post's"
-			" title, categories, and publication time will"
-			" change.</strong></p>\n");
+	ASSERT3U(post->fmt, <=, 3);
 
-	snprintf(path, FILENAME_MAX, "%s/post.%s", post->path, exts[post->fmt]);
-
-	if (post->fmt == 3) {
-		__do_cat_post_fmt3(post, path);
-		return;
-	}
+	snprintf(path, FILENAME_MAX, "data/posts/%d/post.%s", post->id,
+		 exts[post->fmt]);
 
 	fd = open(path, O_RDONLY);
-	if (fd == -1) {
-		fprintf(post->out, "post.txt open error\n");
-		return;
-	}
+	if (fd == -1)
+		return errno;
 
 	ret = fstat(fd, &statbuf);
-	if (ret == -1) {
-		fprintf(post->out, "fstat failed\n");
-		goto out_close;
-	}
+	if (ret == -1)
+		goto err_close;
 
 	ibuf = mmap(NULL, statbuf.st_size, PROT_READ, MAP_SHARED, fd, 0);
 	if (ibuf == MAP_FAILED) {
-		fprintf(post->out, "mmap failed\n");
-		goto out_close;
+		ret = errno;
+		goto err_close;
 	}
 
-	__do_cat_post(post, ibuf, statbuf.st_size);
-
-	munmap(ibuf, statbuf.st_size);
-
-out_close:
-	close(fd);
-}
-
-void cat_post_comment(struct post *post, struct comment *comm)
-{
-	char path[FILENAME_MAX];
-	struct stat statbuf;
-	char *ibuf;
-	int ret;
-	int fd;
-
-	snprintf(path, FILENAME_MAX, "%s/comments/%d/text.txt", post->path,
-		 comm->id);
-
-	fd = open(path, O_RDONLY);
-	if (fd == -1) {
-		fprintf(post->out, "post.txt open error\n");
-		return;
-	}
-
-	ret = fstat(fd, &statbuf);
-	if (ret == -1) {
-		fprintf(post->out, "fstat failed\n");
-		goto out_close;
-	}
-
-	ibuf = mmap(NULL, statbuf.st_size, PROT_READ, MAP_SHARED, fd, 0);
-	if (ibuf == MAP_FAILED) {
-		fprintf(post->out, "mmap failed\n");
-		goto out_close;
-	}
-
-	__do_cat_post(post, ibuf, statbuf.st_size);
-
-	munmap(ibuf, statbuf.st_size);
-
-out_close:
-	close(fd);
-}
-
-int load_comment(struct post *post, int commid, struct comment *comm)
-{
-	char path[FILENAME_MAX];
-	char *buf;
-
-	snprintf(path, FILENAME_MAX, "%s/comments/%d", post->path, commid);
-
-	comm->id = commid;
-	comm->author = safe_getxattr(path, XATTR_COMM_AUTHOR);
-	buf          = safe_getxattr(path, XATTR_TIME);
-
-	if (comm->author && buf && (strlen(buf) == 16)) {
-		/* "2005-01-02 03:03" */
-		strptime(buf, "%Y-%m-%d %H:%M", &comm->time);
-
-		free(buf);
-
-		return 0;
-	}
-
-	free(buf);
-	return ENOMEM;
-}
-
-void destroy_comment(struct comment *comm)
-{
-	free(comm->author);
-}
-
-static void __each_comment_helper(struct post *post, char *name, void *data)
-{
-	void(*f)(struct post*, struct comment*) = data;
-	struct comment comm;
-	int commid;
-
-	commid = atoi(name);
-
-	if (load_comment(post, commid, &comm))
-		return;
-
-	f(post, &comm);
-
-	destroy_comment(&comm);
-}
-
-void invoke_for_each_comment(struct post *post, void(*f)(struct post*,
-							 struct comment*))
-{
-	char path[FILENAME_MAX];
-	DIR *dir;
-
-	snprintf(path, FILENAME_MAX, "%s/comments", post->path);
-
-	dir = opendir(path);
-	if (!dir)
-		return;
-
-	sorted_readdir_loop(dir, post, __each_comment_helper, f, SORT_ASC,
-			    0, -1);
-
-	closedir(dir);
-}
-
-int load_post(int postid, struct post *post, int preview)
-{
-	char path[FILENAME_MAX];
-	char *buf1,*buf2;
-	int ret = 0;
-
-	if (!preview)
-		snprintf(path, FILENAME_MAX, "data/posts/%d", postid);
+	if (post->fmt == 3)
+		ret = __do_load_post_body_fmt3(post, ibuf, statbuf.st_size);
 	else
-		snprintf(path, FILENAME_MAX, "data/pending-posts/%d",
-			 postid);
+		ret = __do_load_post_body(post, ibuf, statbuf.st_size);
 
-	memset(&post->lasttime, 0, sizeof(struct tm));
+	munmap(ibuf, statbuf.st_size);
 
-	post->id = postid;
-	post->path = strdup(path);
-	post->preview = preview;
-	if (!preview) {
-		post->title = safe_getxattr(path, XATTR_TITLE);
-		post->cats  = safe_getxattr(path, XATTR_CATS);
-		buf1        = safe_getxattr(path, XATTR_TIME);
-		buf2        = safe_getxattr(path, XATTR_FMT);
-	} else {
-		post->title = strdup("Post Preview");
-		post->cats  = strdup("preview");
-		buf1        = strdup("1970-01-01 00:00");
-		buf2        = strdup("3");
+err_close:
+	close(fd);
+
+	return ret;
+}
+
+static int __load_post_comments(struct post *post)
+{
+	sqlite3_stmt *stmt;
+	int ret;
+
+	post->numcom = 0;
+
+	SQL(stmt, "SELECT id, author, email, strftime(\"%s\", time), "
+	    "remote_addr, url FROM comments WHERE post=? AND moderated=1 "
+	    "ORDER BY id");
+	SQL_BIND_INT(stmt, 1, post->id);
+	SQL_FOR_EACH(stmt) {
+		struct comment *comm;
+
+		comm = malloc(sizeof(struct comment));
+		ASSERT(comm);
+
+		list_add_tail(&comm->list, &post->comments);
+
+		comm->id     = SQL_COL_INT(stmt, 0);
+		comm->author = xstrdup_def(SQL_COL_STR(stmt, 1), "[unknown]");
+		comm->email  = xstrdup(SQL_COL_STR(stmt, 2));
+		comm->time   = SQL_COL_INT(stmt, 3);
+		comm->ip     = xstrdup(SQL_COL_STR(stmt, 4));
+		comm->url    = xstrdup(SQL_COL_STR(stmt, 5));
+		comm->body   = load_comment(post, comm->id);
+
+		post->numcom++;
 	}
 
-	if (post->title && buf1 && (strlen(buf1) == 16)) {
-		/* "2005-01-02 03:03" */
-		strptime(buf1, "%Y-%m-%d %H:%M", &post->time);
+	return 0;
+}
 
-		post->fmt = buf2 ? atoi(buf2) : 0;
+static struct var *__tag_var(const char *name, struct list_head *val)
+{
+	struct post_tag *cur, *tmp;
+	struct var *v;
+	int i;
 
-		if ((post->fmt < 0) || (post->fmt > 3))
-			ret = EINVAL;
-	} else
-		ret = ENOMEM;
+	v = var_alloc(name);
+	ASSERT(v);
 
-	if (ret)
-		destroy_post(post);
+	i = 0;
+	list_for_each_entry_safe(cur, tmp, val, list) {
+		ASSERT(i < VAR_MAX_ARRAY_SIZE);
 
-	free(buf1);
-	free(buf2);
-	return ret;
+		v->val[i].type = VT_STR;
+		v->val[i].str  = xstrdup(cur->tag);
+		ASSERT(v->val[i].str);
+
+		i++;
+	}
+
+	return v;
+}
+
+static struct var *__com_var(const char *name, struct list_head *val)
+{
+	struct comment *cur, *tmp;
+	struct var *v;
+	int i;
+
+	v = var_alloc(name);
+	ASSERT(v);
+
+	i = 0;
+	list_for_each_entry_safe(cur, tmp, val, list) {
+		ASSERT(i < VAR_MAX_ARRAY_SIZE);
+
+		v->val[i].type = VT_VARS;
+		v->val[i].vars[0] = VAR_ALLOC_INT("commid", cur->id);
+		v->val[i].vars[1] = VAR_ALLOC_INT("commtime", cur->time);
+		v->val[i].vars[2] = VAR_ALLOC_STR("commauthor", cur->author);
+		v->val[i].vars[3] = VAR_ALLOC_STR("commemail", cur->email);
+		v->val[i].vars[4] = VAR_ALLOC_STR("commip", cur->ip);
+		v->val[i].vars[5] = VAR_ALLOC_STR("commurl", cur->url);
+		v->val[i].vars[6] = VAR_ALLOC_STR("commbody", cur->body);
+
+		i++;
+	}
+
+	return v;
+}
+
+static void __store_vars(struct req *req, const char *var, struct post *post,
+			 const char *titlevar)
+{
+	struct var_val vv;
+
+	memset(&vv, 0, sizeof(vv));
+
+	vv.type    = VT_VARS;
+	vv.vars[0] = VAR_ALLOC_INT("id", post->id);
+	vv.vars[1] = VAR_ALLOC_INT("time", post->time);
+	vv.vars[2] = VAR_ALLOC_STR("title", post->title);
+	vv.vars[3] = __tag_var("tags", &post->tags);
+	vv.vars[4] = VAR_ALLOC_STR("body", post->body);
+	vv.vars[5] = VAR_ALLOC_INT("numcom", post->numcom);
+	vv.vars[6] = __com_var("comments", &post->comments);
+
+	ASSERT(!var_append(&req->vars, "posts", &vv));
+
+	if (titlevar) {
+		vv.type = VT_STR;
+		vv.str  = xstrdup(post->title);
+		ASSERT(vv.str);
+
+		ASSERT(!var_append(&req->vars, titlevar, &vv));
+	}
+}
+
+int load_post(struct req *req, int postid, const char *titlevar)
+{
+	char path[FILENAME_MAX];
+	struct post post;
+	int ret;
+	int err;
+	sqlite3_stmt *stmt;
+
+	snprintf(path, FILENAME_MAX, "data/posts/%d", postid);
+
+	post.id = postid;
+	post.title = NULL;
+	post.body = NULL;
+	post.numcom = 0;
+	INIT_LIST_HEAD(&post.tags);
+	INIT_LIST_HEAD(&post.comments);
+
+	open_db();
+	SQL(stmt, "SELECT title, strftime(\"%s\", time), fmt FROM posts WHERE id=?");
+	SQL_BIND_INT(stmt, 1, postid);
+	SQL_FOR_EACH(stmt) {
+		post.title = xstrdup(SQL_COL_STR(stmt, 0));
+		post.time  = SQL_COL_INT(stmt, 1);
+		post.fmt   = SQL_COL_INT(stmt, 2);
+	}
+
+	if (!post.title) {
+		err = ENOENT;
+		goto err;
+	}
+
+	SQL(stmt, "SELECT tag FROM post_tags WHERE post=? ORDER BY tag");
+	SQL_BIND_INT(stmt, 1, postid);
+	SQL_FOR_EACH(stmt) {
+		struct post_tag *tag;
+
+		tag = malloc(sizeof(struct post_tag));
+		ASSERT(tag);
+
+		tag->tag = xstrdup(SQL_COL_STR(stmt, 0));
+		ASSERT(tag->tag);
+
+		list_add_tail(&tag->list, &post.tags);
+	}
+
+	err = __load_post_comments(&post);
+
+	if (!err)
+		err = __load_post_body(&post);
+
+err:
+	if (err)
+		destroy_post(&post);
+	else
+		__store_vars(req, "posts", &post, titlevar);
+
+	return err;
 }
 
 void destroy_post(struct post *post)
 {
 	free(post->title);
-	free(post->cats);
 }
 
-void dump_post(struct post *post)
+#if 0
+void dump_post(struct post_old *post)
 {
 	if (!post)
 		fprintf(stdout, "p=NULL\n");
 	else
-		fprintf(post->out, "p=%p { %d, '%s', '%s', '%04d-%02d-%02d %02d:%02d' }\n\n",
+		fprintf(post->out, "p=%p { %d, '%s', '%s', '%s', '%04d-%02d-%02d %02d:%02d' }\n\n",
 			post, post->id, post->title, post->cats,
+			post->tags,
 			post->time.tm_year, post->time.tm_mon,
 			post->time.tm_mday, post->time.tm_hour,
 			post->time.tm_min);
 }
+#endif

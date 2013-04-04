@@ -1,30 +1,36 @@
+%pure-parser
+%lex-param {void *scanner}
+%parse-param {struct parser_output *data}
+
 %{
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
-#include <errno.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include <openssl/sha.h>
 
 #include "config.h"
-#include "post.h"
 #include "listing.h"
+#include "error.h"
+#include "utils.h"
+#include "mangle.h"
 
-static struct post *post;
+#include "parse.h"
 
-extern int yylex(void);
-extern void yyrestart(FILE*);
+#define scanner data->scanner
 
-void yyerror(char *e)
+extern int fmt3_lex(void *, void *);
+
+void yyerror(void *scan, char *e)
 {
-	fprintf(post->out, "Error: %s\n", e);
+	LOG("Error: %s", e);
 }
 
-void yyerror2(char *e, char *yytext)
+void fmt3_error2(char *e, char *yytext)
 {
-	fprintf(post->out, "Error: %s (%s)\n", e, yytext);
+	LOG("Error: %s (%s)", e, yytext);
 }
 
 static char *concat(char *a, char *b)
@@ -32,7 +38,7 @@ static char *concat(char *a, char *b)
 	char *ret;
 
 	ret = malloc(strlen(a) + strlen(b) + 1);
-	assert(ret);
+	ASSERT(ret);
 
 	strcpy(ret, a);
 	strcat(ret, b);
@@ -45,7 +51,7 @@ static char *concat4(char *a, char *b, char *c, char *d)
 	char *ret;
 
 	ret = malloc(strlen(a) + strlen(b) + strlen(c) + strlen(d) + 1);
-	assert(ret);
+	ASSERT(ret);
 
 	strcpy(ret, a);
 	strcat(ret, b);
@@ -60,7 +66,7 @@ static char *concat5(char *a, char *b, char *c, char *d, char *e)
 	char *ret;
 
 	ret = malloc(strlen(a) + strlen(b) + strlen(c) + strlen(d) + strlen(e) + 1);
-	assert(ret);
+	ASSERT(ret);
 
 	strcpy(ret, a);
 	strcat(ret, b);
@@ -71,36 +77,52 @@ static char *concat5(char *a, char *b, char *c, char *d, char *e)
 	return ret;
 }
 
-static char *__listing(char *txt, char *opt)
+static char *__listing(struct post *post, char *txt, char *opt)
 {
 	return concat4("</p><pre>", "", listing(post, txt), "</pre><p>");
 }
 
-static char *process_cmd(char *cmd, char *txt, char *opt)
+static char *verbatim(char *txt)
+{
+	char *escaped;
+
+	escaped = mangle_htmlescape(txt);
+	ASSERT(escaped);
+
+	return concat4("</p><pre>", escaped, "</pre><p>", "");
+}
+
+static char *process_cmd(struct post *post, char *cmd, char *txt, char *opt)
 {
 	if (!strcmp(cmd, "link"))
 		return concat5("<a href=\"", txt, "\">", opt ? opt : txt, "</a>");
 
+	if (!strcmp(cmd, "photolink"))
+		return concat5("<a href=\"" PHOTO_BASE_URL "/", txt, "\">", opt ? opt : txt, "</a>");
+
 	if (!strcmp(cmd, "img"))
 		return concat5("<img src=\"", txt, "\" alt=\"", opt ? opt : "", "\" />");
 
+	if (!strcmp(cmd, "photo"))
+		return concat5("<img src=\"" PHOTO_BASE_URL "/", txt, "\" alt=\"", opt ? opt : "", "\" />");
+
 	if (!strcmp(cmd, "emph")) {
-		assert(!opt);
+		ASSERT(!opt);
 		return concat4("<em>", txt, "</em>", "");
 	}
 
 	if (!strcmp(cmd, "texttt")) {
-		assert(!opt);
+		ASSERT(!opt);
 		return concat4("<tt>", txt, "</tt>", "");
 	}
 
 	if (!strcmp(cmd, "textbf")) {
-		assert(!opt);
+		ASSERT(!opt);
 		return concat4("<strong>", txt, "</strong>", "");
 	}
 
 	if (!strcmp(cmd, "listing"))
-		return __listing(txt, opt);
+		return __listing(post, txt, opt);
 
 	if (!strcmp(cmd, "item")) {
 		// FIXME: we should keep track of what commands we've
@@ -115,23 +137,23 @@ static char *process_cmd(char *cmd, char *txt, char *opt)
 		int begin = !strcmp(cmd, "begin");
 
 		if (!strcmp(txt, "enumerate")) {
-			assert(!opt);
-			return strdup(begin ? "</p><ol>" : "</ol><p>");
+			ASSERT(!opt);
+			return xstrdup(begin ? "</p><ol>" : "</ol><p>");
 		}
 
 		if (!strcmp(txt, "itemize")) {
-			assert(!opt);
-			return strdup(begin ? "</p><ul>" : "</ul><p>");
+			ASSERT(!opt);
+			return xstrdup(begin ? "</p><ul>" : "</ul><p>");
 		}
 
 		if (!strcmp(txt, "description")) {
-			assert(!opt);
-			return strdup(begin ? "</p><dl>" : "</dl><p>");
+			ASSERT(!opt);
+			return xstrdup(begin ? "</p><dl>" : "</dl><p>");
 		}
 
 		if (!strcmp(txt, "quote")) {
-			assert(!opt);
-			return strdup(begin ? "</p><blockquote><p>" :
+			ASSERT(!opt);
+			return xstrdup(begin ? "</p><blockquote><p>" :
 					      "</p></blockquote><p>");
 		}
 
@@ -142,36 +164,42 @@ static char *process_cmd(char *cmd, char *txt, char *opt)
 		return concat5("<abbr title=\"", opt ? opt : txt, "\">", txt, "</abbr>");
 
 	if (!strcmp(cmd, "section")) {
-		assert(!opt);
+		ASSERT(!opt);
 		return concat4("</p><h4>", txt, "</h4><p>", "");
 	}
 
 	if (!strcmp(cmd, "subsection")) {
-		assert(!opt);
+		ASSERT(!opt);
 		return concat4("</p><h5>", txt, "</h5><p>", "");
 	}
 
 	if (!strcmp(cmd, "subsubsection")) {
-		assert(!opt);
+		ASSERT(!opt);
 		return concat4("</p><h6>", txt, "</h6><p>", "");
 	}
 
 	if (!strcmp(cmd, "wiki")) {
 		return concat5("<a href=\"" WIKI_BASE_URL "/", txt,
-			"\"><img src=\"/wiki.png\" alt=\"Wikipedia article:\" />&nbsp;",
+			"\"><img src=\"" BASE_URL "/wiki.png\" alt=\"Wikipedia article:\" />&nbsp;",
 			opt ? opt : txt, "</a>");
 	}
 
 	if (!strcmp(cmd, "bug")) {
-		assert(!opt);
+		ASSERT(!opt);
 		return concat5("<a href=\"" BUG_BASE_URL "/", txt,
-			"\"><img src=\"/bug.png\" alt=\"bug #\" />&nbsp;",
+			"\"><img src=\"" BASE_URL "/bug.png\" alt=\"bug #\" />&nbsp;",
 			txt, "</a>");
 	}
 
 	if (!strcmp(cmd, "degree")) {
-		assert(!opt);
+		ASSERT(!opt);
 		return concat4("\xc2\xb0", txt, "", "");
+	}
+
+	if (!strcmp(cmd, "tag") ||
+	    !strcmp(cmd, "title")) {
+		ASSERT(!opt);
+		return xstrdup("");
 	}
 
 	return concat4("[INVAL CMD", txt, "]", "");
@@ -179,42 +207,42 @@ static char *process_cmd(char *cmd, char *txt, char *opt)
 
 static char *dash(int len)
 {
-	char *ret[4] = {
+	static const char *ret[4] = {
 		[0] = NULL,
 		[1] = "-",
 		[2] = "&ndash;",
 		[3] = "&mdash;",
 	};
 
-	assert(len <= 3);
+	ASSERT(len <= 3);
 
-	return strdup(ret[len]);
+	return xstrdup(ret[len]);
 }
 
 static char *oquote(int len)
 {
-	char *ret[3] = {
+	static const char *ret[3] = {
 		[0] = NULL,
 		[1] = "&lsquo;",
 		[2] = "&ldquo;",
 	};
 
-	assert(len <= 2);
+	ASSERT(len <= 2);
 
-	return strdup(ret[len]);
+	return xstrdup(ret[len]);
 }
 
 static char *cquote(int len)
 {
-	char *ret[3] = {
+	static const char *ret[3] = {
 		[0] = NULL,
 		[1] = "&rsquo;",
 		[2] = "&rdquo;",
 	};
 
-	assert(len <= 2);
+	ASSERT(len <= 2);
 
-	return strdup(ret[len]);
+	return xstrdup(ret[len]);
 }
 
 static char *special_char(char *txt)
@@ -230,7 +258,7 @@ static char *special_char(char *txt)
 			break;
 	}
 
-	return strdup(ret);
+	return xstrdup(ret);
 }
 
 static inline char asciify(unsigned char c)
@@ -355,9 +383,12 @@ static char *render_math(char *tex)
 %token <ptr> UTF8FIRST3 UTF8FIRST2 UTF8REST WORD PLUS MINUS ASTERISK SLASH
 %token <ptr> PIPE
 %token <ptr> W_TIMES W_FRAC
+%token <ptr> VERBTEXT
+%token VERBSTART VERBEND
 
 %type <ptr> paragraphs paragraph line thing cmd cmdarg optcmdarg math mexpr
 %type <ptr> mcmd mcmdarg
+%type <ptr> verb
 
 %left USCORE
 %left PLUS MINUS
@@ -365,9 +396,9 @@ static char *render_math(char *tex)
 
 %%
 
-post : paragraphs			{ printf("%s\n", $1); }
-     | PAREND
-     | NLINE
+post : paragraphs			{ data->output = $1; }
+     | PAREND				{ data->output = xstrdup(""); }
+     | NLINE				{ data->output = xstrdup(""); }
      |
      ;
 
@@ -398,20 +429,21 @@ thing : WORD				{ $$ = $1; }
       | OQUOT				{ $$ = oquote(strlen($1)); }
       | CQUOT				{ $$ = cquote(strlen($1)); }
       | SCHAR				{ $$ = special_char($1); }
-      | ELLIPSIS			{ $$ = strdup("&hellip;"); }
-      | TILDE				{ $$ = strdup("&nbsp;"); }
+      | ELLIPSIS			{ $$ = xstrdup("&hellip;"); }
+      | TILDE				{ $$ = xstrdup("&nbsp;"); }
       | BSLASH cmd			{ $$ = $2; }
       | DOLLAR math DOLLAR		{ $$ = render_math($2); }
+      | VERBSTART verb VERBEND		{ $$ = verbatim($2); }
       ;
 
-cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd($1, $3, $2); }
-    | WORD cmdarg		{ $$ = process_cmd($1, $2, NULL); }
-    | BSLASH			{ $$ = strdup("<br/>"); }
+cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd(data->post, $1, $3, $2); }
+    | WORD cmdarg		{ $$ = process_cmd(data->post, $1, $2, NULL); }
+    | BSLASH			{ $$ = xstrdup("<br/>"); }
     | OCURLY			{ $$ = $1; }
     | CCURLY			{ $$ = $1; }
     | OBRACE			{ $$ = $1; }
     | CBRACE			{ $$ = $1; }
-    | AMP			{ $$ = strdup("&amp;"); }
+    | AMP			{ $$ = xstrdup("&amp;"); }
     | USCORE			{ $$ = $1; }
     | PERCENT			{ $$ = $1; }
     | DOLLAR			{ $$ = $1; }
@@ -423,6 +455,9 @@ optcmdarg : OBRACE paragraph CBRACE	{ $$ = $2; }
 
 cmdarg : OCURLY paragraph CCURLY	{ $$ = $2; }
        ;
+
+verb : verb VERBTEXT			{ $$ = concat($1, $2); }
+     | VERBTEXT				{ $$ = $1; }
 
 math : mexpr			{ $$ = $1; }
      ;
@@ -448,21 +483,3 @@ mcmdarg : OCURLY mexpr CCURLY		{ $$ = concat4($1, $2, $3, ""); }
 	;
 
 %%
-
-void __do_cat_post_fmt3(struct post *p, char *path)
-{
-	FILE *f;
-
-	f = fopen(path, "r");
-	if (!f) {
-		fprintf(p->out, "post.tex open error\n");
-		return;
-	}
-
-	post = p;
-
-	yyrestart(f);
-
-	while (yyparse())
-		;
-}

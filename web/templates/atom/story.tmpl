@@ -1,0 +1,17 @@
+<entry>
+	<author>
+		<name>JeffPC</name>
+		<uri>{baseurl}</uri>
+	</author>
+	<title type="html"><![CDATA[{title}]]></title>
+	<link rel="alternate" type="text/html" href="{baseurl}/?p={id}" />
+	<id>{baseurl}/?p={id}</id>
+	<updated>{time|zulu}</updated>
+	<published>{time|zulu}</published>
+
+	<link rel="replies" type="text/html" href="{baseurl}/?p={id}#comments" thr:count="1"/>
+	<thr:total>{numcom}</thr:total>
+	{tags%tag}
+	<summary type="html"><![CDATA[{body}]]></summary>
+	<content type="html" xml:base="{baseurl}/?p={id}"><![CDATA[{body}]]></content>
+</entry>

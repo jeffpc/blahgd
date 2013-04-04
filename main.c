@@ -2,10 +2,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <libgen.h>
+#include <syslog.h>
 
 #include "main.h"
+#include "decode.h"
 #include "post.h"
-#include "html.h"
+#include "error.h"
+#include "utils.h"
+#include "render.h"
+#include "sidebar.h"
 
 static char *nullterminate(char *s)
 {
@@ -17,8 +22,9 @@ static char *nullterminate(char *s)
 	return s + 1;
 }
 
-static void parse_qs(char *qs, struct qs *args)
+static void parse_qs(char *qs, struct req *req)
 {
+	struct qs *args = &req->args;
 	char *tmp;
 	char *end;
 
@@ -27,10 +33,10 @@ static void parse_qs(char *qs, struct qs *args)
 	args->paged = -1;
 	args->m = -1;
 	args->xmlrpc = 0;
+	args->comment = 0;
 	args->cat = NULL;
 	args->tag = NULL;
 	args->feed = NULL;
-	args->comment = NULL;
 	args->preview = 0;
 
 	if (!qs)
@@ -63,7 +69,7 @@ static void parse_qs(char *qs, struct qs *args)
 			cptr = &args->feed;
 			len = 5;
 		} else if (!strncmp(qs, "comment=", 8)) {
-			cptr = &args->comment;
+			iptr = &args->comment;
 			len = 8;
 		} else if (!strncmp(qs, "preview=", 8)) {
 			iptr = &args->preview;
@@ -79,10 +85,12 @@ static void parse_qs(char *qs, struct qs *args)
 		qs += len;
 		tmp = nullterminate(qs);
 
-		if (iptr)
+		if (iptr) {
 			*iptr = atoi(qs);
-		else if (cptr)
+		} else if (cptr) {
+			urldecode(qs, strlen(qs), qs);
 			*cptr = qs;
+		}
 
 		qs = tmp;
 	}
@@ -103,68 +111,166 @@ static void parse_qs(char *qs, struct qs *args)
 		args->page = PAGE_STORY;
 }
 
-static int blahg_malformed(int argc, char **argv)
+int R404(struct req *req, char *tmpl)
 {
-	printf("Content-Type: text/plain\n\n");
-	printf("There has been an error processing your request.  The site "
-	       "administrator has\nbeen notified.\n\nSorry for the "
-	       "inconvenience.\n\nJosef 'Jeff' Sipek.\n");
+	tmpl = tmpl ? tmpl : "{404}";
 
-	// FIXME: send $SCRIPT_URL, $PATH_INFO, and $QUERY_STRING via email
+	LOG("status 404 (tmpl: '%s')", tmpl);
+
+	req_head(req, "Content-Type", "text/html");
+
+	req->status = 404;
+	req->fmt    = "html";
+
+	vars_scope_push(&req->vars);
+
+	sidebar(req);
+
+	req->body = render_page(req, tmpl);
 
 	return 0;
 }
 
-void disp_404(char *title, char *txt)
+static void __store_str(struct vars *vars, const char *key, char *val)
 {
-	struct post post;
+	struct var_val vv;
 
-	memset(&post, 0, sizeof(struct post));
-	post.out = stdout;
-	post.title = "Error";
+	memset(&vv, 0, sizeof(vv));
 
-	fprintf(post.out, "Status: 404 Not Found\nContent-Type: text/html\n\n");
+        vv.type = VT_STR;
+        vv.str  = xstrdup(val);
+        ASSERT(vv.str);
 
-	html_header(&post);
-	printf("<h2>%s</h2>\n<div class=\"storycentent\">%s</div>\n", title, txt);
+        ASSERT(!var_append(vars, key, &vv));
+}
 
-	html_sidebar(&post);
-	html_footer(&post);
+static void __store_int(struct vars *vars, const char *key, uint64_t val)
+{
+	struct var_val vv;
 
-	post.title = NULL;
-	destroy_post(&post);
+	memset(&vv, 0, sizeof(vv));
 
-	exit(0);
+        vv.type = VT_INT;
+        vv.i    = val;
+
+        ASSERT(!var_append(vars, key, &vv));
+}
+
+static void req_init(struct req *req)
+{
+	req->dump_latency = true;
+	req->start = gettime();
+	req->body  = NULL;
+	req->fmt   = "html";
+	INIT_LIST_HEAD(&req->headers);
+
+	req->status = 200;
+
+	vars_init(&req->vars);
+
+	__store_str(&req->vars, "baseurl", BASE_URL);
+	__store_int(&req->vars, "now", gettime());
+}
+
+static void req_destroy(struct req *req)
+{
+	struct header *cur, *tmp;
+
+	printf("Status: %u\n", req->status);
+
+	list_for_each_entry_safe(cur, tmp, &req->headers, list) {
+		printf("%s: %s\n", cur->name, cur->val);
+	}
+
+	printf("\n%s\n", req->body);
+
+	if (req->dump_latency) {
+		uint64_t delta;
+
+		delta = gettime() - req->start;
+
+		printf("<!-- time to render: %lu.%09lu seconds -->\n",
+		       delta / 1000000000UL,
+		       delta % 1000000000UL);
+	}
+}
+
+void req_head(struct req *req, char *name, char *val)
+{
+	struct header *cur, *tmp;
+
+	list_for_each_entry_safe(cur, tmp, &req->headers, list) {
+		if (!strcmp(cur->name, name)) {
+			free(cur->val);
+			list_del(&cur->list);
+			goto set;
+		}
+	}
+
+	cur = malloc(sizeof(struct header));
+	ASSERT(cur);
+
+	cur->name = xstrdup(name);
+
+set:
+	cur->val  = xstrdup(val);
+	list_add_tail(&cur->list, &req->headers);
 }
 
 int main(int argc, char **argv)
 {
-	struct qs args;
+	struct req request;
+	int ret;
 
-	parse_qs(getenv("QUERY_STRING"), &args);
+	openlog("blahg", LOG_NDELAY | LOG_PID, LOG_LOCAL0);
 
-	printf("X-Pingback: http://blahg.josefsipek.net/?xmlrpc=1\n");
+	req_init(&request);
 
-	switch(args.page) {
+	parse_qs(getenv("QUERY_STRING"), &request);
+
+#ifdef USE_XMLRPC
+	req_head(&request, "X-Pingback", BASE_URL "/?xmlrpc=1");
+#endif
+
+	switch (request.args.page) {
 		case PAGE_ARCHIVE:
-			return blahg_archive(args.m, args.paged);
+			ret = blahg_archive(&request, request.args.m,
+					    request.args.paged);
+			break;
 		case PAGE_CATEGORY:
-			return blahg_category(args.cat, args.paged);
+			ret = blahg_category(&request, request.args.cat,
+					     request.args.paged);
+			break;
 		case PAGE_TAG:
-			return blahg_tag(args.tag, args.paged);
+			ret = blahg_tag(&request, request.args.tag,
+					request.args.paged);
+			break;
 		case PAGE_COMMENT:
-			return blahg_comment();
+			ret = blahg_comment(&request);
+			break;
 		case PAGE_FEED:
-			return blahg_feed(args.feed, args.p);
+			ret = blahg_feed(&request, request.args.feed,
+					 request.args.p);
+			break;
 		case PAGE_INDEX:
-			return blahg_index(args.paged);
+			ret = blahg_index(&request, request.args.paged);
+			break;
 		case PAGE_STORY:
-			return blahg_story(args.p, args.preview);
+			ret = blahg_story(&request, request.args.p);
+			break;
+#if 0
+#ifdef USE_XMLRPC
 		case PAGE_XMLRPC:
 			return blahg_pingback();
+#endif
+#endif
 		default:
-			return blahg_malformed(argc, argv);
+			// FIXME: send $SCRIPT_URL, $PATH_INFO, and $QUERY_STRING via email
+			ret = R404(&request, NULL);
+			break;
 	}
 
-	return 0;
+	req_destroy(&request);
+
+	return ret;
 }

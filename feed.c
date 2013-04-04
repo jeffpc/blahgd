@@ -4,51 +4,72 @@
 #include <time.h>
 
 #include "main.h"
-#include "post.h"
-#include "sar.h"
-#include "html.h"
+#include "config.h"
+#include "render.h"
+#include "db.h"
+#include "error.h"
 
-int blahg_feed(char *feed, int p)
+static void __load_posts(struct req *req, int page)
 {
-	struct timespec s,e;
-	struct post post;
+	struct var_val vv;
+	sqlite3_stmt *stmt;
+	time_t maxtime;
+	int ret;
 
-	if (strcmp(feed, "atom"))
-		disp_404("Atom only",
-			 "When I first decided to write my own blogging "
-			 "system, I made a decision that the only feed type "
-			 "I'd support (at least for now) would be the Atom "
-			 "format.  Yes, there are a lot of RSS and RSS2 feeds "
-			 "out there, but it seems to be the case that Atom is "
-			 "just as supported (and a bit easier to generate). "
-			 "Feel free to contact me if you cannot live without "
-			 "a non-Atom feed.");
+	maxtime = 0;
+
+	open_db();
+	SQL(stmt, "SELECT id, strftime(\"%s\", time) FROM posts ORDER BY time DESC LIMIT ? OFFSET ?");
+	SQL_BIND_INT(stmt, 1, FEED_INDEX_STORIES);
+	SQL_BIND_INT(stmt, 2, page * FEED_INDEX_STORIES);
+	SQL_FOR_EACH(stmt) {
+		time_t posttime;
+		int postid;
+
+		postid   = SQL_COL_INT(stmt, 0);
+		posttime = SQL_COL_INT(stmt, 1);
+
+		if (load_post(req, postid, NULL))
+			continue;
+
+		if (posttime > maxtime)
+			maxtime = posttime;
+	}
+
+	memset(&vv, 0, sizeof(vv));
+
+	vv.type = VT_INT;
+	vv.i    = maxtime;
+
+	ASSERT(!var_append(&req->vars, "lastupdate", &vv));
+}
+
+static int __feed(struct req *req)
+{
+	if (!strcmp(req->fmt, "atom"))
+		req_head(req, "Content-Type", "application/atom+xml");
+	else if (!strcmp(req->fmt, "rss2"))
+		req_head(req, "Content-Type", "application/rss+xml");
+
+	vars_scope_push(&req->vars);
+
+	__load_posts(req, 0);
+
+	req->body = render_page(req, "{feed}");
+	return 0;
+}
+
+int blahg_feed(struct req *req, char *feed, int p)
+{
+	if (strcmp(feed, "atom") &&
+	    strcmp(feed, "rss2"))
+		return R404(req, "{error_unsupported_feed_fmt}");
 
 	if (p != -1)
-		disp_404("Comment feed not yet supported",
-			 "It turns out that there are some features that I "
-			 "never got around to implementing.  You just found "
-			 "one of them.  Eventually, ");
+		return R404(req, "{error_comment_feed}");
 
-	clock_gettime(CLOCK_REALTIME, &s);
+	/* switch to to the right type */
+	req->fmt = feed;
 
-	memset(&post, 0, sizeof(struct post));
-	post.out = stdout;
-	post.title = "Blahg";
-
-	fprintf(post.out, "Content-Type: application/atom+xml; charset=UTF-8\n\n");
-
-	feed_header(&post,"atom");
-	feed_index(&post,"atom");
-	feed_footer(&post,"atom");
-
-	post.title = NULL;
-	destroy_post(&post);
-
-	clock_gettime(CLOCK_REALTIME, &e);
-
-	fprintf(post.out, "<!-- time to render: %ld.%09ld seconds -->\n", (int)e.tv_sec-s.tv_sec,
-		e.tv_nsec-s.tv_nsec+((e.tv_sec-s.tv_sec) ? 1000000000 : 0));
-
-	return 0;
+	return __feed(req);
 }

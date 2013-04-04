@@ -14,7 +14,7 @@ static xmlrpc_value *ping(xmlrpc_env * const envP,
 			  void * const serverInfo,
 			  void * const channelInfo)
 {
-	struct post post;
+	struct post_old post;
 	char comment[1024];
 	char *src, *tgt;
 	char *tmp, *end;

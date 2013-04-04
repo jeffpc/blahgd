@@ -1,0 +1,14 @@
+<h2>{time|date}</h2>
+<div class="post" id="post-{id}">
+	<h3 class="storytitle"><a href="?p={id}" rel="bookmark">{title|escape}</a></h3>
+	<div class="meta">Filed under: {tags%tag} &#8212;  JeffPC @ <span title="{time|zulu}">{time|time}</span></div>
+
+	<div class="storycontent">
+{body}
+	</div>
+
+	<div class="feedback">
+		<a href="?p={id}#respond" title="Comment on {title|escape}">Comments ({numcom})</a>
+	</div>
+</div>
+

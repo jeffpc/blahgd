@@ -3,6 +3,9 @@ blahg
 post_fmt3.lex.c
 post_fmt3.tab.c
 post_fmt3.tab.h
+template.lex.c
+template.tab.c
+template.tab.h
 
 tags
 

@@ -2,47 +2,60 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <errno.h>
 
 #include "post.h"
-#include "sar.h"
-#include "html.h"
+#include "main.h"
+#include "render.h"
+#include "sidebar.h"
+#include "error.h"
+#include "utils.h"
 
-int blahg_story(int p, int preview)
+static void __store_title(struct vars *vars, const char *title)
 {
-	struct timespec s,e;
-	struct post post;
+	struct var_val vv;
+
+	memset(&vv, 0, sizeof(vv));
+
+        vv.type = VT_STR;
+        vv.str  = xstrdup(title);
+        ASSERT(vv.str);
+
+        ASSERT(!var_append(vars, "title", &vv));
+}
+
+static int __load_post(struct req *req, int p)
+{
 	int ret;
 
-	clock_gettime(CLOCK_REALTIME, &s);
+	ret = load_post(req, p, "title");
 
-	post.out = stdout;
-
-	fprintf(post.out, "Content-Type: text/html\n\n");
-
-	if (p == -1) {
-		fprintf(post.out, "Invalid post #\n");
-		return 0;
-	}
-
-	ret = load_post(p, &post, preview);
 	if (ret) {
-		fprintf(post.out, "Gah! %d (postid=%d)\n", ret, p);
+		LOG("failed to load post #%d: %s (%d)", p, strerror(ret),
+		    ret);
+		__store_title(&req->vars, "not found");
+	}
+
+	return ret;
+}
+
+int blahg_story(struct req *req, int p)
+{
+	if (p == -1) {
+		fprintf(stderr, "Invalid post #\n");
 		return 0;
 	}
 
-	html_header(&post);
-	html_story(&post);
-	if (!preview)
-		html_comments(&post);
-	html_sidebar(&post);
-	html_footer(&post);
+	req_head(req, "Content-Type", "text/html");
 
-	destroy_post(&post);
+	sidebar(req);
 
-	clock_gettime(CLOCK_REALTIME, &e);
+	vars_scope_push(&req->vars);
 
-	fprintf(post.out, "<!-- time to render: %ld.%09ld seconds -->\n", (int)e.tv_sec-s.tv_sec,
-		e.tv_nsec-s.tv_nsec+((e.tv_sec-s.tv_sec) ? 1000000000 : 0));
+	if (__load_post(req, p))
+		return R404(req, NULL);
+
+	req->body = render_page(req, "{storyview}");
 
 	return 0;
 }
