@@ -176,14 +176,14 @@ static char *process_cmd(struct post *post, char *cmd, char *txt, char *opt)
 
 	if (!strcmp(cmd, "wiki")) {
 		return concat5("<a href=\"" WIKI_BASE_URL "/", txt,
-			"\"><img src=\"/wiki.png\" alt=\"Wikipedia article:\" />&nbsp;",
+			"\"><img src=\"" BASE_URL "/wiki.png\" alt=\"Wikipedia article:\" />&nbsp;",
 			opt ? opt : txt, "</a>");
 	}
 
 	if (!strcmp(cmd, "bug")) {
 		ASSERT(!opt);
 		return concat5("<a href=\"" BUG_BASE_URL "/", txt,
-			"\"><img src=\"/bug.png\" alt=\"bug #\" />&nbsp;",
+			"\"><img src=\"" BASE_URL "/bug.png\" alt=\"bug #\" />&nbsp;",
 			txt, "</a>");
 	}
 
