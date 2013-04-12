@@ -32,6 +32,7 @@ static void parse_qs(char *qs, struct req *req)
 	args->p = -1;
 	args->paged = -1;
 	args->m = -1;
+	args->admin = 0;
 	args->xmlrpc = 0;
 	args->comment = 0;
 	args->cat = NULL;
@@ -77,6 +78,9 @@ static void parse_qs(char *qs, struct req *req)
 		} else if (!strncmp(qs, "xmlrpc=", 7)) {
 			iptr = &args->xmlrpc;
 			len = 7;
+		} else if (!strncmp(qs, "admin=", 6)) {
+			iptr = &args->admin;
+			len = 6;
 		} else {
 			args->page = PAGE_MALFORMED;
 			return;
@@ -109,6 +113,8 @@ static void parse_qs(char *qs, struct req *req)
 		args->page = PAGE_ARCHIVE;
 	else if (args->p != -1)
 		args->page = PAGE_STORY;
+	else if (args->admin)
+		args->page = PAGE_ADMIN;
 }
 
 int R404(struct req *req, char *tmpl)
@@ -264,6 +270,9 @@ int main(int argc, char **argv)
 			return blahg_pingback();
 #endif
 #endif
+		case PAGE_ADMIN:
+			ret = blahg_admin(&request);
+			break;
 		default:
 			// FIXME: send $SCRIPT_URL, $PATH_INFO, and $QUERY_STRING via email
 			ret = R404(&request, NULL);
