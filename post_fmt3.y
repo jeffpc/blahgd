@@ -231,6 +231,22 @@ static char *process_cmd(struct post *post, char *cmd, char *txt, char *opt)
 	return concat4("[INVAL CMD", cmd, "]", "");
 }
 
+static char *process_kwd(struct post *post, char *cmd)
+{
+	if (!strcmp(cmd, "leftarrow"))
+		return xstrdup("&larr;");
+
+	if (!strcmp(cmd, "rightarrow"))
+		return xstrdup("&rarr;");
+
+	if (!strcmp(cmd, "leftrightarrow"))
+		return xstrdup("&harr;");
+
+	LOG("post_fmt3: invalid keyword '%s'", cmd);
+
+	return concat4("[INVAL KWD", cmd, "]", "");
+}
+
 static char *dash(int len)
 {
 	static const char *ret[4] = {
@@ -342,6 +358,7 @@ thing : WORD				{ $$ = $1; }
 
 cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd(data->post, $1, $3, $2); }
     | WORD cmdarg		{ $$ = process_cmd(data->post, $1, $2, NULL); }
+    | WORD			{ $$ = process_kwd(data->post, $1); }
     | BSLASH			{ $$ = xstrdup("<br/>"); }
     | OCURLY			{ $$ = $1; }
     | CCURLY			{ $$ = $1; }
