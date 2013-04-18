@@ -324,9 +324,9 @@ static void hexdump(char *a, unsigned char *b, int len)
 }
 
 #define TEX_TMP_DIR "/tmp"
-#define TEX_FILE_NAME TEX_TMP_DIR "/blahg_math"
+#define TEX_FILE_NAME TEX_TMP_DIR "/tmp"
 static int __render_math(char *tex, char *md, char *dstpath, char *texpath,
-			 char *dvipath, char *pspath, char *pngpath)
+			 char *dvipath, char *pngpath)
 {
 	char cmd[3*FILENAME_MAX];
 	char *pwd;
@@ -342,13 +342,10 @@ static int __render_math(char *tex, char *md, char *dstpath, char *texpath,
 
 	chdir(TEX_TMP_DIR);
 
-	fprintf(f, "\\documentclass[10pt]{article}\n");
+	fprintf(f, "\\documentclass{article}\n");
 	fprintf(f, "%% add additional packages here\n");
 	fprintf(f, "\\usepackage{amsmath}\n");
-	fprintf(f, "\\usepackage{amsfonts}\n");
-	fprintf(f, "\\usepackage{amssymb}\n");
-	//fprintf(f, "\\usepackage{pst-plot}\n");
-	fprintf(f, "\\usepackage{color}\n");
+	fprintf(f, "\\usepackage{bm}\n");
 	fprintf(f, "\\pagestyle{empty}\n");
 	fprintf(f, "\\begin{document}\n");
 	fprintf(f, "\\begin{equation*}\n");
@@ -358,23 +355,23 @@ static int __render_math(char *tex, char *md, char *dstpath, char *texpath,
 	fprintf(f, "\\end{document}\n");
 	fclose(f);
 
-	snprintf(cmd, sizeof(cmd), "latex --interaction=nonstopmode %s > /dev/null", texpath);
+	snprintf(cmd, sizeof(cmd), LATEX_BIN " --interaction=nonstopmode %s > /dev/null", texpath);
+	LOG("'%s'", cmd);
 	if (system(cmd))
 		goto err_chdir;
 
-	snprintf(cmd, sizeof(cmd), "dvips -E %s -o %s > /dev/null", dvipath, pspath);
-	if (system(cmd))
-		goto err_chdir;
-
-	snprintf(cmd, sizeof(cmd), "convert -density 120 %s %s > /dev/null", pspath, pngpath);
+	snprintf(cmd, sizeof(cmd), DVIPNG_BIN " -T tight -x 1200 -z 9 "
+			"-bg Transparent -o %s %s > /dev/null", pngpath, dvipath);
+	LOG("'%s'", cmd);
 	if (system(cmd))
 		goto err_chdir;
 
 	chdir(pwd);
 
 	snprintf(cmd, sizeof(cmd), "cp %s %s", pngpath, dstpath);
+	LOG("'%s'", cmd);
 	if (system(cmd))
-		goto err;
+		goto err_chdir;
 
 	return 0;
 
@@ -389,8 +386,8 @@ static char *render_math(char *tex)
 {
 	char finalpath[FILENAME_MAX];
 	char texpath[FILENAME_MAX];
+	char logpath[FILENAME_MAX];
 	char dvipath[FILENAME_MAX];
-	char pspath[FILENAME_MAX];
 	char pngpath[FILENAME_MAX];
 
 	unsigned char md[20];
@@ -402,14 +399,24 @@ static char *render_math(char *tex)
 
 	snprintf(finalpath, FILENAME_MAX, "math/%s.png", amd);
 	snprintf(texpath, FILENAME_MAX, "/tmp/blahg_math_%s_%d.tex", amd, getpid());
+	snprintf(logpath, FILENAME_MAX, "/tmp/blahg_math_%s_%d.log", amd, getpid());
 	snprintf(dvipath, FILENAME_MAX, "/tmp/blahg_math_%s_%d.dvi", amd, getpid());
-	snprintf(pspath,  FILENAME_MAX, "/tmp/blahg_math_%s_%d.ps",  amd, getpid());
 	snprintf(pngpath, FILENAME_MAX, "/tmp/blahg_math_%s_%d.png", amd, getpid());
+
+	unlink(texpath);
+	unlink(logpath);
+	unlink(dvipath);
+	unlink(pngpath);
 
 	ret = 0;
 	//if (path does not exist)
 		ret = __render_math(tex, amd, finalpath, texpath, dvipath,
-				    pspath, pngpath);
+				    pngpath);
+
+	unlink(texpath);
+	unlink(logpath);
+	unlink(dvipath);
+	unlink(pngpath);
 
 	if (ret)
 		return concat4("<span>Math Error (", strerror(errno),

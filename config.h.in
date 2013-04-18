@@ -32,4 +32,7 @@
 #define TAGCLOUD_MIN_SIZE		6
 #define TAGCLOUD_MAX_SIZE		18
 
+#define LATEX_BIN			"/opt/local/bin/latex"
+#define DVIPNG_BIN			"/opt/local/bin/dvipng"
+
 #endif
