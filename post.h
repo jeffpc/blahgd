@@ -38,6 +38,9 @@ struct post {
 
 	/* body */
 	char *body;
+
+	/* fmt3 */
+	int table_nesting;
 };
 
 struct post_old {

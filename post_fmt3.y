@@ -92,6 +92,25 @@ static char *verbatim(char *txt)
 	return concat4("</p><pre>", escaped, "</pre><p>", "");
 }
 
+static char *table(struct post *post, char *opt, bool begin)
+{
+	char *a, *b;
+
+	ASSERT(!opt);
+
+	/* only begin/end the paragraph for the first level */
+
+	if (begin) {
+		a = post->table_nesting++ ? "" : "</p>";
+		b = "<table>";
+	} else {
+		a = "</table>";
+		b = --post->table_nesting ? "" : "<p>";
+	}
+
+	return concat(a, b);
+}
+
 static char *process_cmd(struct post *post, char *cmd, char *txt, char *opt)
 {
 	if (!strcmp(cmd, "link"))
@@ -157,6 +176,9 @@ static char *process_cmd(struct post *post, char *cmd, char *txt, char *opt)
 					      "</p></blockquote><p>");
 		}
 
+		if (!strcmp(txt, "tabular"))
+			return table(post, opt, begin);
+
 		return concat4("[INVAL ENVIRON", txt, "]", "");
 	}
 
@@ -196,13 +218,37 @@ static char *process_cmd(struct post *post, char *cmd, char *txt, char *opt)
 		return concat4("\xc2\xb0", txt, "", "");
 	}
 
+	if (!strcmp(cmd, "trow")) {
+		ASSERT(!opt);
+
+		return concat4("<tr><td>", txt, "</td></tr>", "");
+	}
+
 	if (!strcmp(cmd, "tag") ||
 	    !strcmp(cmd, "title")) {
 		ASSERT(!opt);
 		return xstrdup("");
 	}
 
-	return concat4("[INVAL CMD", txt, "]", "");
+	LOG("post_fmt3: invalid command '%s'", cmd);
+
+	return concat4("[INVAL CMD", cmd, "]", "");
+}
+
+static char *process_kwd(struct post *post, char *cmd)
+{
+	if (!strcmp(cmd, "leftarrow"))
+		return xstrdup("&larr;");
+
+	if (!strcmp(cmd, "rightarrow"))
+		return xstrdup("&rarr;");
+
+	if (!strcmp(cmd, "leftrightarrow"))
+		return xstrdup("&harr;");
+
+	LOG("post_fmt3: invalid keyword '%s'", cmd);
+
+	return concat4("[INVAL KWD", cmd, "]", "");
 }
 
 static char *dash(int len)
@@ -431,6 +477,7 @@ thing : WORD				{ $$ = $1; }
       | SCHAR				{ $$ = special_char($1); }
       | ELLIPSIS			{ $$ = xstrdup("&hellip;"); }
       | TILDE				{ $$ = xstrdup("&nbsp;"); }
+      | AMP				{ $$ = xstrdup("</td><td>"); }
       | BSLASH cmd			{ $$ = $2; }
       | DOLLAR math DOLLAR		{ $$ = render_math($2); }
       | VERBSTART verb VERBEND		{ $$ = verbatim($2); }
@@ -438,6 +485,7 @@ thing : WORD				{ $$ = $1; }
 
 cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd(data->post, $1, $3, $2); }
     | WORD cmdarg		{ $$ = process_cmd(data->post, $1, $2, NULL); }
+    | WORD			{ $$ = process_kwd(data->post, $1); }
     | BSLASH			{ $$ = xstrdup("<br/>"); }
     | OCURLY			{ $$ = $1; }
     | CCURLY			{ $$ = $1; }

@@ -52,6 +52,8 @@ static int __do_load_post_body_fmt3(struct post *post, char *ibuf, size_t len)
 	x.len   = strlen(ibuf);
 	x.pos   = 0;
 
+	post->table_nesting = 0;
+
 	fmt3_lex_init(&x.scanner);
 	fmt3_set_extra(&x, x.scanner);
 

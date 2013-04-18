@@ -33,6 +33,7 @@ add_executable(blahg render.c post.c main.c
 	${FLEX_tmpl_OUTPUTS} ${BISON_tmpl_OUTPUTS}
 	${FLEX_fmt3_OUTPUTS} ${BISON_fmt3_OUTPUTS}
 	index.c sidebar.c story.c tag.c feed.c comment.c
+	admin.c
 	listing.c utils.c error.c mangle.c
 	decode.c fsm.c
 )
