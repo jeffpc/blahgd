@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.5)
 
 include(CheckFunctionExists)
 configure_file(config.h.in config.h)
@@ -9,6 +9,7 @@ set(CMAKE_C_FLAGS "-Wall -O2 -g -std=gnu99 -D_XOPEN_SOURCE=700 -D_STDC_C99 -D_XP
 
 find_package(BISON)
 find_package(FLEX)
+find_package(OpenSSL)
 
 BISON_TARGET(fmt3 post_fmt3.y post_fmt3.tab.c COMPILE_FLAGS "-p fmt3_")
 FLEX_TARGET(fmt3 post_fmt3.l post_fmt3.lex.c COMPILE_FLAGS "-P fmt3_")
@@ -45,4 +46,4 @@ target_link_libraries(blahg ${XMLRPC_LIBRARIES} ${SQLITE_LIB})
 target_link_libraries(blahg rt)
 target_link_libraries(blahg umem)
 target_link_libraries(blahg m)
-target_link_libraries(blahg crypto)
+target_link_libraries(blahg ${OPENSSL_CRYPTO_LIBRARY})
