@@ -132,6 +132,8 @@ int __tagcat(struct req *req, const char *tagcat, int page, char *tmpl,
 	if (!tagcat)
 		return R404(req, NULL);
 
+	req_head(req, "Content-Type", "text/html");
+
 	page = max(page, 0);
 
 	__store_title(&req->vars, tagcat);
