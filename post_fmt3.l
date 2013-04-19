@@ -19,6 +19,7 @@ int fmt3_input_proc(char *buf, int size, yyscan_t scanner);
 %}
 
 %x VERBATIM
+%x MATH
 
 %%
 "\\begin{verbatim}"		{ BEGIN(VERBATIM); return VERBSTART; }
@@ -26,6 +27,24 @@ int fmt3_input_proc(char *buf, int size, yyscan_t scanner);
 <VERBATIM>.			{ yylval->ptr = xstrdup(yytext); return VERBTEXT; }
 <VERBATIM>.|\n			{ yylval->ptr = xstrdup(yytext); return VERBTEXT; }
 
+"$"			{ BEGIN(MATH); return MATHSTART; }
+<MATH>"$"		{ BEGIN(INITIAL); return MATHEND; }
+<MATH>"\\"		{ yylval->ptr = xstrdup(yytext); return BSLASH; }
+<MATH>"_"		{ yylval->ptr = xstrdup(yytext); return USCORE; }
+<MATH>"+"		{ yylval->ptr = xstrdup(yytext); return PLUS; }
+<MATH>"-"		{ yylval->ptr = xstrdup(yytext); return MINUS; }
+<MATH>"*"		{ yylval->ptr = xstrdup(yytext); return ASTERISK; }
+<MATH>"/"		{ yylval->ptr = xstrdup(yytext); return SLASH; }
+<MATH>"{"		{ yylval->ptr = xstrdup(yytext); return OCURLY; }
+<MATH>"}"		{ yylval->ptr = xstrdup(yytext); return CCURLY; }
+<MATH>"("		{ yylval->ptr = xstrdup(yytext); return OPAREN; }
+<MATH>")"		{ yylval->ptr = xstrdup(yytext); return CPAREN; }
+<MATH>[=<>]		{ yylval->ptr = xstrdup(yytext); return EQLTGT; }
+<MATH>[A-Za-z0-9]+	{ yylval->ptr = xstrdup(yytext); return WORD; }
+<MATH>[".,=<>!:;?@*#]	{ yylval->ptr = xstrdup(yytext); return SCHAR; }
+<MATH>[ \t]+		{ yylval->ptr = xstrdup(yytext); return WSPACE; }
+
+"\\$"			{ return DOLLAR; }
 \n\n[ \t\n]*		{ yylval->ptr = xstrdup(yytext); return PAREND; }
 \n			{ yylval->ptr = xstrdup(yytext); return NLINE; }
 [ \t]+			{ yylval->ptr = xstrdup(yytext); return WSPACE; }
@@ -37,7 +56,6 @@ int fmt3_input_proc(char *buf, int size, yyscan_t scanner);
 "&"			{ yylval->ptr = xstrdup(yytext); return AMP; }
 "_"			{ yylval->ptr = xstrdup(yytext); return USCORE; }
 "%"			{ yylval->ptr = xstrdup(yytext); return PERCENT; }
-"$"			{ yylval->ptr = xstrdup(yytext); return DOLLAR; }
 "~"			{ yylval->ptr = xstrdup(yytext); return TILDE; }
 "|"			{ yylval->ptr = xstrdup(yytext); return PIPE; }
 \.{3}			{ yylval->ptr = xstrdup(yytext); return ELLIPSIS; }
@@ -48,8 +66,6 @@ int fmt3_input_proc(char *buf, int size, yyscan_t scanner);
 [\xe0-\xef]		{ yylval->ptr = xstrdup(yytext); return UTF8FIRST3; }
 [\xc0-\xdf]		{ yylval->ptr = xstrdup(yytext); return UTF8FIRST2; }
 [\x80-\xbf]		{ yylval->ptr = xstrdup(yytext); return UTF8REST; }
-"times"			{ yylval->ptr = xstrdup(yytext); return W_TIMES; }
-"frac"			{ yylval->ptr = xstrdup(yytext); return W_FRAC; }
 [A-Za-z0-9]+		{ yylval->ptr = xstrdup(yytext); return WORD; }
 .|\n			{ fmt3_error2("post text contains invalid characters", yytext); yyterminate(); }
 %%

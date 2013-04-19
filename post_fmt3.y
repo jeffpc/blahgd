@@ -387,6 +387,7 @@ static char *render_math(char *tex)
 	char finalpath[FILENAME_MAX];
 	char texpath[FILENAME_MAX];
 	char logpath[FILENAME_MAX];
+	char auxpath[FILENAME_MAX];
 	char dvipath[FILENAME_MAX];
 	char pngpath[FILENAME_MAX];
 
@@ -400,11 +401,13 @@ static char *render_math(char *tex)
 	snprintf(finalpath, FILENAME_MAX, "math/%s.png", amd);
 	snprintf(texpath, FILENAME_MAX, "/tmp/blahg_math_%s_%d.tex", amd, getpid());
 	snprintf(logpath, FILENAME_MAX, "/tmp/blahg_math_%s_%d.log", amd, getpid());
+	snprintf(auxpath, FILENAME_MAX, "/tmp/blahg_math_%s_%d.aux", amd, getpid());
 	snprintf(dvipath, FILENAME_MAX, "/tmp/blahg_math_%s_%d.dvi", amd, getpid());
 	snprintf(pngpath, FILENAME_MAX, "/tmp/blahg_math_%s_%d.png", amd, getpid());
 
 	unlink(texpath);
 	unlink(logpath);
+	unlink(auxpath);
 	unlink(dvipath);
 	unlink(pngpath);
 
@@ -415,6 +418,7 @@ static char *render_math(char *tex)
 
 	unlink(texpath);
 	unlink(logpath);
+	unlink(auxpath);
 	unlink(dvipath);
 	unlink(pngpath);
 
@@ -422,7 +426,7 @@ static char *render_math(char *tex)
 		return concat4("<span>Math Error (", strerror(errno),
 			       ")</span>", "");
 
-	return concat4("<img src=\"", finalpath, "\" alt=\"math\" />", "");
+	return concat5("<img src=\"", finalpath, "\" alt=\"$", tex, "$\" />");
 }
 
 %}
@@ -431,19 +435,25 @@ static char *render_math(char *tex)
 	char *ptr;
 };
 
+/* generic tokens */
 %token <ptr> PAREND NLINE WSPACE BSLASH OCURLY CCURLY OBRACE CBRACE AMP
-%token <ptr> USCORE PERCENT DOLLAR TILDE DASH OQUOT CQUOT SCHAR ELLIPSIS
-%token <ptr> UTF8FIRST3 UTF8FIRST2 UTF8REST WORD PLUS MINUS ASTERISK SLASH
+%token <ptr> USCORE PERCENT TILDE DASH OQUOT CQUOT SCHAR ELLIPSIS
+%token <ptr> UTF8FIRST3 UTF8FIRST2 UTF8REST WORD ASTERISK SLASH
 %token <ptr> PIPE
-%token <ptr> W_TIMES W_FRAC
+
+/* math specific tokens */
+%token <ptr> PLUS MINUS OPAREN CPAREN EQLTGT
+%token MATHSTART MATHEND
+
+/* verbose environment */
 %token <ptr> VERBTEXT
-%token VERBSTART VERBEND
+%token VERBSTART VERBEND DOLLAR
 
 %type <ptr> paragraphs paragraph line thing cmd cmdarg optcmdarg math mexpr
-%type <ptr> mcmd mcmdarg
 %type <ptr> verb
 
 %left USCORE
+%left EQLTGT
 %left PLUS MINUS
 %left ASTERISK SLASH
 
@@ -485,8 +495,9 @@ thing : WORD				{ $$ = $1; }
       | ELLIPSIS			{ $$ = xstrdup("&hellip;"); }
       | TILDE				{ $$ = xstrdup("&nbsp;"); }
       | AMP				{ $$ = xstrdup("</td><td>"); }
+      | DOLLAR				{ $$ = xstrdup("$"); }
       | BSLASH cmd			{ $$ = $2; }
-      | DOLLAR math DOLLAR		{ $$ = render_math($2); }
+      | MATHSTART math MATHEND		{ $$ = render_math($2); }
       | VERBSTART verb VERBEND		{ $$ = verbatim($2); }
       ;
 
@@ -501,7 +512,6 @@ cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd(data->post, $1, $3, $2); }
     | AMP			{ $$ = xstrdup("&amp;"); }
     | USCORE			{ $$ = $1; }
     | PERCENT			{ $$ = $1; }
-    | DOLLAR			{ $$ = $1; }
     | TILDE			{ $$ = $1; }
     ;
 
@@ -514,27 +524,22 @@ cmdarg : OCURLY paragraph CCURLY	{ $$ = $2; }
 verb : verb VERBTEXT			{ $$ = concat($1, $2); }
      | VERBTEXT				{ $$ = $1; }
 
-math : mexpr			{ $$ = $1; }
+math : math mexpr			{ $$ = concat($1, $2); LOG("%d: '%s'", __LINE__, $2); }
+     | mexpr				{ $$ = $1;  LOG("%d: '%s'", __LINE__, $1);}
      ;
 
 mexpr : WORD				{ $$ = $1; }
       | WSPACE				{ $$ = $1; }
+      | SCHAR				{ $$ = $1; }
+      | mexpr EQLTGT mexpr 		{ $$ = concat4($1, $2, $3, ""); }
       | mexpr USCORE mexpr 		{ $$ = concat4($1, $2, $3, ""); }
       | mexpr PLUS mexpr 		{ $$ = concat4($1, $2, $3, ""); }
       | mexpr MINUS mexpr 		{ $$ = concat4($1, $2, $3, ""); }
       | mexpr ASTERISK mexpr	 	{ $$ = concat4($1, $2, $3, ""); }
-//      | mexpr WSPACE mexpr 		{ $$ = concat4($1, $2, $3, ""); }
-//      | OCURLY mexpr CCURLY		{ $$ = concat4($1, $2, $3, ""); }
-//      | BSLASH WORD			{ $$ = concat($1, $2); }
-//      | BSLASH mcmd			{ $$ = concat($1, $2); }
-      |					{ $$ = strdup(""); }
+      | mexpr SLASH mexpr	 	{ $$ = concat4($1, $2, $3, ""); }
+      | BSLASH WORD			{ $$ = concat4($1, $2, "", ""); }
+      | OPAREN math CPAREN		{ $$ = concat4($1, $2, $3, ""); }
+      | OCURLY math CCURLY		{ $$ = concat4($1, $2, $3, ""); }
       ;
-
-mcmd : W_TIMES				{ $$ = $1; }
-     | W_FRAC mcmdarg mcmdarg		{ $$ = concat4($1, $2, $3, ""); }
-     ;
-
-mcmdarg : OCURLY mexpr CCURLY		{ $$ = concat4($1, $2, $3, ""); }
-	;
 
 %%
