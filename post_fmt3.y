@@ -8,6 +8,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include <openssl/sha.h>
 
@@ -356,20 +359,20 @@ static int __render_math(char *tex, char *md, char *dstpath, char *texpath,
 	fclose(f);
 
 	snprintf(cmd, sizeof(cmd), LATEX_BIN " --interaction=nonstopmode %s > /dev/null", texpath);
-	LOG("'%s'", cmd);
+	LOG("math cmd: '%s'", cmd);
 	if (system(cmd))
 		goto err_chdir;
 
 	snprintf(cmd, sizeof(cmd), DVIPNG_BIN " -T tight -x 1200 -z 9 "
 			"-bg Transparent -o %s %s > /dev/null", pngpath, dvipath);
-	LOG("'%s'", cmd);
+	LOG("math cmd: '%s'", cmd);
 	if (system(cmd))
 		goto err_chdir;
 
 	chdir(pwd);
 
 	snprintf(cmd, sizeof(cmd), "cp %s %s", pngpath, dstpath);
-	LOG("'%s'", cmd);
+	LOG("math cmd: '%s'", cmd);
 	if (system(cmd))
 		goto err_chdir;
 
@@ -391,6 +394,7 @@ static char *render_math(char *tex)
 	char dvipath[FILENAME_MAX];
 	char pngpath[FILENAME_MAX];
 
+	struct stat statbuf;
 	unsigned char md[20];
 	char amd[41];
 	int ret;
@@ -411,8 +415,8 @@ static char *render_math(char *tex)
 	unlink(dvipath);
 	unlink(pngpath);
 
-	ret = 0;
-	//if (path does not exist)
+	ret = stat(finalpath, &statbuf);
+	if (ret)
 		ret = __render_math(tex, amd, finalpath, texpath, dvipath,
 				    pngpath);
 
@@ -524,8 +528,8 @@ cmdarg : OCURLY paragraph CCURLY	{ $$ = $2; }
 verb : verb VERBTEXT			{ $$ = concat($1, $2); }
      | VERBTEXT				{ $$ = $1; }
 
-math : math mexpr			{ $$ = concat($1, $2); LOG("%d: '%s'", __LINE__, $2); }
-     | mexpr				{ $$ = $1;  LOG("%d: '%s'", __LINE__, $1);}
+math : math mexpr			{ $$ = concat($1, $2); }
+     | mexpr				{ $$ = $1; }
      ;
 
 mexpr : WORD				{ $$ = $1; }
