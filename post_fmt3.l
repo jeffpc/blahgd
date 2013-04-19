@@ -31,6 +31,7 @@ int fmt3_input_proc(char *buf, int size, yyscan_t scanner);
 <MATH>"$"		{ BEGIN(INITIAL); return MATHEND; }
 <MATH>"\\"		{ yylval->ptr = xstrdup(yytext); return BSLASH; }
 <MATH>"_"		{ yylval->ptr = xstrdup(yytext); return USCORE; }
+<MATH>"^"		{ yylval->ptr = xstrdup(yytext); return CARRET; }
 <MATH>"+"		{ yylval->ptr = xstrdup(yytext); return PLUS; }
 <MATH>"-"		{ yylval->ptr = xstrdup(yytext); return MINUS; }
 <MATH>"*"		{ yylval->ptr = xstrdup(yytext); return ASTERISK; }

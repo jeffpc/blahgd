@@ -416,9 +416,10 @@ static char *render_math(char *tex)
 	unlink(pngpath);
 
 	ret = stat(finalpath, &statbuf);
-	if (ret)
-		ret = __render_math(tex, amd, finalpath, texpath, dvipath,
-				    pngpath);
+	if (!ret)
+		goto out;
+
+	ret = __render_math(tex, amd, finalpath, texpath, dvipath, pngpath);
 
 	unlink(texpath);
 	unlink(logpath);
@@ -430,6 +431,7 @@ static char *render_math(char *tex)
 		return concat4("<span>Math Error (", strerror(errno),
 			       ")</span>", "");
 
+out:
 	return concat5("<img src=\"", finalpath, "\" alt=\"$", tex, "$\" />");
 }
 
@@ -446,7 +448,7 @@ static char *render_math(char *tex)
 %token <ptr> PIPE
 
 /* math specific tokens */
-%token <ptr> PLUS MINUS OPAREN CPAREN EQLTGT
+%token <ptr> PLUS MINUS OPAREN CPAREN EQLTGT CARRET
 %token MATHSTART MATHEND
 
 /* verbose environment */
@@ -456,7 +458,7 @@ static char *render_math(char *tex)
 %type <ptr> paragraphs paragraph line thing cmd cmdarg optcmdarg math mexpr
 %type <ptr> verb
 
-%left USCORE
+%left USCORE CARRET
 %left EQLTGT
 %left PLUS MINUS
 %left ASTERISK SLASH
@@ -537,6 +539,7 @@ mexpr : WORD				{ $$ = $1; }
       | SCHAR				{ $$ = $1; }
       | mexpr EQLTGT mexpr 		{ $$ = concat4($1, $2, $3, ""); }
       | mexpr USCORE mexpr 		{ $$ = concat4($1, $2, $3, ""); }
+      | mexpr CARRET mexpr 		{ $$ = concat4($1, $2, $3, ""); }
       | mexpr PLUS mexpr 		{ $$ = concat4($1, $2, $3, ""); }
       | mexpr MINUS mexpr 		{ $$ = concat4($1, $2, $3, ""); }
       | mexpr ASTERISK mexpr	 	{ $$ = concat4($1, $2, $3, ""); }
