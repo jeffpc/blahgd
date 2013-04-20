@@ -156,3 +156,50 @@ int write_file(const char *fname, const char *data, size_t len)
 
 	return ret != len;
 }
+
+char *concat5(char *a, char *b, char *c, char *d, char *e)
+{
+	char *src[] = { a, b, c, d, e, };
+	char *ret;
+	int first;
+	int tofree;
+	int len;
+	int i, j;
+
+	len = 0;
+	first = -1;
+	tofree = 0x1f;
+
+	for (i = 0; i < 5; i++) {
+		if (src[i]) {
+			len += strlen(src[i]);
+			if (first == -1)
+				first = i;
+
+			for (j = i + 1; j < 5; j++)
+				if (src[i] == src[j])
+					tofree &= ~(1 << i);
+		}
+	}
+
+	if (!len)
+		return xstrdup("");
+
+	ret = malloc(len + 1);
+	ASSERT(ret);
+
+	for (i = 0; i < 5; i++) {
+		if (!src[i])
+			continue;
+
+		if (i == first)
+			strcpy(ret, src[i]);
+		else
+			strcat(ret, src[i]);
+
+		if (tofree & (1 << i))
+			free(src[i]);
+	}
+
+	return ret;
+}

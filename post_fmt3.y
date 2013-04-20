@@ -24,6 +24,8 @@
 
 #define scanner data->scanner
 
+#define S(x)	xstrdup(x)
+
 extern int fmt3_lex(void *, void *);
 
 void yyerror(void *scan, char *e)
@@ -36,53 +38,9 @@ void fmt3_error2(char *e, char *yytext)
 	LOG("Error: %s (%s)", e, yytext);
 }
 
-static char *concat(char *a, char *b)
-{
-	char *ret;
-
-	ret = malloc(strlen(a) + strlen(b) + 1);
-	ASSERT(ret);
-
-	strcpy(ret, a);
-	strcat(ret, b);
-
-	return ret;
-}
-
-static char *concat4(char *a, char *b, char *c, char *d)
-{
-	char *ret;
-
-	ret = malloc(strlen(a) + strlen(b) + strlen(c) + strlen(d) + 1);
-	ASSERT(ret);
-
-	strcpy(ret, a);
-	strcat(ret, b);
-	strcat(ret, c);
-	strcat(ret, d);
-
-	return ret;
-}
-
-static char *concat5(char *a, char *b, char *c, char *d, char *e)
-{
-	char *ret;
-
-	ret = malloc(strlen(a) + strlen(b) + strlen(c) + strlen(d) + strlen(e) + 1);
-	ASSERT(ret);
-
-	strcpy(ret, a);
-	strcat(ret, b);
-	strcat(ret, c);
-	strcat(ret, d);
-	strcat(ret, e);
-
-	return ret;
-}
-
 static char *__listing(struct post *post, char *txt, char *opt)
 {
-	return concat4("</p><pre>", "", listing(post, txt), "</pre><p>");
+	return concat3(S("</p><pre>"), listing(post, txt), S("</pre><p>"));
 }
 
 static char *verbatim(char *txt)
@@ -92,7 +50,7 @@ static char *verbatim(char *txt)
 	escaped = mangle_htmlescape(txt);
 	ASSERT(escaped);
 
-	return concat4("</p><pre>", escaped, "</pre><p>", "");
+	return concat3(S("</p><pre>"), escaped, S("</pre><p>"));
 }
 
 static char *table(struct post *post, char *opt, bool begin)
@@ -111,36 +69,36 @@ static char *table(struct post *post, char *opt, bool begin)
 		b = --post->table_nesting ? "" : "<p>";
 	}
 
-	return concat(a, b);
+	return concat(S(a), S(b));
 }
 
 static char *process_cmd(struct post *post, char *cmd, char *txt, char *opt)
 {
 	if (!strcmp(cmd, "link"))
-		return concat5("<a href=\"", txt, "\">", opt ? opt : txt, "</a>");
+		return concat5(S("<a href=\""), txt, S("\">"), opt ? opt : txt, S("</a>"));
 
 	if (!strcmp(cmd, "photolink"))
-		return concat5("<a href=\"" PHOTO_BASE_URL "/", txt, "\">", opt ? opt : txt, "</a>");
+		return concat5(S("<a href=\"" PHOTO_BASE_URL "/"), txt, S("\">"), opt ? opt : txt, S("</a>"));
 
 	if (!strcmp(cmd, "img"))
-		return concat5("<img src=\"", txt, "\" alt=\"", opt ? opt : "", "\" />");
+		return concat5(S("<img src=\""), txt, S("\" alt=\""), opt, S("\" />"));
 
 	if (!strcmp(cmd, "photo"))
-		return concat5("<img src=\"" PHOTO_BASE_URL "/", txt, "\" alt=\"", opt ? opt : "", "\" />");
+		return concat5(S("<img src=\"" PHOTO_BASE_URL "/"), txt, S("\" alt=\""), opt, S("\" />"));
 
 	if (!strcmp(cmd, "emph")) {
 		ASSERT(!opt);
-		return concat4("<em>", txt, "</em>", "");
+		return concat3(S("<em>"), txt, S("</em>"));
 	}
 
 	if (!strcmp(cmd, "texttt")) {
 		ASSERT(!opt);
-		return concat4("<tt>", txt, "</tt>", "");
+		return concat3(S("<tt>"), txt, S("</tt>"));
 	}
 
 	if (!strcmp(cmd, "textbf")) {
 		ASSERT(!opt);
-		return concat4("<strong>", txt, "</strong>", "");
+		return concat3(S("<strong>"), txt, S("</strong>"));
 	}
 
 	if (!strcmp(cmd, "listing"))
@@ -151,8 +109,8 @@ static char *process_cmd(struct post *post, char *cmd, char *txt, char *opt)
 		// encountered and then decide if <li> is the right tag to
 		// use
 		if (!opt)
-			return concat4("<li>", txt, "</li>", "");
-		return concat5("<dt>", opt, "</dt><dd>", txt, "</dd>");
+			return concat3(S("<li>"), txt, S("</li>"));
+		return concat5(S("<dt>"), opt, S("</dt><dd>"), txt, S("</dd>"));
 	}
 
 	if (!strcmp(cmd, "begin") || !strcmp(cmd, "end")) {
@@ -182,49 +140,49 @@ static char *process_cmd(struct post *post, char *cmd, char *txt, char *opt)
 		if (!strcmp(txt, "tabular"))
 			return table(post, opt, begin);
 
-		return concat4("[INVAL ENVIRON", txt, "]", "");
+		return concat3(S("[INVAL ENVIRON"), txt, S("]"));
 	}
 
 	if (!strcmp(cmd, "abbrev"))
-		return concat5("<abbr title=\"", opt ? opt : txt, "\">", txt, "</abbr>");
+		return concat5(S("<abbr title=\""), opt ? opt : txt, S("\">"), txt, S("</abbr>"));
 
 	if (!strcmp(cmd, "section")) {
 		ASSERT(!opt);
-		return concat4("</p><h4>", txt, "</h4><p>", "");
+		return concat3(S("</p><h4>"), txt, S("</h4><p>"));
 	}
 
 	if (!strcmp(cmd, "subsection")) {
 		ASSERT(!opt);
-		return concat4("</p><h5>", txt, "</h5><p>", "");
+		return concat3(S("</p><h5>"), txt, S("</h5><p>"));
 	}
 
 	if (!strcmp(cmd, "subsubsection")) {
 		ASSERT(!opt);
-		return concat4("</p><h6>", txt, "</h6><p>", "");
+		return concat3(S("</p><h6>"), txt, S("</h6><p>"));
 	}
 
 	if (!strcmp(cmd, "wiki")) {
-		return concat5("<a href=\"" WIKI_BASE_URL "/", txt,
-			"\"><img src=\"" BASE_URL "/wiki.png\" alt=\"Wikipedia article:\" />&nbsp;",
-			opt ? opt : txt, "</a>");
+		return concat5(S("<a href=\"" WIKI_BASE_URL "/"), txt,
+			S("\"><img src=\"" BASE_URL "/wiki.png\" alt=\"Wikipedia article:\" />&nbsp;"),
+			opt ? opt : txt, S("</a>"));
 	}
 
 	if (!strcmp(cmd, "bug")) {
 		ASSERT(!opt);
-		return concat5("<a href=\"" BUG_BASE_URL "/", txt,
-			"\"><img src=\"" BASE_URL "/bug.png\" alt=\"bug #\" />&nbsp;",
-			txt, "</a>");
+		return concat5(S("<a href=\"" BUG_BASE_URL "/"), txt,
+			S("\"><img src=\"" BASE_URL "/bug.png\" alt=\"bug #\" />&nbsp;"),
+			txt, S("</a>"));
 	}
 
 	if (!strcmp(cmd, "degree")) {
 		ASSERT(!opt);
-		return concat4("\xc2\xb0", txt, "", "");
+		return concat(S("\xc2\xb0"), txt);
 	}
 
 	if (!strcmp(cmd, "trow")) {
 		ASSERT(!opt);
 
-		return concat4("<tr><td>", txt, "</td></tr>", "");
+		return concat3(S("<tr><td>"), txt, S("</td></tr>"));
 	}
 
 	if (!strcmp(cmd, "tag") ||
@@ -235,7 +193,7 @@ static char *process_cmd(struct post *post, char *cmd, char *txt, char *opt)
 
 	LOG("post_fmt3: invalid command '%s'", cmd);
 
-	return concat4("[INVAL CMD", cmd, "]", "");
+	return concat3(S("[INVAL CMD"), cmd, S("]"));
 }
 
 static char *process_kwd(struct post *post, char *cmd)
@@ -251,7 +209,7 @@ static char *process_kwd(struct post *post, char *cmd)
 
 	LOG("post_fmt3: invalid keyword '%s'", cmd);
 
-	return concat4("[INVAL KWD", cmd, "]", "");
+	return concat3(S("[INVAL KWD"), cmd, S("]"));
 }
 
 static char *dash(int len)
@@ -428,11 +386,11 @@ static char *render_math(char *tex)
 	unlink(pngpath);
 
 	if (ret)
-		return concat4("<span>Math Error (", strerror(errno),
-			       ")</span>", "");
+		return concat3(S("<span>Math Error ("), S(strerror(errno)),
+			       S(")</span>"));
 
 out:
-	return concat5("<img src=\"", finalpath, "\" alt=\"$", tex, "$\" />");
+	return concat5(S("<img src=\""), S(finalpath), S("\" alt=\"$"), tex, S("$\" />"));
 }
 
 %}
@@ -471,13 +429,13 @@ post : paragraphs			{ data->output = $1; }
      |
      ;
 
-paragraphs : paragraphs PAREND paragraph NLINE	{ $$ = concat4($1, "<p>", $3, "</p>\n"); }
-           | paragraphs PAREND paragraph	{ $$ = concat4($1, "<p>", $3, "</p>\n"); }
-	   | paragraph NLINE			{ $$ = concat4("<p>", $1, "</p>\n", ""); }
-	   | paragraph				{ $$ = concat4("<p>", $1, "</p>\n", ""); }
+paragraphs : paragraphs PAREND paragraph NLINE	{ $$ = concat4($1, S("<p>"), $3, S("</p>\n")); }
+           | paragraphs PAREND paragraph	{ $$ = concat4($1, S("<p>"), $3, S("</p>\n")); }
+	   | paragraph NLINE			{ $$ = concat3(S("<p>"), $1, S("</p>\n")); }
+	   | paragraph				{ $$ = concat3(S("<p>"), $1, S("</p>\n")); }
 	   ;
 
-paragraph : paragraph NLINE line	{ $$ = concat4($1, " ", $3, ""); }
+paragraph : paragraph NLINE line	{ $$ = concat3($1, S(" "), $3); }
 	  | line			{ $$ = $1; }
 	  ;
 
@@ -487,7 +445,7 @@ line : line thing		{ $$ = concat($1, $2); }
 
 thing : WORD				{ $$ = $1; }
       | UTF8FIRST2 UTF8REST		{ $$ = concat($1, $2); }
-      | UTF8FIRST3 UTF8REST UTF8REST	{ $$ = concat4($1, $2, $3, ""); }
+      | UTF8FIRST3 UTF8REST UTF8REST	{ $$ = concat3($1, $2, $3); }
       | WSPACE				{ $$ = $1; }
       | PIPE				{ $$ = $1; }
       | PLUS				{ $$ = $1; }
@@ -537,16 +495,16 @@ math : math mexpr			{ $$ = concat($1, $2); }
 mexpr : WORD				{ $$ = $1; }
       | WSPACE				{ $$ = $1; }
       | SCHAR				{ $$ = $1; }
-      | mexpr EQLTGT mexpr 		{ $$ = concat4($1, $2, $3, ""); }
-      | mexpr USCORE mexpr 		{ $$ = concat4($1, $2, $3, ""); }
-      | mexpr CARRET mexpr 		{ $$ = concat4($1, $2, $3, ""); }
-      | mexpr PLUS mexpr 		{ $$ = concat4($1, $2, $3, ""); }
-      | mexpr MINUS mexpr 		{ $$ = concat4($1, $2, $3, ""); }
-      | mexpr ASTERISK mexpr	 	{ $$ = concat4($1, $2, $3, ""); }
-      | mexpr SLASH mexpr	 	{ $$ = concat4($1, $2, $3, ""); }
-      | BSLASH WORD			{ $$ = concat4($1, $2, "", ""); }
-      | OPAREN math CPAREN		{ $$ = concat4($1, $2, $3, ""); }
-      | OCURLY math CCURLY		{ $$ = concat4($1, $2, $3, ""); }
+      | mexpr EQLTGT mexpr 		{ $$ = concat3($1, $2, $3); }
+      | mexpr USCORE mexpr 		{ $$ = concat3($1, $2, $3); }
+      | mexpr CARRET mexpr 		{ $$ = concat3($1, $2, $3); }
+      | mexpr PLUS mexpr 		{ $$ = concat3($1, $2, $3); }
+      | mexpr MINUS mexpr 		{ $$ = concat3($1, $2, $3); }
+      | mexpr ASTERISK mexpr	 	{ $$ = concat3($1, $2, $3); }
+      | mexpr SLASH mexpr	 	{ $$ = concat3($1, $2, $3); }
+      | BSLASH WORD			{ $$ = concat($1, $2); }
+      | OPAREN math CPAREN		{ $$ = concat3($1, $2, $3); }
+      | OCURLY math CCURLY		{ $$ = concat3($1, $2, $3); }
       ;
 
 %%

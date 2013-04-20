@@ -38,22 +38,6 @@ static char *tostr(char c)
 	return ret;
 }
 
-static char *concat(char *a, char *b)
-{
-	char *ret;
-
-	ret = malloc(strlen(a) + strlen(b) + 1);
-	ASSERT(ret);
-
-	strcpy(ret, a);
-	strcat(ret, b);
-
-	free(a);
-	free(b);
-
-	return ret;
-}
-
 static void __foreach_vars(struct vars *vars, struct var_val *vv)
 {
 	int j, k;
