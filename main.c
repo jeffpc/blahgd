@@ -190,6 +190,7 @@ static void req_destroy(struct req *req)
 	list_for_each_entry_safe(cur, tmp, &req->headers, list) {
 		printf("%s: %s\n", cur->name, cur->val);
 
+		free(cur->name);
 		free(cur->val);
 		free(cur);
 	}
