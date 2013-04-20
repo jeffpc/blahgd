@@ -194,7 +194,7 @@ void var_val_dump(struct var_val *vv, int idx, int indent)
 			fprintf(stderr, "'%s'\n", vv->str);
 			break;
 		case VT_INT:
-			fprintf(stderr, "%llu\n", vv->i);
+			fprintf(stderr, "%lu\n", vv->i);
 			break;
 		case VT_VARS:
 			fprintf(stderr, "VARS\n");

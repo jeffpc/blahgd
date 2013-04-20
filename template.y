@@ -116,7 +116,7 @@ static char *print_var_val(struct var_val *vv)
 			tmp = vv->str;
 			break;
 		case VT_INT:
-			snprintf(buf, sizeof(buf), "%llu", vv->i);
+			snprintf(buf, sizeof(buf), "%lu", vv->i);
 			tmp = buf;
 			break;
 		case VT_VARS:
