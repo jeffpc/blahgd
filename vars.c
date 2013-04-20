@@ -114,8 +114,24 @@ struct var *var_alloc(const char *name)
 
 void var_free(struct var *v)
 {
+	int i, j;
+
 	if (!v)
 		return;
+
+	for (i = 0; i < VAR_MAX_ARRAY_SIZE; i++) {
+		switch (v->val[i].type) {
+			case VT_NIL:
+			case VT_INT:
+				break;
+			case VT_STR:
+				break;
+			case VT_VARS:
+				for (j = 0; j < VAR_MAX_VARS_SIZE; j++)
+					var_free(v->val[i].vars[j]);
+				break;
+		}
+	}
 
 	umem_cache_free(var_cache, v);
 }
