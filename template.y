@@ -186,8 +186,15 @@ words : words CHAR				{ $$ = concat($1, tostr($2)); }
       |						{ $$ = xstrdup(""); }
       ;
 
-cmd : '{' WORD pipeline '}'		{ $$ = pipeline(data->req, $2, $3); }
-    | '{' WORD '%' WORD '}'		{ $$ = foreach(data->req, $2, $4); }
+cmd : '{' WORD pipeline '}'		{
+						$$ = pipeline(data->req, $2, $3);
+						free($2);
+					}
+    | '{' WORD '%' WORD '}'		{
+						$$ = foreach(data->req, $2, $4);
+						free($2);
+						free($4);
+					}
     | '{' WORD '}'			{
 						struct var *var;
 
