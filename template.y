@@ -152,9 +152,10 @@ static char *pipeline(struct req *req, char *var, struct pipeline *pipe)
 
 	vv = &v->val[0];
 
-	list_for_each_entry_safe(cur, tmp, &line, pipe) {
+	list_for_each_entry_safe(cur, tmp, &line, pipe)
 		vv = cur->stage->f(vv);
-	}
+
+	pipeline_destroy(&line);
 
 	return print_var_val(vv);
 }

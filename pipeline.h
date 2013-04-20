@@ -17,6 +17,6 @@ struct pipeline {
 extern void init_pipe_subsys();
 
 extern struct pipeline *pipestage(char *name);
-extern struct pipeline *pipeconnect(struct pipeline *a, struct pipeline *b);
+extern void pipeline_destroy(struct list_head *pipelist);
 
 #endif

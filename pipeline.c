@@ -211,3 +211,12 @@ struct pipeline *pipestage(char *name)
 
 	return pipe;
 }
+
+void pipeline_destroy(struct list_head *pipelist)
+{
+	struct pipeline *cur;
+	struct pipeline *tmp;
+
+	list_for_each_entry_safe(cur, tmp, pipelist, pipe)
+		umem_cache_free(pipeline_cache, cur);
+}
