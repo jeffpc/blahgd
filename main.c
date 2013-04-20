@@ -233,6 +233,7 @@ int main(int argc, char **argv)
 	openlog("blahg", LOG_NDELAY | LOG_PID, LOG_LOCAL0);
 
 	init_var_subsys();
+	init_pipe_subsys();
 
 	req_init(&request);
 

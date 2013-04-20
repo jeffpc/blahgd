@@ -1,11 +1,22 @@
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <umem.h>
 
 #include "pipeline.h"
 #include "error.h"
 #include "utils.h"
 #include "mangle.h"
+
+static umem_cache_t *pipeline_cache;
+
+void init_pipe_subsys()
+{
+	pipeline_cache = umem_cache_create("pipeline-cache",
+					   sizeof(struct pipeline), 0, NULL,
+					   NULL, NULL, NULL, NULL, 0);
+	ASSERT(pipeline_cache);
+}
 
 static struct var_val *nop_fxn(struct var_val *v)
 {
@@ -185,7 +196,7 @@ struct pipeline *pipestage(char *name)
 	struct pipeline *pipe;
 	int i;
 
-	pipe = malloc(sizeof(struct pipeline));
+	pipe = umem_cache_alloc(pipeline_cache, 0);
 	ASSERT(pipe);
 
 	INIT_LIST_HEAD(&pipe->pipe);
