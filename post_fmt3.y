@@ -196,7 +196,7 @@ static char *process_cmd(struct post *post, char *cmd, char *txt, char *opt)
 		return xstrdup("");
 	}
 
-	LOG("post_fmt3: invalid command '%s'", cmd);
+	LOG("post_fmt3: invalid command '%s' (post #%u)", cmd, post->id);
 
 	return concat3(S("[INVAL CMD"), cmd, S("]"));
 }
@@ -212,7 +212,7 @@ static char *process_kwd(struct post *post, char *cmd)
 	if (!strcmp(cmd, "leftrightarrow"))
 		return xstrdup("&harr;");
 
-	LOG("post_fmt3: invalid keyword '%s'", cmd);
+	LOG("post_fmt3: invalid keyword '%s' (post #%u)", cmd, post->id);
 
 	return concat3(S("[INVAL KWD"), cmd, S("]"));
 }
