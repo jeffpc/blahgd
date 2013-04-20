@@ -365,17 +365,27 @@ int load_post(struct req *req, int postid, const char *titlevar)
 		err = __load_post_body(&post);
 
 err:
-	if (err)
-		destroy_post(&post);
-	else
+	if (!err)
 		__store_vars(req, "posts", &post, titlevar);
+
+	destroy_post(&post);
 
 	return err;
 }
 
 void destroy_post(struct post *post)
 {
+	struct post_tag *pt, *pttmp;
+	struct comment *com, *comtmp;
+
+	list_for_each_entry_safe(pt, pttmp, &post->tags, list)
+		free(pt);
+
+	list_for_each_entry_safe(com, comtmp, &post->comments, list)
+		free(com);
+
 	free(post->title);
+	free(post->body);
 }
 
 #if 0
