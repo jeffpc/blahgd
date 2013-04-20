@@ -143,6 +143,11 @@ static char *process_cmd(struct post *post, char *cmd, char *txt, char *opt)
 		return concat4("<strong>", txt, "</strong>", "");
 	}
 
+	if (!strcmp(cmd, "textit")) {
+		ASSERT(!opt);
+		return concat4("<i>", txt, "</i>", "");
+	}
+
 	if (!strcmp(cmd, "listing"))
 		return __listing(post, txt, opt);
 
