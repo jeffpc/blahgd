@@ -34,6 +34,8 @@ struct vars {
 	int cur;
 };
 
+extern void init_var_subsys();
+
 extern void vars_init(struct vars *vars);
 extern void vars_scope_push(struct vars *vars);
 extern void vars_scope_pop(struct vars *vars);

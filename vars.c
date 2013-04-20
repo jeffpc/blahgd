@@ -1,10 +1,20 @@
 #include <string.h>
 #include <errno.h>
 #include <stdio.h>
+#include <umem.h>
 
 #include "vars.h"
 #include "error.h"
 #include "utils.h"
+
+static umem_cache_t *var_cache;
+
+void init_var_subsys()
+{
+	var_cache = umem_cache_create("var-cache", sizeof(struct var), 0,
+				      NULL, NULL, NULL, NULL, NULL, 0);
+	ASSERT(var_cache);
+}
 
 static int cmp(struct avl_node *aa, struct avl_node *ab)
 {
@@ -78,7 +88,7 @@ struct var *var_alloc(const char *name)
 {
 	struct var *v;
 
-	v = malloc(sizeof(struct var));
+	v = umem_cache_alloc(var_cache, 0);
 	if (!v)
 		return NULL;
 
@@ -99,7 +109,7 @@ void var_free(struct var *v)
 		return;
 
 	free((void*) v->name);
-	free(v);
+	umem_cache_free(var_cache, v);
 }
 
 int var_append(struct vars *vars, const char *name, struct var_val *vv)

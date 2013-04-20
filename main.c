@@ -230,6 +230,8 @@ int main(int argc, char **argv)
 
 	openlog("blahg", LOG_NDELAY | LOG_PID, LOG_LOCAL0);
 
+	init_var_subsys();
+
 	req_init(&request);
 
 	parse_qs(getenv("QUERY_STRING"), &request);
