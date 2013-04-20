@@ -1,6 +1,7 @@
 #include <string.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <umem.h>
 
 #include "vars.h"
@@ -29,22 +30,6 @@ static void __init_scope(struct vars *vars)
 	AVL_ROOT_INIT(&vars->scopes[vars->cur], cmp, 0);
 }
 
-void vars_init(struct vars *vars)
-{
-	vars->cur = 0;
-
-	__init_scope(vars);
-}
-
-void vars_scope_push(struct vars *vars)
-{
-	vars->cur++;
-
-	ASSERT(vars->cur < VAR_MAX_SCOPES);
-
-	__init_scope(vars);
-}
-
 static void __free_scope(struct avl_root *root)
 {
 	struct avl_node *node;
@@ -58,13 +43,40 @@ static void __free_scope(struct avl_root *root)
 	}
 }
 
+void vars_init(struct vars *vars)
+{
+	vars->cur = 0;
+
+	__init_scope(vars);
+}
+
+void vars_destroy(struct vars *vars)
+{
+	int i;
+
+	for (i = 0; i <= vars->cur; i++)
+		__free_scope(&vars->scopes[i]);
+}
+
+void vars_scope_push(struct vars *vars)
+{
+	vars->cur++;
+
+	ASSERT(vars->cur < VAR_MAX_SCOPES);
+
+	__init_scope(vars);
+}
+
 void vars_scope_pop(struct vars *vars)
 {
 	vars->cur--;
 
-	ASSERT(vars->cur >= 0);
-
 	__free_scope(&vars->scopes[vars->cur + 1]);
+
+	if (vars->cur < 0)
+		vars_scope_push(vars);
+
+	ASSERT(vars->cur >= 0);
 }
 
 struct var *var_lookup(struct vars *vars, const char *name)
@@ -96,7 +108,7 @@ struct var *var_alloc(const char *name)
 
 	v->name = xstrdup(name);
 	if (!v->name) {
-		free(v);
+		umem_cache_free(var_cache, v);
 		return NULL;
 	}
 
@@ -119,10 +131,15 @@ int var_append(struct vars *vars, const char *name, struct var_val *vv)
 	};
 	struct avl_node *node;
 	struct var *v;
+	bool shouldfree;
 	int i;
+
+	shouldfree = false;
 
 	node = avl_find_node(&vars->scopes[vars->cur], &key.tree);
 	if (!node) {
+		shouldfree = true;
+
 		v = var_alloc(name);
 		if (!v)
 			return ENOMEM;
@@ -146,7 +163,8 @@ int var_append(struct vars *vars, const char *name, struct var_val *vv)
 		return 0;
 	}
 
-	var_free(v);
+	if (shouldfree)
+		var_free(v);
 
 	return E2BIG;
 }

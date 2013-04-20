@@ -37,6 +37,7 @@ struct vars {
 extern void init_var_subsys();
 
 extern void vars_init(struct vars *vars);
+extern void vars_destroy(struct vars *vars);
 extern void vars_scope_push(struct vars *vars);
 extern void vars_scope_pop(struct vars *vars);
 extern void vars_dump(struct vars *vars);
@@ -75,7 +76,7 @@ static inline struct var *var_alloc_str(const char *name, const char *val)
 	v->val[0].str  = xstrdup(val);
 
 	if (!v->val[0].str) {
-		free(v);
+		var_free(v);
 		return NULL;
 	}
 

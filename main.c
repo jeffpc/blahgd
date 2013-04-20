@@ -182,6 +182,8 @@ static void req_destroy(struct req *req)
 {
 	struct header *cur, *tmp;
 
+	vars_destroy(&req->vars);
+
 	printf("Status: %u\n", req->status);
 
 	list_for_each_entry_safe(cur, tmp, &req->headers, list) {
