@@ -22,7 +22,7 @@ static int cmp(struct avl_node *aa, struct avl_node *ab)
 	struct var *a = container_of(aa, struct var, tree);
 	struct var *b = container_of(ab, struct var, tree);
 
-	return strcmp(a->name, b->name);
+	return strncmp(a->name, b->name, VAR_MAX_VAR_NAME);
 }
 
 static void __init_scope(struct vars *vars)
@@ -81,11 +81,11 @@ void vars_scope_pop(struct vars *vars)
 
 struct var *var_lookup(struct vars *vars, const char *name)
 {
-	struct var key = {
-		.name = name,
-	};
+	struct var key;
 	struct avl_node *node;
 	int scope;
+
+	strncpy(key.name, name, VAR_MAX_VAR_NAME);
 
 	for (scope = vars->cur; scope >= 0; scope--) {
 		node = avl_find_node(&vars->scopes[scope], &key.tree);
@@ -100,17 +100,14 @@ struct var *var_alloc(const char *name)
 {
 	struct var *v;
 
+	ASSERT(strlen(name) < VAR_MAX_VAR_NAME);
+
 	v = umem_cache_alloc(var_cache, 0);
 	if (!v)
 		return NULL;
 
 	memset(v, 0, sizeof(struct var));
-
-	v->name = xstrdup(name);
-	if (!v->name) {
-		umem_cache_free(var_cache, v);
-		return NULL;
-	}
+	strncpy(v->name, name, VAR_MAX_VAR_NAME);
 
 	return v;
 }
@@ -120,21 +117,19 @@ void var_free(struct var *v)
 	if (!v)
 		return;
 
-	free((void*) v->name);
 	umem_cache_free(var_cache, v);
 }
 
 int var_append(struct vars *vars, const char *name, struct var_val *vv)
 {
-	struct var key = {
-		.name = name,
-	};
+	struct var key;
 	struct avl_node *node;
 	struct var *v;
 	bool shouldfree;
 	int i;
 
 	shouldfree = false;
+	strncpy(key.name, name, VAR_MAX_VAR_NAME);
 
 	node = avl_find_node(&vars->scopes[vars->cur], &key.tree);
 	if (!node) {

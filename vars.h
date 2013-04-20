@@ -25,7 +25,7 @@ struct var_val {
 
 struct var {
 	struct avl_node tree;
-	const char *name;
+	char name[VAR_MAX_VAR_NAME];
 	struct var_val val[VAR_MAX_ARRAY_SIZE];
 };
 
