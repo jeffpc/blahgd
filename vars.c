@@ -35,13 +35,26 @@ void vars_scope_push(struct vars *vars)
 	__init_scope(vars);
 }
 
+static void __free_scope(struct avl_root *root)
+{
+	struct avl_node *node;
+
+	while ((node = avl_find_minimum(root))) {
+		struct var *v = container_of(node, struct var, tree);
+
+		avl_remove_node(root, node);
+
+		var_free(v);
+	}
+}
+
 void vars_scope_pop(struct vars *vars)
 {
 	vars->cur--;
 
 	ASSERT(vars->cur >= 0);
 
-	// FIXME: just leaked memory
+	__free_scope(&vars->scopes[vars->cur + 1]);
 }
 
 struct var *var_lookup(struct vars *vars, const char *name)
