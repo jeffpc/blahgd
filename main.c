@@ -11,6 +11,7 @@
 #include "utils.h"
 #include "render.h"
 #include "sidebar.h"
+#include "pipeline.h"
 
 static char *nullterminate(char *s)
 {
@@ -188,6 +189,9 @@ static void req_destroy(struct req *req)
 
 	list_for_each_entry_safe(cur, tmp, &req->headers, list) {
 		printf("%s: %s\n", cur->name, cur->val);
+
+		free(cur->val);
+		free(cur);
 	}
 
 	printf("\n%s\n", req->body);
