@@ -39,6 +39,8 @@ int main(int argc, char **argv)
 
 	result = 0;
 
+	ASSERT0(putenv("BLAHG_DISABLE_SYSLOG=1"));
+
 	for (i = 1; i < argc; i++) {
 		in = read_file(argv[i]);
 		ASSERT(in);

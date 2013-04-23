@@ -13,7 +13,8 @@ void __my_log(const char *fmt, ...)
 
 	vsnprintf(msg, sizeof(msg), fmt, ap);
 
-	syslog(LOG_LOCAL0 | LOG_CRIT, "%s", msg);
+	if (!getenv("BLAHG_DISABLE_SYSLOG"))
+		syslog(LOG_LOCAL0 | LOG_CRIT, "%s", msg);
 
 	va_end(ap);
 }
