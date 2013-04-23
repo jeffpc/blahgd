@@ -61,8 +61,8 @@ add_executable(test_fmt3
 target_link_libraries(test_fmt3 umem)
 target_link_libraries(test_fmt3 ${OPENSSL_CRYPTO_LIBRARY})
 
-function(simple_c_test type data)
-	add_test(NAME "${type}:${data}"
+function(simple_c_test type section data)
+	add_test(NAME "${type}:${section}:${data}"
 		 COMMAND "${CMAKE_BINARY_DIR}/test_${type}"
 			 "${CMAKE_CURRENT_SOURCE_DIR}/${data}"
 	)
