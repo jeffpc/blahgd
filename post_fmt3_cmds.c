@@ -5,25 +5,6 @@
 #include "listing.h"
 #include "utils.h"
 
-static char *table(struct post *post, char *opt, bool begin)
-{
-	char *a, *b;
-
-	ASSERT(!opt);
-
-	/* only begin/end the paragraph for the first level */
-
-	if (begin) {
-		a = post->table_nesting++ ? "" : "</p>";
-		b = "<table>";
-	} else {
-		a = "</table>";
-		b = --post->table_nesting ? "" : "<p>";
-	}
-
-	return concat(S(a), S(b));
-}
-
 static char *__process_listing(struct post *post, char *txt, char *opt)
 {
 	return concat3(S("</p><pre>"), listing(post, txt), S("</pre><p>"));
@@ -71,62 +52,46 @@ static char *__process_textit(struct post *post, char *txt, char *opt)
 
 static char *__process_begin(struct post *post, char *txt, char *opt)
 {
-	bool begin = true;
+	if (!strcmp(txt, "enumerate"))
+		return xstrdup("</p><ol>");
 
-	if (!strcmp(txt, "enumerate")) {
-		ASSERT(!opt);
-		return xstrdup(begin ? "</p><ol>" : "</ol><p>");
-	}
+	if (!strcmp(txt, "itemize"))
+		return xstrdup("</p><ul>");
 
-	if (!strcmp(txt, "itemize")) {
-		ASSERT(!opt);
-		return xstrdup(begin ? "</p><ul>" : "</ul><p>");
-	}
+	if (!strcmp(txt, "description"))
+		return xstrdup("</p><dl>");
 
-	if (!strcmp(txt, "description")) {
-		ASSERT(!opt);
-		return xstrdup(begin ? "</p><dl>" : "</dl><p>");
-	}
-
-	if (!strcmp(txt, "quote")) {
-		ASSERT(!opt);
-		return xstrdup(begin ? "</p><blockquote><p>" :
-				      "</p></blockquote><p>");
-	}
+	if (!strcmp(txt, "quote"))
+		return xstrdup("</p><blockquote><p>");
 
 	if (!strcmp(txt, "tabular"))
-		return table(post, opt, begin);
+		return concat(post->table_nesting++ ? NULL : S("</p>"),
+			      S("<table>"));
+
+	LOG("post_fmt3: invalid environment '%s' (post #%u)", txt, post->id);
 
 	return concat3(S("[INVAL ENVIRON"), txt, S("]"));
 }
 
 static char *__process_end(struct post *post, char *txt, char *opt)
 {
-	bool begin = false;
+	if (!strcmp(txt, "enumerate"))
+		return xstrdup("</ol><p>");
 
-	if (!strcmp(txt, "enumerate")) {
-		ASSERT(!opt);
-		return xstrdup(begin ? "</p><ol>" : "</ol><p>");
-	}
+	if (!strcmp(txt, "itemize"))
+		return xstrdup("</ul><p>");
 
-	if (!strcmp(txt, "itemize")) {
-		ASSERT(!opt);
-		return xstrdup(begin ? "</p><ul>" : "</ul><p>");
-	}
+	if (!strcmp(txt, "description"))
+		return xstrdup("</dl><p>");
 
-	if (!strcmp(txt, "description")) {
-		ASSERT(!opt);
-		return xstrdup(begin ? "</p><dl>" : "</dl><p>");
-	}
-
-	if (!strcmp(txt, "quote")) {
-		ASSERT(!opt);
-		return xstrdup(begin ? "</p><blockquote><p>" :
-				      "</p></blockquote><p>");
-	}
+	if (!strcmp(txt, "quote"))
+		return xstrdup("</p></blockquote><p>");
 
 	if (!strcmp(txt, "tabular"))
-		return table(post, opt, begin);
+		return concat(S("</table>"),
+			      --post->table_nesting ? NULL : S("<p>"));
+
+	LOG("post_fmt3: invalid environment '%s' (post #%u)", txt, post->id);
 
 	return concat3(S("[INVAL ENVIRON"), txt, S("]"));
 }
