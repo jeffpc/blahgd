@@ -15,16 +15,14 @@
 #include <openssl/sha.h>
 
 #include "config.h"
-#include "listing.h"
 #include "error.h"
 #include "utils.h"
 #include "mangle.h"
+#include "post_fmt3_cmds.h"
 
 #include "parse.h"
 
 #define scanner data->scanner
-
-#define S(x)	xstrdup(x)
 
 extern int fmt3_lex(void *, void *);
 
@@ -38,11 +36,6 @@ void fmt3_error2(char *e, char *yytext)
 	LOG("Error: %s (%s)", e, yytext);
 }
 
-static char *__listing(struct post *post, char *txt, char *opt)
-{
-	return concat3(S("</p><pre>"), listing(post, txt), S("</pre><p>"));
-}
-
 static char *verbatim(char *txt)
 {
 	char *escaped;
@@ -51,154 +44,6 @@ static char *verbatim(char *txt)
 	ASSERT(escaped);
 
 	return concat3(S("</p><pre>"), escaped, S("</pre><p>"));
-}
-
-static char *table(struct post *post, char *opt, bool begin)
-{
-	char *a, *b;
-
-	ASSERT(!opt);
-
-	/* only begin/end the paragraph for the first level */
-
-	if (begin) {
-		a = post->table_nesting++ ? "" : "</p>";
-		b = "<table>";
-	} else {
-		a = "</table>";
-		b = --post->table_nesting ? "" : "<p>";
-	}
-
-	return concat(S(a), S(b));
-}
-
-static char *process_cmd(struct post *post, char *cmd, char *txt, char *opt)
-{
-	if (!strcmp(cmd, "link"))
-		return concat5(S("<a href=\""), txt, S("\">"), opt ? opt : txt, S("</a>"));
-
-	if (!strcmp(cmd, "photolink"))
-		return concat5(S("<a href=\"" PHOTO_BASE_URL "/"), txt, S("\">"), opt ? opt : txt, S("</a>"));
-
-	if (!strcmp(cmd, "img"))
-		return concat5(S("<img src=\""), txt, S("\" alt=\""), opt, S("\" />"));
-
-	if (!strcmp(cmd, "photo"))
-		return concat5(S("<img src=\"" PHOTO_BASE_URL "/"), txt, S("\" alt=\""), opt, S("\" />"));
-
-	if (!strcmp(cmd, "emph")) {
-		ASSERT(!opt);
-		return concat3(S("<em>"), txt, S("</em>"));
-	}
-
-	if (!strcmp(cmd, "texttt")) {
-		ASSERT(!opt);
-		return concat3(S("<tt>"), txt, S("</tt>"));
-	}
-
-	if (!strcmp(cmd, "textbf")) {
-		ASSERT(!opt);
-		return concat3(S("<strong>"), txt, S("</strong>"));
-	}
-
-	if (!strcmp(cmd, "textit")) {
-		ASSERT(!opt);
-		return concat3(S("<i>"), txt, S("</i>"));
-	}
-
-	if (!strcmp(cmd, "listing"))
-		return __listing(post, txt, opt);
-
-	if (!strcmp(cmd, "item")) {
-		// FIXME: we should keep track of what commands we've
-		// encountered and then decide if <li> is the right tag to
-		// use
-		if (!opt)
-			return concat3(S("<li>"), txt, S("</li>"));
-		return concat5(S("<dt>"), opt, S("</dt><dd>"), txt, S("</dd>"));
-	}
-
-	if (!strcmp(cmd, "begin") || !strcmp(cmd, "end")) {
-		int begin = !strcmp(cmd, "begin");
-
-		if (!strcmp(txt, "enumerate")) {
-			ASSERT(!opt);
-			return xstrdup(begin ? "</p><ol>" : "</ol><p>");
-		}
-
-		if (!strcmp(txt, "itemize")) {
-			ASSERT(!opt);
-			return xstrdup(begin ? "</p><ul>" : "</ul><p>");
-		}
-
-		if (!strcmp(txt, "description")) {
-			ASSERT(!opt);
-			return xstrdup(begin ? "</p><dl>" : "</dl><p>");
-		}
-
-		if (!strcmp(txt, "quote")) {
-			ASSERT(!opt);
-			return xstrdup(begin ? "</p><blockquote><p>" :
-					      "</p></blockquote><p>");
-		}
-
-		if (!strcmp(txt, "tabular"))
-			return table(post, opt, begin);
-
-		return concat3(S("[INVAL ENVIRON"), txt, S("]"));
-	}
-
-	if (!strcmp(cmd, "abbrev"))
-		return concat5(S("<abbr title=\""), opt ? opt : txt, S("\">"), txt, S("</abbr>"));
-
-	if (!strcmp(cmd, "section")) {
-		ASSERT(!opt);
-		return concat3(S("</p><h4>"), txt, S("</h4><p>"));
-	}
-
-	if (!strcmp(cmd, "subsection")) {
-		ASSERT(!opt);
-		return concat3(S("</p><h5>"), txt, S("</h5><p>"));
-	}
-
-	if (!strcmp(cmd, "subsubsection")) {
-		ASSERT(!opt);
-		return concat3(S("</p><h6>"), txt, S("</h6><p>"));
-	}
-
-	if (!strcmp(cmd, "wiki")) {
-		return concat5(S("<a href=\"" WIKI_BASE_URL "/"), txt,
-			S("\"><img src=\"" BASE_URL "/wiki.png\" alt=\"Wikipedia article:\" />&nbsp;"),
-			opt ? opt : txt, S("</a>"));
-	}
-
-	if (!strcmp(cmd, "bug")) {
-		ASSERT(!opt);
-		return concat5(S("<a href=\"" BUG_BASE_URL "/"), txt,
-			S("\"><img src=\"" BASE_URL "/bug.png\" alt=\"bug #\" />&nbsp;"),
-			txt, S("</a>"));
-	}
-
-	if (!strcmp(cmd, "degree")) {
-		ASSERT(!opt);
-		return concat(S("\xc2\xb0"), txt);
-	}
-
-	if (!strcmp(cmd, "trow")) {
-		ASSERT(!opt);
-
-		return concat3(S("<tr><td>"), txt, S("</td></tr>"));
-	}
-
-	if (!strcmp(cmd, "tag") ||
-	    !strcmp(cmd, "title")) {
-		ASSERT(!opt);
-		return xstrdup("");
-	}
-
-	LOG("post_fmt3: invalid command '%s' (post #%u)", cmd, post->id);
-
-	return concat3(S("[INVAL CMD"), cmd, S("]"));
 }
 
 static char *process_kwd(struct post *post, char *cmd)

@@ -16,6 +16,8 @@ extern char *concat5(char *a, char *b, char *c, char *d, char *e);
 #define concat3(a, b, c)	concat5((a), (b), (c), NULL, NULL)
 #define concat(a, b)		concat5((a), (b), NULL, NULL, NULL)
 
+#define S(x)			xstrdup(x)
+
 static inline char *xstrdup_def(const char *s, const char *def)
 {
 	char *ret;

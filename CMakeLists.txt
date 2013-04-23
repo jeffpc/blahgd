@@ -39,6 +39,7 @@ add_executable(blahg render.c post.c main.c
 	db.c ${PINGBACK_SRC} vars.c pipeline.c avl.c
 	${FLEX_tmpl_OUTPUTS} ${BISON_tmpl_OUTPUTS}
 	${FLEX_fmt3_OUTPUTS} ${BISON_fmt3_OUTPUTS}
+	post_fmt3_cmds.c
 	index.c sidebar.c story.c tag.c feed.c comment.c
 	admin.c
 	listing.c utils.c error.c mangle.c
@@ -54,6 +55,7 @@ target_link_libraries(blahg ${OPENSSL_CRYPTO_LIBRARY})
 add_executable(test_fmt3
 	test_fmt3.c
 	${FLEX_fmt3_OUTPUTS} ${BISON_fmt3_OUTPUTS}
+	post_fmt3_cmds.c
 	listing.c
 	mangle.c utils.c error.c
 )

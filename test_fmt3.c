@@ -23,6 +23,7 @@ static int onefile(struct post *post, char *ibuf, size_t len)
 	ret = fmt3_parse(&x);
 
 	ASSERT(x.output);
+	printf("%s", x.output);
 	free(x.output);
 
 	fmt3_lex_destroy(x.scanner);
