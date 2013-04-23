@@ -161,11 +161,13 @@ char *concat5(char *a, char *b, char *c, char *d, char *e)
 {
 	char *src[] = { a, b, c, d, e, };
 	char *ret;
+	int nsrc;
 	int first;
 	int tofree;
 	int len;
 	int i, j;
 
+	nsrc = 0;
 	len = 0;
 	first = -1;
 	tofree = 0x1f;
@@ -176,14 +178,24 @@ char *concat5(char *a, char *b, char *c, char *d, char *e)
 			if (first == -1)
 				first = i;
 
+			nsrc++;
+
 			for (j = i + 1; j < 5; j++)
 				if (src[i] == src[j])
 					tofree &= ~(1 << i);
 		}
 	}
 
-	if (!len)
+	if (nsrc == 1)
+		return src[first];
+
+	if (!len) {
+		for (i = 0; i < 5; i++)
+			if (tofree & (1 << i))
+				free(src[i]);
+
 		return xstrdup("");
+	}
 
 	ret = malloc(len + 1);
 	ASSERT(ret);
