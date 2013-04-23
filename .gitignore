@@ -1,4 +1,5 @@
 blahg
+test_fmt3
 
 post_fmt3.lex.c
 post_fmt3.tab.c
@@ -18,3 +19,6 @@ CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
 config.h
+
+CTestTestfile.cmake
+Testing

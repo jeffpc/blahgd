@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 2.8.5)
 
+enable_testing()
+
 include(CheckFunctionExists)
 configure_file(config.h.in config.h)
 
@@ -28,6 +30,11 @@ else()
 	set(XMLRPC_LIBRARIES )
 endif()
 
+find_library(SQLITE_LIB sqlite3)
+find_path(SQLITE_INC sqlite3.h)
+
+include_directories(${SQLITE_INC})
+
 add_executable(blahg render.c post.c main.c
 	db.c ${PINGBACK_SRC} vars.c pipeline.c avl.c
 	${FLEX_tmpl_OUTPUTS} ${BISON_tmpl_OUTPUTS}
@@ -38,13 +45,27 @@ add_executable(blahg render.c post.c main.c
 	decode.c fsm.c
 )
 
-find_library(SQLITE_LIB sqlite3)
-find_path(SQLITE_INC sqlite3.h)
-
-include_directories(${SQLITE_INC})
-
 target_link_libraries(blahg ${XMLRPC_LIBRARIES} ${SQLITE_LIB})
 target_link_libraries(blahg rt)
 target_link_libraries(blahg umem)
 target_link_libraries(blahg m)
 target_link_libraries(blahg ${OPENSSL_CRYPTO_LIBRARY})
+
+add_executable(test_fmt3
+	test_fmt3.c
+	${FLEX_fmt3_OUTPUTS} ${BISON_fmt3_OUTPUTS}
+	listing.c
+	mangle.c utils.c error.c
+)
+
+target_link_libraries(test_fmt3 umem)
+target_link_libraries(test_fmt3 ${OPENSSL_CRYPTO_LIBRARY})
+
+function(simple_c_test type data)
+	add_test(NAME "${type}:${data}"
+		 COMMAND "${CMAKE_BINARY_DIR}/test_${type}"
+			 "${CMAKE_CURRENT_SOURCE_DIR}/${data}"
+	)
+endfunction()
+
+add_subdirectory(test/fmt3)
