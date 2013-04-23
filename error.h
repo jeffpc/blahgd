@@ -26,4 +26,6 @@ extern int __my_assfail3(const char *a, uintmax_t lv, const char *op,
 			__my_assfail(#c, __FILE__, __LINE__);		\
 	} while(0)
 
+#define ASSERT0(c)	ASSERT3U((c), ==, 0)
+
 #endif
