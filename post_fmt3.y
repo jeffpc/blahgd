@@ -46,22 +46,6 @@ static char *verbatim(char *txt)
 	return concat3(S("</p><pre>"), escaped, S("</pre><p>"));
 }
 
-static char *process_kwd(struct post *post, char *cmd)
-{
-	if (!strcmp(cmd, "leftarrow"))
-		return xstrdup("&larr;");
-
-	if (!strcmp(cmd, "rightarrow"))
-		return xstrdup("&rarr;");
-
-	if (!strcmp(cmd, "leftrightarrow"))
-		return xstrdup("&harr;");
-
-	LOG("post_fmt3: invalid keyword '%s' (post #%u)", cmd, post->id);
-
-	return concat3(S("[INVAL KWD"), cmd, S("]"));
-}
-
 static char *dash(int len)
 {
 	static const char *ret[4] = {
@@ -317,7 +301,7 @@ thing : WORD				{ $$ = $1; }
 
 cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd(data->post, $1, $3, $2); }
     | WORD cmdarg		{ $$ = process_cmd(data->post, $1, $2, NULL); }
-    | WORD			{ $$ = process_kwd(data->post, $1); }
+    | WORD			{ $$ = process_cmd(data->post, $1, NULL, NULL); }
     | BSLASH			{ $$ = xstrdup("<br/>"); }
     | OCURLY			{ $$ = $1; }
     | CCURLY			{ $$ = $1; }

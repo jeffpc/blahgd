@@ -185,6 +185,21 @@ static char *__process_trow(struct post *post, char *txt, char *opt)
 	return concat3(S("<tr><td>"), txt, S("</td></tr>"));
 }
 
+static char *__process_leftarrow(struct post *post, char *txt, char *opt)
+{
+	return xstrdup("&larr;");
+}
+
+static char *__process_rightarrow(struct post *post, char *txt, char *opt)
+{
+	return xstrdup("&rarr;");
+}
+
+static char *__process_leftrightarrow(struct post *post, char *txt, char *opt)
+{
+	return xstrdup("&harr;");
+}
+
 static char *__process_nop(struct post *post, char *txt, char *opt)
 {
 	return xstrdup("");
@@ -214,7 +229,7 @@ int cmd_cmp(const void *va, const void *vb)
 #define CMD(n, f, s, c)	{ .name = #n, .fxn = f, .square = (s), .curly = (c), }
 #define CMD_OPT(n)	CMD(n, __process_##n, ALLOWED, REQUIRED)
 #define CMD_REQ(n)	CMD(n, __process_##n, PROHIBITED, REQUIRED)
-#define CMD_NONE(n)	CMD(n, __process_##n, PROHIBITED, PROHIBITED)
+#define CMD_NON(n)	CMD(n, __process_##n, PROHIBITED, PROHIBITED)
 #define CMD_NOP(n)	CMD(n, __process_nop, PROHIBITED, REQUIRED)
 
 /* NOTE: this array must by storted! */
@@ -227,10 +242,13 @@ static const struct cmd cmds[] = {
 	CMD_REQ(end),
 	CMD_OPT(img),
 	CMD_OPT(item),
+	CMD_NON(leftarrow),
+	CMD_NON(leftrightarrow),
 	CMD_OPT(link),
 	CMD_OPT(listing),
 	CMD_OPT(photo),
 	CMD_OPT(photolink),
+	CMD_NON(rightarrow),
 	CMD_REQ(section),
 	CMD_REQ(subsection),
 	CMD_REQ(subsubsection),
