@@ -68,4 +68,4 @@ function(simple_c_test type data)
 	)
 endfunction()
 
-add_subdirectory(test/fmt3)
+add_subdirectory(test)
