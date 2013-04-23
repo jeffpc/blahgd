@@ -1,3 +1,4 @@
-simple_c_test(fmt3 simple.tex)
-simple_c_test(fmt3 table.tex)
-#simple_c_test(fmt3 basic_math.tex)
+file(GLOB TESTS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.tex)
+foreach(TEST ${TESTS})
+	simple_c_test(fmt3 ${TEST})
+endforeach()
