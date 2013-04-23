@@ -5,6 +5,15 @@
 #include "listing.h"
 #include "utils.h"
 
+/*
+ * NOTE:
+ *
+ * To add a new command 'foo', simply...
+ *  (1) add a CMD_IDX_foo to cmd_idx enum
+ *  (2) add entry to cmds array
+ *  (3) create a function __process_foo(...)
+ */
+
 static char *__process_listing(struct post *post, char *txt, char *opt)
 {
 	return concat3(S("</p><pre>"), listing(post, txt), S("</pre><p>"));
@@ -191,13 +200,41 @@ int cmd_cmp(const void *va, const void *vb)
 	return strcmp(a->name, b->name);
 }
 
-#define CMD(n, f, s, c)	{ .name = #n, .fxn = f, .square = (s), .curly = (c), }
-#define CMD_OPT(n)	CMD(n, __process_##n, ALLOWED, REQUIRED)
-#define CMD_REQ(n)	CMD(n, __process_##n, PROHIBITED, REQUIRED)
-#define CMD_NON(n)	CMD(n, __process_##n, PROHIBITED, PROHIBITED)
-#define CMD_NOP(n)	CMD(n, __process_nop, PROHIBITED, REQUIRED)
+/* NOTE: this enum must by storted! */
+enum cmd_idx {
+	CMD_IDX_abbrev,
+	CMD_IDX_begin,
+	CMD_IDX_bug,
+	CMD_IDX_degree,
+	CMD_IDX_emph,
+	CMD_IDX_end,
+	CMD_IDX_img,
+	CMD_IDX_item,
+	CMD_IDX_leftarrow,
+	CMD_IDX_leftrightarrow,
+	CMD_IDX_link,
+	CMD_IDX_listing,
+	CMD_IDX_photo,
+	CMD_IDX_photolink,
+	CMD_IDX_rightarrow,
+	CMD_IDX_section,
+	CMD_IDX_subsection,
+	CMD_IDX_subsubsection,
+	CMD_IDX_tag,
+	CMD_IDX_textbf,
+	CMD_IDX_textit,
+	CMD_IDX_texttt,
+	CMD_IDX_title,
+	CMD_IDX_trow,
+	CMD_IDX_wiki,
+};
 
-/* NOTE: this array must by storted! */
+#define CMD(n, f, s, c)	{ .name = #n, .fxn = f, .square = (s), .curly = (c), }
+#define CMD_OPT(n) [CMD_IDX_##n] = CMD(n, __process_##n, ALLOWED, REQUIRED)
+#define CMD_REQ(n) [CMD_IDX_##n] = CMD(n, __process_##n, PROHIBITED, REQUIRED)
+#define CMD_NON(n) [CMD_IDX_##n] = CMD(n, __process_##n, PROHIBITED, PROHIBITED)
+#define CMD_NOP(n) [CMD_IDX_##n] = CMD(n, __process_nop, PROHIBITED, REQUIRED)
+
 static const struct cmd cmds[] = {
 	CMD_OPT(abbrev),
 	CMD_REQ(begin),
