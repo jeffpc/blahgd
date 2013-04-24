@@ -149,6 +149,16 @@ static char *__process_bug(struct post *post, char *txt, char *opt)
 		txt, S("</a>"));
 }
 
+static char *__process_post(struct post *post, char *txt, char *opt)
+{
+	char buf[1024];
+
+	snprintf(buf, sizeof(buf), "<a href=\"/?p=%s\" alt=\"post #%s\">%s</a>",
+		 txt, txt, opt ? opt : txt);
+
+	return S(buf);
+}
+
 static char *__process_degree(struct post *post, char *txt, char *opt)
 {
 	return concat(S("\xc2\xb0"), txt);
@@ -216,6 +226,7 @@ enum cmd_idx {
 	CMD_IDX_listing,
 	CMD_IDX_photo,
 	CMD_IDX_photolink,
+	CMD_IDX_post,
 	CMD_IDX_rightarrow,
 	CMD_IDX_section,
 	CMD_IDX_subsection,
@@ -236,31 +247,32 @@ enum cmd_idx {
 #define CMD_NOP(n) [CMD_IDX_##n] = CMD(n, __process_nop, PROHIBITED, REQUIRED)
 
 static const struct cmd cmds[] = {
+	CMD_NON(leftarrow),
+	CMD_NON(leftrightarrow),
+	CMD_NON(rightarrow),
+	CMD_NOP(tag),
+	CMD_NOP(title),
 	CMD_OPT(abbrev),
+	CMD_OPT(img),
+	CMD_OPT(item),
+	CMD_OPT(link),
+	CMD_OPT(listing),
+	CMD_OPT(photo),
+	CMD_OPT(photolink),
+	CMD_OPT(post),
+	CMD_OPT(wiki),
 	CMD_REQ(begin),
 	CMD_REQ(bug),
 	CMD_REQ(degree),
 	CMD_REQ(emph),
 	CMD_REQ(end),
-	CMD_OPT(img),
-	CMD_OPT(item),
-	CMD_NON(leftarrow),
-	CMD_NON(leftrightarrow),
-	CMD_OPT(link),
-	CMD_OPT(listing),
-	CMD_OPT(photo),
-	CMD_OPT(photolink),
-	CMD_NON(rightarrow),
 	CMD_REQ(section),
 	CMD_REQ(subsection),
 	CMD_REQ(subsubsection),
-	CMD_NOP(tag),
 	CMD_REQ(textbf),
 	CMD_REQ(textit),
 	CMD_REQ(texttt),
-	CMD_NOP(title),
 	CMD_REQ(trow),
-	CMD_OPT(wiki),
 };
 
 static void __check_arg(tri r, char *ptr)
