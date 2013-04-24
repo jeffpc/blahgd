@@ -46,8 +46,8 @@ int fmt3_input_proc(char *buf, int size, yyscan_t scanner);
 <MATH>[ \t]+		{ yylval->ptr = xstrdup(yytext); return WSPACE; }
 
 "\\$"			{ return DOLLAR; }
-\n\n[ \t\n]*		{ yylval->ptr = xstrdup(yytext); return PAREND; }
-\n			{ yylval->ptr = xstrdup(yytext); return NLINE; }
+\n\n[ \t\n]*		{ return PAREND; }
+\n			{ return NLINE; }
 [ \t]+			{ yylval->ptr = xstrdup(yytext); return WSPACE; }
 "\\"			{ yylval->ptr = xstrdup(yytext); return BSLASH; }
 "{"			{ yylval->ptr = xstrdup(yytext); return OCURLY; }

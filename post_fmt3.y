@@ -234,10 +234,11 @@ out:
 };
 
 /* generic tokens */
-%token <ptr> PAREND NLINE WSPACE BSLASH OCURLY CCURLY OBRACE CBRACE AMP
+%token <ptr> WSPACE BSLASH OCURLY CCURLY OBRACE CBRACE AMP
 %token <ptr> USCORE PERCENT TILDE DASH OQUOT CQUOT SCHAR ELLIPSIS
 %token <ptr> UTF8FIRST3 UTF8FIRST2 UTF8REST WORD ASTERISK SLASH
 %token <ptr> PIPE
+%token PAREND NLINE
 
 /* math specific tokens */
 %token <ptr> PLUS MINUS OPAREN CPAREN EQLTGT CARRET
@@ -247,7 +248,7 @@ out:
 %token <ptr> VERBTEXT
 %token VERBSTART VERBEND DOLLAR
 
-%type <ptr> paragraphs paragraph line thing cmd cmdarg optcmdarg math mexpr
+%type <ptr> paragraphs paragraph thing cmd cmdarg optcmdarg math mexpr
 %type <ptr> verb
 
 %left USCORE CARRET
@@ -257,29 +258,23 @@ out:
 
 %%
 
-post : paragraphs			{ data->output = $1; }
+post : paragraphs PAREND		{ data->output = $1; }
+     | paragraphs			{ data->output = $1; }
      | PAREND				{ data->output = xstrdup(""); }
-     | NLINE				{ data->output = xstrdup(""); }
-     |
      ;
 
-paragraphs : paragraphs PAREND paragraph NLINE	{ $$ = concat4($1, S("<p>"), $3, S("</p>\n")); }
-           | paragraphs PAREND paragraph	{ $$ = concat4($1, S("<p>"), $3, S("</p>\n")); }
-	   | paragraph NLINE			{ $$ = concat3(S("<p>"), $1, S("</p>\n")); }
+paragraphs : paragraphs PAREND paragraph	{ $$ = concat4($1, S("<p>"), $3, S("</p>\n")); }
 	   | paragraph				{ $$ = concat3(S("<p>"), $1, S("</p>\n")); }
 	   ;
 
-paragraph : paragraph NLINE line	{ $$ = concat3($1, S(" "), $3); }
-	  | line			{ $$ = $1; }
-	  ;
-
-line : line thing		{ $$ = concat($1, $2); }
-     | thing			{ $$ = $1; }
-     ;
+paragraph : paragraph thing		{ $$ = concat($1, $2); }
+          | thing			{ $$ = $1; }
+          ;
 
 thing : WORD				{ $$ = $1; }
       | UTF8FIRST2 UTF8REST		{ $$ = concat($1, $2); }
       | UTF8FIRST3 UTF8REST UTF8REST	{ $$ = concat3($1, $2, $3); }
+      | NLINE				{ $$ = xstrdup(" "); }
       | WSPACE				{ $$ = $1; }
       | PIPE				{ $$ = $1; }
       | PLUS				{ $$ = $1; }
