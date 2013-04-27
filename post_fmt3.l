@@ -19,6 +19,7 @@ int fmt3_input_proc(char *buf, int size, yyscan_t scanner);
 %}
 
 %x VERBATIM
+%x LISTING
 %x MATH
 
 %%
@@ -26,6 +27,11 @@ int fmt3_input_proc(char *buf, int size, yyscan_t scanner);
 <VERBATIM>"\\end{verbatim}"	{ BEGIN(INITIAL); return VERBEND; }
 <VERBATIM>.			{ yylval->ptr = xstrdup(yytext); return VERBTEXT; }
 <VERBATIM>.|\n			{ yylval->ptr = xstrdup(yytext); return VERBTEXT; }
+
+"\\begin{listing}"		{ BEGIN(LISTING); return LISTSTART; }
+<LISTING>"\\end{listing}"	{ BEGIN(INITIAL); return LISTEND; }
+<LISTING>.			{ yylval->ptr = xstrdup(yytext); return VERBTEXT; }
+<LISTING>.|\n			{ yylval->ptr = xstrdup(yytext); return VERBTEXT; }
 
 "$"			{ BEGIN(MATH); return MATHSTART; }
 <MATH>"$"		{ BEGIN(INITIAL); return MATHEND; }

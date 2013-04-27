@@ -18,6 +18,7 @@
 #include "error.h"
 #include "utils.h"
 #include "mangle.h"
+#include "listing.h"
 #include "post_fmt3_cmds.h"
 
 #include "parse.h"
@@ -34,16 +35,6 @@ void yyerror(void *scan, char *e)
 void fmt3_error2(char *e, char *yytext)
 {
 	LOG("Error: %s (%s)", e, yytext);
-}
-
-static char *verbatim(char *txt)
-{
-	char *escaped;
-
-	escaped = mangle_htmlescape(txt);
-	ASSERT(escaped);
-
-	return concat3(S("</p><pre>"), escaped, S("</pre><p>"));
 }
 
 static char *dash(int len)
@@ -244,9 +235,10 @@ out:
 %token <ptr> PLUS MINUS OPAREN CPAREN EQLTGT CARRET
 %token MATHSTART MATHEND
 
-/* verbose environment */
+/* verbose & listing environment */
 %token <ptr> VERBTEXT
 %token VERBSTART VERBEND DOLLAR
+%token LISTSTART LISTEND
 
 %type <ptr> paragraphs paragraph thing cmd cmdarg optcmdarg math mexpr
 %type <ptr> verb
@@ -291,7 +283,10 @@ thing : WORD				{ $$ = $1; }
       | DOLLAR				{ $$ = xstrdup("$"); }
       | BSLASH cmd			{ $$ = $2; }
       | MATHSTART math MATHEND		{ $$ = render_math($2); }
-      | VERBSTART verb VERBEND		{ $$ = verbatim($2); }
+      | VERBSTART verb VERBEND		{ $$ = concat3(S("</p><p>"), $2, S("</p><p>")); }
+      | LISTSTART verb LISTEND		{ $$ = concat3(S("</p><pre>"),
+							 listing_str($2),
+							 S("</pre><p>")); }
       ;
 
 cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd(data->post, $1, $3, $2); }
