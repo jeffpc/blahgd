@@ -9,12 +9,17 @@
 #include "utils.h"
 
 static umem_cache_t *var_cache;
+static umem_cache_t *var_val_cache;
 
 void init_var_subsys()
 {
 	var_cache = umem_cache_create("var-cache", sizeof(struct var), 0,
 				      NULL, NULL, NULL, NULL, NULL, 0);
 	ASSERT(var_cache);
+
+	var_val_cache = umem_cache_create("var-val-cache", sizeof(struct var_val),
+					  0, NULL, NULL, NULL, NULL, NULL, 0);
+	ASSERT(var_val_cache);
 }
 
 static int cmp(struct avl_node *aa, struct avl_node *ab)
@@ -134,6 +139,16 @@ void var_free(struct var *v)
 	}
 
 	umem_cache_free(var_cache, v);
+}
+
+struct var_val *var_val_alloc()
+{
+	return umem_cache_alloc(var_val_cache, 0);
+}
+
+void var_val_free(struct var_val *vv)
+{
+	umem_cache_free(var_val_cache, vv);
 }
 
 int var_append(struct vars *vars, const char *name, struct var_val *vv)

@@ -48,6 +48,8 @@ extern void var_dump(struct var *v, int indent);
 extern struct var *var_lookup(struct vars *vars, const char *name);
 extern int var_append(struct vars *vars, const char *name, struct var_val *vv);
 
+extern struct var_val *var_val_alloc();
+extern void var_val_free(struct var_val *vv);
 extern void var_val_dump(struct var_val *vv, int idx, int indent);
 
 static inline struct var *var_alloc_int(const char *name, uint64_t val)
@@ -93,5 +95,29 @@ static inline struct var *var_alloc_str(const char *name, const char *val)
 
 #define VAR_ALLOC_INT(n, v)	__VAR_ALLOC((n), (v), int)
 #define VAR_ALLOC_STR(n, v)	__VAR_ALLOC((n), (v), str)
+
+static inline struct var_val *var_val_alloc_str(char *str)
+{
+	struct var_val *vv;
+
+	vv = var_val_alloc();
+	if (!vv)
+		return NULL;
+
+	vv->type = VT_STR;
+	vv->str = str;
+
+	return vv;
+}
+
+#define __VAR_VAL_ALLOC(v, t)			\
+	({					\
+		struct var_val *_x;		\
+		_x = var_val_alloc_##t(v);	\
+		ASSERT(_x);			\
+		_x;				\
+	})
+
+#define VAR_VAL_ALLOC_STR(v)	__VAR_VAL_ALLOC((v), str)
 
 #endif

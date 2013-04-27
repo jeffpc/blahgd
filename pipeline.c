@@ -117,13 +117,7 @@ static struct var_val *__escape(struct var_val *v, char *(*cvt)(char*))
 
 	ASSERT(out);
 
-	v = malloc(sizeof(struct var_val));
-	ASSERT(v);
-
-	v->type = VT_STR;
-	v->str  = out;
-
-	return v;
+	return VAR_VAL_ALLOC_STR(out);
 }
 
 static struct var_val *urlescape_fxn(struct var_val *v)
@@ -148,15 +142,7 @@ static struct var_val *__datetime(struct var_val *v, const char *fmt)
 	gmtime_r(&ts, &tm);
 	strftime(buf, sizeof(buf), fmt, &tm);
 
-
-	v = malloc(sizeof(struct var_val));
-	ASSERT(v);
-
-	v->type = VT_STR;
-	v->str  = xstrdup(buf);
-	ASSERT(v->str);
-
-	return v;
+	return VAR_VAL_ALLOC_STR(xstrdup(buf));
 }
 
 static struct var_val *time_fxn(struct var_val *v)
