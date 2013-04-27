@@ -41,6 +41,7 @@ struct post {
 
 	/* fmt3 */
 	int table_nesting;
+	int texttt_nesting;
 };
 
 struct post_old {

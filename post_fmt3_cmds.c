@@ -61,6 +61,11 @@ static char *__process_textit(struct post *post, char *txt, char *opt)
 
 static char *__process_begin(struct post *post, char *txt, char *opt)
 {
+	if (!strcmp(txt, "texttt")) {
+		post->texttt_nesting++;
+		return xstrdup("</p><pre>");
+	}
+
 	if (!strcmp(txt, "enumerate"))
 		return xstrdup("</p><ol>");
 
@@ -84,6 +89,11 @@ static char *__process_begin(struct post *post, char *txt, char *opt)
 
 static char *__process_end(struct post *post, char *txt, char *opt)
 {
+	if (!strcmp(txt, "texttt")) {
+		post->texttt_nesting--;
+		return xstrdup("</pre><p>");
+	}
+
 	if (!strcmp(txt, "enumerate"))
 		return xstrdup("</ol><p>");
 
