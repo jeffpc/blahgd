@@ -194,6 +194,11 @@ static char *__process_leftrightarrow(struct post *post, char *txt, char *opt)
 	return xstrdup("&harr;");
 }
 
+static char *__process_tm(struct post *post, char *txt, char *opt)
+{
+	return xstrdup("&trade;");
+}
+
 static char *__process_nop(struct post *post, char *txt, char *opt)
 {
 	return xstrdup("");
@@ -248,6 +253,7 @@ enum cmd_idx {
 	CMD_IDX_textit,
 	CMD_IDX_texttt,
 	CMD_IDX_title,
+	CMD_IDX_tm,
 	CMD_IDX_trow,
 	CMD_IDX_wiki,
 };
@@ -262,6 +268,7 @@ static const struct cmd cmds[] = {
 	CMD_NON(leftarrow),
 	CMD_NON(leftrightarrow),
 	CMD_NON(rightarrow),
+	CMD_NON(tm),
 	CMD_NOP(category),
 	CMD_NOP(tag),
 	CMD_NOP(title),
