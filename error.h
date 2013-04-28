@@ -20,6 +20,15 @@ extern int __my_assfail3(const char *a, uintmax_t lv, const char *op,
 				      __FILE__, __LINE__);		\
 	} while(0)
 
+#define ASSERT3S(l, op, r)						\
+	do {								\
+		int64_t lhs = (l);					\
+		int64_t rhs = (r);					\
+		if (!(lhs op rhs))					\
+			__my_assfail3(#l " " #op " " #r, lhs, #op, rhs,	\
+				      __FILE__, __LINE__);		\
+	} while(0)
+
 #define ASSERT(c)							\
 	do {								\
 		if (!(c))						\
