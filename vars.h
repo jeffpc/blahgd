@@ -25,6 +25,7 @@ struct var_val {
 
 struct var {
 	struct avl_node tree;
+	int refcnt;
 	char name[VAR_MAX_VAR_NAME];
 	struct var_val val[VAR_MAX_ARRAY_SIZE];
 };
@@ -52,6 +53,30 @@ extern struct var_val *var_val_alloc();
 extern void var_val_free(struct var_val *vv);
 extern void var_val_dump(struct var_val *vv, int idx, int indent);
 
+static inline struct var *var_getref(struct var *v)
+{
+	if (!v)
+		return NULL;
+
+	ASSERT3U(v->refcnt, >=, 1);
+
+	v->refcnt++;
+	return v;
+}
+
+static inline void var_putref(struct var *v)
+{
+	if (!v)
+		return;
+
+	ASSERT3S(v->refcnt, >=, 1);
+
+	v->refcnt--;
+
+	if (!v->refcnt)
+		var_free(v);
+}
+
 static inline struct var *var_alloc_int(const char *name, uint64_t val)
 {
 	struct var *v;
@@ -78,7 +103,7 @@ static inline struct var *var_alloc_str(const char *name, const char *val)
 	v->val[0].str  = xstrdup(val);
 
 	if (!v->val[0].str) {
-		var_free(v);
+		var_putref(v);
 		return NULL;
 	}
 

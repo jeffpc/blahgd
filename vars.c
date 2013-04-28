@@ -44,7 +44,7 @@ static void __free_scope(struct avl_root *root)
 
 		avl_remove_node(root, node);
 
-		var_free(v);
+		var_putref(v);
 	}
 }
 
@@ -114,6 +114,8 @@ struct var *var_alloc(const char *name)
 	memset(v, 0, sizeof(struct var));
 	strncpy(v->name, name, VAR_MAX_VAR_NAME);
 
+	v->refcnt = 1;
+
 	return v;
 }
 
@@ -121,8 +123,8 @@ void var_free(struct var *v)
 {
 	int i, j;
 
-	if (!v)
-		return;
+	ASSERT(v);
+	ASSERT3U(v->refcnt, ==, 0);
 
 	for (i = 0; i < VAR_MAX_ARRAY_SIZE; i++) {
 		switch (v->val[i].type) {
@@ -133,7 +135,7 @@ void var_free(struct var *v)
 				break;
 			case VT_VARS:
 				for (j = 0; j < VAR_MAX_VARS_SIZE; j++)
-					var_free(v->val[i].vars[j]);
+					var_putref(v->val[i].vars[j]);
 				break;
 		}
 	}
@@ -157,7 +159,7 @@ int var_append(struct vars *vars, const char *name, struct var_val *vv)
 	struct avl_node *node;
 	struct var *v;
 	bool shouldfree;
-	int i;
+	int i, j;
 
 	shouldfree = false;
 	strncpy(key.name, name, VAR_MAX_VAR_NAME);
@@ -171,7 +173,7 @@ int var_append(struct vars *vars, const char *name, struct var_val *vv)
 			return ENOMEM;
 
 		if (avl_insert_node(&vars->scopes[vars->cur], &v->tree)) {
-			var_free(v);
+			var_putref(v);
 			return EEXIST;
 		}
 
@@ -184,13 +186,17 @@ int var_append(struct vars *vars, const char *name, struct var_val *vv)
 		if (v->val[i].type != VT_NIL)
 			continue;
 
+		if (vv->type == VT_VARS)
+			for (j = 0; j < VAR_MAX_VARS_SIZE; j++)
+				var_getref(vv->vars[j]);
+
 		v->val[i] = *vv;
 
 		return 0;
 	}
 
 	if (shouldfree)
-		var_free(v);
+		var_putref(v);
 
 	return E2BIG;
 }
