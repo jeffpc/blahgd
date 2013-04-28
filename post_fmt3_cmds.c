@@ -163,8 +163,8 @@ static char *__process_post(struct post *post, char *txt, char *opt)
 {
 	char buf[1024];
 
-	snprintf(buf, sizeof(buf), "<a href=\"/?p=%s\" alt=\"post #%s\">%s</a>",
-		 txt, txt, opt ? opt : txt);
+	snprintf(buf, sizeof(buf), "<a href=\"/?p=%s\">%s</a>",
+		 txt, opt ? opt : txt);
 
 	return S(buf);
 }
