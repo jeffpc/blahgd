@@ -160,7 +160,6 @@ static int __do_load_post_body(struct post *post, char *ibuf, size_t len)
 static int __load_post_body(struct post *post)
 {
 	static const char *exts[4] = {
-		[0] = "txt",
 		[1] = "txt",
 		[2] = "txt",
 		[3] = "tex",
@@ -172,6 +171,7 @@ static int __load_post_body(struct post *post)
 	int ret;
 	int fd;
 
+	ASSERT3U(post->fmt, >=, 1);
 	ASSERT3U(post->fmt, <=, 3);
 
 	snprintf(path, FILENAME_MAX, "data/posts/%d/post.%s", post->id,
