@@ -14,6 +14,7 @@ struct parser_output {
 	char *input;
 	size_t len;
 	size_t pos;
+	int lineno;
 };
 
 typedef void* yyscan_t;

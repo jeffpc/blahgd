@@ -14,14 +14,30 @@
 #define YY_INPUT(buf, result, max_size)	\
 	result = tmpl_input_proc(buf, max_size, yyscanner)
 int tmpl_input_proc(char *buf, int size, yyscan_t scanner);
+
+static void inc_lineno(yyscan_t scanner);
 %}
 
 %%
 [{}|%]			{ return *yytext; }
 [A-Za-z0-9_]+		{ yylval->ptr = xstrdup(yytext); return WORD; }
-[ \n\r\t]		{ yylval->c = *yytext; return CHAR; }
+[ \r\t]			{ yylval->c = *yytext; return CHAR; }
+\n			{
+				yylval->c = *yytext;
+				inc_lineno(yyscanner);
+				return CHAR;
+			}
 .			{ yylval->c = *yytext; return CHAR; }
 %%
+
+static void inc_lineno(yyscan_t scanner)
+{
+	struct parser_output *out;
+
+	out = (struct parser_output *) tmpl_get_extra(scanner);
+
+	out->lineno++;
+}
 
 int tmpl_input_proc(char *buf, int size, yyscan_t scanner)
 {

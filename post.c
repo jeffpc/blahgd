@@ -46,11 +46,12 @@ static int __do_load_post_body_fmt3(struct post *post, char *ibuf, size_t len)
 	struct parser_output x;
 	int ret;
 
-	x.req   = NULL;
-	x.post  = post;
-	x.input = ibuf;
-	x.len   = strlen(ibuf);
-	x.pos   = 0;
+	x.req    = NULL;
+	x.post   = post;
+	x.input  = ibuf;
+	x.len    = strlen(ibuf);
+	x.pos    = 0;
+	x.lineno = 0;
 
 	post->table_nesting = 0;
 	post->texttt_nesting = 0;

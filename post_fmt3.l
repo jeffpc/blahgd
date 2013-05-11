@@ -16,6 +16,8 @@ extern void fmt3_error2(char *, char *);
 #define YY_INPUT(buf, result, max_size)	\
 	result = fmt3_input_proc(buf, max_size, yyscanner)
 int fmt3_input_proc(char *buf, int size, yyscan_t scanner);
+
+static void inc_lineno(yyscan_t scanner);
 %}
 
 %x VERBATIM
@@ -26,12 +28,20 @@ int fmt3_input_proc(char *buf, int size, yyscan_t scanner);
 "\\begin{verbatim}"		{ BEGIN(VERBATIM); return VERBSTART; }
 <VERBATIM>"\\end{verbatim}"	{ BEGIN(INITIAL); return VERBEND; }
 <VERBATIM>.			{ yylval->ptr = xstrdup(yytext); return VERBTEXT; }
-<VERBATIM>.|\n			{ yylval->ptr = xstrdup(yytext); return VERBTEXT; }
+<VERBATIM>\n			{
+					yylval->ptr = xstrdup(yytext);
+					inc_lineno(yyscanner);
+					return VERBTEXT;
+				}
 
 "\\begin{listing}"		{ BEGIN(LISTING); return LISTSTART; }
 <LISTING>"\\end{listing}"	{ BEGIN(INITIAL); return LISTEND; }
 <LISTING>.			{ yylval->ptr = xstrdup(yytext); return VERBTEXT; }
-<LISTING>.|\n			{ yylval->ptr = xstrdup(yytext); return VERBTEXT; }
+<LISTING>\n			{
+					yylval->ptr = xstrdup(yytext);
+					inc_lineno(yyscanner);
+					return VERBTEXT;
+				}
 
 "$"			{ BEGIN(MATH); return MATHSTART; }
 <MATH>"$"		{ BEGIN(INITIAL); return MATHEND; }
@@ -52,8 +62,18 @@ int fmt3_input_proc(char *buf, int size, yyscan_t scanner);
 <MATH>[ \t]+		{ yylval->ptr = xstrdup(yytext); return WSPACE; }
 
 "\\$"			{ return DOLLAR; }
-\n\n[ \t\n]*		{ return PAREND; }
-\n			{ return NLINE; }
+\n\n[ \t\n]*		{
+				int i;
+
+				for (i = 0; i < strlen(yytext); i++)
+					if (yytext[i] == '\n')
+						inc_lineno(yyscanner);
+				return PAREND;
+			}
+\n			{
+				inc_lineno(yyscanner);
+				return NLINE;
+			}
 [ \t]+			{ yylval->ptr = xstrdup(yytext); return WSPACE; }
 "\\"			{ yylval->ptr = xstrdup(yytext); return BSLASH; }
 "{"			{ yylval->ptr = xstrdup(yytext); return OCURLY; }
@@ -74,8 +94,17 @@ int fmt3_input_proc(char *buf, int size, yyscan_t scanner);
 [\xc0-\xdf]		{ yylval->ptr = xstrdup(yytext); return UTF8FIRST2; }
 [\x80-\xbf]		{ yylval->ptr = xstrdup(yytext); return UTF8REST; }
 [A-Za-z0-9]+		{ yylval->ptr = xstrdup(yytext); return WORD; }
-.|\n			{ fmt3_error2("post text contains invalid characters", yytext); yyterminate(); }
+.			{ fmt3_error2("post text contains invalid characters", yytext); yyterminate(); }
 %%
+
+static void inc_lineno(yyscan_t scanner)
+{
+	struct parser_output *out;
+
+	out = (struct parser_output *) fmt3_get_extra(scanner);
+
+	out->lineno++;
+}
 
 int fmt3_input_proc(char *buf, int size, yyscan_t scanner)
 {
