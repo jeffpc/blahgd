@@ -69,7 +69,7 @@ extern int blahg_tag(struct req *req, char *tag, int paged);
 extern int blahg_comment(struct req *req);
 extern int blahg_feed(struct req *req, char *feed, int p);
 extern int blahg_index(struct req *req, int paged);
-extern int blahg_story(struct req *req, int p);
+extern int blahg_story(struct req *req, int p, bool preview);
 extern int blahg_admin(struct req *req);
 #ifdef USE_XMLRPC
 extern int blahg_pingback();

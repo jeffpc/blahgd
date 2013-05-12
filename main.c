@@ -272,7 +272,8 @@ int main(int argc, char **argv)
 			ret = blahg_index(&request, request.args.paged);
 			break;
 		case PAGE_STORY:
-			ret = blahg_story(&request, request.args.p);
+			ret = blahg_story(&request, request.args.p,
+					  request.args.preview == PREVIEW_SECRET);
 			break;
 #if 0
 #ifdef USE_XMLRPC

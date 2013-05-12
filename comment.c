@@ -58,7 +58,7 @@ int write_out_comment(struct req *req, int id, char *author, char *email,
 	time_t now_sec;
 	struct tm *now_tm;
 
-	ret = load_post(req, id, NULL);
+	ret = load_post(req, id, NULL, false);
 	if (ret) {
 		LOG("Gah! %d (postid=%d)", ret, id);
 		return 1;

@@ -29,7 +29,7 @@ static void __load_posts(struct req *req, int page)
 		postid   = SQL_COL_INT(stmt, 0);
 		posttime = SQL_COL_INT(stmt, 1);
 
-		if (load_post(req, postid, NULL))
+		if (load_post(req, postid, NULL, false))
 			continue;
 
 		if (posttime > maxtime)

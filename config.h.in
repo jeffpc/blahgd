@@ -36,4 +36,6 @@
 #define LATEX_BIN			"/opt/local/bin/latex"
 #define DVIPNG_BIN			"/opt/local/bin/dvipng"
 
+#define PREVIEW_SECRET			0x1985
+
 #endif

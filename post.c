@@ -210,8 +210,6 @@ static int __load_post_comments(struct post *post)
 	sqlite3_stmt *stmt;
 	int ret;
 
-	post->numcom = 0;
-
 	SQL(stmt, "SELECT id, author, email, strftime(\"%s\", time), "
 	    "remote_addr, url FROM comments WHERE post=? AND moderated=1 "
 	    "ORDER BY id");
@@ -316,7 +314,7 @@ static void __store_vars(struct req *req, const char *var, struct post *post,
 	}
 }
 
-int load_post(struct req *req, int postid, const char *titlevar)
+int load_post(struct req *req, int postid, const char *titlevar, bool preview)
 {
 	char path[FILENAME_MAX];
 	struct post post;
@@ -333,35 +331,43 @@ int load_post(struct req *req, int postid, const char *titlevar)
 	INIT_LIST_HEAD(&post.tags);
 	INIT_LIST_HEAD(&post.comments);
 
-	open_db();
-	SQL(stmt, "SELECT title, strftime(\"%s\", time), fmt FROM posts WHERE id=?");
-	SQL_BIND_INT(stmt, 1, postid);
-	SQL_FOR_EACH(stmt) {
-		post.title = xstrdup(SQL_COL_STR(stmt, 0));
-		post.time  = SQL_COL_INT(stmt, 1);
-		post.fmt   = SQL_COL_INT(stmt, 2);
+	if (preview) {
+		post.title = xstrdup("PREVIEW");
+		post.time  = time(NULL);
+		post.fmt   = 3;
+
+		err = 0;
+	} else {
+		open_db();
+		SQL(stmt, "SELECT title, strftime(\"%s\", time), fmt FROM posts WHERE id=?");
+		SQL_BIND_INT(stmt, 1, postid);
+		SQL_FOR_EACH(stmt) {
+			post.title = xstrdup(SQL_COL_STR(stmt, 0));
+			post.time  = SQL_COL_INT(stmt, 1);
+			post.fmt   = SQL_COL_INT(stmt, 2);
+		}
+
+		if (!post.title) {
+			err = ENOENT;
+			goto err;
+		}
+
+		SQL(stmt, "SELECT tag FROM post_tags WHERE post=? ORDER BY tag");
+		SQL_BIND_INT(stmt, 1, postid);
+		SQL_FOR_EACH(stmt) {
+			struct post_tag *tag;
+
+			tag = malloc(sizeof(struct post_tag));
+			ASSERT(tag);
+
+			tag->tag = xstrdup(SQL_COL_STR(stmt, 0));
+			ASSERT(tag->tag);
+
+			list_add_tail(&tag->list, &post.tags);
+		}
+
+		err = __load_post_comments(&post);
 	}
-
-	if (!post.title) {
-		err = ENOENT;
-		goto err;
-	}
-
-	SQL(stmt, "SELECT tag FROM post_tags WHERE post=? ORDER BY tag");
-	SQL_BIND_INT(stmt, 1, postid);
-	SQL_FOR_EACH(stmt) {
-		struct post_tag *tag;
-
-		tag = malloc(sizeof(struct post_tag));
-		ASSERT(tag);
-
-		tag->tag = xstrdup(SQL_COL_STR(stmt, 0));
-		ASSERT(tag->tag);
-
-		list_add_tail(&tag->list, &post.tags);
-	}
-
-	err = __load_post_comments(&post);
 
 	if (!err)
 		err = __load_post_body(&post);
