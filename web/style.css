@@ -66,6 +66,11 @@ p, li, .feedback {
 	letter-spacing: -1px;
 }
 
+dt, dd {
+	font: 90%/125% 'Lucida Grande', 'Lucida Sans Unicode', Verdana, sans-serif;
+	letter-spacing: -1px;
+}
+
 /* classes used by the_meta() */
 ul.post-meta {
 	list-style: none;
