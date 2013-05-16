@@ -169,6 +169,16 @@ static char *__process_post(struct post *post, char *txt, char *opt)
 	return S(buf);
 }
 
+static char *__process_taglink(struct post *post, char *txt, char *opt)
+{
+	char buf[1024];
+
+	snprintf(buf, sizeof(buf), "<a href=\"/?tag=%s\">%s</a>",
+		 txt, opt ? opt : txt);
+
+	return S(buf);
+}
+
 static char *__process_degree(struct post *post, char *txt, char *opt)
 {
 	return concat(S("\xc2\xb0"), txt);
@@ -249,6 +259,7 @@ enum cmd_idx {
 	CMD_IDX_subsection,
 	CMD_IDX_subsubsection,
 	CMD_IDX_tag,
+	CMD_IDX_taglink,
 	CMD_IDX_textbf,
 	CMD_IDX_textit,
 	CMD_IDX_texttt,
@@ -281,6 +292,7 @@ static const struct cmd cmds[] = {
 	CMD_OPT(photo),
 	CMD_OPT(photolink),
 	CMD_OPT(post),
+	CMD_OPT(taglink),
 	CMD_OPT(wiki),
 	CMD_REQ(begin),
 	CMD_REQ(bug),
