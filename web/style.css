@@ -61,13 +61,8 @@ ol#comments li p {
 	font-size: 100%;
 }
 
-p, li, .feedback {
+p, dt, dd, li, .feedback {
 	font: 90%/175% 'Lucida Grande', 'Lucida Sans Unicode', Verdana, sans-serif;
-	letter-spacing: -1px;
-}
-
-dt, dd {
-	font: 90%/125% 'Lucida Grande', 'Lucida Sans Unicode', Verdana, sans-serif;
 	letter-spacing: -1px;
 }
 
