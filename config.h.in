@@ -7,35 +7,35 @@
 #cmakedefine USE_XMLRPC 1
 
 /* settings */
-#define HTML_INDEX_STORIES		10
-#define HTML_ARCHIVE_STORIES		10
-#define HTML_CATEGORY_STORIES		10
-#define HTML_TAG_STORIES		10
-#define FEED_INDEX_STORIES		15
+#cmakedefine HTML_INDEX_STORIES		${HTML_INDEX_STORIES}
+#cmakedefine HTML_ARCHIVE_STORIES	${HTML_ARCHIVE_STORIES}
+#cmakedefine HTML_CATEGORY_STORIES	${HTML_CATEGORY_STORIES}
+#cmakedefine HTML_TAG_STORIES		${HTML_TAG_STORIES}
+#cmakedefine FEED_INDEX_STORIES		${FEED_INDEX_STORIES}
 
-#define COMMENT_MAX_DELAY		(3600 * 1000000000ULL)	/* 60 mins max think time */
-#define COMMENT_MIN_DELAY		(10 * 1000000000ULL)	/* 10 secs min think time */
+#cmakedefine COMMENT_MAX_DELAY		(${COMMENT_MAX_DELAY} * 1000000000ULL)
+#cmakedefine COMMENT_MIN_DELAY		(${COMMENT_MIN_DELAY} * 1000000000ULL)
 
-#define DB_FILE				"data/db2"
+#cmakedefine DB_FILE			"${DB_FILE}"
 
-#define ERROR_LOG_FILE			"data/logs/comment_error.log"
+#cmakedefine ERROR_LOG_FILE		"${ERROR_LOG_FILE}"
 
-#define BASE_URL			"http://blahg.josefsipek.net"
-#define BUG_BASE_URL			"http://bugs.31bits.net"
-#define WIKI_BASE_URL			"http://en.wikipedia.org/wiki"
-#define PHOTO_BASE_URL			"http://www.josefsipek.net/photos"
+#cmakedefine BASE_URL			"${BASE_URL}"
+#cmakedefine BUG_BASE_URL		"${BUG_BASE_URL}"
+#cmakedefine WIKI_BASE_URL		"${WIKI_BASE_URL}"
+#cmakedefine PHOTO_BASE_URL		"${PHOTO_BASE_URL}"
 
-#define VAR_MAX_SCOPES			10
-#define VAR_MAX_VAR_NAME		32
-#define VAR_MAX_ARRAY_SIZE		200
-#define VAR_MAX_VARS_SIZE		10
+#cmakedefine VAR_MAX_SCOPES		${VAR_MAX_SCOPES}
+#cmakedefine VAR_MAX_VAR_NAME		${VAR_MAX_VAR_NAME}
+#cmakedefine VAR_MAX_ARRAY_SIZE		${VAR_MAX_ARRAY_SIZE}
+#cmakedefine VAR_MAX_VARS_SIZE		${VAR_MAX_VARS_SIZE}
 
-#define TAGCLOUD_MIN_SIZE		6
-#define TAGCLOUD_MAX_SIZE		18
+#cmakedefine TAGCLOUD_MIN_SIZE		${TAGCLOUD_MIN_SIZE}
+#cmakedefine TAGCLOUD_MAX_SIZE		${TAGCLOUD_MAX_SIZE}
 
-#define LATEX_BIN			"/opt/local/bin/latex"
-#define DVIPNG_BIN			"/opt/local/bin/dvipng"
+#cmakedefine LATEX_BIN			"${LATEX_BIN}"
+#cmakedefine DVIPNG_BIN			"${DVIPNG_BIN}"
 
-#define PREVIEW_SECRET			0x1985
+#cmakedefine PREVIEW_SECRET		${PREVIEW_SECRET}
 
 #endif

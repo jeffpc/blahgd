@@ -2,11 +2,7 @@ cmake_minimum_required(VERSION 2.8.5)
 
 enable_testing()
 
-include(CheckFunctionExists)
-configure_file(config.h.in config.h)
-
-check_function_exists(flock HAVE_FLOCK)
-
+include(config.cmake)
 set(CMAKE_C_FLAGS "-Wall -O2 -g -std=gnu99 -D_XOPEN_SOURCE=700 -D_STDC_C99 -D_XPG6 -D__EXTENSIONS__")
 
 find_package(BISON)
