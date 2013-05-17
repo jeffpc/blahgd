@@ -22,8 +22,6 @@ set_default(COMMENT_MIN_DELAY		10)	# 10 secs min think time
 
 set_default(DB_FILE			"data/db2")
 
-set_default(ERROR_LOG_FILE		"data/logs/comment_error.log")
-
 set_default(BASE_URL			"http://blahg.josefsipek.net")
 set_default(BUG_BASE_URL		"http://bugs.31bits.net")
 set_default(WIKI_BASE_URL		"http://en.wikipedia.org/wiki")
