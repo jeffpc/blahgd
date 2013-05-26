@@ -281,6 +281,7 @@ thing : WORD				{ $$ = $1; }
       | TILDE				{ $$ = xstrdup("&nbsp;"); }
       | AMP				{ $$ = xstrdup("</td><td>"); }
       | DOLLAR				{ $$ = xstrdup("$"); }
+      | PERCENT				{ $$ = $1; }
       | BSLASH cmd			{ $$ = $2; }
       | MATHSTART math MATHEND		{ $$ = render_math($2); }
       | VERBSTART verb VERBEND		{ $$ = concat3(S("</p><p>"), $2, S("</p><p>")); }
@@ -299,7 +300,6 @@ cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd(data->post, $1, $3, $2); }
     | CBRACE			{ $$ = $1; }
     | AMP			{ $$ = xstrdup("&amp;"); }
     | USCORE			{ $$ = $1; }
-    | PERCENT			{ $$ = $1; }
     | TILDE			{ $$ = $1; }
     ;
 
