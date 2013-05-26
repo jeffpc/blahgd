@@ -74,6 +74,7 @@ static void inc_lineno(yyscan_t scanner);
 				inc_lineno(yyscanner);
 				return NLINE;
 			}
+%[^\n]*			{ /* tex comment */ }
 [ \t]+			{ yylval->ptr = xstrdup(yytext); return WSPACE; }
 "\\"			{ yylval->ptr = xstrdup(yytext); return BSLASH; }
 "{"			{ yylval->ptr = xstrdup(yytext); return OCURLY; }
