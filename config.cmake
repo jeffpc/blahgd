@@ -17,7 +17,7 @@ set_default(HTML_CATEGORY_STORIES	10)
 set_default(HTML_TAG_STORIES		10)
 set_default(FEED_INDEX_STORIES		15)
 
-set_default(COMMENT_MAX_DELAY		3600)	# 60 mins max think time
+set_default(COMMENT_MAX_DELAY		86400)	# 1 day max think time
 set_default(COMMENT_MIN_DELAY		10)	# 10 secs min think time
 
 set_default(DB_FILE			"data/db2")
