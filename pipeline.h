@@ -6,7 +6,7 @@
 
 struct pipestages {
 	const char *name;
-	struct var_val *(*f)(struct var_val *);
+	struct val *(*f)(struct val *);
 };
 
 struct pipeline {

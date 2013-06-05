@@ -18,9 +18,9 @@ void init_pipe_subsys()
 	ASSERT(pipeline_cache);
 }
 
-static struct var_val *nop_fxn(struct var_val *v)
+static struct val *nop_fxn(struct val *val)
 {
-	return v;
+	return val;
 }
 
 static char *str_of_int(uint64_t v)
@@ -93,76 +93,79 @@ static char *__urlescape_str(char *in)
 	return out;
 }
 
-static struct var_val *__escape(struct var_val *v, char *(*cvt)(char*))
+static struct val *__escape(struct val *val, char *(*cvt)(char*))
 {
 	char *out;
 
 	out = NULL;
 
-	switch (v->type) {
-		case VT_VARS:
-			var_val_dump(v, 0, 10);
+	switch (val->type) {
+		case VT_NV:
+		case VT_LIST:
+			out = xstrdup("FAKED");
+			val_dump(val, 10);
 			ASSERT(0);
 			break;
-		case VT_NIL:
-			out = xstrdup("");
-			break;
 		case VT_INT:
-			out = str_of_int(v->i);
+			out = str_of_int(val->i);
 			break;
 		case VT_STR:
-			out = cvt(v->str);
+			out = cvt(val->str);
 			break;
 	}
 
+	val_putref(val);
+
 	ASSERT(out);
 
-	return VAR_VAL_ALLOC_STR(out);
+	return VAL_ALLOC_STR(out);
 }
 
-static struct var_val *urlescape_fxn(struct var_val *v)
+static struct val *urlescape_fxn(struct val *val)
 {
-	return __escape(v, __urlescape_str);
+	return __escape(val, __urlescape_str);
 }
 
-static struct var_val *escape_fxn(struct var_val *v)
+static struct val *escape_fxn(struct val *val)
 {
-	return __escape(v, mangle_htmlescape);
+	return __escape(val, mangle_htmlescape);
 }
 
-static struct var_val *__datetime(struct var_val *v, const char *fmt)
+static struct val *__datetime(struct val *val, const char *fmt)
 {
 	char buf[64];
 	struct tm tm;
 	time_t ts;
 
-	ASSERT(v->type == VT_INT);
+	ASSERT3U(val->type, ==, VT_INT);
 
-	ts = v->i;
+	ts = val->i;
 	gmtime_r(&ts, &tm);
 	strftime(buf, sizeof(buf), fmt, &tm);
 
-	return VAR_VAL_ALLOC_STR(xstrdup(buf));
+	val_putref(val);
+
+	return VAL_ALLOC_STR(xstrdup(buf));
 }
 
-static struct var_val *time_fxn(struct var_val *v)
+static struct val *time_fxn(struct val *val)
 {
-	return __datetime(v, "%H:%M");
+	return __datetime(val, "%H:%M");
 }
 
-static struct var_val *date_fxn(struct var_val *v)
+static struct val *date_fxn(struct val *val)
 {
-	return __datetime(v, "%B %e, %Y");
+	return __datetime(val, "%B %e, %Y");
 }
 
-static struct var_val *zulu_fxn(struct var_val *v)
+static struct val *zulu_fxn(struct val *val)
 {
-	return __datetime(v, "%Y-%m-%dT%H:%M:%SZ");
+	return __datetime(val, "%Y-%m-%dT%H:%M:%SZ");
 }
 
-static struct var_val *rfc822_fxn(struct var_val *v)
+static struct val *rfc822_fxn(struct val *val)
 {
-	return __datetime(v, "%a, %d %b %Y %H:%M:%S +0000");
+	return __datetime(val, "%a, %d %b %Y %H:%M:%S +0000");
 }
 
 static const struct pipestages stages[] = {
@@ -203,6 +206,7 @@ void pipeline_destroy(struct list_head *pipelist)
 	struct pipeline *cur;
 	struct pipeline *tmp;
 
-	list_for_each_entry_safe(cur, tmp, pipelist, pipe)
+	list_for_each_entry_safe(cur, tmp, pipelist, pipe) {
 		umem_cache_free(pipeline_cache, cur);
+	}
 }

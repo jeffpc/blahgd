@@ -11,32 +11,24 @@
 #include "error.h"
 #include "utils.h"
 
-static void __store_title(struct vars *vars, const char *title)
-{
-	struct var_val vv;
-
-	memset(&vv, 0, sizeof(vv));
-
-        vv.type = VT_STR;
-        vv.str  = xstrdup(title);
-        ASSERT(vv.str);
-
-        ASSERT(!var_append(vars, "title", &vv));
-}
-
 static int __load_post(struct req *req, int p, bool preview)
 {
-	int ret;
+	struct val *posts;
+	struct val *post;
 
-	ret = load_post(req, p, "title", preview);
+	post = load_post(req, p, "title", preview);
+	if (!post) {
+		LOG("failed to load post #%d: %s (%d)%s", p, "XXX",
+		    -1, preview ? " preview" : "");
 
-	if (ret) {
-		LOG("failed to load post #%d: %s (%d)%s", p, strerror(ret),
-		    ret, preview ? " preview" : "");
-		__store_title(&req->vars, "not found");
+		VAR_SET_STR(&req->vars, "title", xstrdup("not found"));
+	} else {
+		posts = VAR_LOOKUP_VAL(&req->vars, "posts");
+
+		VAL_SET_LIST(posts, 0, post);
 	}
 
-	return ret;
+	return post ? 0 : ENOENT;
 }
 
 int blahg_story(struct req *req, int p, bool preview)

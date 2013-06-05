@@ -225,14 +225,19 @@ out:
 };
 
 /* generic tokens */
-%token <ptr> WSPACE BSLASH OCURLY CCURLY OBRACE CBRACE AMP
-%token <ptr> USCORE PERCENT TILDE DASH OQUOT CQUOT SCHAR ELLIPSIS
-%token <ptr> UTF8FIRST3 UTF8FIRST2 UTF8REST WORD ASTERISK SLASH
-%token <ptr> PIPE
+%token <ptr> WSPACE
+%token <ptr> DASH OQUOT CQUOT SCHAR
+%token <ptr> UTF8FIRST3 UTF8FIRST2 UTF8REST WORD
+%token SLASH
+%token PIPE
+%token OCURLY CCURLY OBRACE CBRACE
+%token USCORE ASTERISK
+%token BSLASH PERCENT AMP TILDE ELLIPSIS
 %token PAREND NLINE
 
 /* math specific tokens */
-%token <ptr> PLUS MINUS OPAREN CPAREN EQLTGT CARRET
+%token <ptr> PLUS MINUS EQLTGT CARRET
+%token OPAREN CPAREN
 %token MATHSTART MATHEND
 
 /* verbose & listing environment */
@@ -268,20 +273,18 @@ thing : WORD				{ $$ = $1; }
       | UTF8FIRST3 UTF8REST UTF8REST	{ $$ = concat3($1, $2, $3); }
       | NLINE				{ $$ = xstrdup(data->post->texttt_nesting ? "\n" : " "); }
       | WSPACE				{ $$ = $1; }
-      | PIPE				{ $$ = $1; }
-      | PLUS				{ $$ = $1; }
-      | MINUS				{ $$ = dash(strlen($1)); }
-      | ASTERISK			{ $$ = $1; }
-      | SLASH				{ $$ = $1; }
-      | DASH				{ $$ = dash(strlen($1)); }
-      | OQUOT				{ $$ = oquote(strlen($1)); }
-      | CQUOT				{ $$ = cquote(strlen($1)); }
-      | SCHAR				{ $$ = special_char($1); }
+      | PIPE				{ $$ = xstrdup("|"); }
+      | ASTERISK			{ $$ = xstrdup("*"); }
+      | SLASH				{ $$ = xstrdup("/"); }
+      | DASH				{ $$ = dash(strlen($1)); free($1); }
+      | OQUOT				{ $$ = oquote(strlen($1)); free($1); }
+      | CQUOT				{ $$ = cquote(strlen($1)); free($1); }
+      | SCHAR				{ $$ = special_char($1); free($1); }
       | ELLIPSIS			{ $$ = xstrdup("&hellip;"); }
       | TILDE				{ $$ = xstrdup("&nbsp;"); }
       | AMP				{ $$ = xstrdup("</td><td>"); }
       | DOLLAR				{ $$ = xstrdup("$"); }
-      | PERCENT				{ $$ = $1; }
+      | PERCENT				{ $$ = xstrdup("%"); }
       | BSLASH cmd			{ $$ = $2; }
       | MATHSTART math MATHEND		{ $$ = render_math($2); }
       | VERBSTART verb VERBEND		{ $$ = concat3(S("</p><p>"), $2, S("</p><p>")); }
@@ -290,17 +293,17 @@ thing : WORD				{ $$ = $1; }
 							 S("</pre><p>")); }
       ;
 
-cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd(data->post, $1, $3, $2); }
-    | WORD cmdarg		{ $$ = process_cmd(data->post, $1, $2, NULL); }
-    | WORD			{ $$ = process_cmd(data->post, $1, NULL, NULL); }
+cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd(data->post, $1, $3, $2); free($1); }
+    | WORD cmdarg		{ $$ = process_cmd(data->post, $1, $2, NULL); free($1); }
+    | WORD			{ $$ = process_cmd(data->post, $1, NULL, NULL); free($1); }
     | BSLASH			{ $$ = xstrdup("<br/>"); }
-    | OCURLY			{ $$ = $1; }
-    | CCURLY			{ $$ = $1; }
-    | OBRACE			{ $$ = $1; }
-    | CBRACE			{ $$ = $1; }
+    | OCURLY			{ $$ = xstrdup("{"); }
+    | CCURLY			{ $$ = xstrdup("}"); }
+    | OBRACE			{ $$ = xstrdup("["); }
+    | CBRACE			{ $$ = xstrdup("]"); }
     | AMP			{ $$ = xstrdup("&amp;"); }
-    | USCORE			{ $$ = $1; }
-    | TILDE			{ $$ = $1; }
+    | USCORE			{ $$ = xstrdup("_"); }
+    | TILDE			{ $$ = xstrdup("~"); }
     ;
 
 optcmdarg : OBRACE paragraph CBRACE	{ $$ = $2; }
@@ -320,15 +323,15 @@ mexpr : WORD				{ $$ = $1; }
       | WSPACE				{ $$ = $1; }
       | SCHAR				{ $$ = $1; }
       | mexpr EQLTGT mexpr 		{ $$ = concat3($1, $2, $3); }
-      | mexpr USCORE mexpr 		{ $$ = concat3($1, $2, $3); }
+      | mexpr USCORE mexpr 		{ $$ = concat3($1, S("_"), $3); }
       | mexpr CARRET mexpr 		{ $$ = concat3($1, $2, $3); }
       | mexpr PLUS mexpr 		{ $$ = concat3($1, $2, $3); }
       | mexpr MINUS mexpr 		{ $$ = concat3($1, $2, $3); }
-      | mexpr ASTERISK mexpr	 	{ $$ = concat3($1, $2, $3); }
-      | mexpr SLASH mexpr	 	{ $$ = concat3($1, $2, $3); }
-      | BSLASH WORD			{ $$ = concat($1, $2); }
-      | OPAREN math CPAREN		{ $$ = concat3($1, $2, $3); }
-      | OCURLY math CCURLY		{ $$ = concat3($1, $2, $3); }
+      | mexpr ASTERISK mexpr	 	{ $$ = concat3($1, S("*"), $3); }
+      | mexpr SLASH mexpr	 	{ $$ = concat3($1, S("/"), $3); }
+      | BSLASH WORD			{ $$ = concat(S("\\"), $2); }
+      | OPAREN math CPAREN		{ $$ = concat3(S("("), $2, S(")")); }
+      | OCURLY math CCURLY		{ $$ = concat3(S("{"), $2, S("}")); }
       ;
 
 %%

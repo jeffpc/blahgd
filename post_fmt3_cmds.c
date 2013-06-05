@@ -16,7 +16,13 @@
 
 static char *__process_listing(struct post *post, char *txt, char *opt)
 {
-	return concat3(S("</p><pre>"), listing(post, txt), S("</pre><p>"));
+	char *out;
+
+	out = listing(post, txt);
+
+	free(txt);
+
+	return concat3(S("</p><pre>"), out, S("</pre><p>"));
 }
 
 static char *__process_link(struct post *post, char *txt, char *opt)
@@ -61,6 +67,7 @@ static char *__process_textit(struct post *post, char *txt, char *opt)
 
 static char *__process_begin(struct post *post, char *txt, char *opt)
 {
+#warning memory leaks galore
 	if (!strcmp(txt, "texttt")) {
 		post->texttt_nesting++;
 		return xstrdup("</p><pre>");
@@ -89,6 +96,7 @@ static char *__process_begin(struct post *post, char *txt, char *opt)
 
 static char *__process_end(struct post *post, char *txt, char *opt)
 {
+#warning memory leaks galore
 	if (!strcmp(txt, "texttt")) {
 		post->texttt_nesting--;
 		return xstrdup("</pre><p>");
@@ -166,6 +174,9 @@ static char *__process_post(struct post *post, char *txt, char *opt)
 	snprintf(buf, sizeof(buf), "<a href=\"/?p=%s\">%s</a>",
 		 txt, opt ? opt : txt);
 
+	free(txt);
+	free(opt);
+
 	return S(buf);
 }
 
@@ -211,6 +222,9 @@ static char *__process_tm(struct post *post, char *txt, char *opt)
 
 static char *__process_nop(struct post *post, char *txt, char *opt)
 {
+	free(txt);
+	free(opt);
+
 	return xstrdup("");
 }
 

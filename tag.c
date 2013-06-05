@@ -57,52 +57,32 @@ static const char *wordpress_catn[] = {
 
 static void __store_title(struct vars *vars, const char *title)
 {
-	struct var_val vv;
-
-	memset(&vv, 0, sizeof(vv));
-
-        vv.type = VT_STR;
-        vv.str  = xstrdup(title);
-        ASSERT(vv.str);
-
-        ASSERT(!var_append(vars, "title", &vv));
+	VAR_SET_STR(vars, "title", xstrdup(title));
 }
 
 static void __store_tag(struct vars *vars, const char *tag)
 {
-	struct var_val vv;
-
-	memset(&vv, 0, sizeof(vv));
-
-        vv.type = VT_STR;
-        vv.str  = xstrdup(tag);
-        ASSERT(vv.str);
-
-        ASSERT(!var_append(vars, "tagid", &vv));
+	VAR_SET_STR(vars, "tagid", xstrdup(tag));
 }
 
 static void __store_pages(struct vars *vars, int page)
 {
-	struct var_val vv;
-
-	memset(&vv, 0, sizeof(vv));
-
-	vv.type = VT_INT;
-	vv.i    = page + 1;
-
-	ASSERT(!var_append(vars, "prevpage", &vv));
-
-	vv.type = VT_INT;
-	vv.i    = page - 1;
-
-	ASSERT(!var_append(vars, "nextpage", &vv));
+	VAR_SET_INT(vars, "prevpage", page + 1);
+	VAR_SET_INT(vars, "nextpage", page - 1);
 }
 
 static void __load_posts_tag(struct req *req, int page, const char *tag,
 			     bool istag, int nstories)
 {
 	sqlite3_stmt *stmt;
+	struct val *posts;
+	struct val *val;
 	int ret;
+	int i;
+
+	i = 0;
+
+	posts = VAR_LOOKUP_VAL(&req->vars, "posts");
 
 	open_db();
 	if (istag)
@@ -121,8 +101,11 @@ static void __load_posts_tag(struct req *req, int page, const char *tag,
 
 		postid = SQL_COL_INT(stmt, 0);
 
-		if (load_post(req, postid, NULL, false))
+		val = load_post(req, postid, NULL, false);
+		if (!val)
 			continue;
+
+		VAL_SET_LIST(posts, i++, val);
 	}
 }
 
