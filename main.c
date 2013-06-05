@@ -138,31 +138,6 @@ int R404(struct req *req, char *tmpl)
 	return 0;
 }
 
-static void __store_str(struct vars *vars, const char *key, char *val)
-{
-	struct var_val vv;
-
-	memset(&vv, 0, sizeof(vv));
-
-        vv.type = VT_STR;
-        vv.str  = xstrdup(val);
-        ASSERT(vv.str);
-
-        ASSERT(!var_append(vars, key, &vv));
-}
-
-static void __store_int(struct vars *vars, const char *key, uint64_t val)
-{
-	struct var_val vv;
-
-	memset(&vv, 0, sizeof(vv));
-
-        vv.type = VT_INT;
-        vv.i    = val;
-
-        ASSERT(!var_append(vars, key, &vv));
-}
-
 static void req_init(struct req *req)
 {
 	req->dump_latency = true;
@@ -175,8 +150,10 @@ static void req_init(struct req *req)
 
 	vars_init(&req->vars);
 
-	__store_str(&req->vars, "baseurl", BASE_URL);
-	__store_int(&req->vars, "now", gettime());
+	VAR_SET_STR(&req->vars, "baseurl", xstrdup(BASE_URL));
+	VAR_SET_INT(&req->vars, "now", gettime());
+
+	VAR_SET(&req->vars, "posts", VAL_ALLOC(VT_LIST));
 }
 
 static void req_destroy(struct req *req)
@@ -206,6 +183,8 @@ static void req_destroy(struct req *req)
 		       delta / 1000000000UL,
 		       delta % 1000000000UL);
 	}
+
+	free(req->body);
 }
 
 void req_head(struct req *req, char *name, char *val)

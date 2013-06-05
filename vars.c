@@ -9,7 +9,8 @@
 #include "utils.h"
 
 static umem_cache_t *var_cache;
-static umem_cache_t *var_val_cache;
+static umem_cache_t *val_cache;
+static umem_cache_t *val_item_cache;
 
 void init_var_subsys()
 {
@@ -17,22 +18,45 @@ void init_var_subsys()
 				      NULL, NULL, NULL, NULL, NULL, 0);
 	ASSERT(var_cache);
 
-	var_val_cache = umem_cache_create("var-val-cache", sizeof(struct var_val),
-					  0, NULL, NULL, NULL, NULL, NULL, 0);
-	ASSERT(var_val_cache);
+	val_cache = umem_cache_create("val-cache", sizeof(struct val),
+				      0, NULL, NULL, NULL, NULL, NULL, 0);
+	ASSERT(val_cache);
+
+	val_item_cache = umem_cache_create("val-item-cache",
+					   sizeof(struct val_item), 0, NULL,
+					   NULL, NULL, NULL, NULL, 0);
+	ASSERT(val_item_cache);
 }
 
-static int cmp(struct avl_node *aa, struct avl_node *ab)
+static int cmp_var(struct avl_node *aa, struct avl_node *ab)
 {
 	struct var *a = container_of(aa, struct var, tree);
 	struct var *b = container_of(ab, struct var, tree);
 
-	return strncmp(a->name, b->name, VAR_MAX_VAR_NAME);
+	return strncmp(a->name, b->name, VAR_NAME_MAXLEN);
+}
+
+static int cmp_val_list(struct avl_node *aa, struct avl_node *ab)
+{
+	struct val_item *a = container_of(aa, struct val_item, tree);
+	struct val_item *b = container_of(ab, struct val_item, tree);
+
+	if (a->key.i < b->key.i)
+		return -1;
+	return (a->key.i != b->key.i);
+}
+
+static int cmp_val_nv(struct avl_node *aa, struct avl_node *ab)
+{
+	struct val_item *a = container_of(aa, struct val_item, tree);
+	struct val_item *b = container_of(ab, struct val_item, tree);
+
+	return strncmp(a->key.name, b->key.name, VAR_VAL_KEY_MAXLEN);
 }
 
 static void __init_scope(struct vars *vars)
 {
-	AVL_ROOT_INIT(&vars->scopes[vars->cur], cmp, 0);
+	AVL_ROOT_INIT(&vars->scopes[vars->cur], cmp_var, 0);
 }
 
 static void __free_scope(struct avl_root *root)
@@ -44,7 +68,7 @@ static void __free_scope(struct avl_root *root)
 
 		avl_remove_node(root, node);
 
-		var_putref(v);
+		var_free(v);
 	}
 }
 
@@ -90,7 +114,7 @@ struct var *var_lookup(struct vars *vars, const char *name)
 	struct avl_node *node;
 	int scope;
 
-	strncpy(key.name, name, VAR_MAX_VAR_NAME);
+	strncpy(key.name, name, VAR_NAME_MAXLEN);
 
 	for (scope = vars->cur; scope >= 0; scope--) {
 		node = avl_find_node(&vars->scopes[scope], &key.tree);
@@ -105,75 +129,193 @@ struct var *var_alloc(const char *name)
 {
 	struct var *v;
 
-	ASSERT(strlen(name) < VAR_MAX_VAR_NAME);
+	ASSERT(strlen(name) < VAR_NAME_MAXLEN);
 
 	v = umem_cache_alloc(var_cache, 0);
 	if (!v)
 		return NULL;
 
 	memset(v, 0, sizeof(struct var));
-	strncpy(v->name, name, VAR_MAX_VAR_NAME);
-
-	v->refcnt = 1;
+	strncpy(v->name, name, VAR_NAME_MAXLEN);
 
 	return v;
 }
 
-void var_free(struct var *v)
+void var_free(struct var *var)
 {
-	int i, j;
+	val_putref(var->val);
 
-	ASSERT(v);
-	ASSERT3U(v->refcnt, ==, 0);
+	umem_cache_free(var_cache, var);
+}
 
-	for (i = 0; i < VAR_MAX_ARRAY_SIZE; i++) {
-		switch (v->val[i].type) {
-			case VT_NIL:
-			case VT_INT:
-				break;
-			case VT_STR:
-				break;
-			case VT_VARS:
-				for (j = 0; j < VAR_MAX_VARS_SIZE; j++)
-					var_putref(v->val[i].vars[j]);
-				break;
-		}
+static void __val_init(struct val *val, enum val_type type)
+{
+	val->type = type;
+
+	switch (type) {
+		case VT_LIST:
+			AVL_ROOT_INIT(&val->tree, cmp_val_list, 0);
+			break;
+		case VT_NV:
+			AVL_ROOT_INIT(&val->tree, cmp_val_nv, 0);
+			break;
+		case VT_INT:
+			val->i = 0;
+			break;
+		case VT_STR:
+			val->str = NULL;
+			break;
+		default:
+			ASSERT(0);
+	}
+}
+
+static void __val_cleanup(struct val *val)
+{
+	switch (val->type) {
+		case VT_INT:
+			break;
+		case VT_STR:
+			free(val->str);
+			break;
+		case VT_NV:
+		case VT_LIST:
+			while (val->tree.root) {
+				struct val_item *vi;
+				struct avl_node *n;
+
+				n = avl_find_minimum(&val->tree);
+
+				avl_remove_node(&val->tree, n);
+
+				vi = container_of(n, struct val_item, tree);
+
+				val_putref(vi->val);
+
+				umem_cache_free(val_item_cache, vi);
+			}
+
+			break;
+		default:
+			ASSERT(0);
+	}
+}
+
+struct val *val_alloc(enum val_type type)
+{
+	struct val *val;
+
+	val = umem_cache_alloc(val_cache, 0);
+	if (!val)
+		return val;
+
+	val->refcnt = 1;
+
+	__val_init(val, type);
+
+	return val;
+}
+
+void val_free(struct val *val)
+{
+	ASSERT(val);
+	ASSERT3U(val->refcnt, ==, 0);
+
+	__val_cleanup(val);
+
+	umem_cache_free(val_cache, val);
+}
+
+static int __val_set_val(struct val *val, enum val_type type, char *name,
+			 uint64_t idx, struct val *sub)
+{
+	struct val_item *vi;
+
+	if ((type != VT_NV) && (type != VT_LIST))
+		return EINVAL;
+
+	vi = umem_cache_alloc(val_item_cache, 0);
+	if (!vi)
+		return ENOMEM;
+
+	vi->val = sub;
+
+	if (type == VT_NV)
+		strncpy(vi->key.name, name, VAR_VAL_KEY_MAXLEN);
+	else if (type == VT_LIST)
+		vi->key.i = idx;
+
+	if (val->type != type) {
+		__val_cleanup(val);
+		__val_init(val, type);
 	}
 
-	umem_cache_free(var_cache, v);
+	avl_insert_node(&val->tree, &vi->tree);
+
+	return 0;
 }
 
-struct var_val *var_val_alloc()
+int val_set_list(struct val *val, uint64_t idx, struct val *sub)
 {
-	return umem_cache_alloc(var_val_cache, 0);
+	return __val_set_val(val, VT_LIST, NULL, idx, sub);
 }
 
-void var_val_free(struct var_val *vv)
+int val_set_nv(struct val *val, char *name, struct val *sub)
 {
-	umem_cache_free(var_val_cache, vv);
+	if (!name)
+		return EINVAL;
+
+	return __val_set_val(val, VT_NV, name, 0, sub);
 }
 
-int var_append(struct vars *vars, const char *name, struct var_val *vv)
+#define DEF_VAL_SET(fxn, vttype, valelem, ctype)		\
+int val_set_nv##fxn(struct val *val, char *name, ctype v)	\
+{								\
+	struct val *sub;					\
+	int ret;						\
+								\
+	sub = val_alloc(vttype);				\
+	if (!sub)						\
+		return ENOMEM;					\
+								\
+	sub->valelem = v;					\
+								\
+	ret = val_set_nv(val, name, sub);			\
+	if (ret)						\
+		val_putref(sub);				\
+								\
+	return ret;						\
+}								\
+								\
+int val_set_##fxn(struct val *val, ctype v)			\
+{								\
+	__val_cleanup(val);					\
+								\
+	val->type = vttype;					\
+	val->valelem = v;					\
+								\
+	return 0;						\
+}
+
+DEF_VAL_SET(int, VT_INT, i, uint64_t)
+DEF_VAL_SET(str, VT_STR, str, char *)
+
+int var_set(struct vars *vars, const char *name, struct val *val)
 {
 	struct var key;
 	struct avl_node *node;
 	struct var *v;
-	bool shouldfree;
-	int i, j;
 
-	shouldfree = false;
-	strncpy(key.name, name, VAR_MAX_VAR_NAME);
+	strncpy(key.name, name, VAR_NAME_MAXLEN);
 
 	node = avl_find_node(&vars->scopes[vars->cur], &key.tree);
 	if (!node) {
-		shouldfree = true;
-
 		v = var_alloc(name);
 		if (!v)
 			return ENOMEM;
 
 		if (avl_insert_node(&vars->scopes[vars->cur], &v->tree)) {
-			var_putref(v);
+			var_free(v);
 			return EEXIST;
 		}
 
@@ -182,69 +324,71 @@ int var_append(struct vars *vars, const char *name, struct var_val *vv)
 
 	v = container_of(node, struct var, tree);
 
-	for (i = 0; i < VAR_MAX_ARRAY_SIZE; i++) {
-		if (v->val[i].type != VT_NIL)
-			continue;
+	if (v->val)
+		val_putref(v->val);
 
-		if (vv->type == VT_VARS)
-			for (j = 0; j < VAR_MAX_VARS_SIZE; j++)
-				var_getref(vv->vars[j]);
+	v->val = val;
 
-		v->val[i] = *vv;
-
-		return 0;
-	}
-
-	if (shouldfree)
-		var_putref(v);
-
-	return E2BIG;
+	return 0;
 }
 
-void var_val_dump(struct var_val *vv, int idx, int indent)
+static void __dump_val(struct avl_node *node, int indent, enum val_type type)
 {
-	int i;
+	struct val_item *vi;
 
-	fprintf(stderr, "%*s   [%02d] ", indent, "", idx);
+	vi = container_of(node, struct val_item, tree);
 
-	switch (vv->type) {
-		case VT_NIL:
-			fprintf(stderr, "NIL\n");
-			break;
+	if (type == VT_LIST)
+		fprintf(stderr, "%*s [%lu] = ", indent, "", vi->key.i);
+	else
+		fprintf(stderr, "%*s [%s] = ", indent, "", vi->key.name);
+
+	val_dump(vi->val, indent + 4);
+}
+
+static int __dump_val_list(struct avl_node *node, void *data)
+{
+	__dump_val(node, (uintptr_t) data, VT_LIST);
+	return 0;
+}
+
+static int __dump_val_nv(struct avl_node *node, void *data)
+{
+	__dump_val(node, (uintptr_t) data, VT_NV);
+	return 0;
+}
+
+void val_dump(struct val *val, int indent)
+{
+	switch (val->type) {
 		case VT_STR:
-			fprintf(stderr, "'%s'\n", vv->str);
+			fprintf(stderr, "%*s'%s'\n", indent, "", val->str);
 			break;
 		case VT_INT:
-			fprintf(stderr, "%lu\n", vv->i);
+			fprintf(stderr, "%*s%lu\n", indent, "", val->i);
 			break;
-		case VT_VARS:
-			fprintf(stderr, "VARS\n");
-			for (i = 0; i < VAR_MAX_VARS_SIZE; i++)
-				if (vv->vars[i])
-					var_dump(vv->vars[i], indent + 6);
+		case VT_LIST:
+			fprintf(stderr, "\n");
+			avl_for_each(&val->tree, __dump_val_list,
+				     (void*) (uintptr_t) (indent + 4), NULL, NULL);
+			break;
+		case VT_NV:
+			fprintf(stderr, "\n");
+			avl_for_each(&val->tree, __dump_val_nv,
+				     (void*) (uintptr_t) (indent + 4), NULL, NULL);
 			break;
 		default:
-			fprintf(stderr, "Unknown type %d\n", vv->type);
+			fprintf(stderr, "Unknown type %d\n", val->type);
 			break;
 	}
-}
-
-void var_dump(struct var *v, int indent)
-{
-	int i;
-
-	fprintf(stderr, "%*s-> '%s'\n", indent, "", v->name);
-
-	for (i = 0; i < VAR_MAX_ARRAY_SIZE; i++)
-		if (v->val[i].type != VT_NIL)
-			var_val_dump(&v->val[i], i, indent);
 }
 
 static int __vars_dump(struct avl_node *node, void *data)
 {
 	struct var *v = container_of(node, struct var, tree);
 
-	var_dump(v, 0);
+	fprintf(stderr, "-> '%s'\n", v->name);
+	val_dump(v->val, 4);
 
 	return 0;
 }

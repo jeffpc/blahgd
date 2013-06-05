@@ -45,17 +45,17 @@ static void inc_lineno(yyscan_t scanner);
 
 "$"			{ BEGIN(MATH); return MATHSTART; }
 <MATH>"$"		{ BEGIN(INITIAL); return MATHEND; }
-<MATH>"\\"		{ yylval->ptr = xstrdup(yytext); return BSLASH; }
-<MATH>"_"		{ yylval->ptr = xstrdup(yytext); return USCORE; }
+<MATH>"\\"		{ return BSLASH; }
+<MATH>"_"		{ return USCORE; }
 <MATH>"^"		{ yylval->ptr = xstrdup(yytext); return CARRET; }
 <MATH>"+"		{ yylval->ptr = xstrdup(yytext); return PLUS; }
 <MATH>"-"		{ yylval->ptr = xstrdup(yytext); return MINUS; }
-<MATH>"*"		{ yylval->ptr = xstrdup(yytext); return ASTERISK; }
-<MATH>"/"		{ yylval->ptr = xstrdup(yytext); return SLASH; }
-<MATH>"{"		{ yylval->ptr = xstrdup(yytext); return OCURLY; }
-<MATH>"}"		{ yylval->ptr = xstrdup(yytext); return CCURLY; }
-<MATH>"("		{ yylval->ptr = xstrdup(yytext); return OPAREN; }
-<MATH>")"		{ yylval->ptr = xstrdup(yytext); return CPAREN; }
+<MATH>"*"		{ return ASTERISK; }
+<MATH>"/"		{ return SLASH; }
+<MATH>"{"		{ return OCURLY; }
+<MATH>"}"		{ return CCURLY; }
+<MATH>"("		{ return OPAREN; }
+<MATH>")"		{ return CPAREN; }
 <MATH>[=<>]		{ yylval->ptr = xstrdup(yytext); return EQLTGT; }
 <MATH>[A-Za-z0-9]+	{ yylval->ptr = xstrdup(yytext); return WORD; }
 <MATH>[".,=<>!:;?@*#]	{ yylval->ptr = xstrdup(yytext); return SCHAR; }
@@ -76,17 +76,17 @@ static void inc_lineno(yyscan_t scanner);
 			}
 %[^\n]*			{ /* tex comment */ }
 [ \t]+			{ yylval->ptr = xstrdup(yytext); return WSPACE; }
-"\\"			{ yylval->ptr = xstrdup(yytext); return BSLASH; }
-"{"			{ yylval->ptr = xstrdup(yytext); return OCURLY; }
-"}"			{ yylval->ptr = xstrdup(yytext); return CCURLY; }
-"["			{ yylval->ptr = xstrdup(yytext); return OBRACE; }
-"]"			{ yylval->ptr = xstrdup(yytext); return CBRACE; }
-"&"			{ yylval->ptr = xstrdup(yytext); return AMP; }
-"_"			{ yylval->ptr = xstrdup(yytext); return USCORE; }
-"\\%"			{ yylval->ptr = xstrdup(yytext+1); return PERCENT; }
-"~"			{ yylval->ptr = xstrdup(yytext); return TILDE; }
-"|"			{ yylval->ptr = xstrdup(yytext); return PIPE; }
-\.{3}			{ yylval->ptr = xstrdup(yytext); return ELLIPSIS; }
+"\\"			{ return BSLASH; }
+"{"			{ return OCURLY; }
+"}"			{ return CCURLY; }
+"["			{ return OBRACE; }
+"]"			{ return CBRACE; }
+"&"			{ return AMP; }
+"_"			{ return USCORE; }
+"\\%"			{ return PERCENT; }
+"~"			{ return TILDE; }
+"|"			{ return PIPE; }
+\.{3}			{ return ELLIPSIS; }
 -{1,3}			{ yylval->ptr = xstrdup(yytext); return DASH; }
 `{1,2}			{ yylval->ptr = xstrdup(yytext); return OQUOT; }
 '{1,2}			{ yylval->ptr = xstrdup(yytext); return CQUOT; }

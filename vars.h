@@ -5,29 +5,38 @@
 #include "avl.h"
 #include "utils.h"
 
-enum var_type {
-	VT_NIL = 0,	/* invalid */
+enum val_type {
+	VT_INT = 0,	/* 64-bit uint */
 	VT_STR,		/* null-terminated string */
-	VT_INT,		/* 64-bit uint */
-	VT_VARS,	/* name-value set of variables */
+	VT_NV,		/* name-value set of values */
+	VT_LIST,	/* array of values */
 };
 
-struct var;
+struct val;
 
-struct var_val {
-	enum var_type type;
+struct val_item {
+	struct avl_node tree;
 	union {
-		struct var *vars[VAR_MAX_VARS_SIZE];
-		char *str;
 		uint64_t i;
+		char name[VAR_VAL_KEY_MAXLEN];
+	} key;
+	struct val *val;
+};
+
+struct val {
+	enum val_type type;
+	int refcnt;
+	union {
+		uint64_t i;
+		char *str;
+		struct avl_root tree;
 	};
 };
 
 struct var {
 	struct avl_node tree;
-	int refcnt;
-	char name[VAR_MAX_VAR_NAME];
-	struct var_val val[VAR_MAX_ARRAY_SIZE];
+	char name[VAR_NAME_MAXLEN];
+	struct val *val;
 };
 
 struct vars {
@@ -47,102 +56,94 @@ extern struct var *var_alloc(const char *name);
 extern void var_free(struct var *v);
 extern void var_dump(struct var *v, int indent);
 extern struct var *var_lookup(struct vars *vars, const char *name);
-extern int var_append(struct vars *vars, const char *name, struct var_val *vv);
+extern int var_set(struct vars *vars, const char *name, struct val *val);
 
-extern struct var_val *var_val_alloc();
-extern void var_val_free(struct var_val *vv);
-extern void var_val_dump(struct var_val *vv, int idx, int indent);
+extern struct val *val_alloc(enum val_type type);
+extern void val_free(struct val *v);
+extern int val_set_int(struct val *val, uint64_t v);
+extern int val_set_str(struct val *val, char *v);
+extern int val_set_list(struct val *val, uint64_t idx, struct val *sub);
+extern int val_set_nv(struct val *val, char *name, struct val *sub);
+extern int val_set_nvint(struct val *val, char *name, uint64_t v);
+extern int val_set_nvstr(struct val *val, char *name, char *v);
+extern void val_dump(struct val *v, int indent);
 
-static inline struct var *var_getref(struct var *v)
+static inline struct val *val_getref(struct val *vv)
 {
-	if (!v)
-		return NULL;
-
-	ASSERT3U(v->refcnt, >=, 1);
-
-	v->refcnt++;
-	return v;
-}
-
-static inline void var_putref(struct var *v)
-{
-	if (!v)
-		return;
-
-	ASSERT3S(v->refcnt, >=, 1);
-
-	v->refcnt--;
-
-	if (!v->refcnt)
-		var_free(v);
-}
-
-static inline struct var *var_alloc_int(const char *name, uint64_t val)
-{
-	struct var *v;
-
-	v = var_alloc(name);
-	if (!v)
-		return NULL;
-
-	v->val[0].type = VT_INT;
-	v->val[0].i    = val;
-
-	return v;
-}
-
-static inline struct var *var_alloc_str(const char *name, const char *val)
-{
-	struct var *v;
-
-	v = var_alloc(name);
-	if (!v)
-		return NULL;
-
-	v->val[0].type = VT_STR;
-	v->val[0].str  = xstrdup(val);
-
-	if (!v->val[0].str) {
-		var_putref(v);
-		return NULL;
-	}
-
-	return v;
-}
-
-#define __VAR_ALLOC(n, v, t)			\
-	({					\
-		struct var *_x;			\
-		_x = var_alloc_##t((n), (v));	\
-		ASSERT(_x);			\
-		_x;				\
-	})
-
-#define VAR_ALLOC_INT(n, v)	__VAR_ALLOC((n), (v), int)
-#define VAR_ALLOC_STR(n, v)	__VAR_ALLOC((n), (v), str)
-
-static inline struct var_val *var_val_alloc_str(char *str)
-{
-	struct var_val *vv;
-
-	vv = var_val_alloc();
 	if (!vv)
 		return NULL;
 
-	vv->type = VT_STR;
-	vv->str = str;
+	ASSERT3U(vv->refcnt, >=, 1);
 
+	vv->refcnt++;
 	return vv;
 }
 
-#define __VAR_VAL_ALLOC(v, t)			\
+static inline void val_putref(struct val *vv)
+{
+	if (!vv)
+		return;
+
+	ASSERT3S(vv->refcnt, >=, 1);
+
+	vv->refcnt--;
+
+	if (!vv->refcnt)
+		val_free(vv);
+}
+
+#define VAR_LOOKUP_VAL(vars, n)			\
 	({					\
-		struct var_val *_x;		\
-		_x = var_val_alloc_##t(v);	\
+		struct var *_x;			\
+		_x = var_lookup((vars), (n));	\
+		ASSERT(_x);			\
+		val_getref(_x->val);		\
+	})
+#define VAR_SET(vars, n, val)		ASSERT0(var_set((vars), (n), (val)))
+
+#define VAR_SET_STR(vars, n, v)			\
+	do {					\
+		struct val *_x;			\
+		_x = VAL_ALLOC_STR(v);		\
+		VAR_SET((vars), (n), _x);	\
+	} while (0)
+
+#define VAR_SET_INT(vars, n, v)			\
+	do {					\
+		struct val *_x;			\
+		_x = VAL_ALLOC_INT(v);		\
+		VAR_SET((vars), (n), _x);	\
+	} while (0)
+
+#define VAL_ALLOC(t)				\
+	({					\
+		struct val *_x;			\
+		_x = val_alloc(t);		\
 		ASSERT(_x);			\
 		_x;				\
 	})
 
-#define VAR_VAL_ALLOC_STR(v)	__VAR_VAL_ALLOC((v), str)
+#define VAL_ALLOC_STR(v)			\
+	({					\
+		struct val *_x;			\
+		_x = VAL_ALLOC(VT_STR);		\
+		VAL_SET_STR(_x, v);		\
+		_x;				\
+	})
+
+#define VAL_ALLOC_INT(v)			\
+	({					\
+		struct val *_x;			\
+		_x = VAL_ALLOC(VT_INT);		\
+		VAL_SET_INT(_x, (v));		\
+		_x;				\
+	})
+
+#define VAL_SET_INT(val, v)		ASSERT0(val_set_int((val), (v)))
+#define VAL_SET_STR(val, v)		ASSERT0(val_set_str((val), (v)))
+#define VAL_SET_NVINT(val, n, v)	ASSERT0(val_set_nvint((val), (n), (v)))
+#define VAL_SET_NVSTR(val, n, v)	ASSERT0(val_set_nvstr((val), (n), (v)))
+#define VAL_SET_NV(val, n, v)		ASSERT0(val_set_nv((val), (n), (v)))
+#define VAL_SET_LIST(val, idx, v)	ASSERT0(val_set_list((val), (idx), (v)))
 
 #endif

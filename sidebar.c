@@ -24,18 +24,20 @@ static int __tag_size(int count, int cmin, int cmax)
 
 static void tagcloud(struct req *req)
 {
-	struct var_val vv;
+	struct val *cloud;
+	struct val *val;
 	sqlite3_stmt *stmt;
 	int cmin, cmax;
 	int ret;
+	int i;
+
+	i = 0;
+
+	cloud = VAL_ALLOC(VT_LIST);
 
 	/* pacify gcc */
 	cmin = 0;
 	cmax = 0;
-
-	memset(&vv, 0, sizeof(vv));
-
-	vv.type = VT_VARS;
 
 	open_db();
 	SQL(stmt, "SELECT min(cnt), max(cnt) FROM tagcloud");
@@ -54,12 +56,16 @@ static void tagcloud(struct req *req)
 		count = SQL_COL_INT(stmt, 1);
 		size  = __tag_size(count, cmin, cmax);
 
-		vv.vars[0] = VAR_ALLOC_STR("name", tag);
-		vv.vars[1] = VAR_ALLOC_INT("size", size);
-		vv.vars[2] = VAR_ALLOC_INT("count", count);
+		val = VAL_ALLOC(VT_NV);
 
-		ASSERT(!var_append(&req->vars, "tagcloud", &vv));
+		VAL_SET_NVSTR(val, "name", xstrdup(tag));
+		VAL_SET_NVINT(val, "size", size);
+		VAL_SET_NVINT(val, "count", count);
+
+		VAL_SET_LIST(cloud, i++, val);
 	}
+
+	VAR_SET(&req->vars, "tagcloud", cloud);
 }
 
 static void archive(struct req *req)
@@ -70,13 +76,15 @@ static void archive(struct req *req)
 		"December",
 	};
 
-	struct var_val vv;
+	struct val *archives;
+	struct val *val;
 	sqlite3_stmt *stmt;
 	int ret;
+	int i;
 
-	memset(&vv, 0, sizeof(vv));
+	i = 0;
 
-	vv.type = VT_VARS;
+	archives = VAL_ALLOC(VT_LIST);
 
 	open_db();
 	SQL(stmt, "SELECT DISTINCT STRFTIME(\"%Y%m\", time) AS t FROM posts ORDER BY t DESC");
@@ -89,11 +97,14 @@ static void archive(struct req *req)
 		snprintf(buf, sizeof(buf), "%s %d", months[(archid % 100) - 1],
 			 archid / 100);
 
-		vv.vars[0] = VAR_ALLOC_INT("name", archid);
-		vv.vars[1] = VAR_ALLOC_STR("desc", buf);
+		val = VAL_ALLOC(VT_NV);
+		VAL_SET_NVINT(val, "name", archid);
+		VAL_SET_NVSTR(val, "desc", xstrdup(buf));
 
-		ASSERT(!var_append(&req->vars, "archives", &vv));
+		VAL_SET_LIST(archives, i++, val);
 	}
+
+	VAR_SET(&req->vars, "archives", archives);
 }
 
 void sidebar(struct req *req)

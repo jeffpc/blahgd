@@ -236,91 +236,84 @@ static int __load_post_comments(struct post *post)
 	return 0;
 }
 
-static struct var *__tag_var(const char *name, struct list_head *val)
+static struct val *__tag_val(struct list_head *list)
 {
 	struct post_tag *cur, *tmp;
-	struct var *v;
+	struct val *val;
+	struct val *sub;
 	int i;
 
-	v = var_alloc(name);
-	ASSERT(v);
+	val = VAL_ALLOC(VT_LIST);
 
 	i = 0;
-	list_for_each_entry_safe(cur, tmp, val, list) {
-		ASSERT(i < VAR_MAX_ARRAY_SIZE);
+	list_for_each_entry_safe(cur, tmp, list, list) {
+		sub = VAL_ALLOC_STR(xstrdup(cur->tag));
 
-		v->val[i].type = VT_STR;
-		v->val[i].str  = xstrdup(cur->tag);
-		ASSERT(v->val[i].str);
-
+		VAL_SET_LIST(val, i, sub);
 		i++;
 	}
 
-	return v;
+	return val;
 }
 
-static struct var *__com_var(const char *name, struct list_head *val)
+static struct val *__com_val(struct list_head *list)
 {
 	struct comment *cur, *tmp;
-	struct var *v;
+	struct val *val;
+	struct val *sub;
 	int i;
 
-	v = var_alloc(name);
-	ASSERT(v);
+	val = VAL_ALLOC(VT_LIST);
 
 	i = 0;
-	list_for_each_entry_safe(cur, tmp, val, list) {
-		ASSERT(i < VAR_MAX_ARRAY_SIZE);
+	list_for_each_entry_safe(cur, tmp, list, list) {
+		sub = VAL_ALLOC(VT_NV);
 
-		v->val[i].type = VT_VARS;
-		v->val[i].vars[0] = VAR_ALLOC_INT("commid", cur->id);
-		v->val[i].vars[1] = VAR_ALLOC_INT("commtime", cur->time);
-		v->val[i].vars[2] = VAR_ALLOC_STR("commauthor", cur->author);
-		v->val[i].vars[3] = VAR_ALLOC_STR("commemail", cur->email);
-		v->val[i].vars[4] = VAR_ALLOC_STR("commip", cur->ip);
-		v->val[i].vars[5] = VAR_ALLOC_STR("commurl", cur->url);
-		v->val[i].vars[6] = VAR_ALLOC_STR("commbody", cur->body);
+		VAL_SET_NVINT(sub, "commid", cur->id);
+		VAL_SET_NVINT(sub, "commtime", cur->time);
+		VAL_SET_NVSTR(sub, "commauthor", xstrdup(cur->author));
+		VAL_SET_NVSTR(sub, "commemail", xstrdup(cur->email));
+		VAL_SET_NVSTR(sub, "commip", xstrdup(cur->ip));
+		VAL_SET_NVSTR(sub, "commurl", xstrdup(cur->url));
+		VAL_SET_NVSTR(sub, "commbody", xstrdup(cur->body));
 
+		VAL_SET_LIST(val, i, sub);
 		i++;
 	}
 
-	return v;
+	return val;
 }
 
-static void __store_vars(struct req *req, const char *var, struct post *post,
-			 const char *titlevar)
+static struct val *__store_vars(struct req *req, struct post *post, const char *titlevar)
 {
-	struct var_val vv;
-
-	memset(&vv, 0, sizeof(vv));
-
-	vv.type    = VT_VARS;
-	vv.vars[0] = VAR_ALLOC_INT("id", post->id);
-	vv.vars[1] = VAR_ALLOC_INT("time", post->time);
-	vv.vars[2] = VAR_ALLOC_STR("title", post->title);
-	vv.vars[3] = __tag_var("tags", &post->tags);
-	vv.vars[4] = VAR_ALLOC_STR("body", post->body);
-	vv.vars[5] = VAR_ALLOC_INT("numcom", post->numcom);
-	vv.vars[6] = __com_var("comments", &post->comments);
-
-	ASSERT(!var_append(&req->vars, "posts", &vv));
+	struct val *val;
 
 	if (titlevar) {
-		vv.type = VT_STR;
-		vv.str  = xstrdup(post->title);
-		ASSERT(vv.str);
-
-		ASSERT(!var_append(&req->vars, titlevar, &vv));
+		val = VAL_ALLOC_STR(xstrdup(post->title));
+		VAR_SET(&req->vars, titlevar, val);
 	}
+
+	val = VAL_ALLOC(VT_NV);
+
+	VAL_SET_NVINT(val, "id", post->id);
+	VAL_SET_NVINT(val, "time", post->time);
+	VAL_SET_NVSTR(val, "title", xstrdup(post->title));
+	VAL_SET_NV   (val, "tags", __tag_val(&post->tags));
+	VAL_SET_NVSTR(val, "body", xstrdup(post->body));
+	VAL_SET_NVINT(val, "numcom", post->numcom);
+	VAL_SET_NV   (val, "comments", __com_val(&post->comments));
+
+	return val;
 }
 
-int load_post(struct req *req, int postid, const char *titlevar, bool preview)
+struct val *load_post(struct req *req, int postid, const char *titlevar, bool preview)
 {
 	char path[FILENAME_MAX];
 	struct post post;
 	int ret;
 	int err;
 	sqlite3_stmt *stmt;
+	struct val *val;
 
 	snprintf(path, FILENAME_MAX, "data/posts/%d", postid);
 
@@ -374,11 +367,11 @@ int load_post(struct req *req, int postid, const char *titlevar, bool preview)
 
 err:
 	if (!err)
-		__store_vars(req, "posts", &post, titlevar);
+		val = __store_vars(req, &post, titlevar);
 
 	destroy_post(&post);
 
-	return err;
+	return err ? NULL : val;
 }
 
 void destroy_post(struct post *post)
@@ -386,27 +379,20 @@ void destroy_post(struct post *post)
 	struct post_tag *pt, *pttmp;
 	struct comment *com, *comtmp;
 
-	list_for_each_entry_safe(pt, pttmp, &post->tags, list)
+	list_for_each_entry_safe(pt, pttmp, &post->tags, list) {
+		free(pt->tag);
 		free(pt);
+	}
 
-	list_for_each_entry_safe(com, comtmp, &post->comments, list)
+	list_for_each_entry_safe(com, comtmp, &post->comments, list) {
+		free(com->author);
+		free(com->email);
+		free(com->ip);
+		free(com->url);
+		free(com->body);
 		free(com);
+	}
 
 	free(post->title);
 	free(post->body);
 }
-
-#if 0
-void dump_post(struct post_old *post)
-{
-	if (!post)
-		fprintf(stdout, "p=NULL\n");
-	else
-		fprintf(post->out, "p=%p { %d, '%s', '%s', '%s', '%04d-%02d-%02d %02d:%02d' }\n\n",
-			post, post->id, post->title, post->cats,
-			post->tags,
-			post->time.tm_year, post->time.tm_mon,
-			post->time.tm_mday, post->time.tm_hour,
-			post->time.tm_min);
-}
-#endif

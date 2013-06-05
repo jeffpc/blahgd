@@ -58,11 +58,15 @@ int write_out_comment(struct req *req, int id, char *author, char *email,
 	time_t now_sec;
 	struct tm *now_tm;
 
-	ret = load_post(req, id, NULL, false);
-	if (ret) {
-		LOG("Gah! %d (postid=%d)", ret, id);
+	struct val *val;
+
+	val = load_post(req, id, NULL, false);
+	if (!val) {
+		LOG("Gah! %d (postid=%d)", -1, id);
 		return 1;
 	}
+
+	val_putref(val);
 
 	if ((strlen(author) == 0) || (strlen(comment) == 0)) {
 		LOG("You must fill in name, and comment (postid=%d)", id);

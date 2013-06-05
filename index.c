@@ -21,7 +21,14 @@
 static void __load_posts(struct req *req, int page)
 {
 	sqlite3_stmt *stmt;
+	struct val *posts;
+	struct val *val;
 	int ret;
+	int i;
+
+	i = 0;
+
+	posts = VAR_LOOKUP_VAL(&req->vars, "posts");
 
 	open_db();
 	SQL(stmt, "SELECT id FROM posts ORDER BY time DESC LIMIT ? OFFSET ?");
@@ -32,9 +39,14 @@ static void __load_posts(struct req *req, int page)
 
 		postid = SQL_COL_INT(stmt, 0);
 
-		if (load_post(req, postid, NULL, false))
+		val = load_post(req, postid, NULL, false);
+		if (!val)
 			continue;
+
+		VAL_SET_LIST(posts, i++, val);
 	}
+
+	val_putref(posts);
 }
 
 static void __load_posts_archive(struct req *req, int page, int archid)
@@ -42,8 +54,11 @@ static void __load_posts_archive(struct req *req, int page, int archid)
 	char fromtime[32];
 	char totime[32];
 	sqlite3_stmt *stmt;
+	struct val *posts;
+	struct val *val;
 	int toyear, tomonth;
 	int ret;
+	int i;
 
 	toyear = archid / 100;
 	tomonth = (archid % 100) + 1;
@@ -51,6 +66,10 @@ static void __load_posts_archive(struct req *req, int page, int archid)
 		tomonth = 1;
 		toyear++;
 	}
+
+	i = 0;
+
+	posts = VAR_LOOKUP_VAL(&req->vars, "posts");
 
 	snprintf(fromtime, sizeof(fromtime), "%04d-%02d-01 00:00",
 		 archid / 100, archid % 100);
@@ -68,51 +87,30 @@ static void __load_posts_archive(struct req *req, int page, int archid)
 
 		postid = SQL_COL_INT(stmt, 0);
 
-		if (load_post(req, postid, NULL, false))
+		val = load_post(req, postid, NULL, false);
+		if (!val)
 			continue;
+
+		VAL_SET_LIST(posts, i++, val);
 	}
+
+	val_putref(posts);
 }
 
-static void __store_title(struct vars *vars, const char *title)
+static void __store_title(struct vars *vars, char *title)
 {
-	struct var_val vv;
-
-	memset(&vv, 0, sizeof(vv));
-
-        vv.type = VT_STR;
-        vv.str  = xstrdup(title);
-        ASSERT(vv.str);
-
-        ASSERT(!var_append(vars, "title", &vv));
+	VAR_SET_STR(vars, "title", xstrdup(title));
 }
 
 static void __store_pages(struct vars *vars, int page)
 {
-	struct var_val vv;
-
-	memset(&vv, 0, sizeof(vv));
-
-	vv.type = VT_INT;
-	vv.i    = page + 1;
-
-	ASSERT(!var_append(vars, "prevpage", &vv));
-
-	vv.type = VT_INT;
-	vv.i    = page - 1;
-
-	ASSERT(!var_append(vars, "nextpage", &vv));
+	VAR_SET_INT(vars, "prevpage", page + 1);
+	VAR_SET_INT(vars, "nextpage", page - 1);
 }
 
 static void __store_archid(struct vars *vars, int archid)
 {
-	struct var_val vv;
-
-	memset(&vv, 0, sizeof(vv));
-
-	vv.type = VT_INT;
-	vv.i    = archid;
-
-	ASSERT(!var_append(vars, "archid", &vv));
+	VAR_SET_INT(vars, "archid", archid);
 }
 
 int blahg_index(struct req *req, int page)
@@ -125,8 +123,6 @@ int blahg_index(struct req *req, int page)
 	__store_pages(&req->vars, page);
 
 	sidebar(req);
-
-	vars_scope_push(&req->vars);
 
 	__load_posts(req, page);
 
@@ -167,8 +163,6 @@ int blahg_archive(struct req *req, int m, int page)
 	__store_archid(&req->vars, m);
 
 	sidebar(req);
-
-	vars_scope_push(&req->vars);
 
 	__load_posts_archive(req, page, m);
 

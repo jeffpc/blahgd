@@ -38,107 +38,135 @@ static char *tostr(char c)
 	return ret;
 }
 
-static void __foreach_vars(struct vars *vars, struct var_val *vv)
+static int __expand_val(struct avl_node *node, void *data)
 {
-	int j, k;
+	struct vars *vars = data;
+	struct val_item *val_item;
 
-	for (j = 0; j < VAR_MAX_VARS_SIZE; j++) {
-		if (!vv->vars[j])
-			continue;
+	val_item = container_of(node, struct val_item, tree);
 
-		for (k = 0; k < VAR_MAX_ARRAY_SIZE; k++) {
-			if (vv->vars[j]->val[k].type == VT_NIL)
-				continue;
+	VAR_SET(vars, val_item->key.name, val_getref(val_item->val));
 
-			var_append(vars, vv->vars[j]->name,
-				   &vv->vars[j]->val[k]);
-		}
-	}
+	return 0;
 }
 
-char *foreach(struct req *req, char *var, char *tmpl)
+struct wrap_state {
+	struct req *req;
+	char *varname;
+	char *tmpl;
+
+	char *out;
+};
+
+static int __foreach_val(struct avl_node *node, void *arg)
+{
+	struct wrap_state *state = arg;
+	struct req *req = state->req;
+	struct val *val;
+	char *ret;
+
+	val = container_of(node, struct val_item, tree)->val;
+
+	vars_scope_push(&req->vars);
+
+	switch (val->type) {
+		case VT_STR:
+		case VT_INT:
+			VAR_SET(&req->vars, state->varname, val_getref(val));
+			break;
+		case VT_NV:
+			avl_for_each(&val->tree, __expand_val, &req->vars,
+				     NULL, NULL);
+			break;
+		default:
+			fprintf(stderr, "XXX %p\n", val);
+			val_dump(val, 0);
+			ASSERT(0);
+			break;
+	}
+
+	ret = render_template(req, state->tmpl);
+
+	state->out = concat(state->out, ret);
+
+	vars_scope_pop(&req->vars);
+
+	return !ret;
+}
+
+char *foreach(struct req *req, char *varname, char *tmpl)
 {
 	struct vars *vars = &req->vars;
-	struct var *v;
+	struct wrap_state state = {
+		.req = req,
+		.varname = varname,
+		.tmpl = tmpl,
+	};
+	struct var *var;
+	struct val *val;
 	char *ret;
-	char *tmp;
-	int i;
 
-	ret = xstrdup("");
+	var = var_lookup(vars, varname);
+	if (!var)
+		return xstrdup("");
 
-	v = var_lookup(vars, var);
-	if (!v)
-		return ret;
+	val = var->val;
+	if (!val)
+		return xstrdup("");
 
-	for (i = 0; i < VAR_MAX_ARRAY_SIZE; i++) {
-		struct var_val *vv = &v->val[i];
-
-		if (vv->type == VT_NIL)
-			continue;
-
-		vars_scope_push(vars);
-
-		switch (vv->type) {
-			case VT_NIL:
-				ASSERT(0);
-				break;
-			case VT_VARS:
-				__foreach_vars(vars, vv);
-				break;
-			case VT_STR:
-			case VT_INT:
-				var_append(vars, var, vv);
-				break;
-		}
-
-		tmp = render_template(req, tmpl);
-
-		ret = concat(ret, tmp);
-
-		vars_scope_pop(vars);
+	if (val->type == VT_LIST) {
+		state.out = NULL;
+		avl_for_each(&val->tree, __foreach_val, &state, NULL, NULL);
+		ret = state.out;
+	} else {
+		ret = NULL;
+		LOG("%s called with '%s' which has type %d", __func__,
+		    varname, val->type);
+		ASSERT(0);
 	}
 
 	return ret;
 }
 
-static char *print_var_val(struct var_val *vv)
+static char *print_val(struct val *val)
 {
 	char buf[32];
-	char *tmp;
+	const char *tmp;
 
 	tmp = NULL;
 
-	switch (vv->type) {
-		case VT_NIL:
-			tmp = "NIL";
-			break;
+	switch (val->type) {
 		case VT_STR:
-			tmp = vv->str;
+			tmp = val->str;
 			break;
 		case VT_INT:
-			snprintf(buf, sizeof(buf), "%lu", vv->i);
+			snprintf(buf, sizeof(buf), "%lu", val->i);
 			tmp = buf;
 			break;
-		case VT_VARS:
-			tmp = "VARS";
+		case VT_LIST:
+			tmp = "LIST";
+			break;
+		case VT_NV:
+			tmp = "NV";
 			break;
 	}
 
 	return xstrdup(tmp);
 }
 
-static char *print_var(struct var *v)
+static char *print_var(struct var *var)
 {
-	return print_var_val(&v->val[0]);
+	return print_val(var->val);
 }
 
 static char *pipeline(struct req *req, char *var, struct pipeline *pipe)
 {
 	struct list_head line;
-	struct var_val *vv;
+	struct val *val;
 	struct var *v;
 	struct pipeline *cur;
 	struct pipeline *tmp;
+	char *out;
 
 	v = var_lookup(&req->vars, var);
 	if (!v)
@@ -150,14 +178,18 @@ static char *pipeline(struct req *req, char *var, struct pipeline *pipe)
 	pipe->pipe.prev->next = &line;
 	pipe->pipe.prev = &line;
 
-	vv = &v->val[0];
+	val = val_getref(v->val);
 
 	list_for_each_entry_safe(cur, tmp, &line, pipe)
-		vv = cur->stage->f(vv);
+		val = cur->stage->f(val);
 
 	pipeline_destroy(&line);
 
-	return print_var_val(vv);
+	out = print_val(val);
+
+	val_putref(val);
+
+	return out;
 }
 %}
 
@@ -216,7 +248,7 @@ pipeline : pipeline pipe		{
 	 | pipe				{ $$ = $1; }
          ;
 
-pipe : '|' WORD				{ $$ = pipestage($2); }
+pipe : '|' WORD				{ $$ = pipestage($2); free($2); }
      ;
 
 %%

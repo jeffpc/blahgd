@@ -11,12 +11,17 @@
 
 static void __load_posts(struct req *req, int page)
 {
-	struct var_val vv;
 	sqlite3_stmt *stmt;
+	struct val *posts;
+	struct val *val;
 	time_t maxtime;
 	int ret;
+	int i;
 
 	maxtime = 0;
+	i = 0;
+
+	posts = VAR_LOOKUP_VAL(&req->vars, "posts");
 
 	open_db();
 	SQL(stmt, "SELECT id, strftime(\"%s\", time) FROM posts ORDER BY time DESC LIMIT ? OFFSET ?");
@@ -29,19 +34,17 @@ static void __load_posts(struct req *req, int page)
 		postid   = SQL_COL_INT(stmt, 0);
 		posttime = SQL_COL_INT(stmt, 1);
 
-		if (load_post(req, postid, NULL, false))
+		val = load_post(req, postid, NULL, false);
+		if (!val)
 			continue;
+
+		VAL_SET_LIST(posts, i++, val);
 
 		if (posttime > maxtime)
 			maxtime = posttime;
 	}
 
-	memset(&vv, 0, sizeof(vv));
-
-	vv.type = VT_INT;
-	vv.i    = maxtime;
-
-	ASSERT(!var_append(&req->vars, "lastupdate", &vv));
+	VAR_SET_INT(&req->vars, "lastupdate", maxtime);
 }
 
 static int __feed(struct req *req)
@@ -50,8 +53,6 @@ static int __feed(struct req *req)
 		req_head(req, "Content-Type", "application/atom+xml");
 	else if (!strcmp(req->fmt, "rss2"))
 		req_head(req, "Content-Type", "application/rss+xml");
-
-	vars_scope_push(&req->vars);
 
 	__load_posts(req, 0);
 
