@@ -45,17 +45,7 @@ static void inc_lineno(yyscan_t scanner);
 
 "$"			{ BEGIN(MATH); return MATHSTART; }
 <MATH>"$"		{ BEGIN(INITIAL); return MATHEND; }
-<MATH>"\\"		{ return BSLASH; }
-<MATH>"_"		{ return USCORE; }
-<MATH>"^"		{ yylval->ptr = xstrdup(yytext); return CARRET; }
-<MATH>"+"		{ yylval->ptr = xstrdup(yytext); return PLUS; }
-<MATH>"-"		{ yylval->ptr = xstrdup(yytext); return MINUS; }
-<MATH>"*"		{ return ASTERISK; }
-<MATH>"/"		{ return SLASH; }
-<MATH>"{"		{ return OCURLY; }
-<MATH>"}"		{ return CCURLY; }
-<MATH>"("		{ return OPAREN; }
-<MATH>")"		{ return CPAREN; }
+<MATH>[\\_^*/{}()+-]	{ return *yytext; }
 <MATH>[=<>]		{ yylval->ptr = xstrdup(yytext); return EQLTGT; }
 <MATH>[A-Za-z0-9]+	{ yylval->ptr = xstrdup(yytext); return WORD; }
 <MATH>[".,=<>!:;?@*#]	{ yylval->ptr = xstrdup(yytext); return SCHAR; }
@@ -76,16 +66,8 @@ static void inc_lineno(yyscan_t scanner);
 			}
 %[^\n]*			{ /* tex comment */ }
 [ \t]+			{ yylval->ptr = xstrdup(yytext); return WSPACE; }
-"\\"			{ return BSLASH; }
-"{"			{ return OCURLY; }
-"}"			{ return CCURLY; }
-"["			{ return OBRACE; }
-"]"			{ return CBRACE; }
-"&"			{ return AMP; }
-"_"			{ return USCORE; }
-"\\%"			{ return PERCENT; }
-"~"			{ return TILDE; }
-"|"			{ return PIPE; }
+[\\{}\[\]&_~|]		{ return *yytext; }
+"\\%"			{ return '%'; }
 \.{3}			{ return ELLIPSIS; }
 -{1,3}			{ yylval->ptr = xstrdup(yytext); return DASH; }
 `{1,2}			{ yylval->ptr = xstrdup(yytext); return OQUOT; }

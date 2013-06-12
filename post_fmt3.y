@@ -228,16 +228,10 @@ out:
 %token <ptr> WSPACE
 %token <ptr> DASH OQUOT CQUOT SCHAR
 %token <ptr> UTF8FIRST3 UTF8FIRST2 UTF8REST WORD
-%token SLASH
-%token PIPE
-%token OCURLY CCURLY OBRACE CBRACE
-%token USCORE ASTERISK
-%token BSLASH PERCENT AMP TILDE ELLIPSIS
-%token PAREND NLINE
+%token ELLIPSIS PAREND NLINE
 
 /* math specific tokens */
-%token <ptr> PLUS MINUS EQLTGT CARRET
-%token OPAREN CPAREN
+%token <ptr> EQLTGT
 %token MATHSTART MATHEND
 
 /* verbose & listing environment */
@@ -248,10 +242,10 @@ out:
 %type <ptr> paragraphs paragraph thing cmd cmdarg optcmdarg math mexpr
 %type <ptr> verb
 
-%left USCORE CARRET
+%left '_' '^'
 %left EQLTGT
-%left PLUS MINUS
-%left ASTERISK SLASH
+%left '+' '-'
+%left '*' '/'
 
 %%
 
@@ -273,19 +267,17 @@ thing : WORD				{ $$ = $1; }
       | UTF8FIRST3 UTF8REST UTF8REST	{ $$ = concat3($1, $2, $3); }
       | NLINE				{ $$ = xstrdup(data->post->texttt_nesting ? "\n" : " "); }
       | WSPACE				{ $$ = $1; }
-      | PIPE				{ $$ = xstrdup("|"); }
-      | ASTERISK			{ $$ = xstrdup("*"); }
-      | SLASH				{ $$ = xstrdup("/"); }
+      | '|'				{ $$ = xstrdup("|"); }
       | DASH				{ $$ = dash(strlen($1)); free($1); }
       | OQUOT				{ $$ = oquote(strlen($1)); free($1); }
       | CQUOT				{ $$ = cquote(strlen($1)); free($1); }
       | SCHAR				{ $$ = special_char($1); free($1); }
       | ELLIPSIS			{ $$ = xstrdup("&hellip;"); }
-      | TILDE				{ $$ = xstrdup("&nbsp;"); }
-      | AMP				{ $$ = xstrdup("</td><td>"); }
+      | '~'				{ $$ = xstrdup("&nbsp;"); }
+      | '&'				{ $$ = xstrdup("</td><td>"); }
       | DOLLAR				{ $$ = xstrdup("$"); }
-      | PERCENT				{ $$ = xstrdup("%"); }
-      | BSLASH cmd			{ $$ = $2; }
+      | '%'				{ $$ = xstrdup("%"); }
+      | '\\' cmd			{ $$ = $2; }
       | MATHSTART math MATHEND		{ $$ = render_math($2); }
       | VERBSTART verb VERBEND		{ $$ = concat3(S("</p><p>"), $2, S("</p><p>")); }
       | LISTSTART verb LISTEND		{ $$ = concat3(S("</p><pre>"),
@@ -296,20 +288,20 @@ thing : WORD				{ $$ = $1; }
 cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd(data->post, $1, $3, $2); free($1); }
     | WORD cmdarg		{ $$ = process_cmd(data->post, $1, $2, NULL); free($1); }
     | WORD			{ $$ = process_cmd(data->post, $1, NULL, NULL); free($1); }
-    | BSLASH			{ $$ = xstrdup("<br/>"); }
-    | OCURLY			{ $$ = xstrdup("{"); }
-    | CCURLY			{ $$ = xstrdup("}"); }
-    | OBRACE			{ $$ = xstrdup("["); }
-    | CBRACE			{ $$ = xstrdup("]"); }
-    | AMP			{ $$ = xstrdup("&amp;"); }
-    | USCORE			{ $$ = xstrdup("_"); }
-    | TILDE			{ $$ = xstrdup("~"); }
+    | '\\'			{ $$ = xstrdup("<br/>"); }
+    | '{'			{ $$ = xstrdup("{"); }
+    | '}'			{ $$ = xstrdup("}"); }
+    | '['			{ $$ = xstrdup("["); }
+    | ']'			{ $$ = xstrdup("]"); }
+    | '&'			{ $$ = xstrdup("&amp;"); }
+    | '_'			{ $$ = xstrdup("_"); }
+    | '~'			{ $$ = xstrdup("~"); }
     ;
 
-optcmdarg : OBRACE paragraph CBRACE	{ $$ = $2; }
+optcmdarg : '[' paragraph ']'		{ $$ = $2; }
           ;
 
-cmdarg : OCURLY paragraph CCURLY	{ $$ = $2; }
+cmdarg : '{' paragraph '}'		{ $$ = $2; }
        ;
 
 verb : verb VERBTEXT			{ $$ = concat($1, $2); }
@@ -323,15 +315,15 @@ mexpr : WORD				{ $$ = $1; }
       | WSPACE				{ $$ = $1; }
       | SCHAR				{ $$ = $1; }
       | mexpr EQLTGT mexpr 		{ $$ = concat3($1, $2, $3); }
-      | mexpr USCORE mexpr 		{ $$ = concat3($1, S("_"), $3); }
-      | mexpr CARRET mexpr 		{ $$ = concat3($1, $2, $3); }
-      | mexpr PLUS mexpr 		{ $$ = concat3($1, $2, $3); }
-      | mexpr MINUS mexpr 		{ $$ = concat3($1, $2, $3); }
-      | mexpr ASTERISK mexpr	 	{ $$ = concat3($1, S("*"), $3); }
-      | mexpr SLASH mexpr	 	{ $$ = concat3($1, S("/"), $3); }
-      | BSLASH WORD			{ $$ = concat(S("\\"), $2); }
-      | OPAREN math CPAREN		{ $$ = concat3(S("("), $2, S(")")); }
-      | OCURLY math CCURLY		{ $$ = concat3(S("{"), $2, S("}")); }
+      | mexpr '_' mexpr 		{ $$ = concat3($1, S("_"), $3); }
+      | mexpr '^' mexpr 		{ $$ = concat3($1, S("^"), $3); }
+      | mexpr '+' mexpr 		{ $$ = concat3($1, S("+"), $3); }
+      | mexpr '-' mexpr 		{ $$ = concat3($1, S("-"), $3); }
+      | mexpr '*' mexpr		 	{ $$ = concat3($1, S("*"), $3); }
+      | mexpr '/' mexpr	 		{ $$ = concat3($1, S("/"), $3); }
+      | '\\' WORD			{ $$ = concat(S("\\"), $2); }
+      | '(' math ')'			{ $$ = concat3(S("("), $2, S(")")); }
+      | '{' math '}'			{ $$ = concat3(S("{"), $2, S("}")); }
       ;
 
 %%
