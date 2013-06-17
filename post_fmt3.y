@@ -306,6 +306,7 @@ cmdarg : '{' paragraph '}'		{ $$ = $2; }
 
 verb : verb VERBTEXT			{ $$ = concat($1, $2); }
      | VERBTEXT				{ $$ = $1; }
+     ;
 
 math : math mexpr			{ $$ = concat($1, $2); }
      | mexpr				{ $$ = $1; }
