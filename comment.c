@@ -8,7 +8,6 @@
 #include <sys/types.h>
 #include <sys/file.h>
 #include <unistd.h>
-#include <fcntl.h>
 
 #include "main.h"
 #include "sidebar.h"
