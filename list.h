@@ -1,6 +1,8 @@
 #ifndef __LIST_H
 #define __LIST_H
 
+#include <stddef.h>
+
 #ifndef container_of
 #define container_of(ptr, type, member) ({                      \
 		const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
