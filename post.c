@@ -20,6 +20,7 @@
 #include "parse.h"
 #include "error.h"
 #include "utils.h"
+#include "post_fmt3_ast.h"
 
 static char *load_comment(struct post *post, int commid)
 {
@@ -68,7 +69,7 @@ static int __do_load_post_body_fmt3(struct post *post, char *ibuf, size_t len)
 
 	fmt3_lex_destroy(x.scanner);
 
-	post->body = x.output;
+	post->body = ptree2ast(x.ptree);
 	ASSERT(post->body);
 
 	return 0;

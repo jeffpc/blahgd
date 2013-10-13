@@ -22,9 +22,9 @@ static int onefile(struct post *post, char *ibuf, size_t len)
 
 	ret = fmt3_parse(&x);
 	if (!ret) {
-		ASSERT(x.output);
-		printf("%s", x.output);
-		free(x.output);
+		ASSERT(x.ptree);
+		pt_dump(x.ptree);
+		pt_destroy(x.ptree);
 	} else {
 		fprintf(stderr, "failed to parse\n");
 	}

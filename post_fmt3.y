@@ -19,6 +19,7 @@
 #include "mangle.h"
 #include "listing.h"
 #include "post_fmt3_cmds.h"
+#include "ptree.h"
 
 #include "parse.h"
 
@@ -220,6 +221,8 @@ out:
 %}
 
 %union {
+	struct ptree *tree;
+	struct ptnode *node;
 	char *ptr;
 };
 
@@ -227,7 +230,7 @@ out:
 %token <ptr> WSPACE
 %token <ptr> DASH OQUOT CQUOT SCHAR
 %token <ptr> UTF8FIRST3 UTF8FIRST2 UTF8REST WORD
-%token ELLIPSIS PAREND NLINE
+%token <ptr> ELLIPSIS PAREND NLINE
 
 /* math specific tokens */
 %token <ptr> EQLTGT
@@ -238,7 +241,9 @@ out:
 %token VERBSTART VERBEND DOLLAR
 %token LISTSTART LISTEND
 
-%type <ptr> paragraphs paragraph thing cmd cmdarg optcmdarg math mexpr
+%type <node> thing cmd
+%type <tree> paragraphs
+%type <ptr> math mexpr
 %type <ptr> verb
 
 %left '_' '^'
@@ -248,60 +253,46 @@ out:
 
 %%
 
-post : paragraphs PAREND		{ data->output = $1; }
-     | paragraphs			{ data->output = $1; }
-     | PAREND				{ data->output = xstrdup(""); }
+post : paragraphs			{ data->ptree = $1; }
      ;
 
-paragraphs : paragraphs PAREND paragraph	{ $$ = concat4($1, S("<p>"), $3, S("</p>\n")); }
-	   | paragraph				{ $$ = concat3(S("<p>"), $1, S("</p>\n")); }
-	   ;
+paragraphs : paragraphs thing		{ $$ = pt_append($1, $2); }
+           | thing			{ $$ = pt_append(NULL, $1); }
+           ;
 
-paragraph : paragraph thing		{ $$ = concat($1, $2); }
-          | thing			{ $$ = $1; }
-          ;
-
-thing : WORD				{ $$ = $1; }
-      | UTF8FIRST2 UTF8REST		{ $$ = concat($1, $2); }
-      | UTF8FIRST3 UTF8REST UTF8REST	{ $$ = concat3($1, $2, $3); }
-      | NLINE				{ $$ = xstrdup(data->post->texttt_nesting ? "\n" : " "); }
-      | WSPACE				{ $$ = $1; }
-      | '|'				{ $$ = xstrdup("|"); }
-      | DASH				{ $$ = dash(strlen($1)); free($1); }
-      | OQUOT				{ $$ = oquote(strlen($1)); free($1); }
-      | CQUOT				{ $$ = cquote(strlen($1)); free($1); }
-      | SCHAR				{ $$ = special_char($1); free($1); }
-      | ELLIPSIS			{ $$ = xstrdup("&hellip;"); }
-      | '~'				{ $$ = xstrdup("&nbsp;"); }
-      | '&'				{ $$ = xstrdup("</td><td>"); }
-      | DOLLAR				{ $$ = xstrdup("$"); }
-      | '%'				{ $$ = xstrdup("%"); }
+thing : WORD				{ $$ = ptn_new_str($1); }
+      | UTF8FIRST2 UTF8REST		{ $$ = ptn_new_str(concat($1, $2)); }
+      | UTF8FIRST3 UTF8REST UTF8REST	{ $$ = ptn_new_str(concat3($1, $2, $3)); }
+      | NLINE				{ $$ = ptn_new_nl(); }
+      | PAREND				{ $$ = ptn_new_par(); }
+      | WSPACE				{ $$ = ptn_new_ws($1); }
+      | '|'				{ $$ = ptn_new_char('|'); }
+      | DASH				{ $$ = ptn_new_mchar('-', strlen($1)); free($1); }
+      | OQUOT				{ $$ = ptn_new_mchar('`', strlen($1)); free($1); }
+      | CQUOT				{ $$ = ptn_new_mchar('\'', strlen($1)); free($1); }
+      | SCHAR				{ $$ = ptn_new_char(*$1); free($1); }
+      | ELLIPSIS			{ $$ = ptn_new_ellipsis(); }
+      | '~'				{ $$ = ptn_new_nbsp(); }
+      | '&'				{ $$ = ptn_new(PT_TBL_COL); }
+      | DOLLAR				{ $$ = ptn_new_char('$'); }
+      | '%'				{ $$ = ptn_new_char('%'); }
       | '\\' cmd			{ $$ = $2; }
-      | MATHSTART math MATHEND		{ $$ = render_math($2); }
-      | VERBSTART verb VERBEND		{ $$ = concat3(S("</p><p>"), $2, S("</p><p>")); }
-      | LISTSTART verb LISTEND		{ $$ = concat3(S("</p><pre>"),
-							 listing_str($2),
-							 S("</pre><p>")); }
+      | MATHSTART math MATHEND		{ $$ = ptn_new_math($2); }
+      | VERBSTART verb VERBEND		{ $$ = ptn_new_verb($2); }
+      | '[' paragraphs ']'		{ $$ = ptn_new_opt(PT_OPT_OPT, $2); }
+      | '{' paragraphs '}'		{ $$ = ptn_new_opt(PT_OPT_MAN, $2); }
       ;
 
-cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd(data->post, $1, $3, $2); free($1); }
-    | WORD cmdarg		{ $$ = process_cmd(data->post, $1, $2, NULL); free($1); }
-    | WORD			{ $$ = process_cmd(data->post, $1, NULL, NULL); free($1); }
-    | '\\'			{ $$ = xstrdup("<br/>"); }
-    | '{'			{ $$ = xstrdup("{"); }
-    | '}'			{ $$ = xstrdup("}"); }
-    | '['			{ $$ = xstrdup("["); }
-    | ']'			{ $$ = xstrdup("]"); }
-    | '&'			{ $$ = xstrdup("&amp;"); }
-    | '_'			{ $$ = xstrdup("_"); }
-    | '~'			{ $$ = xstrdup("~"); }
+cmd : WORD			{ $$ = ptn_new_cmd($1); }
+    | '\\'			{ $$ = ptn_new_char('\\'); }
+    | '{'			{ $$ = ptn_new_char('{'); }
+    | '}'			{ $$ = ptn_new_char('}'); }
+    | '['			{ $$ = ptn_new_char('['); }
+    | ']'			{ $$ = ptn_new_char(']'); }
+    | '&'			{ $$ = ptn_new_char('&'); }
+    | '_'			{ $$ = ptn_new_char('_'); }
+    | '~'			{ $$ = ptn_new_char('~'); }
     ;
-
-optcmdarg : '[' paragraph ']'		{ $$ = $2; }
-          ;
-
-cmdarg : '{' paragraph '}'		{ $$ = $2; }
-       ;
 
 verb : verb VERBTEXT			{ $$ = concat($1, $2); }
      | VERBTEXT				{ $$ = $1; }
