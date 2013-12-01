@@ -1,12 +1,14 @@
 #include <stdlib.h>
 
 #include "parse.h"
+#include "ast.h"
 #include "error.h"
 #include "utils.h"
 
 static int onefile(struct post *post, char *ibuf, size_t len)
 {
 	struct parser_output x;
+	struct ast *ast;
 	int ret;
 
 	x.req   = NULL;
@@ -24,6 +26,16 @@ static int onefile(struct post *post, char *ibuf, size_t len)
 	if (!ret) {
 		ASSERT(x.ptree);
 		pt_dump(x.ptree);
+
+		ast = ptree2ast(x.ptree);
+		if (ast) {
+			ast_dump(ast);
+			ast_destroy(ast);
+		} else {
+			fprintf(stderr, "failed to convert parse tree to AST\n");
+			ret = 1;
+		}
+
 		pt_destroy(x.ptree);
 	} else {
 		fprintf(stderr, "failed to parse\n");
