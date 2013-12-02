@@ -48,6 +48,10 @@ static void __ast_dump(struct list_head *nodes, int indent)
 				fprintf(stderr, "%*s    >>%s<<\n", indent,
 					"", cur->u.str);
 				break;
+			case AST_CMD:
+				fprintf(stderr, "%*s    >>%s<<\n", indent,
+					"", cur->u.cmd.info->name);
+				break;
 			case AST_CAT:
 				__ast_dump(&cur->u.concat, indent + 2);
 				break;
@@ -117,6 +121,17 @@ struct astnode *astnode_new_concat()
 	node = astnode_new(AST_CAT);
 
 	INIT_LIST_HEAD(&node->u.concat);
+
+	return node;
+}
+
+struct astnode *astnode_new_cmd(const struct ast_cmd *cmd)
+{
+	struct astnode *node;
+
+	node = astnode_new(AST_CMD);
+
+	node->u.cmd.info = cmd;
 
 	return node;
 }

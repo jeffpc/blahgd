@@ -241,7 +241,7 @@ struct cmd {
 	tri curly;
 };
 
-int cmd_cmp(const void *va, const void *vb)
+static int cmd_cmp(const void *va, const void *vb)
 {
 	const struct cmd *a = va;
 	const struct cmd *b = vb;

@@ -67,11 +67,17 @@ static struct astnode *__cvt_ptnode(struct ptnode *pn)
 
 static int __cvt(struct ast *ast, struct list_head *nodes)
 {
+	const struct ast_cmd *last_cmd;
 	struct ptnode *pnode, *tmp;
-	struct astnode *anode;
 	struct list_head concat;
+	struct astnode *anode;
+	size_t cmd_nmand;	/* number of mandatory args we've seen */
+	size_t cmd_nopt;	/* number of optional args we've seen */
 
 	INIT_LIST_HEAD(&concat);
+	last_cmd = NULL;
+	cmd_nmand = 0;
+	cmd_nopt = 0;
 
 	list_for_each_entry_safe(pnode, tmp, nodes, list) {
 		switch (pnode->type) {
@@ -85,10 +91,52 @@ static int __cvt(struct ast *ast, struct list_head *nodes)
 				anode = __cvt_ptnode(pnode);
 				list_add_tail(&anode->list, &concat);
 				break;
+			case PT_CMD: {
+				const struct ast_cmd *cmd;
+
+				cmd = ast_cmd_lookup(pnode->u.str);
+				ASSERT(cmd);
+
+				anode = astnode_new_cmd(cmd);
+				list_add_tail(&anode->list, &concat);
+
+				last_cmd = cmd;
+				cmd_nmand = 0;
+				cmd_nopt = 0;
+				break;
+			}
+			case PT_OPT_MAN: {
+				struct astnode *child;
+
+				/*
+				 * Regardless of how we treat this parse
+				 * tree node, we need to convert it into AST
+				 * node.
+				 */
+
+				if (!last_cmd) {
+					/*
+					 * treat '{foo}' as if the {} didn't
+					 * exist
+					 */
+					ASSERT(0);
+				} else {
+					/*
+					 * this is part of the last
+					 * command's arguments
+					 */
+					cmd_nmand++;
+					ASSERT(0);
+				}
+				break;
+			}
 			default:
 				ASSERT(0);
 				break;
 		}
+
+		if (last_cmd && (cmd_nmand == last_cmd->nmand))
+			last_cmd = NULL;
 	}
 
 	if (!list_empty(&concat)) {

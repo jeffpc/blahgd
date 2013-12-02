@@ -38,7 +38,7 @@ add_executable(blahg render.c post.c main.c
 	post_fmt3_cmds.c
 	post_fmt3_ast.c
 	ptree.c
-	ast.c
+	ast.c ast_cmd.c
 	index.c sidebar.c story.c tag.c feed.c comment.c
 	admin.c
 	listing.c utils.c error.c mangle.c
@@ -57,7 +57,7 @@ add_executable(test_fmt3
 	post_fmt3_cmds.c
 	post_fmt3_ast.c
 	ptree.c
-	ast.c
+	ast.c ast_cmd.c
 	listing.c
 	mangle.c utils.c error.c
 )
