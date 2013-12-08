@@ -38,6 +38,18 @@
  *  3) environment nesting - environments can be nested, but the \begin and
  *     \end must happen at the same nesting level and commands cannot start
  *     outside of an environment and end inside or vice versa.
+ *
+ * The entire conversion happens in several passes:
+ *
+ *  1) Convert parse tree to proto-AST.  This is essentially a node mapping
+ *     phase - each ptnode gets mapped to a astnode.  There are two
+ *     important properties of this pass:
+ *
+ *      a) commands capture arguments - any optional or mandatory arguments
+ *         that aren't used will show up in the output
+ *
+ *      b) environments aren't yet processed - you'll see the \begin and
+ *         \end commands in the output
  */
 
 static struct astnode *__cvt_ptnode(struct ptnode *pn)
@@ -65,11 +77,11 @@ static struct astnode *__cvt_ptnode(struct ptnode *pn)
 	return an;
 }
 
-static int __cvt(struct ast *ast, struct list_head *nodes)
+static struct astnode *__cvt(struct list_head *nodes)
 {
-	const struct ast_cmd *last_cmd;
 	struct ptnode *pnode, *tmp;
 	struct list_head concat;
+	struct astnode *last_cmd;
 	struct astnode *anode;
 	size_t cmd_nmand;	/* number of mandatory args we've seen */
 	size_t cmd_nopt;	/* number of optional args we've seen */
@@ -100,7 +112,7 @@ static int __cvt(struct ast *ast, struct list_head *nodes)
 				anode = astnode_new_cmd(cmd);
 				list_add_tail(&anode->list, &concat);
 
-				last_cmd = cmd;
+				last_cmd = anode;
 				cmd_nmand = 0;
 				cmd_nopt = 0;
 				break;
@@ -111,8 +123,10 @@ static int __cvt(struct ast *ast, struct list_head *nodes)
 				/*
 				 * Regardless of how we treat this parse
 				 * tree node, we need to convert it into AST
-				 * node.
+				 * concat node.
 				 */
+				child = __cvt(&pnode->u.tree->nodes);
+				ASSERT(child);
 
 				if (!last_cmd) {
 					/*
@@ -126,7 +140,8 @@ static int __cvt(struct ast *ast, struct list_head *nodes)
 					 * command's arguments
 					 */
 					cmd_nmand++;
-					ASSERT(0);
+					list_add_tail(&child->list,
+						      &last_cmd->u.cmd.mand);
 				}
 				break;
 			}
@@ -135,17 +150,27 @@ static int __cvt(struct ast *ast, struct list_head *nodes)
 				break;
 		}
 
-		if (last_cmd && (cmd_nmand == last_cmd->nmand))
+		if (last_cmd && (cmd_nmand == last_cmd->u.cmd.info->nmand))
 			last_cmd = NULL;
 	}
 
-	if (!list_empty(&concat)) {
-		anode = astnode_new_concat();
+	if (list_empty(&concat))
+		return NULL;
 
-		list_splice(&concat, &anode->u.concat);
+	anode = astnode_new_concat();
 
-		list_add_tail(&anode->list, &ast->nodes);
-	}
+	list_splice(&concat, &anode->u.concat);
+
+	return anode;
+}
+
+static int pass1(struct ast *ast, struct list_head *nodes)
+{
+	struct astnode *root;
+
+	root = __cvt(nodes);
+
+	list_add_tail(&root->list, &ast->nodes);
 
 	return 0;
 }
@@ -158,7 +183,7 @@ struct ast *ptree2ast(struct ptree *pt)
 	if (!ast)
 		return NULL;
 
-	__cvt(ast, &pt->nodes);
+	pass1(ast, &pt->nodes);
 
 	return ast;
 }

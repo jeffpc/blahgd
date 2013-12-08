@@ -31,6 +31,8 @@ struct astnode {
 		struct list_head concat;
 		struct {
 			const struct ast_cmd *info;
+			struct list_head mand;
+			struct list_head opt;
 		} cmd;
 	} u;
 };
