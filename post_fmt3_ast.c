@@ -180,9 +180,6 @@ static struct astnode *__cvt(struct list_head *nodes)
 			last_cmd = NULL;
 	}
 
-	fprintf(stderr, "%s: par = %d, concat = %d\n", __func__,
-		list_empty(&paragraphs), list_empty(&concat));
-
 	/*
 	 * If we have seen a paragraph, let's turn everything on the concat
 	 * queue into another paragraph.
