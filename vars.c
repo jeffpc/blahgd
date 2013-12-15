@@ -80,6 +80,7 @@ static void __free_scope(avl_tree_t *tree)
 	struct var *v;
 	void *cookie;
 
+	cookie = NULL;
 	while ((v = avl_destroy_nodes(tree, &cookie)))
 		var_free(v);
 
@@ -201,6 +202,7 @@ static void __val_cleanup(struct val *val)
 			break;
 		case VT_NV:
 		case VT_LIST:
+			cookie = NULL;
 			while ((vi = avl_destroy_nodes(&val->tree, &cookie))) {
 				val_putref(vi->val);
 
