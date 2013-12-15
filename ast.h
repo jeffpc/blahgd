@@ -6,6 +6,8 @@
 enum asttype {
 	AST_STR = 1,	/* must be first */
 	AST_CHAR,
+	AST_NL,
+	AST_NBSP,
 	AST_MATH,
 	AST_CMD,
 	AST_ENV,

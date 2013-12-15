@@ -26,9 +26,11 @@ enum cmd_idx {
 	CMD_IDX_post,
 	CMD_IDX_published,
 	CMD_IDX_rightarrow,
+#endif
 	CMD_IDX_section,
 	CMD_IDX_subsection,
 	CMD_IDX_subsubsection,
+#if 0
 	CMD_IDX_tag,
 	CMD_IDX_taglink,
 #endif
@@ -46,10 +48,13 @@ enum cmd_idx {
 #define CMD(n, m, o)	[CMD_IDX_##n] = { .name = #n, .nmand = (m), .nopt = (o), }
 
 static const struct ast_cmd cmds[] = {
-	CMD(emph,	1, 0),
-	CMD(textbf,	1, 0),
-	CMD(textit,	1, 0),
-	CMD(texttt,	1, 0),
+	CMD(emph,			1, 0),
+	CMD(section,			1, 0),
+	CMD(subsection,			1, 0),
+	CMD(subsubsection,		1, 0),
+	CMD(textbf,			1, 0),
+	CMD(textit,			1, 0),
+	CMD(texttt,			1, 0),
 };
 
 static int cmd_cmp(const void *va, const void *vb)

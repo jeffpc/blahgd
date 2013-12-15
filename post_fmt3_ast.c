@@ -63,11 +63,16 @@ static struct astnode *__cvt_ptnode(struct ptnode *pn)
 		case PT_CHAR:
 			an = astnode_new_char(pn->u.ch.ch, pn->u.ch.len);
 			break;
+		case PT_NL:
+			an = astnode_new(AST_NL);
+			break;
+		case PT_NBSP:
+			an = astnode_new(AST_NBSP);
+			break;
 		case PT_MATH:
 			an = astnode_new_math(pn->u.str);
 			break;
 		default:
-			an = NULL;
 			ASSERT(0);
 			break;
 	}
@@ -95,6 +100,8 @@ static struct astnode *__cvt(struct list_head *nodes)
 		switch (pnode->type) {
 			case PT_STR:
 			case PT_CHAR:
+			case PT_NL:
+			case PT_NBSP:
 			case PT_MATH:
 				/*
 				 * these parse tree nodes convert trivially,

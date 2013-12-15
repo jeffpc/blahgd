@@ -22,6 +22,8 @@ static const char *ast_typename(enum asttype type)
 	static const char *names[] = {
 		[AST_STR]	= "AST_STR",
 		[AST_CHAR]	= "AST_CHAR",
+		[AST_NL]	= "AST_NL",
+		[AST_NBSP]	= "AST_NBSP",
 		[AST_MATH]	= "AST_MATH",
 		[AST_CMD]	= "AST_CMD",
 		[AST_ENV]	= "AST_ENV",
@@ -60,6 +62,9 @@ static void __ast_dump(struct list_head *nodes, int indent)
 				break;
 			case AST_CAT:
 				__ast_dump(&cur->u.concat, indent + 2);
+				break;
+			case AST_NL:
+			case AST_NBSP:
 				break;
 			default:
 				ASSERT(0);
