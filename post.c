@@ -14,7 +14,6 @@
 
 #include "post.h"
 #include "list.h"
-#include "avl.h"
 #include "vars.h"
 #include "main.h"
 #include "db.h"

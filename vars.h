@@ -1,8 +1,9 @@
 #ifndef __VARS_H
 #define __VARS_H
 
+#include <sys/avl.h>
+
 #include "config.h"
-#include "avl.h"
 #include "utils.h"
 
 enum val_type {
@@ -15,7 +16,7 @@ enum val_type {
 struct val;
 
 struct val_item {
-	struct avl_node tree;
+	avl_node_t tree;
 	union {
 		uint64_t i;
 		char name[VAR_VAL_KEY_MAXLEN];
@@ -29,18 +30,18 @@ struct val {
 	union {
 		uint64_t i;
 		char *str;
-		struct avl_root tree;
+		avl_tree_t tree;
 	};
 };
 
 struct var {
-	struct avl_node tree;
+	avl_node_t tree;
 	char name[VAR_NAME_MAXLEN];
 	struct val *val;
 };
 
 struct vars {
-	struct avl_root scopes[VAR_MAX_SCOPES];
+	avl_tree_t scopes[VAR_MAX_SCOPES];
 	int cur;
 };
 
