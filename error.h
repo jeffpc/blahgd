@@ -4,10 +4,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define NORETURN __attribute__((__noreturn__))
+
 extern void __my_log(const char *fmt, ...);
-extern int __my_assfail(const char *a, const char *f, int l);
-extern int __my_assfail3(const char *a, uintmax_t lv, const char *op,
-			 uintmax_t rv, const char *f, int l);
+extern void __my_assfail(const char *a, const char *f, int l) NORETURN;
+extern void __my_assfail3(const char *a, uintmax_t lv, const char *op,
+			  uintmax_t rv, const char *f, int l) NORETURN;
 
 #define LOG(...)	__my_log(__VA_ARGS__)
 
