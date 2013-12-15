@@ -61,6 +61,7 @@ static void __ast_dump(struct list_head *nodes, int indent)
 				__ast_dump(&cur->u.cmd.opt, indent + 4);
 				break;
 			case AST_CAT:
+			case AST_PAR:
 				__ast_dump(&cur->u.concat, indent + 2);
 				break;
 			case AST_NL:
@@ -130,6 +131,17 @@ struct astnode *astnode_new_concat()
 	struct astnode *node;
 
 	node = astnode_new(AST_CAT);
+
+	INIT_LIST_HEAD(&node->u.concat);
+
+	return node;
+}
+
+struct astnode *astnode_new_par()
+{
+	struct astnode *node;
+
+	node = astnode_new(AST_PAR);
 
 	INIT_LIST_HEAD(&node->u.concat);
 

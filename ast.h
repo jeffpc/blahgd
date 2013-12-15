@@ -48,6 +48,7 @@ extern struct astnode *astnode_new_str(char *);
 extern struct astnode *astnode_new_char(char, int);
 extern struct astnode *astnode_new_math(char *);
 extern struct astnode *astnode_new_concat();
+extern struct astnode *astnode_new_par();
 extern struct astnode *astnode_new_cmd(const struct ast_cmd *);
 
 extern const struct ast_cmd *ast_cmd_lookup(const char *);

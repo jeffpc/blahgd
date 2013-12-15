@@ -1,5 +1,6 @@
 #include <stdlib.h>
 
+#include "post_fmt3_ast.h"
 #include "parse.h"
 #include "ast.h"
 #include "error.h"

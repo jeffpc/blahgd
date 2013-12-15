@@ -85,12 +85,14 @@ static struct astnode *__cvt_ptnode(struct ptnode *pn)
 static struct astnode *__cvt(struct list_head *nodes)
 {
 	struct ptnode *pnode, *tmp;
+	struct list_head paragraphs;
 	struct list_head concat;
 	struct astnode *last_cmd;
 	struct astnode *anode;
 	size_t cmd_nmand;	/* number of mandatory args we've seen */
 	size_t cmd_nopt;	/* number of optional args we've seen */
 
+	INIT_LIST_HEAD(&paragraphs);
 	INIT_LIST_HEAD(&concat);
 	last_cmd = NULL;
 	cmd_nmand = 0;
@@ -152,6 +154,23 @@ static struct astnode *__cvt(struct list_head *nodes)
 				}
 				break;
 			}
+			case PT_PAR: {
+				struct astnode *par;
+
+				/*
+				 * We found a paragraph parse tree node,
+				 * time to take everything we've seen and
+				 * added to the concat queue, and turn it
+				 * into a paragraph.
+				 */
+
+				par = astnode_new_par();
+
+				list_splice(&concat, &par->u.concat);
+
+				list_add_tail(&par->list, &paragraphs);
+				break;
+			}
 			default:
 				ASSERT(0);
 				break;
@@ -161,12 +180,37 @@ static struct astnode *__cvt(struct list_head *nodes)
 			last_cmd = NULL;
 	}
 
-	if (list_empty(&concat))
+	fprintf(stderr, "%s: par = %d, concat = %d\n", __func__,
+		list_empty(&paragraphs), list_empty(&concat));
+
+	/*
+	 * If we have seen a paragraph, let's turn everything on the concat
+	 * queue into another paragraph.
+	 */
+	if (!list_empty(&paragraphs)) {
+		anode = astnode_new_par();
+
+		list_splice(&concat, &anode->u.concat);
+
+		list_add_tail(&anode->list, &paragraphs);
+	}
+
+	/*
+	 * Now, we have three possible cases:
+	 *  (1) no paragraphs, no concat nodes  -> return NULL
+	 *  (2) paragraphs, no concat nodes     -> return paragraphs
+	 *  (3) no paragraphs, concat nodes     -> return concat
+	 */
+
+	if (list_empty(&concat) && list_empty(&paragraphs))
 		return NULL;
 
 	anode = astnode_new_concat();
 
-	list_splice(&concat, &anode->u.concat);
+	if (!list_empty(&paragraphs))
+		list_splice(&paragraphs, &anode->u.concat);
+	else
+		list_splice(&concat, &anode->u.concat);
 
 	return anode;
 }
