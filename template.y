@@ -38,70 +38,53 @@ static char *tostr(char c)
 	return ret;
 }
 
-static int __expand_val(struct avl_node *node, void *data)
+static char *__foreach_list(struct req *req, char *varname, char *tmpl,
+                            struct val *val)
 {
-	struct vars *vars = data;
-	struct val_item *val_item;
-
-	val_item = container_of(node, struct val_item, tree);
-
-	VAR_SET(vars, val_item->key.name, val_getref(val_item->val));
-
-	return 0;
-}
-
-struct wrap_state {
-	struct req *req;
-	char *varname;
-	char *tmpl;
-
-	char *out;
-};
-
-static int __foreach_val(struct avl_node *node, void *arg)
-{
-	struct wrap_state *state = arg;
-	struct req *req = state->req;
-	struct val *val;
+	avl_tree_t *tree;
+	struct val_item *vi;
 	char *ret;
+	char *out;
 
-	val = container_of(node, struct val_item, tree)->val;
+	tree = &val->tree;
 
-	vars_scope_push(&req->vars);
+	out = xstrdup("");
 
-	switch (val->type) {
-		case VT_STR:
-		case VT_INT:
-			VAR_SET(&req->vars, state->varname, val_getref(val));
-			break;
-		case VT_NV:
-			avl_for_each(&val->tree, __expand_val, &req->vars,
-				     NULL, NULL);
-			break;
-		default:
-			fprintf(stderr, "XXX %p\n", val);
-			val_dump(val, 0);
-			ASSERT(0);
-			break;
+	/* NOTE: we're reusing `val' as the iterator */
+	for (val = avl_first(tree); val; val = AVL_NEXT(tree, val)) {
+		vars_scope_push(&req->vars);
+
+		switch (val->type) {
+			case VT_STR:
+			case VT_INT:
+				VAR_SET(&req->vars, varname, val_getref(val));
+				break;
+			case VT_NV:
+				for (vi = avl_first(&val->tree); vi;
+				     vi = AVL_NEXT(&val->tree, vi))
+					VAR_SET(&req->vars, vi->key.name,
+					        val_getref(vi->val));
+				break;
+			default:
+				fprintf(stderr, "XXX %p\n", val);
+				val_dump(val, 0);
+				ASSERT(0);
+				break;
+		}
+
+		ret = render_template(req, tmpl);
+
+		out = concat(out, ret);
+
+		vars_scope_pop(&req->vars);
 	}
 
-	ret = render_template(req, state->tmpl);
-
-	state->out = concat(state->out, ret);
-
-	vars_scope_pop(&req->vars);
-
-	return !ret;
+	return out;
 }
 
 char *foreach(struct req *req, char *varname, char *tmpl)
 {
 	struct vars *vars = &req->vars;
-	struct wrap_state state = {
-		.req = req,
-		.varname = varname,
-		.tmpl = tmpl,
-	};
 	struct var *var;
 	struct val *val;
 	char *ret;
@@ -115,11 +98,8 @@ char *foreach(struct req *req, char *varname, char *tmpl)
 		return xstrdup("");
 
 	if (val->type == VT_LIST) {
-		state.out = NULL;
-		avl_for_each(&val->tree, __foreach_val, &state, NULL, NULL);
-		ret = state.out;
+		ret = __foreach_list(req, varname, tmpl, val);
 	} else {
-		ret = NULL;
 		LOG("%s called with '%s' which has type %d", __func__,
 		    varname, val->type);
 		ASSERT(0);
