@@ -5,7 +5,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "avl.h"
 #include "config.h"
 #include "post.h"
 #include "vars.h"

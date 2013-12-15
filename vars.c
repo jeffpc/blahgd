@@ -1,5 +1,6 @@
 #include <string.h>
 #include <errno.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <umem.h>
@@ -22,30 +23,37 @@ void init_var_subsys()
 	ASSERT(var_val_cache);
 }
 
-static int cmp(struct avl_node *aa, struct avl_node *ab)
+static int cmp(const void *va, const void *vb)
 {
-	struct var *a = container_of(aa, struct var, tree);
-	struct var *b = container_of(ab, struct var, tree);
+	const struct var *a = va;
+	const struct var *b = vb;
+	int ret;
 
-	return strncmp(a->name, b->name, VAR_MAX_VAR_NAME);
+	ret = strncmp(a->name, b->name, VAR_MAX_VAR_NAME);
+
+	if (ret < 0)
+		return -1;
+	if (ret > 0)
+		return 1;
+	return 0;
 }
 
 static void __init_scope(struct vars *vars)
 {
-	AVL_ROOT_INIT(&vars->scopes[vars->cur], cmp, 0);
+	avl_create(&vars->scopes[vars->cur], cmp, sizeof(struct var),
+		   offsetof(struct var, tree));
 }
 
-static void __free_scope(struct avl_root *root)
+static void __free_scope(avl_tree_t *tree)
 {
-	struct avl_node *node;
+	struct var *v;
+	void *cookie;
 
-	while ((node = avl_find_minimum(root))) {
-		struct var *v = container_of(node, struct var, tree);
-
-		avl_remove_node(root, node);
-
+	cookie = NULL;
+	while ((v = avl_destroy_nodes(tree, &cookie)))
 		var_putref(v);
-	}
+
+	avl_destroy(tree);
 }
 
 void vars_init(struct vars *vars)
@@ -87,15 +95,15 @@ void vars_scope_pop(struct vars *vars)
 struct var *var_lookup(struct vars *vars, const char *name)
 {
 	struct var key;
-	struct avl_node *node;
+	struct var *v;
 	int scope;
 
 	strncpy(key.name, name, VAR_MAX_VAR_NAME);
 
 	for (scope = vars->cur; scope >= 0; scope--) {
-		node = avl_find_node(&vars->scopes[scope], &key.tree);
-		if (node)
-			return container_of(node, struct var, tree);
+		v = avl_find(&vars->scopes[scope], &key, NULL);
+		if (v)
+			return v;
 	}
 
 	return NULL;
@@ -156,7 +164,6 @@ void var_val_free(struct var_val *vv)
 int var_append(struct vars *vars, const char *name, struct var_val *vv)
 {
 	struct var key;
-	struct avl_node *node;
 	struct var *v;
 	bool shouldfree;
 	int i, j;
@@ -164,23 +171,16 @@ int var_append(struct vars *vars, const char *name, struct var_val *vv)
 	shouldfree = false;
 	strncpy(key.name, name, VAR_MAX_VAR_NAME);
 
-	node = avl_find_node(&vars->scopes[vars->cur], &key.tree);
-	if (!node) {
+	v = avl_find(&vars->scopes[vars->cur], &key, NULL);
+	if (!v) {
 		shouldfree = true;
 
 		v = var_alloc(name);
 		if (!v)
 			return ENOMEM;
 
-		if (avl_insert_node(&vars->scopes[vars->cur], &v->tree)) {
-			var_putref(v);
-			return EEXIST;
-		}
-
-		node = &v->tree;
+		avl_add(&vars->scopes[vars->cur], &v->tree);
 	}
-
-	v = container_of(node, struct var, tree);
 
 	for (i = 0; i < VAR_MAX_ARRAY_SIZE; i++) {
 		if (v->val[i].type != VT_NIL)
@@ -240,24 +240,20 @@ void var_dump(struct var *v, int indent)
 			var_val_dump(&v->val[i], i, indent);
 }
 
-static int __vars_dump(struct avl_node *node, void *data)
-{
-	struct var *v = container_of(node, struct var, tree);
-
-	var_dump(v, 0);
-
-	return 0;
-}
-
 void vars_dump(struct vars *vars)
 {
+	struct var *v;
 	int scope;
 
 	fprintf(stderr, "%p: VARS DUMP BEGIN\n", vars);
 
 	for (scope = vars->cur; scope >= 0; scope--) {
+		avl_tree_t *s = &vars->scopes[scope];
+
 		fprintf(stderr, "%p: scope %2d:\n", vars, scope);
-		avl_for_each(&vars->scopes[scope], __vars_dump, NULL, NULL, NULL);
+
+		for (v = avl_first(s); v; v = AVL_NEXT(s, v))
+			var_dump(v, 0);
 	}
 
 	fprintf(stderr, "%p: VARS DUMP END\n", vars);

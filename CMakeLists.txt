@@ -32,7 +32,7 @@ find_path(SQLITE_INC sqlite3.h)
 include_directories(${SQLITE_INC})
 
 add_executable(blahg render.c post.c main.c
-	db.c ${PINGBACK_SRC} vars.c pipeline.c avl.c
+	db.c ${PINGBACK_SRC} vars.c pipeline.c
 	${FLEX_tmpl_OUTPUTS} ${BISON_tmpl_OUTPUTS}
 	${FLEX_fmt3_OUTPUTS} ${BISON_fmt3_OUTPUTS}
 	post_fmt3_cmds.c
@@ -45,6 +45,7 @@ add_executable(blahg render.c post.c main.c
 target_link_libraries(blahg ${XMLRPC_LIBRARIES} ${SQLITE_LIB})
 target_link_libraries(blahg rt)
 target_link_libraries(blahg umem)
+target_link_libraries(blahg avl)
 target_link_libraries(blahg m)
 target_link_libraries(blahg ${OPENSSL_CRYPTO_LIBRARY})
 

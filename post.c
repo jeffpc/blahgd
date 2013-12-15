@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <limits.h>
 #include <errno.h>
@@ -13,7 +14,6 @@
 
 #include "post.h"
 #include "list.h"
-#include "avl.h"
 #include "vars.h"
 #include "main.h"
 #include "db.h"
