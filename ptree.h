@@ -1,6 +1,8 @@
 #ifndef __PTREE_H
 #define __PTREE_H
 
+#include <stdbool.h>
+
 #include "list.h"
 
 enum pttype {
@@ -11,6 +13,7 @@ enum pttype {
 	PT_MATH,
 	PT_VERB,
 	PT_CMD,
+	PT_ENV,
 	PT_PAR,
 	PT_OPT_MAN,
 	PT_OPT_OPT,
@@ -26,6 +29,7 @@ struct ptnode {
 
 	enum pttype type;
 	union {
+		bool b;
 		char *str;
 		struct {
 			char ch;
@@ -46,6 +50,7 @@ extern struct ptnode *ptn_new_mchar(char, int);
 extern struct ptnode *ptn_new_math(char *);
 extern struct ptnode *ptn_new_verb(char *);
 extern struct ptnode *ptn_new_cmd(char *);
+extern struct ptnode *ptn_new_env(bool begin);
 extern struct ptnode *ptn_new_opt(enum pttype, struct ptree *);
 
 #define ptn_new_ws(x)		ptn_new_str(x)

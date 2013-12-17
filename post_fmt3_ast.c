@@ -112,6 +112,16 @@ static struct astnode *__cvt(struct list_head *nodes)
 				anode = __cvt_ptnode(pnode);
 				list_add_tail(&anode->list, &concat);
 				break;
+			case PT_ENV: {
+				if (pnode->u.b) {
+					/* we got a \begin */
+					ASSERT(0);
+				} else {
+					/* we got a \end */
+					ASSERT(0);
+				}
+				break;
+			}
 			case PT_CMD: {
 				const struct ast_cmd *cmd;
 

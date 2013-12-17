@@ -66,6 +66,8 @@ static void inc_lineno(yyscan_t scanner);
 			}
 %[^\n]*			{ /* tex comment */ }
 [ \t]+			{ yylval->ptr = xstrdup(yytext); return WSPACE; }
+"\\begin"		{ return CMDBEGIN; }
+"\\end"			{ return CMDEND; }
 [\\{}\[\]&_~|]		{ return *yytext; }
 "\\%"			{ return '%'; }
 \.{3}			{ return ELLIPSIS; }

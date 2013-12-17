@@ -21,6 +21,7 @@ struct ptnode *ptn_new(enum pttype type)
 		case PT_MATH:
 		case PT_VERB:
 		case PT_CMD:
+		case PT_ENV:
 		case PT_PAR:
 		case PT_OPT_MAN:
 		case PT_OPT_OPT:
@@ -93,6 +94,18 @@ struct ptnode *ptn_new_opt(enum pttype type, struct ptree *tree)
 	return ptn;
 }
 
+struct ptnode *ptn_new_env(bool begin)
+{
+	struct ptnode *ptn;
+
+	ptn = ptn_new(PT_ENV);
+	ASSERT(ptn);
+
+	ptn->u.b = begin;
+
+	return ptn;
+}
+
 struct ptree *pt_append(struct ptree *cur, struct ptnode *new)
 {
 	if (!cur) {
@@ -129,6 +142,7 @@ static const char *pt_typename(enum pttype type)
 		[PT_MATH]	= "PT_MATH",
 		[PT_VERB]	= "PT_VERB",
 		[PT_CMD]	= "PT_CMD",
+		[PT_ENV]	= "PT_ENV",
 		[PT_PAR]	= "PT_PAR",
 		[PT_OPT_MAN]	= "PT_OPT_MAN",
 		[PT_OPT_OPT]	= "PT_OPT_OPT",
@@ -156,6 +170,10 @@ static void __pt_dump(struct ptree *tree, int indent)
 			case PT_VERB:
 				fprintf(stderr, "%*s    >>%s<<\n", indent,
 					"", cur->u.str);
+				break;
+			case PT_ENV:
+				fprintf(stderr, "%*s    (%s)\n", indent,
+					"", cur->u.b ? "begin" : "end");
 				break;
 			case PT_CHAR:
 				fprintf(stderr, "%*s    '%c' * %d\n",
