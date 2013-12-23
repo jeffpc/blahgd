@@ -29,11 +29,9 @@
  *     mandatory arguments to expect.
  *
  *  2) environments - consider this example: "\begin{foo}xyzzy\end{foo}".
- *     The parse node stream will simply contain PT_CMD, PT_OPT_MAN, PT_STR,
- *     PT_CMD, and PT_OPT_MAN.  Obiously, the PT_CMDs affect the immediate
- *     PT_OPT_MANs (see point #1).  However, as part of the AST
- *     construction, we want to turn the \begin & \end pair into an AST_ENV
- *     with all the in-between stuff underneath it.
+ *     The parse node stream will simply contain PT_ENV, PT_STR, and PT_ENV.
+ *     As part of the AST construction, we want to turn the \begin & \end
+ *     pair into an AST_ENV with all the in-between stuff underneath it.
  *
  *  3) environment nesting - environments can be nested, but the \begin and
  *     \end must happen at the same nesting level and commands cannot start
@@ -41,185 +39,50 @@
  *
  * The entire conversion happens in several passes:
  *
- *  1) Convert parse tree to proto-AST.  This is essentially a node mapping
- *     phase - each ptnode gets mapped to a astnode.  There are two
- *     important properties of this pass:
+ *  1) Scan through ptree for \begin and \end and capture the arguments.
+ *     Look up the env (this could be hard because the name of the env is in
+ *     an argument!) and turn the content PT nodes into an ENV AST node that
+ *     has the encapsulation AST node as the content (the args need to be
+ *     converted).
  *
- *      a) commands capture arguments - any optional or mandatory arguments
- *         that aren't used will show up in the output
+ *     At the end of this pass, we have an AST where environments are
+ *     correct and the parse tree is no longer useful; the resulting AST
+ *     tree must not contain any PT_ENV nodes.
  *
- *      b) environments aren't yet processed - you'll see the \begin and
- *         \end commands in the output
+ *  2) Scan through the AST looking for paragraph breaks in the encapsulated
+ *     parse tree nodes.  Convert the content between breaks into PAR AST
+ *     nodes with the content encapsulated.
+ *
+ *     At the end of this pass, the resulting AST must not contain any
+ *     PT_ENV and PT_PAR nodes.
+ *
+ *  3) Scan through the AST looking for commands in the encapsulated parse
+ *     tree nodes.  Look up the commands and capture the arguments - emit a
+ *     CMD AST node for each command.  Any non-command parse tree nodes get
+ *     put into AST encap node.
+ *
+ *     At the end of this pass, the resulting AST must not contain any
+ *     PT_ENV, PT_PAR, or PT_CMD nodes.
+ *
+ *  4) Scan through the AST, converting any left PT_* nodes into AST nodes.
+ *     STR, CHAR, NL, NBSP, MATH, and VERB are trivially converted into
+ *     their AST equivalents.  Any OPT_MAN and OPT_OPT parse tree nodes
+ *     still in the tree at this point haven't been captured by any commands
+ *     or environments.  Therefore, they should be converted to string AST
+ *     nodes.
+ *
+ *     XXX: tables
+ *     XXX: \\ handling
+ *
+ *     At the end of this pass, the resulting AST must not contain any AST
+ *     encapsulation nodes (and therefore any parse tree nodes).  We have a
+ *     pure AST now!
+ *
+ * After these passes, the AST is renderable.  However, it may be
+ * advantageous to perform some optimization passes.  Note, if the ptree2ast
+ * conversion is too slow, it may be worthwhile to do a simple optimization
+ * pass on the ptree - to reduce the number of nodes.
  */
-
-#if 0
-static struct astnode *__cvt_ptnode(struct ptnode *pn)
-{
-	struct astnode *an;
-
-	switch (pn->type) {
-		case PT_STR:
-			an = astnode_new_str(pn->u.str);
-			break;
-		case PT_CHAR:
-			an = astnode_new_char(pn->u.ch.ch, pn->u.ch.len);
-			break;
-		case PT_NL:
-			an = astnode_new(AST_NL);
-			break;
-		case PT_NBSP:
-			an = astnode_new(AST_NBSP);
-			break;
-		case PT_MATH:
-			an = astnode_new_math(pn->u.str);
-			break;
-		default:
-			ASSERT(0);
-			break;
-	}
-
-	ASSERT(an);
-
-	return an;
-}
-
-static struct astnode *__cvt(struct list_head *nodes)
-{
-	struct ptnode *pnode, *tmp;
-	struct list_head paragraphs;
-	struct list_head concat;
-	struct astnode *last_cmd;
-	struct astnode *anode;
-	size_t cmd_nmand;	/* number of mandatory args we've seen */
-
-	INIT_LIST_HEAD(&paragraphs);
-	INIT_LIST_HEAD(&concat);
-	last_cmd = NULL;
-	cmd_nmand = 0;
-
-	list_for_each_entry_safe(pnode, tmp, nodes, list) {
-		switch (pnode->type) {
-			case PT_STR:
-			case PT_CHAR:
-			case PT_NL:
-			case PT_NBSP:
-			case PT_MATH:
-				/*
-				 * these parse tree nodes convert trivially,
-				 * and we just concat them
-				 */
-				anode = __cvt_ptnode(pnode);
-				list_add_tail(&anode->list, &concat);
-				break;
-			case PT_ENV: {
-				if (pnode->u.b) {
-					/* we got a \begin */
-					ASSERT(0);
-				} else {
-					/* we got a \end */
-					ASSERT(0);
-				}
-				break;
-			}
-			case PT_CMD: {
-				const struct ast_cmd *cmd;
-
-				cmd = ast_cmd_lookup(pnode->u.str);
-				ASSERT(cmd);
-
-				anode = astnode_new_cmd(cmd);
-				list_add_tail(&anode->list, &concat);
-
-				last_cmd = anode;
-				cmd_nmand = 0;
-				break;
-			}
-			case PT_OPT_MAN: {
-				struct astnode *child;
-
-				/*
-				 * Regardless of how we treat this parse
-				 * tree node, we need to convert it into AST
-				 * concat node.
-				 */
-				child = __cvt(&pnode->u.tree->nodes);
-				ASSERT(child);
-
-				if (!last_cmd) {
-					/*
-					 * treat '{foo}' as if the {} didn't
-					 * exist
-					 */
-					ASSERT(0);
-				} else {
-					/*
-					 * this is part of the last
-					 * command's arguments
-					 */
-					cmd_nmand++;
-					list_add_tail(&child->list,
-						      &last_cmd->u.cmd.mand);
-				}
-				break;
-			}
-			case PT_PAR: {
-				struct astnode *par;
-
-				/*
-				 * We found a paragraph parse tree node,
-				 * time to take everything we've seen and
-				 * added to the concat queue, and turn it
-				 * into a paragraph.
-				 */
-
-				par = astnode_new_par();
-
-				list_splice(&concat, &par->u.concat);
-
-				list_add_tail(&par->list, &paragraphs);
-				break;
-			}
-			default:
-				ASSERT(0);
-				break;
-		}
-
-		if (last_cmd && (cmd_nmand == last_cmd->u.cmd.info->nmand))
-			last_cmd = NULL;
-	}
-
-	/*
-	 * If we have seen a paragraph, let's turn everything on the concat
-	 * queue into another paragraph.
-	 */
-	if (!list_empty(&paragraphs)) {
-		anode = astnode_new_par();
-
-		list_splice(&concat, &anode->u.concat);
-
-		list_add_tail(&anode->list, &paragraphs);
-	}
-
-	/*
-	 * Now, we have three possible cases:
-	 *  (1) no paragraphs, no concat nodes  -> return NULL
-	 *  (2) paragraphs, no concat nodes     -> return paragraphs
-	 *  (3) no paragraphs, concat nodes     -> return concat
-	 */
-
-	if (list_empty(&concat) && list_empty(&paragraphs))
-		return NULL;
-
-	anode = astnode_new_concat();
-
-	if (!list_empty(&paragraphs))
-		list_splice(&paragraphs, &anode->u.concat);
-	else
-		list_splice(&concat, &anode->u.concat);
-
-	return anode;
-}
-#endif
 
 static struct astnode *__pass1_cvt(struct list_head *nodes)
 {
@@ -341,6 +204,10 @@ static void pass1(struct ast *ast, struct list_head *nodes)
 	list_add_tail(&node->list, &ast->nodes);
 }
 
+static void pass2(struct ast *ast)
+{
+}
+
 struct ast *ptree2ast(struct ptree *pt)
 {
 	struct ast *ast;
@@ -349,7 +216,13 @@ struct ast *ptree2ast(struct ptree *pt)
 	if (!ast)
 		return NULL;
 
+	fprintf(stderr, "%s: pass 1\n", __func__);
 	pass1(ast, &pt->nodes);
+	ast_dump(ast);
+
+	fprintf(stderr, "%s: pass 2\n", __func__);
+	pass2(ast);
+	ast_dump(ast);
 
 	return ast;
 }
