@@ -231,7 +231,7 @@ out:
 %token <ptr> DASH OQUOT CQUOT SCHAR
 %token <ptr> UTF8FIRST3 UTF8FIRST2 UTF8REST WORD
 %token <ptr> ELLIPSIS PAREND NLINE
-%token CMDBEGIN CMDEND
+%token <ptr> ENVBEGIN ENVEND
 
 /* math specific tokens */
 %token <ptr> EQLTGT
@@ -277,8 +277,8 @@ thing : WORD				{ $$ = ptn_new_str($1); }
       | '&'				{ $$ = ptn_new(PT_TBL_COL); }
       | DOLLAR				{ $$ = ptn_new_char('$'); }
       | '%'				{ $$ = ptn_new_char('%'); }
-      | CMDBEGIN			{ $$ = ptn_new_env(true); }
-      | CMDEND				{ $$ = ptn_new_env(false); }
+      | ENVBEGIN			{ $$ = ptn_new_env(true, $1); }
+      | ENVEND				{ $$ = ptn_new_env(false, $1); }
       | '\\' cmd			{ $$ = $2; }
       | MATHSTART math MATHEND		{ $$ = ptn_new_math($2); }
       | VERBSTART verb VERBEND		{ $$ = ptn_new_verb($2); }

@@ -50,7 +50,7 @@ extern struct ptnode *ptn_new_mchar(char, int);
 extern struct ptnode *ptn_new_math(char *);
 extern struct ptnode *ptn_new_verb(char *);
 extern struct ptnode *ptn_new_cmd(char *);
-extern struct ptnode *ptn_new_env(bool begin);
+extern struct ptnode *ptn_new_env(bool begin, char *txt);
 extern struct ptnode *ptn_new_opt(enum pttype, struct ptree *);
 
 #define ptn_new_ws(x)		ptn_new_str(x)

@@ -11,7 +11,6 @@ enum asttype {
 	AST_MATH,
 	AST_CMD,
 	AST_ENV,
-	AST_CAT,
 	AST_ENCAP,
 	AST_PAR,	/* must be last */
 };
@@ -30,14 +29,22 @@ struct astnode {
 	struct list_head list;
 	enum asttype type;
 	union {
-		void *data;
 		char *str;
-		struct list_head concat;
+		struct {
+			char *name;
+			struct list_head children;
+		} env;
+		struct {
+			struct list_head children;
+		} par;
 		struct {
 			const struct ast_cmd *info;
 			struct list_head mand;
 			struct list_head opt;
 		} cmd;
+		struct {
+			struct list_head data;
+		} encap;
 	} u;
 };
 
@@ -46,11 +53,11 @@ extern void ast_dump(struct ast *tree);
 extern void ast_destroy(struct ast *tree);
 
 extern struct astnode *astnode_new(enum asttype);
-extern struct astnode *astnode_new_encap(void *);
+extern struct astnode *astnode_new_encap(struct list_head *);
 extern struct astnode *astnode_new_str(char *);
 extern struct astnode *astnode_new_char(char, int);
 extern struct astnode *astnode_new_math(char *);
-extern struct astnode *astnode_new_concat();
+extern struct astnode *astnode_new_env(char *);
 extern struct astnode *astnode_new_par();
 extern struct astnode *astnode_new_cmd(const struct ast_cmd *);
 

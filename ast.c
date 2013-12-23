@@ -27,7 +27,6 @@ static const char *ast_typename(enum asttype type)
 		[AST_MATH]	= "AST_MATH",
 		[AST_CMD]	= "AST_CMD",
 		[AST_ENV]	= "AST_ENV",
-		[AST_CAT]	= "AST_CAT",
 		[AST_PAR]	= "AST_PAR",
 		[AST_ENCAP]	= "AST_ENCAP",
 	};
@@ -48,8 +47,9 @@ static void __ast_dump(struct list_head *nodes, int indent)
 
 		switch (cur->type) {
 			case AST_ENCAP:
-				fprintf(stderr, "%*s    %p\n", indent, "",
-					cur->u.data);
+				fprintf(stderr, "%*s    %p<->%p\n", indent, "",
+					cur->u.encap.data.prev,
+					cur->u.encap.data.next);
 				break;
 			case AST_STR:
 				fprintf(stderr, "%*s    >>%s<<\n", indent,
@@ -65,9 +65,13 @@ static void __ast_dump(struct list_head *nodes, int indent)
 					indent, "");
 				__ast_dump(&cur->u.cmd.opt, indent + 4);
 				break;
-			case AST_CAT:
 			case AST_PAR:
-				__ast_dump(&cur->u.concat, indent + 2);
+				__ast_dump(&cur->u.par.children, indent + 2);
+				break;
+			case AST_ENV:
+				fprintf(stderr, "%*s    >>%s<<\n", indent,
+					"", cur->u.env.name);
+				__ast_dump(&cur->u.env.children, indent + 2);
 				break;
 			case AST_NL:
 			case AST_NBSP:
@@ -103,12 +107,16 @@ struct astnode *astnode_new(enum asttype type)
 	return node;
 }
 
-struct astnode *astnode_new_encap(void *data)
+struct astnode *astnode_new_encap(struct list_head *data)
 {
 	struct astnode *node;
 
 	node = astnode_new(AST_ENCAP);
-	node->u.data = data;
+
+	INIT_LIST_HEAD(&node->u.encap.data);
+
+	if (!list_empty(data))
+		list_splice(data, &node->u.encap.data);
 
 	return node;
 }
@@ -141,13 +149,15 @@ struct astnode *astnode_new_math(char *str)
 	return node;
 }
 
-struct astnode *astnode_new_concat()
+struct astnode *astnode_new_env(char *name)
 {
 	struct astnode *node;
 
-	node = astnode_new(AST_CAT);
+	node = astnode_new(AST_ENV);
 
-	INIT_LIST_HEAD(&node->u.concat);
+	node->u.env.name = name;
+
+	INIT_LIST_HEAD(&node->u.env.children);
 
 	return node;
 }
@@ -158,7 +168,7 @@ struct astnode *astnode_new_par()
 
 	node = astnode_new(AST_PAR);
 
-	INIT_LIST_HEAD(&node->u.concat);
+	INIT_LIST_HEAD(&node->u.par.children);
 
 	return node;
 }

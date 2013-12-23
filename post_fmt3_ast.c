@@ -52,6 +52,7 @@
  *         \end commands in the output
  */
 
+#if 0
 static struct astnode *__cvt_ptnode(struct ptnode *pn)
 {
 	struct astnode *an;
@@ -90,13 +91,11 @@ static struct astnode *__cvt(struct list_head *nodes)
 	struct astnode *last_cmd;
 	struct astnode *anode;
 	size_t cmd_nmand;	/* number of mandatory args we've seen */
-	size_t cmd_nopt;	/* number of optional args we've seen */
 
 	INIT_LIST_HEAD(&paragraphs);
 	INIT_LIST_HEAD(&concat);
 	last_cmd = NULL;
 	cmd_nmand = 0;
-	cmd_nopt = 0;
 
 	list_for_each_entry_safe(pnode, tmp, nodes, list) {
 		switch (pnode->type) {
@@ -133,7 +132,6 @@ static struct astnode *__cvt(struct list_head *nodes)
 
 				last_cmd = anode;
 				cmd_nmand = 0;
-				cmd_nopt = 0;
 				break;
 			}
 			case PT_OPT_MAN: {
@@ -221,16 +219,126 @@ static struct astnode *__cvt(struct list_head *nodes)
 
 	return anode;
 }
+#endif
 
-static int pass1(struct ast *ast, struct list_head *nodes)
+static struct astnode *__pass1_cvt(struct list_head *nodes)
 {
-	struct astnode *root;
+	struct ptnode *pnode, *pnode_tmp;
+	struct astnode *envs[64];
+	size_t idx;
+	struct astnode *an;
+	struct list_head items;
 
-	root = __cvt(nodes);
+	INIT_LIST_HEAD(&items);
 
-	list_add_tail(&root->list, &ast->nodes);
+	idx = 0;
+	envs[idx] = astnode_new_env(NULL);
 
-	return 0;
+	list_for_each_entry_safe(pnode, pnode_tmp, nodes, list) {
+		switch (pnode->type) {
+			case PT_STR:
+			case PT_CHAR:
+			case PT_NL:
+			case PT_NBSP:
+			case PT_MATH:
+			case PT_VERB:
+			case PT_CMD:
+			case PT_PAR:
+			case PT_OPT_MAN:
+			case PT_OPT_OPT:
+				list_del(&pnode->list);
+				list_add_tail(&pnode->list, &items);
+				break;
+			case PT_ENV:
+				if (pnode->u.b) {
+					if (!list_empty(&items)) {
+						/*
+						 * 1) move everything from
+						 * items into an ENCAP AST
+						 * node
+						 */
+						an = astnode_new_encap(&items);
+
+						/*
+						 * 2) add the AST node to
+						 * the topmost env
+						 */
+						list_add_tail(&an->list,
+							      &envs[idx]->u.env.children);
+					}
+
+					/*
+					 * define a new top-most env based
+					 * on the PT_ENV we are looking at
+					 * and add it to the list of
+					 * children of the currently
+					 * top-most env
+					 */
+					idx++;
+
+					/* FIXME: pass in the env name */
+					envs[idx] = astnode_new_env(NULL);
+
+					list_add_tail(&envs[idx]->list,
+						      &envs[idx - 1]->u.env.children);
+				} else {
+					if (!list_empty(&items)) {
+						/*
+						 * 1) move everything from
+						 * items into an ENCAP AST
+						 * node
+						 */
+						an = astnode_new_encap(&items);
+
+						/*
+						 * 2) add the AST node to
+						 * the topmost env
+						 */
+						list_add_tail(&an->list,
+							      &envs[idx]->u.env.children);
+					}
+
+					/*
+					 * FIXME: make sure the env name matches
+					 */
+#if 0
+					VERIFY0(strcmp(envs[idx]->u.env.name,
+						       CURRENTNAME));
+#endif
+
+					ASSERT3U(idx, >=, 1);
+
+					/*
+					 * pop the topmost env...that's all
+					 */
+					idx--;
+				}
+				break;
+		}
+	}
+
+	if (!list_empty(&items)) {
+		/*
+		 * 1) move everything from items into an ENCAP AST node
+		 */
+		an = astnode_new_encap(&items);
+
+		/*
+		 * 2) add the AST node to the topmost env
+		 */
+		list_add_tail(&an->list, &envs[idx]->u.env.children);
+	}
+
+	return envs[0];
+}
+
+static void pass1(struct ast *ast, struct list_head *nodes)
+{
+	struct astnode *node;
+
+	node = __pass1_cvt(nodes);
+
+	list_add_tail(&node->list, &ast->nodes);
 }
 
 struct ast *ptree2ast(struct ptree *pt)

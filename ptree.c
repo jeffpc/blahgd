@@ -94,7 +94,7 @@ struct ptnode *ptn_new_opt(enum pttype type, struct ptree *tree)
 	return ptn;
 }
 
-struct ptnode *ptn_new_env(bool begin)
+struct ptnode *ptn_new_env(bool begin, char *txt)
 {
 	struct ptnode *ptn;
 
