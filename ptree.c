@@ -3,6 +3,7 @@
 #include "ptree.h"
 #include "list.h"
 #include "error.h"
+#include "utils.h"
 
 struct ptnode *ptn_new(enum pttype type)
 {
@@ -94,14 +95,15 @@ struct ptnode *ptn_new_opt(enum pttype type, struct ptree *tree)
 	return ptn;
 }
 
-struct ptnode *ptn_new_env(bool begin, char *txt)
+struct ptnode *ptn_new_env(bool begin, char *name)
 {
 	struct ptnode *ptn;
 
 	ptn = ptn_new(PT_ENV);
 	ASSERT(ptn);
 
-	ptn->u.b = begin;
+	ptn->u.env.begin = begin;
+	ptn->u.env.name = xstrdup(name);
 
 	return ptn;
 }
@@ -172,8 +174,9 @@ static void __pt_dump(struct ptree *tree, int indent)
 					"", cur->u.str);
 				break;
 			case PT_ENV:
-				fprintf(stderr, "%*s    (%s)\n", indent,
-					"", cur->u.b ? "begin" : "end");
+				fprintf(stderr, "%*s    >>%s<< %s\n", indent,
+					"", cur->u.env.name,
+					cur->u.env.begin ? "begin" : "end");
 				break;
 			case PT_CHAR:
 				fprintf(stderr, "%*s    '%c' * %d\n",

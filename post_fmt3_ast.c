@@ -113,7 +113,7 @@ static struct astnode *__pass1_cvt(struct list_head *nodes)
 				list_add_tail(&pnode->list, &items);
 				break;
 			case PT_ENV:
-				if (pnode->u.b) {
+				if (pnode->u.env.begin) {
 					if (!list_empty(&items)) {
 						/*
 						 * 1) move everything from
@@ -139,8 +139,7 @@ static struct astnode *__pass1_cvt(struct list_head *nodes)
 					 */
 					idx++;
 
-					/* FIXME: pass in the env name */
-					envs[idx] = astnode_new_env(NULL);
+					envs[idx] = astnode_new_env(pnode->u.env.name);
 
 					list_add_tail(&envs[idx]->list,
 						      &envs[idx - 1]->u.env.children);
@@ -164,10 +163,8 @@ static struct astnode *__pass1_cvt(struct list_head *nodes)
 					/*
 					 * FIXME: make sure the env name matches
 					 */
-#if 0
-					VERIFY0(strcmp(envs[idx]->u.env.name,
-						       CURRENTNAME));
-#endif
+					ASSERT0(strcmp(envs[idx]->u.env.name,
+						       pnode->u.env.name));
 
 					ASSERT3U(idx, >=, 1);
 
