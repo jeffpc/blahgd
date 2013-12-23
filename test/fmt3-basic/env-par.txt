@@ -1,0 +1,7 @@
+foo
+\begin{quote}
+bar1
+
+bar2
+\end{quote}
+baz
