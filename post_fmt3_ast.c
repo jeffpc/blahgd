@@ -29,55 +29,69 @@
  *     The command table needs to inform us about how many optional and
  *     mandatory arguments to expect.
  *
- *  2) environments - consider this example: "\begin{foo}xyzzy\end{foo}".
+ *  2) command nesting - commands can nest.  For example:
+ *     "\texttt{\textbf{foo}}".
+ *
+ *  3) environments - consider this example: "\begin{foo}xyzzy\end{foo}".
  *     The parse node stream will simply contain PT_ENV, PT_STR, and PT_ENV.
  *     As part of the AST construction, we want to turn the \begin & \end
  *     pair into an AST_ENV with all the in-between stuff underneath it.
  *
- *  3) environment nesting - environments can be nested, but the \begin and
+ *  4) environment nesting - environments can be nested, but the \begin and
  *     \end must happen at the same nesting level and commands cannot start
  *     outside of an environment and end inside or vice versa.
+ *
+ *  5) commands & environments - environments can only occur at the
+ *     "document" level.  They cannot begin or end within a command.  In
+ *     other words, PT_ENV must not occur within a PT_OPT_MAN & PT_OPT_OPT.
  *
  * The entire conversion happens in several passes:
  *
  *  1) Scan through ptree for \begin and \end and capture the arguments.
  *     Look up the env (this could be hard because the name of the env is in
  *     an argument!) and turn the content PT nodes into an ENV AST node that
- *     has the encapsulation AST node as the content (the args need to be
- *     converted).
+ *     has the encapsulation AST node as the content.  PT_OPT_{MAN,OPT} can
+ *     be left uninspected as environments must not begin/end within
+ *     commands.
  *
  *     At the end of this pass, we have an AST where environments are
  *     correct and the parse tree is no longer useful; the resulting AST
  *     tree must not contain any PT_ENV nodes.
  *
- *  2) Scan through the AST looking for paragraph breaks in the encapsulated
+ *  2) Scan through the AST looking for all PT_OPT_{MAN,OPT} parse tree
+ *     nodes.  Convert them to ARG AST nodes with contents being recursively
+ *     processed to convert any nested PT_OPT_* nodes.
+ *
+ *     At the end of this pass, the resulting AST must not contain any
+ *     PT_ENV, PT_OPT_MAN, and PT_OPT_OPT nodes.
+ *
+ *  3) Scan through the AST looking for paragraph breaks in the encapsulated
  *     parse tree nodes.  Convert the content between breaks into PAR AST
  *     nodes with the content encapsulated.
  *
  *     At the end of this pass, the resulting AST must not contain any
- *     PT_ENV and PT_PAR nodes.
+ *     PT_ENV, PT_OPT_MAN, PT_OPT_OPT, and PT_PAR nodes.
  *
- *  3) Scan through the AST looking for commands in the encapsulated parse
- *     tree nodes.  Look up the commands and capture the arguments - emit a
- *     CMD AST node for each command.  Any non-command parse tree nodes get
- *     put into AST encap node.
+ *  4) Scan through the AST looking for commands in the encapsulated parse
+ *     tree nodes.  Look up the commands and capture the arguments
+ *     (AST_ARGs) - emit a CMD AST node for each command.  Any non-command
+ *     parse tree nodes get put into AST encap node.
  *
  *     At the end of this pass, the resulting AST must not contain any
- *     PT_ENV, PT_PAR, or PT_CMD nodes.
+ *     PT_ENV, PT_OPT_MAN, PT_OPT_OPT, PT_PAR, and PT_CMD nodes.
  *
- *  4) Scan through the AST, converting any left PT_* nodes into AST nodes.
+ *  5) Scan through the AST, converting any left PT_* nodes into AST nodes.
  *     STR, CHAR, NL, NBSP, MATH, and VERB are trivially converted into
- *     their AST equivalents.  Any OPT_MAN and OPT_OPT parse tree nodes
- *     still in the tree at this point haven't been captured by any commands
- *     or environments.  Therefore, they should be converted to string AST
- *     nodes.
+ *     their AST equivalents.  Any AST_ARG nodes still in the tree at this
+ *     point haven't been captured by any commands or environments.
+ *     Therefore, they should be converted to NULL-ENV AST nodes.
  *
  *     XXX: tables
  *     XXX: \\ handling
  *
  *     At the end of this pass, the resulting AST must not contain any AST
- *     encapsulation nodes (and therefore any parse tree nodes).  We have a
- *     pure AST now!
+ *     encapsulation nodes (and therefore any parse tree nodes) and AST ARG
+ *     nodes.  We have a pure AST now!
  *
  * After these passes, the AST is renderable.  However, it may be
  * advantageous to perform some optimization passes.  Note, if the ptree2ast
@@ -202,7 +216,7 @@ static void pass1(struct ast *ast, struct list_head *nodes)
 	list_add_tail(&node->list, &ast->nodes);
 }
 
-static void __pass2_encap(struct ast *ast, struct astnode *node)
+static void __pass3_encap(struct ast *ast, struct astnode *node)
 {
 	struct ptnode *pnode, *pnode_tmp;
 	struct astnode *encap;
@@ -274,7 +288,7 @@ static void __pass2_encap(struct ast *ast, struct astnode *node)
 	}
 }
 
-static int __pass2(struct ast *ast, struct astnode *node)
+static int __pass3(struct ast *ast, struct astnode *node)
 {
 	fprintf(stderr, "%s: %p\n", __func__, node);
 
@@ -292,16 +306,16 @@ static int __pass2(struct ast *ast, struct astnode *node)
 		case AST_ENV:
 			break;
 		case AST_ENCAP:
-			__pass2_encap(ast, node);
+			__pass3_encap(ast, node);
 			break;
 	}
 
 	return 0;
 }
 
-static void pass2(struct ast *ast)
+static void pass3(struct ast *ast)
 {
-	ast_visit(ast, __pass2);
+	ast_visit(ast, __pass3);
 }
 
 struct ast *ptree2ast(struct ptree *pt)
@@ -316,8 +330,8 @@ struct ast *ptree2ast(struct ptree *pt)
 	pass1(ast, &pt->nodes);
 	ast_dump(ast);
 
-	fprintf(stderr, "%s: pass 2\n", __func__);
-	pass2(ast);
+	fprintf(stderr, "%s: pass 3\n", __func__);
+	pass3(ast);
 	ast_dump(ast);
 
 	return ast;
