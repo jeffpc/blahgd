@@ -204,8 +204,74 @@ static void pass1(struct ast *ast, struct list_head *nodes)
 	list_add_tail(&node->list, &ast->nodes);
 }
 
+static void __pass2_encap(struct ast *ast, struct astnode *node)
+{
+	struct ptnode *pnode, *pnode_tmp;
+
+	ASSERT3U(node->type, ==, AST_ENCAP);
+
+	list_for_each_entry_safe(pnode, pnode_tmp, &node->u.encap.data, list) {
+		switch (pnode->type) {
+			case PT_STR:
+			case PT_CHAR:
+			case PT_NL:
+			case PT_NBSP:
+			case PT_MATH:
+			case PT_VERB:
+			case PT_CMD:
+			case PT_OPT_MAN:
+			case PT_OPT_OPT:
+				break;
+			case PT_ENV:
+				/* we shouldn't have these anymore */
+				ASSERT(0);
+				break;
+			case PT_PAR:
+				/* FIXME: move the contents of this list
+				 * before this pnode into a separate ENCAP
+				 * AST node, then move the new ENCAP AST
+				 * node into a new PAR AST node.  Insert the
+				 * new PAR AST node before node->list.
+				 * Then, remove the PT_PAR and free it.
+				 */
+				ASSERT(0);
+				break;
+		}
+	}
+
+	if (list_empty(&node->u.encap.data)) {
+		/* FIXME: remove & free this AST_ENCAP because it's empty */
+	}
+}
+
+static int __pass2(struct ast *ast, struct astnode *node)
+{
+	fprintf(stderr, "%s: %p\n", __func__, node);
+
+	switch (node->type) {
+		case AST_STR:
+		case AST_CHAR:
+		case AST_NL:
+		case AST_NBSP:
+		case AST_MATH:
+		case AST_CMD:
+		case AST_PAR:
+			/* we shouldn't have any of these yet */
+			ASSERT(0);
+			break;
+		case AST_ENV:
+			break;
+		case AST_ENCAP:
+			__pass2_encap(ast, node);
+			break;
+	}
+
+	return 0;
+}
+
 static void pass2(struct ast *ast)
 {
+	ast_visit(ast, __pass2);
 }
 
 struct ast *ptree2ast(struct ptree *pt)
