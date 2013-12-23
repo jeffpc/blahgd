@@ -65,6 +65,12 @@ static void __ast_dump(struct list_head *nodes, int indent)
 					indent, "");
 				__ast_dump(&cur->u.cmd.opt, indent + 4);
 				break;
+			case AST_ARG:
+				fprintf(stderr, "%*s    %s arg\n",
+					indent, "", cur->u.arg.opt ?
+					"optional" : "mandatory");
+				__ast_dump(&cur->u.arg.children, indent + 4);
+				break;
 			case AST_PAR:
 				__ast_dump(&cur->u.par.children, indent + 2);
 				break;
@@ -187,6 +193,19 @@ struct astnode *astnode_new_cmd(const struct ast_cmd *cmd)
 	return node;
 }
 
+struct astnode *astnode_new_arg(bool opt)
+{
+	struct astnode *node;
+
+	node = astnode_new(AST_ARG);
+
+	node->u.arg.opt = opt;
+
+	INIT_LIST_HEAD(&node->u.arg.children);
+
+	return node;
+}
+
 static int __visit(struct list_head *list, struct ast *ast,
 		   int (*fn)(struct ast *, struct astnode *))
 {
@@ -205,6 +224,9 @@ static int __visit(struct list_head *list, struct ast *ast,
 				ret = __visit(&cur->u.cmd.mand, ast, fn);
 				if (!ret)
 					ret = __visit(&cur->u.cmd.opt, ast, fn);
+				break;
+			case AST_ARG:
+				ret = __visit(&cur->u.arg.children, ast, fn);
 				break;
 			case AST_ENV:
 				ret = __visit(&cur->u.env.children, ast, fn);
