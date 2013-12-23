@@ -29,6 +29,7 @@ static const char *ast_typename(enum asttype type)
 		[AST_ENV]	= "AST_ENV",
 		[AST_CAT]	= "AST_CAT",
 		[AST_PAR]	= "AST_PAR",
+		[AST_ENCAP]	= "AST_ENCAP",
 	};
 
 	if ((type < AST_STR) || (type > AST_PAR))
@@ -46,6 +47,10 @@ static void __ast_dump(struct list_head *nodes, int indent)
 			ast_typename(cur->type));
 
 		switch (cur->type) {
+			case AST_ENCAP:
+				fprintf(stderr, "%*s    %p\n", indent, "",
+					cur->u.data);
+				break;
 			case AST_STR:
 				fprintf(stderr, "%*s    >>%s<<\n", indent,
 					"", cur->u.str);
@@ -94,6 +99,16 @@ struct astnode *astnode_new(enum asttype type)
 	ASSERT(node);
 
 	node->type = type;
+
+	return node;
+}
+
+struct astnode *astnode_new_encap(void *data)
+{
+	struct astnode *node;
+
+	node = astnode_new(AST_ENCAP);
+	node->u.data = data;
 
 	return node;
 }

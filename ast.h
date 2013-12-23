@@ -12,6 +12,7 @@ enum asttype {
 	AST_CMD,
 	AST_ENV,
 	AST_CAT,
+	AST_ENCAP,
 	AST_PAR,	/* must be last */
 };
 
@@ -29,6 +30,7 @@ struct astnode {
 	struct list_head list;
 	enum asttype type;
 	union {
+		void *data;
 		char *str;
 		struct list_head concat;
 		struct {
@@ -44,6 +46,7 @@ extern void ast_dump(struct ast *tree);
 extern void ast_destroy(struct ast *tree);
 
 extern struct astnode *astnode_new(enum asttype);
+extern struct astnode *astnode_new_encap(void *);
 extern struct astnode *astnode_new_str(char *);
 extern struct astnode *astnode_new_char(char, int);
 extern struct astnode *astnode_new_math(char *);
