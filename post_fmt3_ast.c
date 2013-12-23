@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include "post_fmt3_ast.h"
 #include "error.h"
@@ -204,8 +205,21 @@ static void pass1(struct ast *ast, struct list_head *nodes)
 static void __pass2_encap(struct ast *ast, struct astnode *node)
 {
 	struct ptnode *pnode, *pnode_tmp;
+	struct astnode *encap;
+	struct astnode *par;
+	struct list_head tmp;
 
 	ASSERT3U(node->type, ==, AST_ENCAP);
+
+	/*
+	 * Since list.h has no way to split a list arbitrarily, we cheat a
+	 * little.  We move every node that *could* be moved onto a
+	 * temporary list.  Then, when we decide that we should split we
+	 * already have two lists.  If we finish the loop and our temp list
+	 * has something, we just put it back into the (now empty) ENCAP
+	 * data list.
+	 */
+	INIT_LIST_HEAD(&tmp);
 
 	list_for_each_entry_safe(pnode, pnode_tmp, &node->u.encap.data, list) {
 		switch (pnode->type) {
@@ -218,23 +232,42 @@ static void __pass2_encap(struct ast *ast, struct astnode *node)
 			case PT_CMD:
 			case PT_OPT_MAN:
 			case PT_OPT_OPT:
+				/* move node onto temp list */
+				list_del(&pnode->list);
+				list_add_tail(&pnode->list, &tmp);
 				break;
 			case PT_ENV:
 				/* we shouldn't have these anymore */
 				ASSERT(0);
 				break;
 			case PT_PAR:
-				/* FIXME: move the contents of this list
-				 * before this pnode into a separate ENCAP
-				 * AST node, then move the new ENCAP AST
-				 * node into a new PAR AST node.  Insert the
-				 * new PAR AST node before node->list.
-				 * Then, remove the PT_PAR and free it.
+				/*
+				 * move the contents of ENCAP AST node
+				 * before this pnode (aka. the temp list)
+				 * into a separate ENCAP AST node, then move
+				 * the new ENCAP AST node into a new PAR AST
+				 * node.  Insert the new PAR AST node before
+				 * node->list.  Then, remove the PT_PAR and
+				 * free it.
 				 */
-				ASSERT(0);
+				encap = astnode_new_encap(&tmp);
+
+				par = astnode_new_par();
+
+				list_add_tail(&encap->list,
+					      &par->u.par.children);
+
+				/*
+				 * add PAR AST node before this (`node')
+				 * ENCAP node
+				 */
+				list_add_tail(&par->list, &node->list);
 				break;
 		}
 	}
+
+	if (!list_empty(&tmp))
+		list_splice(&tmp, &node->u.encap.data);
 
 	if (list_empty(&node->u.encap.data)) {
 		/* FIXME: remove & free this AST_ENCAP because it's empty */
