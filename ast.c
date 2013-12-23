@@ -186,3 +186,54 @@ struct astnode *astnode_new_cmd(const struct ast_cmd *cmd)
 
 	return node;
 }
+
+static int __visit(struct list_head *list, struct ast *ast,
+		   int (*fn)(struct ast *, struct astnode *))
+{
+	struct astnode *cur, *tmp;
+	int ret;
+
+	ret = 0;
+
+	list_for_each_entry_safe(cur, tmp, list, list) {
+		ret = fn(ast, cur);
+		if (ret)
+			break;
+
+		switch (cur->type) {
+			case AST_CMD:
+				ret = __visit(&cur->u.cmd.mand, ast, fn);
+				if (!ret)
+					ret = __visit(&cur->u.cmd.opt, ast, fn);
+				break;
+			case AST_ENV:
+				ret = __visit(&cur->u.env.children, ast, fn);
+				break;
+			case AST_PAR:
+				ret = __visit(&cur->u.par.children, ast, fn);
+				break;
+			case AST_STR:
+			case AST_CHAR:
+			case AST_NL:
+			case AST_NBSP:
+			case AST_MATH:
+			case AST_ENCAP:
+				/* these have no children */
+				ret = 0;
+				break;
+		}
+
+		if (ret)
+			break;
+	}
+
+	return ret;
+}
+
+int ast_visit(struct ast *ast, int (*fn)(struct ast *, struct astnode *))
+{
+	if (!fn)
+		return 0;
+
+	return __visit(&ast->nodes, ast, fn);
+}

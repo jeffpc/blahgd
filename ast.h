@@ -51,6 +51,7 @@ struct astnode {
 extern struct ast *ast_new();
 extern void ast_dump(struct ast *tree);
 extern void ast_destroy(struct ast *tree);
+extern int ast_visit(struct ast *ast, int (*fn)(struct ast *, struct astnode *));
 
 extern struct astnode *astnode_new(enum asttype);
 extern struct astnode *astnode_new_encap(struct list_head *);
