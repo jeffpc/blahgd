@@ -51,21 +51,26 @@ static char *__foreach_list(struct req *req, char *varname, char *tmpl,
 
 	out = xstrdup("");
 
-	/* NOTE: we're reusing `val' as the iterator */
-	for (val = avl_first(tree); val; val = AVL_NEXT(tree, val)) {
+	for (vi = avl_first(tree); vi; vi = AVL_NEXT(tree, vi)) {
 		vars_scope_push(&req->vars);
+
+		/* NOTE: we're reusing the arg */
+		val = vi->val;
 
 		switch (val->type) {
 			case VT_STR:
 			case VT_INT:
 				VAR_SET(&req->vars, varname, val_getref(val));
 				break;
-			case VT_NV:
+			case VT_NV: {
+				struct val_item *vi;
+
 				for (vi = avl_first(&val->tree); vi;
 				     vi = AVL_NEXT(&val->tree, vi))
 					VAR_SET(&req->vars, vi->key.name,
 					        val_getref(vi->val));
 				break;
+			}
 			default:
 				fprintf(stderr, "XXX %p\n", val);
 				val_dump(val, 0);
