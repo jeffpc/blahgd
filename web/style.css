@@ -61,11 +61,6 @@ ol#comments li p {
 	font-size: 100%;
 }
 
-p, dt, dd, li, .feedback {
-	font: 90%/175% 'Lucida Grande', 'Lucida Sans Unicode', Verdana, sans-serif;
-	letter-spacing: -1px;
-}
-
 /* classes used by the_meta() */
 ul.post-meta {
 	list-style: none;
@@ -102,7 +97,6 @@ ul.post-meta span.post-meta-key {
 }
 
 .feedback {
-	color: #ccc;
 	text-align: right;
 	clear: both;
 }
@@ -178,6 +172,7 @@ ul.post-meta span.post-meta-key {
 }
 
 #menu {
+	font-family: sans-serif;
 	background: #fff;
 	border-left: 1px dotted #ccc;
 	border-top: solid 3px #e0e6e0;
@@ -214,13 +209,6 @@ ul.post-meta span.post-meta-key {
 	padding-bottom: 2px; /*border-bottom: dotted 1px #ccc;*/
 }
 
-/* for other & links */
-#menu ul li h2 {
-	font: 10pt/115% sans-serif;
-	font-weight: bold;
-	/* font-size: 10pt; */ /* sans-serif; */
-}
-
 #menu ul ul {
 	line-height: 100%;
 	list-style-type: none;
@@ -231,11 +219,19 @@ ul.post-meta span.post-meta-key {
 
 #menu ul ul li {
 	border: 0;
-	font: normal normal 12px/115% sans-serif;
+	line-height: 115%;
+	font-size: 12px;
+	font-weight: normal;
 	letter-spacing: 0;
 	margin-top: 0;
 	padding: 0;
 	padding-left: 12px;
+}
+
+#categories, #archives {
+	font-weight: normal;
+	font-size: 90%;
+	line-height: 175%;
 }
 
 #tagcloud {
@@ -248,7 +244,6 @@ ul.post-meta span.post-meta-key {
 	border: 0px;
 	font: normal normal 12px/115% sans-serif;
 	letter-spacing: 0;
-	color: #000;
 	text-decoration: none;
 	text-transform: lowercase;
 }
@@ -258,7 +253,6 @@ ul.post-meta span.post-meta-key {
 }
 
 #menu ul ul li a {
-	color: #000;
 	text-decoration: none;
 }
 
