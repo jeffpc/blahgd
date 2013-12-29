@@ -395,3 +395,40 @@ void vars_dump(struct vars *vars)
 
 	fprintf(stderr, "%p: VARS DUMP END\n", vars);
 }
+
+struct val *valcat5(struct val *a, struct val *b, struct val *c,
+		    struct val *d, struct val *e)
+{
+#define NVALS	5
+	struct val *vals[NVALS] = {a, b, c, d, e};
+	size_t len;
+	char *buf;
+	int i;
+
+	len = 0;
+
+	for (i = 0; i < NVALS; i++) {
+		if (!vals[i])
+			continue;
+
+		ASSERT3U(vals[i]->type, ==, VT_STR);
+
+		len += strlen(vals[i]->str);
+	}
+
+	buf = malloc(len + 1);
+	ASSERT(buf);
+
+	buf[0] = '\0';
+
+	for (i = 0; i < NVALS; i++) {
+		if (!vals[i])
+			continue;
+
+		strcat(buf, vals[i]->str);
+
+		val_putref(vals[i]);
+	}
+
+	return VAL_ALLOC_STR(buf);
+}

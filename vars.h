@@ -69,6 +69,12 @@ extern int val_set_nvint(struct val *val, char *name, uint64_t v);
 extern int val_set_nvstr(struct val *val, char *name, char *v);
 extern void val_dump(struct val *v, int indent);
 
+#define valcat(a, b)		valcat5((a), (b), NULL, NULL, NULL)
+#define valcat3(a, b, c)	valcat5((a), (b), (c), NULL, NULL)
+#define valcat4(a, b, c, d)	valcat5((a), (b), (c), (d), NULL)
+extern struct val *valcat5(struct val *a, struct val *b, struct val *c,
+			   struct val *d, struct val *e);
+
 static inline struct val *val_getref(struct val *vv)
 {
 	if (!vv)
