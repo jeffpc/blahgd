@@ -147,4 +147,6 @@ static inline void val_putref(struct val *vv)
 #define VAL_SET_NV(val, n, v)		ASSERT0(val_set_nv((val), (n), (v)))
 #define VAL_SET_LIST(val, idx, v)	ASSERT0(val_set_list((val), (idx), (v)))
 
+#define VAL_DUP_STR(v)		VAL_ALLOC_STR(xstrdup(v))
+
 #endif
