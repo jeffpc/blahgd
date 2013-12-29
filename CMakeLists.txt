@@ -44,12 +44,15 @@ add_executable(blahg render.c post.c main.c
 	decode.c fsm.c
 )
 
-target_link_libraries(blahg ${XMLRPC_LIBRARIES} ${SQLITE_LIB})
-target_link_libraries(blahg rt)
-target_link_libraries(blahg umem)
-target_link_libraries(blahg avl)
-target_link_libraries(blahg m)
-target_link_libraries(blahg ${OPENSSL_CRYPTO_LIBRARY})
+target_link_libraries(blahg
+	${OPENSSL_CRYPTO_LIBRARY}
+	${XMLRPC_LIBRARIES}
+	${SQLITE_LIB}
+	rt
+	umem
+	avl
+	m
+)
 
 add_executable(test_fmt3
 	test_fmt3.c
@@ -60,9 +63,11 @@ add_executable(test_fmt3
 	mangle.c utils.c error.c
 )
 
-target_link_libraries(test_fmt3 umem)
-target_link_libraries(test_fmt3 avl)
-target_link_libraries(test_fmt3 ${OPENSSL_CRYPTO_LIBRARY})
+target_link_libraries(test_fmt3
+	${OPENSSL_CRYPTO_LIBRARY}
+	umem
+	avl
+)
 
 function(simple_c_test type section data)
 	add_test(NAME "${type}:${section}:${data}"
