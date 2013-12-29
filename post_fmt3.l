@@ -7,7 +7,7 @@
 #include <stdlib.h>
 
 #include "parse.h"
-#include "utils.h"
+#include "vars.h"
 
 #include "post_fmt3.tab.h"
 
@@ -27,18 +27,18 @@ static void inc_lineno(yyscan_t scanner);
 %%
 "\\begin{verbatim}"		{ BEGIN(VERBATIM); return VERBSTART; }
 <VERBATIM>"\\end{verbatim}"	{ BEGIN(INITIAL); return VERBEND; }
-<VERBATIM>.			{ yylval->ptr = xstrdup(yytext); return VERBTEXT; }
+<VERBATIM>.			{ yylval->ptr = VAL_DUP_STR(yytext); return VERBTEXT; }
 <VERBATIM>\n			{
-					yylval->ptr = xstrdup(yytext);
+					yylval->ptr = VAL_DUP_STR(yytext);
 					inc_lineno(yyscanner);
 					return VERBTEXT;
 				}
 
 "\\begin{listing}"		{ BEGIN(LISTING); return LISTSTART; }
 <LISTING>"\\end{listing}"	{ BEGIN(INITIAL); return LISTEND; }
-<LISTING>.			{ yylval->ptr = xstrdup(yytext); return VERBTEXT; }
+<LISTING>.			{ yylval->ptr = VAL_DUP_STR(yytext); return VERBTEXT; }
 <LISTING>\n			{
-					yylval->ptr = xstrdup(yytext);
+					yylval->ptr = VAL_DUP_STR(yytext);
 					inc_lineno(yyscanner);
 					return VERBTEXT;
 				}
@@ -47,19 +47,19 @@ static void inc_lineno(yyscan_t scanner);
 <MATH>"$"		{ BEGIN(INITIAL); return MATHEND; }
 <MATH>"\\"		{ return BSLASH; }
 <MATH>"_"		{ return USCORE; }
-<MATH>"^"		{ yylval->ptr = xstrdup(yytext); return CARRET; }
-<MATH>"+"		{ yylval->ptr = xstrdup(yytext); return PLUS; }
-<MATH>"-"		{ yylval->ptr = xstrdup(yytext); return MINUS; }
+<MATH>"^"		{ yylval->ptr = VAL_DUP_STR(yytext); return CARRET; }
+<MATH>"+"		{ yylval->ptr = VAL_DUP_STR(yytext); return PLUS; }
+<MATH>"-"		{ yylval->ptr = VAL_DUP_STR(yytext); return MINUS; }
 <MATH>"*"		{ return ASTERISK; }
 <MATH>"/"		{ return SLASH; }
 <MATH>"{"		{ return OCURLY; }
 <MATH>"}"		{ return CCURLY; }
 <MATH>"("		{ return OPAREN; }
 <MATH>")"		{ return CPAREN; }
-<MATH>[=<>]		{ yylval->ptr = xstrdup(yytext); return EQLTGT; }
-<MATH>[A-Za-z0-9]+	{ yylval->ptr = xstrdup(yytext); return WORD; }
-<MATH>[".,=<>!:;?@*#]	{ yylval->ptr = xstrdup(yytext); return SCHAR; }
-<MATH>[ \t]+		{ yylval->ptr = xstrdup(yytext); return WSPACE; }
+<MATH>[=<>]		{ yylval->ptr = VAL_DUP_STR(yytext); return EQLTGT; }
+<MATH>[A-Za-z0-9]+	{ yylval->ptr = VAL_DUP_STR(yytext); return WORD; }
+<MATH>[".,=<>!:;?@*#]	{ yylval->ptr = VAL_DUP_STR(yytext); return SCHAR; }
+<MATH>[ \t]+		{ yylval->ptr = VAL_DUP_STR(yytext); return WSPACE; }
 
 "\\$"			{ return DOLLAR; }
 \n\n[ \t\n]*		{
@@ -75,7 +75,7 @@ static void inc_lineno(yyscan_t scanner);
 				return NLINE;
 			}
 %[^\n]*			{ /* tex comment */ }
-[ \t]+			{ yylval->ptr = xstrdup(yytext); return WSPACE; }
+[ \t]+			{ yylval->ptr = VAL_DUP_STR(yytext); return WSPACE; }
 "\\"			{ return BSLASH; }
 "{"			{ return OCURLY; }
 "}"			{ return CCURLY; }
@@ -87,14 +87,14 @@ static void inc_lineno(yyscan_t scanner);
 "~"			{ return TILDE; }
 "|"			{ return PIPE; }
 \.{3}			{ return ELLIPSIS; }
--{1,3}			{ yylval->ptr = xstrdup(yytext); return DASH; }
-`{1,2}			{ yylval->ptr = xstrdup(yytext); return OQUOT; }
-'{1,2}			{ yylval->ptr = xstrdup(yytext); return CQUOT; }
-[".,()/=<>!:;\+?@*#]	{ yylval->ptr = xstrdup(yytext); return SCHAR; }
-[\xe0-\xef]		{ yylval->ptr = xstrdup(yytext); return UTF8FIRST3; }
-[\xc0-\xdf]		{ yylval->ptr = xstrdup(yytext); return UTF8FIRST2; }
-[\x80-\xbf]		{ yylval->ptr = xstrdup(yytext); return UTF8REST; }
-[A-Za-z0-9]+		{ yylval->ptr = xstrdup(yytext); return WORD; }
+-{1,3}			{ yylval->ptr = VAL_DUP_STR(yytext); return DASH; }
+`{1,2}			{ yylval->ptr = VAL_DUP_STR(yytext); return OQUOT; }
+'{1,2}			{ yylval->ptr = VAL_DUP_STR(yytext); return CQUOT; }
+[".,()/=<>!:;\+?@*#]	{ yylval->ptr = VAL_DUP_STR(yytext); return SCHAR; }
+[\xe0-\xef]		{ yylval->ptr = VAL_DUP_STR(yytext); return UTF8FIRST3; }
+[\xc0-\xdf]		{ yylval->ptr = VAL_DUP_STR(yytext); return UTF8FIRST2; }
+[\x80-\xbf]		{ yylval->ptr = VAL_DUP_STR(yytext); return UTF8REST; }
+[A-Za-z0-9]+		{ yylval->ptr = VAL_DUP_STR(yytext); return WORD; }
 .			{ fmt3_error2("post text contains invalid characters", yytext); yyterminate(); }
 %%
 

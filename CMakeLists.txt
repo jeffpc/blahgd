@@ -53,6 +53,7 @@ target_link_libraries(blahg ${OPENSSL_CRYPTO_LIBRARY})
 
 add_executable(test_fmt3
 	test_fmt3.c
+	vars.c
 	${FLEX_fmt3_OUTPUTS} ${BISON_fmt3_OUTPUTS}
 	post_fmt3_cmds.c
 	listing.c
@@ -60,6 +61,7 @@ add_executable(test_fmt3
 )
 
 target_link_libraries(test_fmt3 umem)
+target_link_libraries(test_fmt3 avl)
 target_link_libraries(test_fmt3 ${OPENSSL_CRYPTO_LIBRARY})
 
 function(simple_c_test type section data)

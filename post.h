@@ -38,7 +38,7 @@ struct post {
 	unsigned int numcom;
 
 	/* body */
-	char *body;
+	struct val *body;
 
 	/* fmt3 */
 	int table_nesting;

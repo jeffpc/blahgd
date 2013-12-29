@@ -3,6 +3,7 @@
 
 #include "post.h"
 
-extern char *process_cmd(struct post *post, char *cmd, char *txt, char *opt);
+extern struct val *process_cmd(struct post *post, struct val *vcmd,
+			       struct val *vtxt, struct val *vopt);
 
 #endif

@@ -5,6 +5,8 @@
 
 #include "error.h"
 
+#define ARRAY_LEN(a)		(sizeof(a) / sizeof(a[0]))
+
 extern int hasdotdot(char *path);
 extern int xread(int fd, void *buf, size_t nbyte);
 extern int xwrite(int fd, const void *buf, size_t nbyte);

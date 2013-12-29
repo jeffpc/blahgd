@@ -68,7 +68,7 @@ static int __do_load_post_body_fmt3(struct post *post, char *ibuf, size_t len)
 
 	fmt3_lex_destroy(x.scanner);
 
-	post->body = x.output;
+	post->body = x.valoutput;
 	ASSERT(post->body);
 
 	return 0;
@@ -152,7 +152,7 @@ static int __do_load_post_body(struct post *post, char *ibuf, size_t len)
 			ret = cc(ret, "</p>", 4);
 	}
 
-	post->body = ret;
+	post->body = VAL_ALLOC_STR(ret);
 	ASSERT(post->body);
 
 	return 0;
@@ -299,7 +299,7 @@ static struct val *__store_vars(struct req *req, struct post *post, const char *
 	VAL_SET_NVINT(val, "time", post->time);
 	VAL_SET_NVSTR(val, "title", xstrdup(post->title));
 	VAL_SET_NV   (val, "tags", __tag_val(&post->tags));
-	VAL_SET_NVSTR(val, "body", xstrdup(post->body));
+	VAL_SET_NV   (val, "body", val_getref(post->body));
 	VAL_SET_NVINT(val, "numcom", post->numcom);
 	VAL_SET_NV   (val, "comments", __com_val(&post->comments));
 
@@ -394,5 +394,5 @@ void destroy_post(struct post *post)
 	}
 
 	free(post->title);
-	free(post->body);
+	val_putref(post->body);
 }

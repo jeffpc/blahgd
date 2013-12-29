@@ -3,6 +3,7 @@
 
 #include "main.h"
 #include "post.h"
+#include "vars.h"
 
 struct parser_output {
 	struct req *req;
@@ -10,6 +11,7 @@ struct parser_output {
 
 	void *scanner;
 	char *output;
+	struct val *valoutput;
 
 	char *input;
 	size_t len;
