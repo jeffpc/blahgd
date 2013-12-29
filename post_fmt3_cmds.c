@@ -180,17 +180,17 @@ static struct val *__process_abbrev(struct post *post, struct val *txt, struct v
 
 static struct val *__process_section(struct post *post, struct val *txt, struct val *opt)
 {
-	return valcat3(VAL_DUP_STR("</p><h4>"), txt, VAL_DUP_STR("</h4><p>"));
+	return valcat3(VAL_DUP_STR("</p><h3>"), txt, VAL_DUP_STR("</h3><p>"));
 }
 
 static struct val *__process_subsection(struct post *post, struct val *txt, struct val *opt)
 {
-	return valcat3(VAL_DUP_STR("</p><h5>"), txt, VAL_DUP_STR("</h5><p>"));
+	return valcat3(VAL_DUP_STR("</p><h4>"), txt, VAL_DUP_STR("</h4><p>"));
 }
 
 static struct val *__process_subsubsection(struct post *post, struct val *txt, struct val *opt)
 {
-	return valcat3(VAL_DUP_STR("</p><h6>"), txt, VAL_DUP_STR("</h6><p>"));
+	return valcat3(VAL_DUP_STR("</p><h5>"), txt, VAL_DUP_STR("</h5><p>"));
 }
 
 static struct val *__process_wiki(struct post *post, struct val *txt, struct val *opt)
