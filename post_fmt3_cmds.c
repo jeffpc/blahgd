@@ -216,7 +216,7 @@ static struct val *__process_post(struct post *post, struct val *txt, struct val
 {
 	char buf[1024];
 
-	snprintf(buf, sizeof(buf), "<a href=\"/?p=%s\">%s</a>",
+	snprintf(buf, sizeof(buf), "<a href=\"" BASE_URL "/?p=%s\">%s</a>",
 		 txt->str, opt ? opt->str : txt->str);
 
 	val_putref(txt);
@@ -229,7 +229,7 @@ static struct val *__process_taglink(struct post *post, struct val *txt, struct 
 {
 	char buf[1024];
 
-	snprintf(buf, sizeof(buf), "<a href=\"/?tag=%s\">%s</a>",
+	snprintf(buf, sizeof(buf), "<a href=\"" BASE_URL "/?tag=%s\">%s</a>",
 		 txt->str, opt ? opt->str : txt->str);
 
 	val_putref(txt);
