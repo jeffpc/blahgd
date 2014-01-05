@@ -60,7 +60,6 @@ static int __do_load_post_body_fmt3(struct post *post, char *ibuf, size_t len)
 	fmt3_set_extra(&x, x.scanner);
 
 	ret = fmt3_parse(&x);
-
 	if (ret) {
 		LOG("failed to parse post id %u", post->id);
 		ASSERT(0);
