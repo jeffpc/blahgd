@@ -1,12 +1,18 @@
-<div class="post" id="post-{id}">
+<div class="story">
 	<h2 class="storytitle"><a href="?p={id}" rel="bookmark">{title|escape}</a></h2>
-	<div class="meta">Filed under: {tags%tag} &#8212;  JeffPC @ <span title="{time|zulu}">{time|date} {time|time}</span></div>
+	<div class="storymeta">
+		Filed under:
+		<ul>
+{tags%tag}
+		</ul>
+		&#8212; JeffPC @ <span title="{time|zulu}">{time|date} {time|time}</span>
+	</div>
 
 	<div class="storycontent">
 {body}
 	</div>
 
-	<div class="feedback">
+	<div class="storyfeedback">
 		<a href="?p={id}#respond" title="Comment on {title|escape}">Comments ({numcom})</a>
 	</div>
 </div>
