@@ -24,5 +24,5 @@ struct val *listing(struct post *post, char *fname)
 err:
 	snprintf(path, FILENAME_MAX, "Failed to read in listing '%d/%s'",
 		 post->id, fname);
-	return VAL_ALLOC_STR(path);
+	return VAL_DUP_STR(path);
 }
