@@ -154,6 +154,9 @@ static void req_init(struct req *req)
 	VAR_SET_STR(&req->vars, "baseurl", xstrdup(BASE_URL));
 	VAR_SET_INT(&req->vars, "now", gettime());
 
+	VAR_SET_INT(&req->vars, "captcha_a", COMMENT_CAPTCHA_A);
+	VAR_SET_INT(&req->vars, "captcha_b", COMMENT_CAPTCHA_B);
+
 	VAR_SET(&req->vars, "posts", VAL_ALLOC(VT_LIST));
 }
 

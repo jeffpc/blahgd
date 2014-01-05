@@ -20,6 +20,20 @@
 #include "decode.h"
 #include "error.h"
 
+#define INTERNAL_ERR		"Ouch!  Encountered an internal error.  " \
+				"Please contact me to resolve this issue."
+#define GENERIC_ERR_STR		"Somehow, your post is getting rejected. " \
+				"If your issues persist, contact me to " \
+				"resolve this issue."
+#define _REQ_FIELDS		"The required fields are: name, email " \
+				"address, the math field, and of course "\
+				"the content."
+#define CAPTCHA_FAIL		"You need to get better at math."
+#define MISSING_EMAIL		"You need to supply a valid email address. " \
+				_REQ_FIELDS
+#define MISSING_NAME		"You do have a name, right? " _REQ_FIELDS
+#define MISSING_CONTENT		"No content? " _REQ_FIELDS
+
 #define SHORT_BUF_LEN		128
 #define MEDIUM_BUF_LEN		256
 #define LONG_BUF_LEN		(64*1024)
@@ -39,10 +53,12 @@
 #define SC_SUB_EQ		16
 #define SC_ID			7
 #define SC_ID_EQ		17
-#define SC_ERROR		20
+#define SC_CAPTCHA		8
+#define SC_CAPTCHA_EQ		18
+#define SC_ERROR		99
 
-int write_out_comment(struct req *req, int id, char *author, char *email,
-		      char *url, char *comment)
+const char *write_out_comment(struct req *req, int id, char *author,
+			      char *email, char *url, char *comment)
 {
 	char basepath[FILENAME_MAX];
 	char dirpath[FILENAME_MAX];
@@ -60,25 +76,37 @@ int write_out_comment(struct req *req, int id, char *author, char *email,
 
 	struct val *val;
 
+	if (strlen(email) == 0) {
+		LOG("You must fill in email (postid=%d)", id);
+		return MISSING_EMAIL;
+	}
+
+	if (strlen(author) == 0) {
+		LOG("You must fill in name (postid=%d)", id);
+		return MISSING_NAME;
+	}
+
+	if (strlen(comment) == 0) {
+		LOG("You must fill in comment (postid=%d)", id);
+		return MISSING_CONTENT;
+	}
+
 	val = load_post(req, id, NULL, false);
 	if (!val) {
 		LOG("Gah! %d (postid=%d)", -1, id);
-		return 1;
+		return GENERIC_ERR_STR;
 	}
 
 	val_putref(val);
-
-	if ((strlen(author) == 0) || (strlen(comment) == 0)) {
-		LOG("You must fill in name, and comment (postid=%d)", id);
-		return 1;
-	}
 
 	now = gettime();
 	now_sec  = now / 1000000000UL;
 	now_nsec = now % 1000000000UL;
 	now_tm = gmtime(&now_sec);
-	if (!now_tm)
-		return 1;
+	if (!now_tm) {
+		LOG("Ow, gmtime() returned NULL");
+		return INTERNAL_ERR;
+	}
 
 	strftime(curdate, 31, "%Y-%m-%d %H:%M", now_tm);
 
@@ -95,14 +123,14 @@ int write_out_comment(struct req *req, int id, char *author, char *email,
 
 	if (mkdir(dirpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == -1) {
 		LOG("Ow, could not create directory: %d (%s) '%s'", errno, strerror(errno), dirpath);
-		return 1;
+		return INTERNAL_ERR;
 	}
 
 	ret = write_file(textpath, comment, strlen(comment));
 	if (ret) {
 		LOG("Couldn't write file ... :( %d (%s) '%s'",
-				  errno, strerror(errno), textpath);
-		return 1;
+		    errno, strerror(errno), textpath);
+		return INTERNAL_ERR;
 	}
 
 	remote_addr = getenv("HTTP_X_REAL_IP");
@@ -122,19 +150,18 @@ int write_out_comment(struct req *req, int id, char *author, char *email,
 
 	if (ret) {
 		LOG("Couldn't write file ... :( %d (%s) '%s'",
-				  errno, strerror(errno), textpath);
-		return 1;
+		    errno, strerror(errno), textpath);
+		return INTERNAL_ERR;
 	}
 
 	ret = rename(dirpath, basepath);
 	if (ret) {
 		LOG("Could not rename '%s' to '%s' %d (%s)",
-				  dirpath, basepath, errno,
-				  strerror(errno));
-		return 1;
+		    dirpath, basepath, errno, strerror(errno));
+		return INTERNAL_ERR;
 	}
 
-	return 0;
+	return NULL;
 }
 
 #define COPYCHAR(ob, oi, c)	do { \
@@ -142,7 +169,7 @@ int write_out_comment(struct req *req, int id, char *author, char *email,
 					oi++; \
 				} while(0)
 
-static int save_comment(struct req *req)
+static const char *save_comment(struct req *req)
 {
 	int in;
 	char tmp;
@@ -159,6 +186,7 @@ static int save_comment(struct req *req)
 	char comment_buf[LONG_BUF_LEN];
 	int comment_len = 0;
 	uint64_t date = 0;
+	uint64_t captcha = 0;
 	int id = 0;
 
 	author_buf[0] = '\0'; /* better be paranoid */
@@ -189,6 +217,8 @@ static int save_comment(struct req *req)
 					state = SC_SUB_EQ;
 				if (tmp == 'i')
 					state = SC_ID_EQ;
+				if (tmp == 'v')
+					state = SC_CAPTCHA_EQ;
 				break;
 
 			case SC_AUTHOR_EQ:
@@ -217,6 +247,10 @@ static int save_comment(struct req *req)
 
 			case SC_ID_EQ:
 				state = (tmp == '=') ? SC_ID : SC_ERROR;
+				break;
+
+			case SC_CAPTCHA_EQ:
+				state = (tmp == '=') ? SC_CAPTCHA : SC_ERROR;
 				break;
 
 			case SC_AUTHOR:
@@ -277,6 +311,13 @@ static int save_comment(struct req *req)
 				else
 					id = (id * 10) + (tmp - '0');
 				break;
+
+			case SC_CAPTCHA:
+				if (tmp == '&')
+					state = SC_IGNORE;
+				else
+					captcha = (captcha * 10) + (tmp - '0');
+				break;
 		}
 
 		if (state == SC_ERROR)
@@ -290,6 +331,7 @@ static int save_comment(struct req *req)
 	LOG("comment: \"%s\"", comment_buf);
 	LOG("date: %lu", date);
 	LOG("id: %d", id);
+	LOG("captcha: %lu", captcha);
 #endif
 
 	now = gettime();
@@ -297,8 +339,14 @@ static int save_comment(struct req *req)
 
 	if ((deltat > COMMENT_MAX_DELAY) || (deltat < COMMENT_MIN_DELAY)) {
 		LOG("Flash-gordon or geriatric was here... load:%lu comment:%lu delta:%lu postid:%d",
-				  date, now, deltat, id);
-		return 1;
+		    date, now, deltat, id);
+		return GENERIC_ERR_STR;
+	}
+
+	if (captcha != (COMMENT_CAPTCHA_A + COMMENT_CAPTCHA_B)) {
+		LOG("Math illiterate was here... got:%lu expected:%lu postid:%d",
+		    captcha, COMMENT_CAPTCHA_A + COMMENT_CAPTCHA_B, id);
+		return CAPTCHA_FAIL;
 	}
 
 	/* URL decode everything */
@@ -307,18 +355,13 @@ static int save_comment(struct req *req)
 	urldecode(email_buf, strlen(email_buf), email_buf);
 	urldecode(url_buf, strlen(url_buf), url_buf);
 
-	if (strlen(email_buf) == 0) {
-		LOG("You must fill in name, email, and comment (postid=%d)", id);
-		return 1;
-	}
-
 	return write_out_comment(req, id, author_buf, email_buf, url_buf, comment_buf);
 }
 
 int blahg_comment(struct req *req)
 {
+	const char *errmsg;
 	char *tmpl;
-	int ret;
 
 	req_head(req, "Content-Type", "text/html");
 
@@ -326,9 +369,11 @@ int blahg_comment(struct req *req)
 
 	vars_scope_push(&req->vars);
 
-	ret = save_comment(req);
-	if (ret) {
+	errmsg = save_comment(req);
+	if (errmsg) {
 		tmpl = "{comment_error}";
+		VAR_SET_STR(&req->vars, "comment_error_str",
+			    xstrdup(errmsg));
 		// FIXME: __store_title(&req->vars, "Error");
 	} else {
 		tmpl = "{comment_saved}";
