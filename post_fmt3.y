@@ -113,7 +113,6 @@ static void hexdump(char *a, unsigned char *b, int len)
 }
 
 #define TEX_TMP_DIR "/tmp"
-#define TEX_FILE_NAME TEX_TMP_DIR "/tmp"
 static int __render_math(char *tex, char *md, char *dstpath, char *texpath,
 			 char *dvipath, char *pngpath)
 {
@@ -160,7 +159,9 @@ static int __render_math(char *tex, char *md, char *dstpath, char *texpath,
 	snprintf(cmd, sizeof(cmd), "cp %s %s", pngpath, dstpath);
 	LOG("math cmd: '%s'", cmd);
 	if (system(cmd))
-		goto err_chdir;
+		goto err;
+
+	free(pwd);
 
 	return 0;
 
@@ -168,6 +169,8 @@ err_chdir:
 	chdir(pwd);
 
 err:
+	free(pwd);
+
 	return 1;
 }
 
@@ -192,11 +195,11 @@ static struct val *render_math(struct val *val)
 	hexdump(amd, md, 20);
 
 	snprintf(finalpath, FILENAME_MAX, "math/%s.png", amd);
-	snprintf(texpath, FILENAME_MAX, "/tmp/blahg_math_%s_%d.tex", amd, getpid());
-	snprintf(logpath, FILENAME_MAX, "/tmp/blahg_math_%s_%d.log", amd, getpid());
-	snprintf(auxpath, FILENAME_MAX, "/tmp/blahg_math_%s_%d.aux", amd, getpid());
-	snprintf(dvipath, FILENAME_MAX, "/tmp/blahg_math_%s_%d.dvi", amd, getpid());
-	snprintf(pngpath, FILENAME_MAX, "/tmp/blahg_math_%s_%d.png", amd, getpid());
+	snprintf(texpath, FILENAME_MAX, "%s/blahg_math_%s_%d.tex", TEX_TMP_DIR, amd, getpid());
+	snprintf(logpath, FILENAME_MAX, "%s/blahg_math_%s_%d.log", TEX_TMP_DIR, amd, getpid());
+	snprintf(auxpath, FILENAME_MAX, "%s/blahg_math_%s_%d.aux", TEX_TMP_DIR, amd, getpid());
+	snprintf(dvipath, FILENAME_MAX, "%s/blahg_math_%s_%d.dvi", TEX_TMP_DIR, amd, getpid());
+	snprintf(pngpath, FILENAME_MAX, "%s/blahg_math_%s_%d.png", TEX_TMP_DIR, amd, getpid());
 
 	unlink(texpath);
 	unlink(logpath);
