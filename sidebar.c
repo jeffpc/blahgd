@@ -39,7 +39,6 @@ static void tagcloud(struct req *req)
 	cmin = 0;
 	cmax = 0;
 
-	open_db();
 	SQL(stmt, "SELECT min(cnt), max(cnt) FROM tagcloud");
 	SQL_FOR_EACH(stmt) {
 		cmin = SQL_COL_INT(stmt, 0);
@@ -86,7 +85,6 @@ static void archive(struct req *req)
 
 	archives = VAL_ALLOC(VT_LIST);
 
-	open_db();
 	SQL(stmt, "SELECT DISTINCT STRFTIME(\"%Y%m\", time) AS t FROM posts ORDER BY t DESC");
 	SQL_FOR_EACH(stmt) {
 		char buf[32];

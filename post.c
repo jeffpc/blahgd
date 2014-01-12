@@ -330,7 +330,6 @@ struct val *load_post(struct req *req, int postid, const char *titlevar, bool pr
 
 		err = 0;
 	} else {
-		open_db();
 		SQL(stmt, "SELECT title, strftime(\"%s\", time), fmt FROM posts WHERE id=?");
 		SQL_BIND_INT(stmt, 1, postid);
 		SQL_FOR_EACH(stmt) {
@@ -394,4 +393,47 @@ void destroy_post(struct post *post)
 
 	free(post->title);
 	val_putref(post->body);
+}
+
+/*
+ * Fill in the `posts' array with all posts matching the prepared and bound
+ * statement.
+ *
+ * `stmt' should be all ready to execute and it should output two columns:
+ *     post id
+ *     post time
+ */
+void load_posts(struct req *req, sqlite3_stmt *stmt)
+{
+	struct val *posts;
+	struct val *val;
+	time_t maxtime;
+	int ret;
+	int i;
+
+	maxtime = 0;
+	i = 0;
+
+	posts = VAR_LOOKUP_VAL(&req->vars, "posts");
+
+	SQL_FOR_EACH(stmt) {
+		time_t posttime;
+		int postid;
+
+		postid   = SQL_COL_INT(stmt, 0);
+		posttime = SQL_COL_INT(stmt, 1);
+
+		val = load_post(req, postid, NULL, false);
+		if (!val)
+			continue;
+
+		VAL_SET_LIST(posts, i++, val);
+
+		if (posttime > maxtime)
+			maxtime = posttime;
+	}
+
+	val_putref(posts);
+
+	VAR_SET_INT(&req->vars, "lastupdate", maxtime);
 }

@@ -76,19 +76,8 @@ static void __load_posts_tag(struct req *req, int page, const char *tag,
 {
 	const char *tc = istag ? "tag" : "cat";
 	sqlite3_stmt *stmt;
-	struct val *posts;
-	struct val *val;
-	time_t maxtime;
 	char sql[256];
-	int ret;
-	int i;
 
-	maxtime = 0;
-	i = 0;
-
-	posts = VAR_LOOKUP_VAL(&req->vars, "posts");
-
-	open_db();
 	snprintf(sql, sizeof(sql), "SELECT post_%ss.post, strftime(\"%%s\", time) "
 		 "FROM post_%ss,posts "
 		 "WHERE post_%ss.post=posts.id AND post_%ss.%s=? "
@@ -99,26 +88,8 @@ static void __load_posts_tag(struct req *req, int page, const char *tag,
 	SQL_BIND_STR(stmt, 1, tag);
 	SQL_BIND_INT(stmt, 2, req->opts.index_stories);
 	SQL_BIND_INT(stmt, 3, page * req->opts.index_stories);
-	SQL_FOR_EACH(stmt) {
-		time_t posttime;
-		int postid;
 
-		postid   = SQL_COL_INT(stmt, 0);
-		posttime = SQL_COL_INT(stmt, 1);
-
-		val = load_post(req, postid, NULL, false);
-		if (!val)
-			continue;
-
-		VAL_SET_LIST(posts, i++, val);
-
-		if (posttime > maxtime)
-			maxtime = posttime;
-	}
-
-	val_putref(posts);
-
-	VAR_SET_INT(&req->vars, "lastupdate", maxtime);
+	load_posts(req, stmt);
 }
 
 int __tagcat(struct req *req, const char *tagcat, int page, char *tmpl,

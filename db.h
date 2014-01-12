@@ -13,6 +13,7 @@ extern int open_db();
 #define SQL(s, sql)	\
 	do { \
 		int ret; \
+		open_db(); \
 		ret = sqlite3_prepare_v2(db, (sql), strlen(sql) + 1, &(s), NULL); \
 		if (ret != SQLITE_OK) { \
 			LOG("Error %s:%d: %s (%d)", \

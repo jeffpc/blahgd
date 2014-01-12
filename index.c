@@ -21,41 +21,12 @@
 static void __load_posts(struct req *req, int page)
 {
 	sqlite3_stmt *stmt;
-	struct val *posts;
-	struct val *val;
-	time_t maxtime;
-	int ret;
-	int i;
 
-	maxtime = 0;
-	i = 0;
-
-	posts = VAR_LOOKUP_VAL(&req->vars, "posts");
-
-	open_db();
 	SQL(stmt, "SELECT id, strftime(\"%s\", time) FROM posts ORDER BY time DESC LIMIT ? OFFSET ?");
 	SQL_BIND_INT(stmt, 1, req->opts.index_stories);
 	SQL_BIND_INT(stmt, 2, page * req->opts.index_stories);
-	SQL_FOR_EACH(stmt) {
-		time_t posttime;
-		int postid;
 
-		postid   = SQL_COL_INT(stmt, 0);
-		posttime = SQL_COL_INT(stmt, 1);
-
-		val = load_post(req, postid, NULL, false);
-		if (!val)
-			continue;
-
-		VAL_SET_LIST(posts, i++, val);
-
-		if (posttime > maxtime)
-			maxtime = posttime;
-	}
-
-	val_putref(posts);
-
-	VAR_SET_INT(&req->vars, "lastupdate", maxtime);
+	load_posts(req, stmt);
 }
 
 static void __load_posts_archive(struct req *req, int page, int archid)
@@ -63,12 +34,7 @@ static void __load_posts_archive(struct req *req, int page, int archid)
 	char fromtime[32];
 	char totime[32];
 	sqlite3_stmt *stmt;
-	struct val *posts;
-	struct val *val;
-	time_t maxtime;
 	int toyear, tomonth;
-	int ret;
-	int i;
 
 	toyear = archid / 100;
 	tomonth = (archid % 100) + 1;
@@ -77,42 +43,18 @@ static void __load_posts_archive(struct req *req, int page, int archid)
 		toyear++;
 	}
 
-	maxtime = 0;
-	i = 0;
-
-	posts = VAR_LOOKUP_VAL(&req->vars, "posts");
-
 	snprintf(fromtime, sizeof(fromtime), "%04d-%02d-01 00:00",
 		 archid / 100, archid % 100);
 	snprintf(totime, sizeof(totime), "%04d-%02d-01 00:00",
 		 toyear, tomonth);
 
-	open_db();
 	SQL(stmt, "SELECT id, strftime(\"%s\", time) FROM posts WHERE time>=? AND time<? ORDER BY time DESC LIMIT ? OFFSET ?");
 	SQL_BIND_STR(stmt, 1, fromtime);
 	SQL_BIND_STR(stmt, 2, totime);
 	SQL_BIND_INT(stmt, 3, HTML_ARCHIVE_STORIES);
 	SQL_BIND_INT(stmt, 4, page * HTML_ARCHIVE_STORIES);
-	SQL_FOR_EACH(stmt) {
-		time_t posttime;
-		int postid;
 
-		postid   = SQL_COL_INT(stmt, 0);
-		posttime = SQL_COL_INT(stmt, 1);
-
-		val = load_post(req, postid, NULL, false);
-		if (!val)
-			continue;
-
-		VAL_SET_LIST(posts, i++, val);
-
-		if (posttime > maxtime)
-			maxtime = posttime;
-	}
-
-	val_putref(posts);
-
-	VAR_SET_INT(&req->vars, "lastupdate", maxtime);
+	load_posts(req, stmt);
 }
 
 static void __store_title(struct vars *vars, char *title)
