@@ -12,7 +12,6 @@ macro(set_default name default)
 endmacro()
 
 set_default(HTML_INDEX_STORIES		10)
-set_default(HTML_ARCHIVE_STORIES	10)
 set_default(FEED_INDEX_STORIES		15)
 
 set_default(COMMENT_MAX_DELAY		86400)	# 1 day max think time

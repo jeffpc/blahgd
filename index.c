@@ -51,8 +51,8 @@ static void __load_posts_archive(struct req *req, int page, int archid)
 	SQL(stmt, "SELECT id, strftime(\"%s\", time) FROM posts WHERE time>=? AND time<? ORDER BY time DESC LIMIT ? OFFSET ?");
 	SQL_BIND_STR(stmt, 1, fromtime);
 	SQL_BIND_STR(stmt, 2, totime);
-	SQL_BIND_INT(stmt, 3, HTML_ARCHIVE_STORIES);
-	SQL_BIND_INT(stmt, 4, page * HTML_ARCHIVE_STORIES);
+	SQL_BIND_INT(stmt, 3, req->opts.index_stories);
+	SQL_BIND_INT(stmt, 4, page * req->opts.index_stories);
 
 	load_posts(req, stmt);
 }
