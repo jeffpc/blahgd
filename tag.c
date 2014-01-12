@@ -130,6 +130,14 @@ int blahg_category(struct req *req, char *cat, int page)
 	if (catn && ((catn < MIN_CATN) || (catn > MAX_CATN)))
 		return R404(req, NULL);
 
-	return __tagcat(req, catn ? wordpress_catn[catn] : cat, page,
-			"{catindex}", false);
+	if (catn) {
+		char url[256];
+
+		snprintf(url, sizeof(url), "%s/?cat=%s", BASE_URL,
+			 wordpress_catn[catn]);
+
+		return R301(req, url);
+	}
+
+	return __tagcat(req, cat, page, "{catindex}", false);
 }
