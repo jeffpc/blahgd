@@ -29,8 +29,8 @@ static char *load_comment(struct post *post, int commid)
 
 	err_msg = xstrdup("Error: could not load comment text.");
 
-	snprintf(path, FILENAME_MAX, "data/posts/%d/comments/%d/text.txt", post->id,
-		 commid);
+	snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%d/comments/%d/text.txt",
+		 post->id, commid);
 
 	out = read_file(path);
 	if (!out)
@@ -174,7 +174,7 @@ static int __load_post_body(struct post *post)
 	ASSERT3U(post->fmt, >=, 1);
 	ASSERT3U(post->fmt, <=, 3);
 
-	snprintf(path, FILENAME_MAX, "data/posts/%d/post.%s", post->id,
+	snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%d/post.%s", post->id,
 		 exts[post->fmt]);
 
 	fd = open(path, O_RDONLY);
@@ -314,7 +314,7 @@ struct val *load_post(struct req *req, int postid, const char *titlevar, bool pr
 	sqlite3_stmt *stmt;
 	struct val *val;
 
-	snprintf(path, FILENAME_MAX, "data/posts/%d", postid);
+	snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%d", postid);
 
 	post.id = postid;
 	post.title = NULL;

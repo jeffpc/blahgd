@@ -13,7 +13,7 @@ struct val *listing(struct post *post, char *fname)
 	char path[FILENAME_MAX];
 	char *in;
 
-	snprintf(path, FILENAME_MAX, "data/posts/%d/%s", post->id, fname);
+	snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%d/%s", post->id, fname);
 
 	in = read_file(path);
 	if (!in)

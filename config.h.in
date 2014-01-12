@@ -15,6 +15,7 @@
 #cmakedefine COMMENT_CAPTCHA_A		${COMMENT_CAPTCHA_A}
 #cmakedefine COMMENT_CAPTCHA_B		${COMMENT_CAPTCHA_B}
 
+#cmakedefine DATA_DIR			"${DATA_DIR}"
 #cmakedefine DB_FILE			"${DB_FILE}"
 
 #cmakedefine BASE_URL			"${BASE_URL}"

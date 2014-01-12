@@ -110,7 +110,7 @@ const char *write_out_comment(struct req *req, int id, char *author,
 
 	strftime(curdate, 31, "%Y-%m-%d %H:%M", now_tm);
 
-	snprintf(basepath, FILENAME_MAX, "data/pending-comments/%d-%08lx.%08lx.%05x",
+	snprintf(basepath, FILENAME_MAX, DATA_DIR "/pending-comments/%d-%08lx.%08lx.%05x",
 		 id, now_sec, now_nsec, (unsigned) getpid());
 
 	snprintf(dirpath,  FILENAME_MAX, "%sW", basepath);
