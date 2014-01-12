@@ -72,45 +72,57 @@ static void __store_pages(struct vars *vars, int page)
 }
 
 static void __load_posts_tag(struct req *req, int page, const char *tag,
-			     bool istag, int nstories)
+			     bool istag)
 {
+	const char *tc = istag ? "tag" : "cat";
 	sqlite3_stmt *stmt;
 	struct val *posts;
 	struct val *val;
+	time_t maxtime;
+	char sql[256];
 	int ret;
 	int i;
 
+	maxtime = 0;
 	i = 0;
 
 	posts = VAR_LOOKUP_VAL(&req->vars, "posts");
 
 	open_db();
-	if (istag)
-		SQL(stmt, "SELECT post_tags.post FROM post_tags,posts "
-		    "WHERE post_tags.post=posts.id AND post_tags.tag=? "
-		    "ORDER BY posts.time DESC LIMIT ? OFFSET ?");
-	else
-		SQL(stmt, "SELECT post_cats.post FROM post_cats,posts "
-		    "WHERE post_cats.post=posts.id AND post_cats.cat=? "
-		    "ORDER BY posts.time DESC LIMIT ? OFFSET ?");
+	snprintf(sql, sizeof(sql), "SELECT post_%ss.post, strftime(\"%%s\", time) "
+		 "FROM post_%ss,posts "
+		 "WHERE post_%ss.post=posts.id AND post_%ss.%s=? "
+		 "ORDER BY posts.time DESC LIMIT ? OFFSET ?", tc, tc, tc,
+		 tc, tc);
+
+	SQL(stmt, sql);
 	SQL_BIND_STR(stmt, 1, tag);
-	SQL_BIND_INT(stmt, 2, nstories);
-	SQL_BIND_INT(stmt, 3, page * nstories);
+	SQL_BIND_INT(stmt, 2, req->opts.index_stories);
+	SQL_BIND_INT(stmt, 3, page * req->opts.index_stories);
 	SQL_FOR_EACH(stmt) {
+		time_t posttime;
 		int postid;
 
-		postid = SQL_COL_INT(stmt, 0);
+		postid   = SQL_COL_INT(stmt, 0);
+		posttime = SQL_COL_INT(stmt, 1);
 
 		val = load_post(req, postid, NULL, false);
 		if (!val)
 			continue;
 
 		VAL_SET_LIST(posts, i++, val);
+
+		if (posttime > maxtime)
+			maxtime = posttime;
 	}
+
+	val_putref(posts);
+
+	VAR_SET_INT(&req->vars, "lastupdate", maxtime);
 }
 
 int __tagcat(struct req *req, const char *tagcat, int page, char *tmpl,
-	     bool istag, int nstories)
+	     bool istag)
 {
 	if (!tagcat)
 		return R404(req, NULL);
@@ -127,7 +139,7 @@ int __tagcat(struct req *req, const char *tagcat, int page, char *tmpl,
 
 	vars_scope_push(&req->vars);
 
-	__load_posts_tag(req, page, tagcat, istag, nstories);
+	__load_posts_tag(req, page, tagcat, istag);
 
 	req->body = render_page(req, tmpl);
 	return 0;
@@ -135,7 +147,7 @@ int __tagcat(struct req *req, const char *tagcat, int page, char *tmpl,
 
 int blahg_tag(struct req *req, char *tag, int page)
 {
-	return __tagcat(req, tag, page, "{tagindex}", true, HTML_TAG_STORIES);
+	return __tagcat(req, tag, page, "{tagindex}", true);
 }
 
 int blahg_category(struct req *req, char *cat, int page)
@@ -148,5 +160,5 @@ int blahg_category(struct req *req, char *cat, int page)
 		return R404(req, NULL);
 
 	return __tagcat(req, catn ? wordpress_catn[catn] : cat, page,
-			"{catindex}", false, HTML_CATEGORY_STORIES);
+			"{catindex}", false);
 }
