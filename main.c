@@ -241,7 +241,9 @@ static bool switch_content_type(struct req *req)
 
 		/* for everything else, we have only HTML */
 		default:
-			return strcmp(fmt, "html") ? false : true;
+			if (strcmp(fmt, "html"))
+				return false;
+			break;
 	}
 
 	/* let the template engine know */
