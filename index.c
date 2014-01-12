@@ -23,30 +23,39 @@ static void __load_posts(struct req *req, int page)
 	sqlite3_stmt *stmt;
 	struct val *posts;
 	struct val *val;
+	time_t maxtime;
 	int ret;
 	int i;
 
+	maxtime = 0;
 	i = 0;
 
 	posts = VAR_LOOKUP_VAL(&req->vars, "posts");
 
 	open_db();
-	SQL(stmt, "SELECT id FROM posts ORDER BY time DESC LIMIT ? OFFSET ?");
-	SQL_BIND_INT(stmt, 1, HTML_INDEX_STORIES);
-	SQL_BIND_INT(stmt, 2, page * HTML_INDEX_STORIES);
+	SQL(stmt, "SELECT id, strftime(\"%s\", time) FROM posts ORDER BY time DESC LIMIT ? OFFSET ?");
+	SQL_BIND_INT(stmt, 1, req->opts.index_stories);
+	SQL_BIND_INT(stmt, 2, page * req->opts.index_stories);
 	SQL_FOR_EACH(stmt) {
+		time_t posttime;
 		int postid;
 
-		postid = SQL_COL_INT(stmt, 0);
+		postid   = SQL_COL_INT(stmt, 0);
+		posttime = SQL_COL_INT(stmt, 1);
 
 		val = load_post(req, postid, NULL, false);
 		if (!val)
 			continue;
 
 		VAL_SET_LIST(posts, i++, val);
+
+		if (posttime > maxtime)
+			maxtime = posttime;
 	}
 
 	val_putref(posts);
+
+	VAR_SET_INT(&req->vars, "lastupdate", maxtime);
 }
 
 static void __load_posts_archive(struct req *req, int page, int archid)
@@ -115,8 +124,6 @@ static void __store_archid(struct vars *vars, int archid)
 
 int blahg_index(struct req *req, int page)
 {
-	req_head(req, "Content-Type", "text/html");
-
 	page = max(page, 0);
 
 	__store_title(&req->vars, "Blahg");

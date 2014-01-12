@@ -105,8 +105,6 @@ static void parse_qs(char *qs, struct req *req)
 		args->page = PAGE_XMLRPC;
 	else if (args->comment)
 		args->page = PAGE_COMMENT;
-	else if (args->feed)
-		args->page = PAGE_FEED;
 	else if (args->tag)
 		args->page = PAGE_TAG;
 	else if (args->cat)
@@ -144,7 +142,7 @@ static void req_init(struct req *req)
 	req->dump_latency = true;
 	req->start = gettime();
 	req->body  = NULL;
-	req->fmt   = "html";
+	req->fmt   = NULL;
 	INIT_LIST_HEAD(&req->headers);
 
 	req->status = 200;
@@ -191,7 +189,7 @@ static void req_destroy(struct req *req)
 	free(req->body);
 }
 
-void req_head(struct req *req, char *name, char *val)
+void req_head(struct req *req, char *name, const char *val)
 {
 	struct header *cur, *tmp;
 
@@ -213,9 +211,54 @@ set:
 	list_add_tail(&cur->list, &req->headers);
 }
 
+static bool switch_content_type(struct req *req)
+{
+	char *fmt = req->args.feed;
+	int page = req->args.page;
+
+	const char *content_type;
+	int index_stories;
+
+	if (!fmt) {
+		/* no feed => OK, use html */
+		fmt = "html";
+		content_type = "text/html";
+		index_stories = HTML_INDEX_STORIES;
+	} else if (!strcmp(fmt, "atom")) {
+		content_type = "application/atom+xml";
+		index_stories = FEED_INDEX_STORIES;
+	} else if (!strcmp(fmt, "rss2")) {
+		content_type = "application/rss+xml";
+		index_stories = FEED_INDEX_STORIES;
+	} else {
+		/* unsupported feed type */
+		return false;
+	}
+
+	switch (page) {
+		case PAGE_INDEX:
+			break;
+
+		/* for everything else, we have only HTML */
+		default:
+			return strcmp(fmt, "html") ? false : true;
+	}
+
+	/* let the template engine know */
+	req->fmt = fmt;
+
+	/* let the client know */
+	req_head(req, "Content-Type", content_type);
+
+	/* set limits */
+	req->opts.index_stories = index_stories;
+
+	return true;
+}
+
 int main(int argc, char **argv)
 {
-	struct req request;
+	struct req req;
 	int ret;
 
 	openlog("blahg", LOG_NDELAY | LOG_PID, LOG_LOCAL0);
@@ -223,40 +266,44 @@ int main(int argc, char **argv)
 	init_var_subsys();
 	init_pipe_subsys();
 
-	req_init(&request);
+	req_init(&req);
 
-	parse_qs(getenv("QUERY_STRING"), &request);
+	parse_qs(getenv("QUERY_STRING"), &req);
 
 #ifdef USE_XMLRPC
-	req_head(&request, "X-Pingback", BASE_URL "/?xmlrpc=1");
+	req_head(&req, "X-Pingback", BASE_URL "/?xmlrpc=1");
 #endif
 
-	switch (request.args.page) {
+	/*
+	 * If we got a feed format, we'll be switching (most likely) to it
+	 */
+	if (!switch_content_type(&req)) {
+		ret = R404(&req, "{error_unsupported_feed_fmt}");
+		goto out;
+	}
+
+	switch (req.args.page) {
 		case PAGE_ARCHIVE:
-			ret = blahg_archive(&request, request.args.m,
-					    request.args.paged);
+			ret = blahg_archive(&req, req.args.m,
+					    req.args.paged);
 			break;
 		case PAGE_CATEGORY:
-			ret = blahg_category(&request, request.args.cat,
-					     request.args.paged);
+			ret = blahg_category(&req, req.args.cat,
+					     req.args.paged);
 			break;
 		case PAGE_TAG:
-			ret = blahg_tag(&request, request.args.tag,
-					request.args.paged);
+			ret = blahg_tag(&req, req.args.tag,
+					req.args.paged);
 			break;
 		case PAGE_COMMENT:
-			ret = blahg_comment(&request);
-			break;
-		case PAGE_FEED:
-			ret = blahg_feed(&request, request.args.feed,
-					 request.args.p);
+			ret = blahg_comment(&req);
 			break;
 		case PAGE_INDEX:
-			ret = blahg_index(&request, request.args.paged);
+			ret = blahg_index(&req, req.args.paged);
 			break;
 		case PAGE_STORY:
-			ret = blahg_story(&request, request.args.p,
-					  request.args.preview == PREVIEW_SECRET);
+			ret = blahg_story(&req, req.args.p,
+					  req.args.preview == PREVIEW_SECRET);
 			break;
 #if 0
 #ifdef USE_XMLRPC
@@ -265,15 +312,16 @@ int main(int argc, char **argv)
 #endif
 #endif
 		case PAGE_ADMIN:
-			ret = blahg_admin(&request);
+			ret = blahg_admin(&req);
 			break;
 		default:
 			// FIXME: send $SCRIPT_URL, $PATH_INFO, and $QUERY_STRING via email
-			ret = R404(&request, NULL);
+			ret = R404(&req, NULL);
 			break;
 	}
 
-	req_destroy(&request);
+out:
+	req_destroy(&req);
 
 	return ret;
 }

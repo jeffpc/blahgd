@@ -16,7 +16,6 @@ enum {
 	PAGE_CATEGORY,
 	PAGE_TAG,
 	PAGE_COMMENT,
-	PAGE_FEED,
 	PAGE_INDEX,
 	PAGE_STORY,
 	PAGE_XMLRPC,
@@ -55,18 +54,21 @@ struct req {
 
 	char *fmt;		/* format (e.g., "html") */
 
+	struct {
+		int index_stories;
+	} opts;
+
 	/* request latency calculation */
 	bool dump_latency;
 	uint64_t start;
 };
 
-extern void req_head(struct req *req, char *name, char *val);
+extern void req_head(struct req *req, char *name, const char *val);
 
 extern int blahg_archive(struct req *req, int m, int paged);
 extern int blahg_category(struct req *req, char *cat, int page);
 extern int blahg_tag(struct req *req, char *tag, int paged);
 extern int blahg_comment(struct req *req);
-extern int blahg_feed(struct req *req, char *feed, int p);
 extern int blahg_index(struct req *req, int paged);
 extern int blahg_story(struct req *req, int p, bool preview);
 extern int blahg_admin(struct req *req);
