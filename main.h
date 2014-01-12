@@ -77,6 +77,7 @@ extern int blahg_pingback();
 #endif
 
 extern int R404(struct req *req, char *tmpl);
+extern int R301(struct req *req, const char *url);
 
 static inline uint64_t gettime()
 {

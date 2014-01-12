@@ -137,6 +137,25 @@ int R404(struct req *req, char *tmpl)
 	return 0;
 }
 
+int R301(struct req *req, const char *url)
+{
+	LOG("status 301 (url: '%s')", url);
+
+	req_head(req, "Content-Type", "text/html");
+	req_head(req, "Location", url);
+
+	req->status = 301;
+	req->fmt    = "html";
+
+	vars_scope_push(&req->vars);
+
+	VAR_SET_STR(&req->vars, "redirect", xstrdup(url));
+
+	req->body = render_page(req, "{301}");
+
+	return 0;
+}
+
 static void req_init(struct req *req)
 {
 	req->dump_latency = true;
