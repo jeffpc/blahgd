@@ -403,15 +403,17 @@ void destroy_post(struct post *post)
  *     post id
  *     post time
  */
-void load_posts(struct req *req, sqlite3_stmt *stmt)
+void load_posts(struct req *req, sqlite3_stmt *stmt, int expected)
 {
 	struct val *posts;
 	struct val *val;
 	time_t maxtime;
+	int nposts;
 	int ret;
 	int i;
 
 	maxtime = 0;
+	nposts = 0;
 	i = 0;
 
 	posts = VAR_LOOKUP_VAL(&req->vars, "posts");
@@ -431,9 +433,12 @@ void load_posts(struct req *req, sqlite3_stmt *stmt)
 
 		if (posttime > maxtime)
 			maxtime = posttime;
+
+		nposts++;
 	}
 
 	val_putref(posts);
 
 	VAR_SET_INT(&req->vars, "lastupdate", maxtime);
+	VAR_SET_INT(&req->vars, "moreposts", nposts == expected);
 }

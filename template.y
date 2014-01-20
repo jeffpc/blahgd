@@ -39,6 +39,16 @@ static char *tostr(char c)
 	return ret;
 }
 
+static char *condconcat(struct parser_output *data, char *a, char *b)
+{
+	if (!cond_value(data)) {
+		free(b);
+		return a;
+	}
+
+	return concat(a, b);
+}
+
 static char *__foreach_list(struct req *req, char *varname, char *tmpl,
                             struct val *val)
 {
@@ -88,12 +98,16 @@ static char *__foreach_list(struct req *req, char *varname, char *tmpl,
 	return out;
 }
 
-char *foreach(struct req *req, char *varname, char *tmpl)
+static char *foreach(struct parser_output *data, struct req *req, char *varname,
+                     char *tmpl)
 {
 	struct vars *vars = &req->vars;
 	struct var *var;
 	struct val *val;
 	char *ret;
+
+	if (!cond_value(data))
+		return xstrdup("");
 
 	var = var_lookup(vars, varname);
 	if (!var)
@@ -145,7 +159,8 @@ static char *print_var(struct var *var)
 	return print_val(var->val);
 }
 
-static char *pipeline(struct req *req, char *var, struct pipeline *pipe)
+static char *pipeline(struct parser_output *data, struct req *req, char *var,
+                      struct pipeline *pipe)
 {
 	struct list_head line;
 	struct val *val;
@@ -153,6 +168,9 @@ static char *pipeline(struct req *req, char *var, struct pipeline *pipe)
 	struct pipeline *cur;
 	struct pipeline *tmp;
 	char *out;
+
+	if (!cond_value(data))
+		return xstrdup("");
 
 	v = var_lookup(&req->vars, var);
 	if (!v)
@@ -177,6 +195,44 @@ static char *pipeline(struct req *req, char *var, struct pipeline *pipe)
 
 	return out;
 }
+
+static char *variable(struct parser_output *data, struct req *req, char *name)
+{
+	struct var *var;
+
+	if (!cond_value(data))
+		return xstrdup("");
+
+	var = var_lookup(&data->req->vars, name);
+
+	if (!var)
+		return render_template(data->req, name);
+	else
+		return print_var(var);
+}
+
+static char *function(struct parser_output *data, struct req *req,
+                      const char *fxn, void *args)
+{
+	fprintf(stderr, "%s(%p, .., %s)\n", __func__, data, fxn);
+
+	if (!strcmp(fxn, "ifgt")) {
+		cond_if(data, true /* FIXME */);
+	} else if (!strcmp(fxn, "iflt")) {
+		cond_if(data, true /* FIXME */);
+	} else if (!strcmp(fxn, "ifeq")) {
+		cond_if(data, true /* FIXME */);
+	} else if (!strcmp(fxn, "endif")) {
+		cond_endif(data);
+	} else if (!strcmp(fxn, "else")) {
+		cond_else(data);
+	} else {
+		LOG("unknown template function '%s'", fxn);
+		ASSERT(0);
+	}
+
+	return xstrdup(NULL);
+}
 %}
 
 %union {
@@ -190,39 +246,44 @@ static char *pipeline(struct req *req, char *var, struct pipeline *pipe)
 
 %type <ptr> words cmd
 %type <pipe> pipeline pipe
+%type <ptr> args
+ /* FIXME */
 
 %%
 
 page : words					{ data->output = $1; }
      ;
 
-words : words CHAR				{ $$ = concat($1, tostr($2)); }
-      | words WORD				{ $$ = concat($1, $2); }
-      | words '|'				{ $$ = concat($1, xstrdup("|")); }
-      | words '%'				{ $$ = concat($1, xstrdup("%")); }
+words : words CHAR				{ $$ = condconcat(data, $1, tostr($2)); }
+      | words WORD				{ $$ = condconcat(data, $1, $2); }
+      | words '|'				{ $$ = condconcat(data, $1, xstrdup("|")); }
+      | words '%'				{ $$ = condconcat(data, $1, xstrdup("%")); }
+      | words '('				{ $$ = condconcat(data, $1, xstrdup("(")); }
+      | words ')'				{ $$ = condconcat(data, $1, xstrdup(")")); }
+      | words ','				{ $$ = condconcat(data, $1, xstrdup(",")); }
       | words cmd				{ $$ = concat($1, $2); }
       |						{ $$ = xstrdup(""); }
       ;
 
 cmd : '{' WORD pipeline '}'		{
-						$$ = pipeline(data->req, $2, $3);
+						$$ = pipeline(data, data->req, $2, $3);
 						free($2);
 					}
     | '{' WORD '%' WORD '}'		{
-						$$ = foreach(data->req, $2, $4);
+						$$ = foreach(data, data->req, $2, $4);
 						free($2);
 						free($4);
 					}
+    | '{' WORD '(' args ')' '}'		{
+						$$ = function(data, data->req, $2, $4);
+						free($2);
+					}
+    | '{' WORD '(' ')' '}'		{
+						$$ = function(data, data->req, $2, NULL);
+						free($2);
+					}
     | '{' WORD '}'			{
-						struct var *var;
-
-						var = var_lookup(&data->req->vars, $2);
-
-						if (!var)
-							$$ = render_template(data->req, $2);
-						else
-							$$ = print_var(var);
-
+						$$ = variable(data, data->req, $2);
 						free($2);
 					}
     ;
@@ -236,5 +297,12 @@ pipeline : pipeline pipe		{
 
 pipe : '|' WORD				{ $$ = pipestage($2); free($2); }
      ;
+
+args : args ',' arg			{ $$ = NULL; }
+     | arg				{ $$ = NULL; }
+     ;
+
+arg : WORD
+    ;
 
 %%

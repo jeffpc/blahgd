@@ -67,7 +67,7 @@ struct req;
 extern struct val *load_post(struct req *req, int postid, const char *titlevar, bool preview);
 extern void dump_post(struct post_old *post);
 extern void destroy_post(struct post *post);
-extern void load_posts(struct req *req, sqlite3_stmt *stmt);
+extern void load_posts(struct req *req, sqlite3_stmt *stmt, int expected);
 
 #define max(a,b)	((a)<(b)? (b) : (a))
 

@@ -89,7 +89,7 @@ static void __load_posts_tag(struct req *req, int page, const char *tag,
 	SQL_BIND_INT(stmt, 2, req->opts.index_stories);
 	SQL_BIND_INT(stmt, 3, page * req->opts.index_stories);
 
-	load_posts(req, stmt);
+	load_posts(req, stmt, req->opts.index_stories);
 }
 
 int __tagcat(struct req *req, const char *tagcat, int page, char *tmpl,

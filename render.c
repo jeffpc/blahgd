@@ -22,6 +22,8 @@ char *render_page(struct req *req, char *str)
 	x.len   = strlen(str);
 	x.pos   = 0;
 
+	x.cond_stack_use = -1;
+
 	tmpl_lex_init(&x.scanner);
 	tmpl_set_extra(&x, x.scanner);
 
