@@ -28,6 +28,7 @@
 #define _REQ_FIELDS		"The required fields are: name, email " \
 				"address, the math field, and of course "\
 				"the content."
+#define USERAGENT_MISSING	"You need to send a user-agent."
 #define CAPTCHA_FAIL		"You need to get better at math."
 #define MISSING_EMAIL		"You need to supply a valid email address. " \
 				_REQ_FIELDS
@@ -191,6 +192,11 @@ static const char *save_comment(struct req *req)
 	uint64_t captcha = 0;
 	bool nonempty = false;
 	int id = 0;
+
+	if (!getenv("HTTP_USER_AGENT")) {
+		LOG("Missing user agent...");
+		return USERAGENT_MISSING;
+	}
 
 	author_buf[0] = '\0'; /* better be paranoid */
 	email_buf[0] = '\0'; /* better be paranoid */
