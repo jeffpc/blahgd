@@ -4,3 +4,20 @@ Environments
   verbatim  - output raw html
   texttt    - merely monospace
   listing   - similar to the listing command
+
+
+Comment Spam Techniques
+=======================
+
+1) Empty form field - a hidden field that should never get filled in by
+   anything.  Any bot that blindly fills in all the fields will immediately
+   cause the comment to be ignored.
+
+   Idea from: http://utcc.utoronto.ca/~cks/space/blog/web/CommentSpamPrecautions
+
+2) Time stamp field - a hidden field with page load Unix timestamp in
+   nanoseconds.  When submitted, the delta between submission time and page
+   load time must be at least COMMENT_MIN_DELAY and at most COMMENT_MAX_DELAY.
+
+3) Math captcha - a simple math problem.  User must set it to the sum of
+   COMMENT_CAPTCHA_A and COMMENT_CAPTCHA_B.
