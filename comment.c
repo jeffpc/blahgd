@@ -55,6 +55,8 @@
 #define SC_ID_EQ		17
 #define SC_CAPTCHA		8
 #define SC_CAPTCHA_EQ		18
+#define SC_EMPTY		9
+#define SC_EMPTY_EQ		19
 #define SC_ERROR		99
 
 const char *write_out_comment(struct req *req, int id, char *author,
@@ -187,6 +189,7 @@ static const char *save_comment(struct req *req)
 	int comment_len = 0;
 	uint64_t date = 0;
 	uint64_t captcha = 0;
+	bool nonempty = false;
 	int id = 0;
 
 	author_buf[0] = '\0'; /* better be paranoid */
@@ -219,6 +222,8 @@ static const char *save_comment(struct req *req)
 					state = SC_ID_EQ;
 				if (tmp == 'v')
 					state = SC_CAPTCHA_EQ;
+				if (tmp == 'x')
+					state = SC_EMPTY_EQ;
 				break;
 
 			case SC_AUTHOR_EQ:
@@ -251,6 +256,10 @@ static const char *save_comment(struct req *req)
 
 			case SC_CAPTCHA_EQ:
 				state = (tmp == '=') ? SC_CAPTCHA : SC_ERROR;
+				break;
+
+			case SC_EMPTY_EQ:
+				state = (tmp == '=') ? SC_EMPTY : SC_ERROR;
 				break;
 
 			case SC_AUTHOR:
@@ -318,6 +327,16 @@ static const char *save_comment(struct req *req)
 				else
 					captcha = (captcha * 10) + (tmp - '0');
 				break;
+
+			case SC_EMPTY:
+				if (tmp == '&') {
+					state = SC_IGNORE;
+				} else {
+					nonempty = true;
+					state = SC_ERROR;
+				}
+
+				break;
 		}
 
 		if (state == SC_ERROR)
@@ -336,6 +355,11 @@ static const char *save_comment(struct req *req)
 
 	now = gettime();
 	deltat = now - date;
+
+	if (nonempty) {
+		LOG("User filled out supposedly empty field... postid:%d", id);
+		return GENERIC_ERR_STR;
+	}
 
 	if ((deltat > COMMENT_MAX_DELAY) || (deltat < COMMENT_MIN_DELAY)) {
 		LOG("Flash-gordon or geriatric was here... load:%lu comment:%lu delta:%lu postid:%d",
