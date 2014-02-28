@@ -193,9 +193,14 @@ static const char *save_comment(struct req *req)
 	bool nonempty = false;
 	int id = 0;
 
+	bool wouldblock = false;
+
 	if (!getenv("HTTP_USER_AGENT")) {
 		LOG("Missing user agent...");
+		wouldblock = true;
+#if 0
 		return USERAGENT_MISSING;
+#endif
 	}
 
 	author_buf[0] = '\0'; /* better be paranoid */
@@ -364,7 +369,10 @@ static const char *save_comment(struct req *req)
 
 	if (nonempty) {
 		LOG("User filled out supposedly empty field... postid:%d", id);
+		wouldblock = true;
+#if 0
 		return GENERIC_ERR_STR;
+#endif
 	}
 
 	if ((deltat > COMMENT_MAX_DELAY) || (deltat < COMMENT_MIN_DELAY)) {
@@ -378,6 +386,9 @@ static const char *save_comment(struct req *req)
 		    captcha, COMMENT_CAPTCHA_A + COMMENT_CAPTCHA_B, id);
 		return CAPTCHA_FAIL;
 	}
+
+	if (wouldblock)
+		LOG("comment would have been blocked... :)");
 
 	/* URL decode everything */
 	urldecode(comment_buf, strlen(comment_buf), comment_buf);
