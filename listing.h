@@ -5,21 +5,19 @@
 
 #include "post.h"
 #include "mangle.h"
-#include "vars.h"
+#include "str.h"
 
-extern struct val *listing(struct post *post, char *fname);
+extern struct str *listing(struct post *post, char *fname);
 
-static inline struct val *listing_str(struct val *val)
+static inline struct str *listing_str(struct str *str)
 {
 	char *tmp;
 
-	ASSERT3U(val->type, ==, VT_STR);
+	tmp = mangle_htmlescape(str->str);
 
-	tmp = mangle_htmlescape(val->str);
+	str_putref(str);
 
-	val_putref(val);
-
-	return VAL_ALLOC_STR(tmp);
+	return STR_DUP(tmp);
 }
 
 #endif

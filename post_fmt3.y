@@ -20,7 +20,7 @@
 #include "mangle.h"
 #include "listing.h"
 #include "post_fmt3_cmds.h"
-#include "vars.h"
+#include "str.h"
 
 #include "parse.h"
 
@@ -57,30 +57,27 @@ static const char *cquotes[3] = {
 	[2] = "&rdquo;",
 };
 
-static struct val *__char_cvt(struct val *val, const char **outstr, size_t nouts)
+static struct str *__char_cvt(struct str *val, const char **outstr, size_t nouts)
 {
 	size_t len;
-
-	ASSERT3U(val->type, ==, VT_STR);
 
 	len = strlen(val->str);
 
 	ASSERT3U(len, <=, nouts);
 
-	val_putref(val);
+	str_putref(val);
 
-	return VAL_DUP_STR(outstr[len]);
+	return STR_DUP(outstr[len]);
 }
 
 #define dash(v)		__char_cvt((v), dashes, ARRAY_LEN(dashes))
 #define oquote(v)	__char_cvt((v), oquotes, ARRAY_LEN(oquotes))
 #define cquote(v)	__char_cvt((v), cquotes, ARRAY_LEN(cquotes))
 
-static struct val *special_char(struct val *val)
+static struct str *special_char(struct str *val)
 {
 	char *ret;
 
-	ASSERT3U(val->type, ==, VT_STR);
 	ASSERT3U(strlen(val->str), ==, 1);
 
 	switch (val->str[0]) {
@@ -91,9 +88,9 @@ static struct val *special_char(struct val *val)
 			return val;
 	}
 
-	val_putref(val);
+	str_putref(val);
 
-	return VAL_DUP_STR(ret);
+	return STR_DUP(ret);
 }
 
 static inline char asciify(unsigned char c)
@@ -174,7 +171,7 @@ err:
 	return 1;
 }
 
-static struct val *render_math(struct val *val)
+static struct str *render_math(struct str *val)
 {
 	char finalpath[FILENAME_MAX];
 	char texpath[FILENAME_MAX];
@@ -188,8 +185,6 @@ static struct val *render_math(struct val *val)
 	unsigned char md[20];
 	char amd[41];
 	int ret;
-
-	ASSERT3U(val->type, ==, VT_STR);
 
 	SHA1((const unsigned char*) tex, strlen(tex), md);
 	hexdump(amd, md, 20);
@@ -220,22 +215,22 @@ static struct val *render_math(struct val *val)
 	unlink(pngpath);
 
 	if (ret) {
-		val_putref(val);
+		str_putref(val);
 
-		return valcat3(VAL_DUP_STR("<span>Math Error ("),
-		               VAL_DUP_STR(strerror(errno)),
-			       VAL_DUP_STR(")</span>"));
+		return str_cat3(STR_DUP("<span>Math Error ("),
+		                STR_DUP(strerror(errno)),
+			        STR_DUP(")</span>"));
 	}
 
 out:
-	return valcat5(VAL_DUP_STR("<img src=\""), VAL_DUP_STR(finalpath),
-	               VAL_DUP_STR("\" alt=\"$"), val, VAL_DUP_STR("$\" />"));
+	return str_cat5(STR_DUP("<img src=\""), STR_DUP(finalpath),
+	                STR_DUP("\" alt=\"$"), val, STR_DUP("$\" />"));
 }
 
 %}
 
 %union {
-	struct val *ptr;
+	struct str *ptr;
 };
 
 /* generic tokens */
@@ -269,55 +264,55 @@ out:
 
 %%
 
-post : paragraphs PAREND		{ data->valoutput = $1; }
-     | paragraphs			{ data->valoutput = $1; }
-     | PAREND				{ data->valoutput = VAL_DUP_STR(""); }
+post : paragraphs PAREND		{ data->stroutput = $1; }
+     | paragraphs			{ data->stroutput = $1; }
+     | PAREND				{ data->stroutput = STR_DUP(""); }
      ;
 
-paragraphs : paragraphs PAREND paragraph	{ $$ = valcat4($1, VAL_DUP_STR("<p>"), $3, VAL_DUP_STR("</p>\n")); }
-	   | paragraph				{ $$ = valcat3(VAL_DUP_STR("<p>"), $1, VAL_DUP_STR("</p>\n")); }
+paragraphs : paragraphs PAREND paragraph	{ $$ = str_cat4($1, STR_DUP("<p>"), $3, STR_DUP("</p>\n")); }
+	   | paragraph				{ $$ = str_cat3(STR_DUP("<p>"), $1, STR_DUP("</p>\n")); }
 	   ;
 
-paragraph : paragraph thing		{ $$ = valcat($1, $2); }
+paragraph : paragraph thing		{ $$ = str_cat($1, $2); }
           | thing			{ $$ = $1; }
           ;
 
 thing : WORD				{ $$ = $1; }
-      | UTF8FIRST2 UTF8REST		{ $$ = valcat($1, $2); }
-      | UTF8FIRST3 UTF8REST UTF8REST	{ $$ = valcat3($1, $2, $3); }
-      | NLINE				{ $$ = VAL_DUP_STR(data->post->texttt_nesting ? "\n" : " "); }
+      | UTF8FIRST2 UTF8REST		{ $$ = str_cat($1, $2); }
+      | UTF8FIRST3 UTF8REST UTF8REST	{ $$ = str_cat3($1, $2, $3); }
+      | NLINE				{ $$ = STR_DUP(data->post->texttt_nesting ? "\n" : " "); }
       | WSPACE				{ $$ = $1; }
-      | PIPE				{ $$ = VAL_DUP_STR("|"); }
-      | ASTERISK			{ $$ = VAL_DUP_STR("*"); }
-      | SLASH				{ $$ = VAL_DUP_STR("/"); }
+      | PIPE				{ $$ = STR_DUP("|"); }
+      | ASTERISK			{ $$ = STR_DUP("*"); }
+      | SLASH				{ $$ = STR_DUP("/"); }
       | DASH				{ $$ = dash($1); }
       | OQUOT				{ $$ = oquote($1); }
       | CQUOT				{ $$ = cquote($1); }
       | SCHAR				{ $$ = special_char($1); }
-      | ELLIPSIS			{ $$ = VAL_DUP_STR("&hellip;"); }
-      | TILDE				{ $$ = VAL_DUP_STR("&nbsp;"); }
-      | AMP				{ $$ = VAL_DUP_STR("</td><td>"); }
-      | DOLLAR				{ $$ = VAL_DUP_STR("$"); }
-      | PERCENT				{ $$ = VAL_DUP_STR("%"); }
+      | ELLIPSIS			{ $$ = STR_DUP("&hellip;"); }
+      | TILDE				{ $$ = STR_DUP("&nbsp;"); }
+      | AMP				{ $$ = STR_DUP("</td><td>"); }
+      | DOLLAR				{ $$ = STR_DUP("$"); }
+      | PERCENT				{ $$ = STR_DUP("%"); }
       | BSLASH cmd			{ $$ = $2; }
       | MATHSTART math MATHEND		{ $$ = render_math($2); }
-      | VERBSTART verb VERBEND		{ $$ = valcat3(VAL_DUP_STR("</p><p>"), $2, VAL_DUP_STR("</p><p>")); }
-      | LISTSTART verb LISTEND		{ $$ = valcat3(VAL_DUP_STR("</p><pre>"),
+      | VERBSTART verb VERBEND		{ $$ = str_cat3(STR_DUP("</p><p>"), $2, STR_DUP("</p><p>")); }
+      | LISTSTART verb LISTEND		{ $$ = str_cat3(STR_DUP("</p><pre>"),
 							 listing_str($2),
-							 VAL_DUP_STR("</pre><p>")); }
+							 STR_DUP("</pre><p>")); }
       ;
 
 cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd(data->post, $1, $3, $2); }
     | WORD cmdarg		{ $$ = process_cmd(data->post, $1, $2, NULL); }
     | WORD			{ $$ = process_cmd(data->post, $1, NULL, NULL); }
-    | BSLASH			{ $$ = VAL_DUP_STR("<br/>"); }
-    | OCURLY			{ $$ = VAL_DUP_STR("{"); }
-    | CCURLY			{ $$ = VAL_DUP_STR("}"); }
-    | OBRACE			{ $$ = VAL_DUP_STR("["); }
-    | CBRACE			{ $$ = VAL_DUP_STR("]"); }
-    | AMP			{ $$ = VAL_DUP_STR("&amp;"); }
-    | USCORE			{ $$ = VAL_DUP_STR("_"); }
-    | TILDE			{ $$ = VAL_DUP_STR("~"); }
+    | BSLASH			{ $$ = STR_DUP("<br/>"); }
+    | OCURLY			{ $$ = STR_DUP("{"); }
+    | CCURLY			{ $$ = STR_DUP("}"); }
+    | OBRACE			{ $$ = STR_DUP("["); }
+    | CBRACE			{ $$ = STR_DUP("]"); }
+    | AMP			{ $$ = STR_DUP("&amp;"); }
+    | USCORE			{ $$ = STR_DUP("_"); }
+    | TILDE			{ $$ = STR_DUP("~"); }
     ;
 
 optcmdarg : OBRACE paragraph CBRACE	{ $$ = $2; }
@@ -326,26 +321,26 @@ optcmdarg : OBRACE paragraph CBRACE	{ $$ = $2; }
 cmdarg : OCURLY paragraph CCURLY	{ $$ = $2; }
        ;
 
-verb : verb VERBTEXT			{ $$ = valcat($1, $2); }
+verb : verb VERBTEXT			{ $$ = str_cat($1, $2); }
      | VERBTEXT				{ $$ = $1; }
 
-math : math mexpr			{ $$ = valcat($1, $2); }
+math : math mexpr			{ $$ = str_cat($1, $2); }
      | mexpr				{ $$ = $1; }
      ;
 
 mexpr : WORD				{ $$ = $1; }
       | WSPACE				{ $$ = $1; }
       | SCHAR				{ $$ = $1; }
-      | mexpr EQLTGT mexpr 		{ $$ = valcat3($1, $2, $3); }
-      | mexpr USCORE mexpr 		{ $$ = valcat3($1, VAL_DUP_STR("_"), $3); }
-      | mexpr CARRET mexpr 		{ $$ = valcat3($1, $2, $3); }
-      | mexpr PLUS mexpr 		{ $$ = valcat3($1, $2, $3); }
-      | mexpr MINUS mexpr 		{ $$ = valcat3($1, $2, $3); }
-      | mexpr ASTERISK mexpr	 	{ $$ = valcat3($1, VAL_DUP_STR("*"), $3); }
-      | mexpr SLASH mexpr	 	{ $$ = valcat3($1, VAL_DUP_STR("/"), $3); }
-      | BSLASH WORD			{ $$ = valcat(VAL_DUP_STR("\\"), $2); }
-      | OPAREN math CPAREN		{ $$ = valcat3(VAL_DUP_STR("("), $2, VAL_DUP_STR(")")); }
-      | OCURLY math CCURLY		{ $$ = valcat3(VAL_DUP_STR("{"), $2, VAL_DUP_STR("}")); }
+      | mexpr EQLTGT mexpr 		{ $$ = str_cat3($1, $2, $3); }
+      | mexpr USCORE mexpr 		{ $$ = str_cat3($1, STR_DUP("_"), $3); }
+      | mexpr CARRET mexpr 		{ $$ = str_cat3($1, $2, $3); }
+      | mexpr PLUS mexpr 		{ $$ = str_cat3($1, $2, $3); }
+      | mexpr MINUS mexpr 		{ $$ = str_cat3($1, $2, $3); }
+      | mexpr ASTERISK mexpr	 	{ $$ = str_cat3($1, STR_DUP("*"), $3); }
+      | mexpr SLASH mexpr	 	{ $$ = str_cat3($1, STR_DUP("/"), $3); }
+      | BSLASH WORD			{ $$ = str_cat(STR_DUP("\\"), $2); }
+      | OPAREN math CPAREN		{ $$ = str_cat3(STR_DUP("("), $2, STR_DUP(")")); }
+      | OCURLY math CCURLY		{ $$ = str_cat3(STR_DUP("{"), $2, STR_DUP("}")); }
       ;
 
 %%

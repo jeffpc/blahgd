@@ -3,7 +3,7 @@
 #include "parse.h"
 #include "error.h"
 #include "utils.h"
-#include "vars.h"
+#include "str.h"
 
 static int onefile(struct post *post, char *ibuf, size_t len)
 {
@@ -24,9 +24,9 @@ static int onefile(struct post *post, char *ibuf, size_t len)
 
 	ret = fmt3_parse(&x);
 	if (!ret) {
-		ASSERT(x.valoutput);
-		val_dump(x.valoutput, 0);
-		val_putref(x.valoutput);
+		ASSERT(x.stroutput);
+		printf("%s", x.stroutput->str);
+		str_putref(x.stroutput);
 	} else {
 		fprintf(stderr, "failed to parse\n");
 	}

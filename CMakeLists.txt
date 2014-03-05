@@ -41,6 +41,7 @@ add_executable(blahg render.c post.c main.c
 	index.c sidebar.c story.c tag.c comment.c
 	admin.c
 	listing.c utils.c error.c mangle.c
+	str.c
 	decode.c fsm.c
 )
 
@@ -61,6 +62,7 @@ add_executable(test_fmt3
 	post_fmt3_cmds.c
 	listing.c
 	mangle.c utils.c error.c
+	str.c
 )
 
 target_link_libraries(test_fmt3

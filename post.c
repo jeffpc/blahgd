@@ -67,7 +67,7 @@ static int __do_load_post_body_fmt3(struct post *post, char *ibuf, size_t len)
 
 	fmt3_lex_destroy(x.scanner);
 
-	post->body = x.valoutput;
+	post->body = str_to_val(x.stroutput);
 	ASSERT(post->body);
 
 	return 0;
