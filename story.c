@@ -38,8 +38,6 @@ int blahg_story(struct req *req, int p, bool preview)
 		return 0;
 	}
 
-	req_head(req, "Content-Type", "text/html");
-
 	sidebar(req);
 
 	vars_scope_push(&req->vars);

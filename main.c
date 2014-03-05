@@ -256,6 +256,7 @@ static bool switch_content_type(struct req *req)
 
 	switch (page) {
 		case PAGE_INDEX:
+		case PAGE_STORY:
 			break;
 
 		/* for everything else, we have only HTML */
