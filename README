@@ -19,6 +19,8 @@ Comment Spam Techniques
    nanoseconds.  When submitted, the delta between submission time and page
    load time must be at least COMMENT_MIN_DELAY and at most COMMENT_MAX_DELAY.
 
+   Idea from: cdlu (late 2008/early 2009)
+
 3) Math captcha - a simple math problem.  User must set it to the sum of
    COMMENT_CAPTCHA_A and COMMENT_CAPTCHA_B.
 
