@@ -63,8 +63,6 @@ void req_output(struct req *req)
 		       delta / 1000000000UL,
 		       delta % 1000000000UL);
 	}
-
-	req_destroy(req);
 }
 
 void req_destroy(struct req *req)
