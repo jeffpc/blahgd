@@ -59,18 +59,18 @@ static void __load_posts_archive(struct req *req, int page, int archid)
 
 static void __store_title(struct vars *vars, char *title)
 {
-	VAR_SET_STR(vars, "title", xstrdup(title));
+	vars_set_str(vars, "title", title);
 }
 
 static void __store_pages(struct vars *vars, int page)
 {
-	VAR_SET_INT(vars, "prevpage", page + 1);
-	VAR_SET_INT(vars, "nextpage", page - 1);
+	vars_set_int(vars, "prevpage", page + 1);
+	vars_set_int(vars, "nextpage", page - 1);
 }
 
 static void __store_archid(struct vars *vars, int archid)
 {
-	VAR_SET_INT(vars, "archid", archid);
+	vars_set_int(vars, "archid", archid);
 }
 
 int blahg_index(struct req *req, int page)

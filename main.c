@@ -149,7 +149,7 @@ int R301(struct req *req, const char *url)
 
 	vars_scope_push(&req->vars);
 
-	VAR_SET_STR(&req->vars, "redirect", xstrdup(url));
+	vars_set_str(&req->vars, "redirect", xstrdup(url));
 
 	req->body = render_page(req, "{301}");
 
@@ -168,13 +168,13 @@ static void req_init(struct req *req)
 
 	vars_init(&req->vars);
 
-	VAR_SET_STR(&req->vars, "baseurl", xstrdup(BASE_URL));
-	VAR_SET_INT(&req->vars, "now", gettime());
+	vars_set_str(&req->vars, "baseurl", BASE_URL);
+	vars_set_int(&req->vars, "now", gettime());
 
-	VAR_SET_INT(&req->vars, "captcha_a", COMMENT_CAPTCHA_A);
-	VAR_SET_INT(&req->vars, "captcha_b", COMMENT_CAPTCHA_B);
+	vars_set_int(&req->vars, "captcha_a", COMMENT_CAPTCHA_A);
+	vars_set_int(&req->vars, "captcha_b", COMMENT_CAPTCHA_B);
 
-	VAR_SET(&req->vars, "posts", VAL_ALLOC(VT_LIST));
+	vars_set_nvl_array(&req->vars, "posts", NULL, 0);
 }
 
 static void req_destroy(struct req *req)
@@ -285,7 +285,7 @@ int main(int argc, char **argv)
 
 	openlog("blahg", LOG_NDELAY | LOG_PID, LOG_LOCAL0);
 
-	init_var_subsys();
+	init_val_subsys();
 	init_pipe_subsys();
 
 	req_init(&req);

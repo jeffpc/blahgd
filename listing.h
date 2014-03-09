@@ -17,7 +17,7 @@ static inline struct str *listing_str(struct str *str)
 
 	str_putref(str);
 
-	return STR_DUP(tmp);
+	return str_alloc(tmp);
 }
 
 #endif

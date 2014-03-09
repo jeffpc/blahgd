@@ -1,6 +1,7 @@
 #include <stdlib.h>
 
 #include "str.h"
+#include "val.h"
 #include "utils.h"
 
 struct str *str_dup(const char *s)
@@ -94,15 +95,4 @@ void str_putref(struct str *str)
 
 	if (!str->refcnt)
 		str_free(str);
-}
-
-struct val *str_to_val(struct str *str)
-{
-	struct val *out;
-
-	out = VAL_ALLOC_STR(xstrdup(str->str));
-
-	str_putref(str);
-
-	return out;
 }

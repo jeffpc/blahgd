@@ -6,6 +6,7 @@
 
 #include "db.h"
 #include "list.h"
+#include "vars.h"
 
 struct post_tag {
 	struct list_head list;
@@ -39,7 +40,7 @@ struct post {
 	unsigned int numcom;
 
 	/* body */
-	struct val *body;
+	struct str *body;
 
 	/* fmt3 */
 	int table_nesting;
@@ -64,7 +65,7 @@ struct post_old {
 
 struct req;
 
-extern struct val *load_post(struct req *req, int postid, const char *titlevar, bool preview);
+extern nvlist_t *load_post(struct req *req, int postid, const char *titlevar, bool preview);
 extern void dump_post(struct post_old *post);
 extern void destroy_post(struct post *post);
 extern void load_posts(struct req *req, sqlite3_stmt *stmt);

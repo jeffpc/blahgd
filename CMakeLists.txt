@@ -34,7 +34,8 @@ find_path(SQLITE_INC sqlite3.h)
 include_directories(${SQLITE_INC})
 
 add_executable(blahg render.c post.c main.c
-	db.c ${PINGBACK_SRC} vars.c pipeline.c
+	db.c ${PINGBACK_SRC} val.c pipeline.c
+	vars.c vars_dump.c
 	${FLEX_tmpl_OUTPUTS} ${BISON_tmpl_OUTPUTS}
 	${FLEX_fmt3_OUTPUTS} ${BISON_fmt3_OUTPUTS}
 	post_fmt3_cmds.c
@@ -52,12 +53,13 @@ target_link_libraries(blahg
 	rt
 	umem
 	avl
+	nvpair
 	m
 )
 
 add_executable(test_fmt3
 	test_fmt3.c
-	vars.c
+	val.c
 	${FLEX_fmt3_OUTPUTS} ${BISON_fmt3_OUTPUTS}
 	post_fmt3_cmds.c
 	listing.c

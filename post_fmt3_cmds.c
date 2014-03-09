@@ -3,6 +3,7 @@
 #include "config.h"
 #include "post_fmt3_cmds.h"
 #include "listing.h"
+#include "utils.h"
 #include "str.h"
 
 /*

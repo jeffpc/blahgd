@@ -57,18 +57,18 @@ static const char *wordpress_catn[] = {
 
 static void __store_title(struct vars *vars, const char *title)
 {
-	VAR_SET_STR(vars, "title", xstrdup(title));
+	vars_set_str(vars, "title", xstrdup(title));
 }
 
 static void __store_tag(struct vars *vars, const char *tag)
 {
-	VAR_SET_STR(vars, "tagid", xstrdup(tag));
+	vars_set_str(vars, "tagid", xstrdup(tag));
 }
 
 static void __store_pages(struct vars *vars, int page)
 {
-	VAR_SET_INT(vars, "prevpage", page + 1);
-	VAR_SET_INT(vars, "nextpage", page - 1);
+	vars_set_int(vars, "prevpage", page + 1);
+	vars_set_int(vars, "nextpage", page - 1);
 }
 
 static void __load_posts_tag(struct req *req, int page, const char *tag,

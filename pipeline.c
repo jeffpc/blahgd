@@ -8,6 +8,7 @@
 #include "error.h"
 #include "utils.h"
 #include "mangle.h"
+#include "val.h"
 
 static umem_cache_t *pipeline_cache;
 
@@ -101,12 +102,6 @@ static struct val *__escape(struct val *val, char *(*cvt)(char*))
 	out = NULL;
 
 	switch (val->type) {
-		case VT_NV:
-		case VT_LIST:
-			out = xstrdup("FAKED");
-			val_dump(val, 10);
-			ASSERT(0);
-			break;
 		case VT_INT:
 			out = str_of_int(val->i);
 			break;

@@ -48,7 +48,7 @@ int main(int argc, char **argv)
 	ASSERT0(putenv("UMEM_DEBUG=default,verbose"));
 	ASSERT0(putenv("BLAHG_DISABLE_SYSLOG=1"));
 
-	init_var_subsys();
+	init_val_subsys();
 
 	for (i = 1; i < argc; i++) {
 		in = read_file(argv[i]);

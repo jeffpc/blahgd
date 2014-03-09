@@ -17,7 +17,6 @@ extern struct str *str_cat5(struct str *a, struct str *b, struct str *c,
 extern void str_free(struct str *str);
 extern struct str *str_getref(struct str *str);
 extern void str_putref(struct str *str);
-extern struct val *str_to_val(struct str *str);
 
 #define str_cat4(a, b, c, d)		str_cat5((a), (b), (c), (d), NULL)
 #define str_cat3(a, b, c)		str_cat5((a), (b), (c), NULL, NULL)

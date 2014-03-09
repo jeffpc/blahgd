@@ -19,7 +19,7 @@ struct str *listing(struct post *post, char *fname)
 	if (!in)
 		goto err;
 
-	return listing_str(STR_DUP(in));
+	return listing_str(str_alloc(in));
 
 err:
 	snprintf(path, FILENAME_MAX, "Failed to read in listing '%d/%s'",

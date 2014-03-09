@@ -8,6 +8,7 @@
 #include "config.h"
 #include "post.h"
 #include "vars.h"
+#include "val.h"
 
 enum {
 	PAGE_MALFORMED,

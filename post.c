@@ -67,7 +67,7 @@ static int __do_load_post_body_fmt3(struct post *post, char *ibuf, size_t len)
 
 	fmt3_lex_destroy(x.scanner);
 
-	post->body = str_to_val(x.stroutput);
+	post->body = x.stroutput;
 	ASSERT(post->body);
 
 	return 0;
@@ -151,7 +151,7 @@ static int __do_load_post_body(struct post *post, char *ibuf, size_t len)
 			ret = cc(ret, "</p>", 4);
 	}
 
-	post->body = VAL_ALLOC_STR(ret);
+	post->body = str_alloc(ret);
 	ASSERT(post->body);
 
 	return 0;
@@ -235,84 +235,94 @@ static int __load_post_comments(struct post *post)
 	return 0;
 }
 
-static struct val *__tag_val(struct list_head *list)
+static void __tag_val(nvlist_t *post, struct list_head *list)
 {
 	struct post_tag *cur, *tmp;
-	struct val *val;
-	struct val *sub;
+	char **tags;
+	int ntags;
 	int i;
 
-	val = VAL_ALLOC(VT_LIST);
+	/* count the tags */
+	ntags = 0;
+	list_for_each_entry_safe(cur, tmp, list, list)
+		ntags++;
+
+	tags = malloc(sizeof(char *) * ntags);
+	ASSERT(tags);
 
 	i = 0;
-	list_for_each_entry_safe(cur, tmp, list, list) {
-		sub = VAL_ALLOC_STR(xstrdup(cur->tag));
+	list_for_each_entry_safe(cur, tmp, list, list)
+		tags[i++] = cur->tag;
 
-		VAL_SET_LIST(val, i, sub);
-		i++;
-	}
+	nvl_set_str_array(post, "tags", tags, ntags);
 
-	return val;
+	free(tags);
 }
 
-static struct val *__com_val(struct list_head *list)
+static void __com_val(nvlist_t *post, struct list_head *list)
 {
 	struct comment *cur, *tmp;
-	struct val *val;
-	struct val *sub;
+	nvlist_t **comments;
+	uint_t ncomments;
 	int i;
 
-	val = VAL_ALLOC(VT_LIST);
+	/* count the comments */
+	ncomments = 0;
+	list_for_each_entry_safe(cur, tmp, list, list)
+		ncomments++;
+
+	comments = malloc(sizeof(nvlist_t *) * ncomments);
+	ASSERT(comments);
 
 	i = 0;
 	list_for_each_entry_safe(cur, tmp, list, list) {
-		sub = VAL_ALLOC(VT_NV);
+		comments[i] = nvl_alloc();
 
-		VAL_SET_NVINT(sub, "commid", cur->id);
-		VAL_SET_NVINT(sub, "commtime", cur->time);
-		VAL_SET_NVSTR(sub, "commauthor", xstrdup(cur->author));
-		VAL_SET_NVSTR(sub, "commemail", xstrdup(cur->email));
-		VAL_SET_NVSTR(sub, "commip", xstrdup(cur->ip));
-		VAL_SET_NVSTR(sub, "commurl", xstrdup(cur->url));
-		VAL_SET_NVSTR(sub, "commbody", xstrdup(cur->body));
+		nvl_set_int(comments[i], "commid", cur->id);
+		nvl_set_int(comments[i], "commtime", cur->time);
+		nvl_set_str(comments[i], "commauthor", cur->author);
+		nvl_set_str(comments[i], "commemail", cur->email);
+		nvl_set_str(comments[i], "commip", cur->ip);
+		nvl_set_str(comments[i], "commurl", cur->url);
+		nvl_set_str(comments[i], "commbody", cur->body);
 
-		VAL_SET_LIST(val, i, sub);
 		i++;
 	}
 
-	return val;
+	nvl_set_nvl_array(post, "comments", comments, ncomments);
+
+	free(comments);
 }
 
-static struct val *__store_vars(struct req *req, struct post *post, const char *titlevar)
+static nvlist_t *__store_vars(struct req *req, struct post *post, const char *titlevar)
 {
-	struct val *val;
+	nvlist_t *out;
 
-	if (titlevar) {
-		val = VAL_ALLOC_STR(xstrdup(post->title));
-		VAR_SET(&req->vars, titlevar, val);
-	}
+	if (titlevar)
+		vars_set_str(&req->vars, titlevar, post->title);
 
-	val = VAL_ALLOC(VT_NV);
+	out = nvl_alloc();
 
-	VAL_SET_NVINT(val, "id", post->id);
-	VAL_SET_NVINT(val, "time", post->time);
-	VAL_SET_NVSTR(val, "title", xstrdup(post->title));
-	VAL_SET_NV   (val, "tags", __tag_val(&post->tags));
-	VAL_SET_NV   (val, "body", val_getref(post->body));
-	VAL_SET_NVINT(val, "numcom", post->numcom);
-	VAL_SET_NV   (val, "comments", __com_val(&post->comments));
+	nvl_set_int(out, "id", post->id);
+	nvl_set_int(out, "time", post->time);
+	nvl_set_str(out, "title", post->title);
+	nvl_set_int(out, "numcom", post->numcom);
+	nvl_set_str(out, "body", post->body->str);
 
-	return val;
+	__tag_val(out, &post->tags);
+	__com_val(out, &post->comments);
+
+	return out;
 }
 
-struct val *load_post(struct req *req, int postid, const char *titlevar, bool preview)
+nvlist_t *load_post(struct req *req, int postid, const char *titlevar, bool preview)
 {
 	char path[FILENAME_MAX];
 	struct post post;
 	int ret;
 	int err;
 	sqlite3_stmt *stmt;
-	struct val *val;
+	nvlist_t *out;
 
 	snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%d", postid);
 
@@ -365,11 +375,11 @@ struct val *load_post(struct req *req, int postid, const char *titlevar, bool pr
 
 err:
 	if (!err)
-		val = __store_vars(req, &post, titlevar);
+		out = __store_vars(req, &post, titlevar);
 
 	destroy_post(&post);
 
-	return err ? NULL : val;
+	return err ? NULL : out;
 }
 
 void destroy_post(struct post *post)
@@ -392,7 +402,7 @@ void destroy_post(struct post *post)
 	}
 
 	free(post->title);
-	val_putref(post->body);
+	str_putref(post->body);
 }
 
 /*
@@ -405,16 +415,16 @@ void destroy_post(struct post *post)
  */
 void load_posts(struct req *req, sqlite3_stmt *stmt)
 {
-	struct val *posts;
-	struct val *val;
+	nvlist_t **posts;
+	uint_t nposts;
 	time_t maxtime;
 	int ret;
 	int i;
 
 	maxtime = 0;
-	i = 0;
 
-	posts = VAR_LOOKUP_VAL(&req->vars, "posts");
+	posts = NULL;
+	nposts = 0;
 
 	SQL_FOR_EACH(stmt) {
 		time_t posttime;
@@ -423,17 +433,24 @@ void load_posts(struct req *req, sqlite3_stmt *stmt)
 		postid   = SQL_COL_INT(stmt, 0);
 		posttime = SQL_COL_INT(stmt, 1);
 
-		val = load_post(req, postid, NULL, false);
-		if (!val)
-			continue;
+		posts = realloc(posts, sizeof(nvlist_t *) * (nposts + 1));
+		ASSERT(posts);
 
-		VAL_SET_LIST(posts, i++, val);
+		posts[nposts] = load_post(req, postid, NULL, false);
+		if (!posts[nposts])
+			continue;
 
 		if (posttime > maxtime)
 			maxtime = posttime;
+
+		nposts++;
 	}
 
-	val_putref(posts);
+	vars_set_nvl_array(&req->vars, "posts", posts, nposts);
+	vars_set_int(&req->vars, "lastupdate", maxtime);
 
-	VAR_SET_INT(&req->vars, "lastupdate", maxtime);
+	for (i = 0; i < nposts; i++)
+		nvlist_free(posts[i]);
+
+	free(posts);
 }

@@ -77,7 +77,7 @@ const char *write_out_comment(struct req *req, int id, char *author,
 	time_t now_sec;
 	struct tm *now_tm;
 
-	struct val *val;
+	nvlist_t *post;
 
 	if (strlen(email) == 0) {
 		LOG("You must fill in email (postid=%d)", id);
@@ -94,13 +94,11 @@ const char *write_out_comment(struct req *req, int id, char *author,
 		return MISSING_CONTENT;
 	}
 
-	val = load_post(req, id, NULL, false);
-	if (!val) {
+	post = load_post(req, id, NULL, false);
+	if (!post) {
 		LOG("Gah! %d (postid=%d)", -1, id);
 		return GENERIC_ERR_STR;
 	}
-
-	val_putref(val);
 
 	now = gettime();
 	now_sec  = now / 1000000000UL;
@@ -402,8 +400,8 @@ int blahg_comment(struct req *req)
 	errmsg = save_comment(req);
 	if (errmsg) {
 		tmpl = "{comment_error}";
-		VAR_SET_STR(&req->vars, "comment_error_str",
-			    xstrdup(errmsg));
+		vars_set_str(&req->vars, "comment_error_str",
+			     xstrdup(errmsg));
 		// FIXME: __store_title(&req->vars, "Error");
 	} else {
 		tmpl = "{comment_saved}";

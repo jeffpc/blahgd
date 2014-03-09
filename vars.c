@@ -1,90 +1,17 @@
-#include <string.h>
-#include <errno.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include <umem.h>
-
-#include "vars.h"
 #include "error.h"
-#include "utils.h"
-
-static umem_cache_t *var_cache;
-static umem_cache_t *val_cache;
-static umem_cache_t *val_item_cache;
-
-void init_var_subsys()
-{
-	var_cache = umem_cache_create("var-cache", sizeof(struct var), 0,
-				      NULL, NULL, NULL, NULL, NULL, 0);
-	ASSERT(var_cache);
-
-	val_cache = umem_cache_create("val-cache", sizeof(struct val),
-				      0, NULL, NULL, NULL, NULL, NULL, 0);
-	ASSERT(val_cache);
-
-	val_item_cache = umem_cache_create("val-item-cache",
-					   sizeof(struct val_item), 0, NULL,
-					   NULL, NULL, NULL, NULL, 0);
-	ASSERT(val_item_cache);
-}
-
-static int cmp_var(const void *va, const void *vb)
-{
-	const struct var *a = va;
-	const struct var *b = vb;
-	int ret;
-
-	ret = strncmp(a->name, b->name, VAR_NAME_MAXLEN);
-
-	if (ret < 0)
-		return -1;
-	if (ret > 0)
-		return 1;
-	return 0;
-}
-
-static int cmp_val_list(const void *va, const void *vb)
-{
-	const struct val_item *a = va;
-	const struct val_item *b = vb;
-
-	if (a->key.i < b->key.i)
-		return -1;
-	return (a->key.i != b->key.i);
-}
-
-static int cmp_val_nv(const void *va, const void *vb)
-{
-	const struct val_item *a = va;
-	const struct val_item *b = vb;
-	int ret;
-
-	ret = strncmp(a->key.name, b->key.name, VAR_VAL_KEY_MAXLEN);
-
-	if (ret < 0)
-		return -1;
-	if (ret > 0)
-		return 1;
-	return 0;
-}
+#include "vars_impl.h"
 
 static void __init_scope(struct vars *vars)
 {
-	avl_create(&vars->scopes[vars->cur], cmp_var, sizeof(struct var),
-		   offsetof(struct var, tree));
+	int ret;
+
+	ret = nvlist_alloc(&vars->scopes[vars->cur], NV_UNIQUE_NAME, 0);
+	ASSERT0(ret);
 }
 
-static void __free_scope(avl_tree_t *tree)
+static void __free_scope(nvlist_t *scope)
 {
-	struct var *v;
-	void *cookie;
-
-	cookie = NULL;
-	while ((v = avl_destroy_nodes(tree, &cookie)))
-		var_free(v);
-
-	avl_destroy(tree);
+	nvlist_free(scope);
 }
 
 void vars_init(struct vars *vars)
@@ -99,7 +26,7 @@ void vars_destroy(struct vars *vars)
 	int i;
 
 	for (i = 0; i <= vars->cur; i++)
-		__free_scope(&vars->scopes[i]);
+		__free_scope(vars->scopes[i]);
 }
 
 void vars_scope_push(struct vars *vars)
@@ -115,7 +42,7 @@ void vars_scope_pop(struct vars *vars)
 {
 	vars->cur--;
 
-	__free_scope(&vars->scopes[vars->cur + 1]);
+	__free_scope(vars->scopes[vars->cur + 1]);
 
 	if (vars->cur < 0)
 		vars_scope_push(vars);
@@ -123,312 +50,126 @@ void vars_scope_pop(struct vars *vars)
 	ASSERT(vars->cur >= 0);
 }
 
-struct var *var_lookup(struct vars *vars, const char *name)
+void vars_set_str(struct vars *vars, const char *name, char *val)
 {
-	struct var key;
-	struct var *v;
-	int scope;
+	nvl_set_str(C(vars), name, val);
+}
 
-	strncpy(key.name, name, VAR_NAME_MAXLEN);
+void vars_set_int(struct vars *vars, const char *name, uint64_t val)
+{
+	nvl_set_int(C(vars), name, val);
+}
+
+void vars_set_nvl_array(struct vars *vars, const char *name,
+			nvlist_t **val, uint_t nval)
+{
+	nvl_set_nvl_array(C(vars), name, val, nval);
+}
+
+nvpair_t *vars_lookup(struct vars *vars, const char *name)
+{
+	nvpair_t *out;
+	int scope;
+	int ret;
 
 	for (scope = vars->cur; scope >= 0; scope--) {
-		v = avl_find(&vars->scopes[scope], &key, NULL);
-		if (v)
-			return v;
+		ret = nvlist_lookup_nvpair(C(vars), name, &out);
+		if (!ret)
+			return out;
 	}
 
 	return NULL;
 }
 
-struct var *var_alloc(const char *name)
+char *vars_lookup_str(struct vars *vars, const char *name)
 {
-	struct var *v;
+	nvpair_t *pair;
+	char *out;
+	int ret;
 
-	ASSERT(strlen(name) < VAR_NAME_MAXLEN);
+	pair = vars_lookup(vars, name);
+	ASSERT(pair);
 
-	v = umem_cache_alloc(var_cache, 0);
-	if (!v)
-		return NULL;
+	ASSERT3S(nvpair_type(pair), ==, DATA_TYPE_STRING);
 
-	memset(v, 0, sizeof(struct var));
-	strncpy(v->name, name, VAR_NAME_MAXLEN);
+	ret = nvpair_value_string(pair, &out);
+	ASSERT0(ret);
 
-	return v;
+	return out;
 }
 
-void var_free(struct var *var)
+uint64_t vars_lookup_int(struct vars *vars, const char *name)
 {
-	val_putref(var->val);
+	nvpair_t *pair;
+	uint64_t out;
+	int ret;
 
-	umem_cache_free(var_cache, var);
+	pair = vars_lookup(vars, name);
+	ASSERT(pair);
+
+	ASSERT3S(nvpair_type(pair), ==, DATA_TYPE_STRING);
+
+	ret = nvpair_value_uint64(pair, &out);
+	ASSERT0(ret);
+
+	return out;
 }
 
-static void __val_init(struct val *val, enum val_type type)
+void vars_merge(struct vars *vars, nvlist_t *items)
 {
-	val->type = type;
+	int ret;
 
-	switch (type) {
-		case VT_LIST:
-			avl_create(&val->tree, cmp_val_list,
-				   sizeof(struct val_item),
-				   offsetof(struct val_item, tree));
-			break;
-		case VT_NV:
-			avl_create(&val->tree, cmp_val_nv,
-				   sizeof(struct val_item),
-				   offsetof(struct val_item, tree));
-			break;
-		case VT_INT:
-			val->i = 0;
-			break;
-		case VT_STR:
-			val->str = NULL;
-			break;
-		default:
-			ASSERT(0);
-	}
+	ret = nvlist_merge(C(vars), items, 0);
+
+	ASSERT0(ret);
 }
 
-static void __val_cleanup(struct val *val)
+nvlist_t *nvl_alloc()
 {
-	struct val_item *vi;
-	void *cookie;
+	nvlist_t *out;
+	int ret;
 
-	switch (val->type) {
-		case VT_INT:
-			break;
-		case VT_STR:
-			free(val->str);
-			break;
-		case VT_NV:
-		case VT_LIST:
-			cookie = NULL;
-			while ((vi = avl_destroy_nodes(&val->tree, &cookie))) {
-				val_putref(vi->val);
+	ret = nvlist_alloc(&out, NV_UNIQUE_NAME, 0);
 
-				umem_cache_free(val_item_cache, vi);
-			}
+	ASSERT0(ret);
 
-			avl_destroy(&val->tree);
-
-			break;
-		default:
-			ASSERT(0);
-	}
+	return out;
 }
 
-struct val *val_alloc(enum val_type type)
+void nvl_set_str(nvlist_t *nvl, const char *name, char *val)
 {
-	struct val *val;
+	int ret;
 
-	val = umem_cache_alloc(val_cache, 0);
-	if (!val)
-		return val;
+	ret = nvlist_add_string(nvl, name, val);
 
-	val->refcnt = 1;
-
-	__val_init(val, type);
-
-	return val;
+	ASSERT0(ret);
 }
 
-void val_free(struct val *val)
+void nvl_set_int(nvlist_t *nvl, const char *name, uint64_t val)
 {
-	ASSERT(val);
-	ASSERT3U(val->refcnt, ==, 0);
+	int ret;
 
-	__val_cleanup(val);
+	ret = nvlist_add_uint64(nvl, name, val);
 
-	umem_cache_free(val_cache, val);
+	ASSERT0(ret);
 }
 
-static int __val_set_val(struct val *val, enum val_type type, char *name,
-			 uint64_t idx, struct val *sub)
+void nvl_set_str_array(nvlist_t *nvl, const char *name, char **val,
+		       uint_t nval)
 {
-	struct val_item *vi;
+	int ret;
 
-	if ((type != VT_NV) && (type != VT_LIST))
-		return EINVAL;
+	ret = nvlist_add_string_array(nvl, name, val, nval);
 
-	vi = umem_cache_alloc(val_item_cache, 0);
-	if (!vi)
-		return ENOMEM;
-
-	vi->val = sub;
-
-	if (type == VT_NV)
-		strncpy(vi->key.name, name, VAR_VAL_KEY_MAXLEN);
-	else if (type == VT_LIST)
-		vi->key.i = idx;
-
-	if (val->type != type) {
-		__val_cleanup(val);
-		__val_init(val, type);
-	}
-
-	avl_add(&val->tree, vi);
-
-	return 0;
+	ASSERT0(ret);
 }
 
-int val_set_list(struct val *val, uint64_t idx, struct val *sub)
+void nvl_set_nvl_array(nvlist_t *nvl, const char *name, nvlist_t **val,
+		       uint_t nval)
 {
-	return __val_set_val(val, VT_LIST, NULL, idx, sub);
-}
+	int ret;
 
-int val_set_nv(struct val *val, char *name, struct val *sub)
-{
-	if (!name)
-		return EINVAL;
+	ret = nvlist_add_nvlist_array(nvl, name, val, nval);
 
-	return __val_set_val(val, VT_NV, name, 0, sub);
-}
-
-#define DEF_VAL_SET(fxn, vttype, valelem, ctype)		\
-int val_set_nv##fxn(struct val *val, char *name, ctype v)	\
-{								\
-	struct val *sub;					\
-	int ret;						\
-								\
-	sub = val_alloc(vttype);				\
-	if (!sub)						\
-		return ENOMEM;					\
-								\
-	sub->valelem = v;					\
-								\
-	ret = val_set_nv(val, name, sub);			\
-	if (ret)						\
-		val_putref(sub);				\
-								\
-	return ret;						\
-}								\
-								\
-int val_set_##fxn(struct val *val, ctype v)			\
-{								\
-	__val_cleanup(val);					\
-								\
-	val->type = vttype;					\
-	val->valelem = v;					\
-								\
-	return 0;						\
-}
-
-DEF_VAL_SET(int, VT_INT, i, uint64_t)
-DEF_VAL_SET(str, VT_STR, str, char *)
-
-int var_set(struct vars *vars, const char *name, struct val *val)
-{
-	struct var key;
-	struct var *v;
-
-	strncpy(key.name, name, VAR_NAME_MAXLEN);
-
-	v = avl_find(&vars->scopes[vars->cur], &key, NULL);
-	if (!v) {
-		v = var_alloc(name);
-		if (!v)
-			return ENOMEM;
-
-		avl_add(&vars->scopes[vars->cur], v);
-	}
-
-	val_putref(v->val);
-
-	v->val = val;
-
-	return 0;
-}
-
-static void __dump_val(struct val_item *vi, int indent, enum val_type type)
-{
-	if (type == VT_LIST)
-		fprintf(stderr, "%*s [%lu] = ", indent, "", vi->key.i);
-	else
-		fprintf(stderr, "%*s [%s] = ", indent, "", vi->key.name);
-
-	val_dump(vi->val, indent + 4);
-}
-
-void val_dump(struct val *val, int indent)
-{
-	struct val_item *vi;
-
-	switch (val->type) {
-		case VT_STR:
-			fprintf(stderr, "%*s'%s'\n", indent, "", val->str);
-			break;
-		case VT_INT:
-			fprintf(stderr, "%*s%lu\n", indent, "", val->i);
-			break;
-		case VT_LIST:
-		case VT_NV:
-			fprintf(stderr, "\n");
-
-			for (vi = avl_first(&val->tree); vi;
-			     vi = AVL_NEXT(&val->tree, vi))
-				__dump_val(vi, indent + 4, val->type);
-
-			break;
-		default:
-			fprintf(stderr, "Unknown type %d\n", val->type);
-			break;
-	}
-}
-
-void vars_dump(struct vars *vars)
-{
-	struct var *v;
-	int scope;
-
-	fprintf(stderr, "%p: VARS DUMP BEGIN\n", vars);
-
-	for (scope = vars->cur; scope >= 0; scope--) {
-		avl_tree_t *s = &vars->scopes[scope];
-
-		fprintf(stderr, "%p: scope %2d:\n", vars, scope);
-
-		for (v = avl_first(s); v; v = AVL_NEXT(s, v)) {
-			fprintf(stderr, "-> '%s'\n", v->name);
-			val_dump(v->val, 4);
-		}
-	}
-
-	fprintf(stderr, "%p: VARS DUMP END\n", vars);
-}
-
-struct val *valcat5(struct val *a, struct val *b, struct val *c,
-		    struct val *d, struct val *e)
-{
-#define NVALS	5
-	struct val *vals[NVALS] = {a, b, c, d, e};
-	size_t len;
-	char *buf;
-	int i;
-
-	len = 0;
-
-	for (i = 0; i < NVALS; i++) {
-		if (!vals[i])
-			continue;
-
-		ASSERT3U(vals[i]->type, ==, VT_STR);
-
-		len += strlen(vals[i]->str);
-	}
-
-	buf = malloc(len + 1);
-	ASSERT(buf);
-
-	buf[0] = '\0';
-
-	for (i = 0; i < NVALS; i++) {
-		if (!vals[i])
-			continue;
-
-		strcat(buf, vals[i]->str);
-
-		val_putref(vals[i]);
-	}
-
-	return VAL_ALLOC_STR(buf);
+	ASSERT0(ret);
 }
