@@ -25,7 +25,7 @@ static void req_init(struct req *req, enum req_via via)
 
 	/* response */
 	req->status = 200;
-	INIT_LIST_HEAD(&req->headers);
+	req->headers = nvl_alloc();
 	req->body  = NULL;
 }
 
@@ -43,12 +43,14 @@ void req_init_scgi(struct req *req, int fd)
 
 void req_output(struct req *req)
 {
-	struct header *cur, *tmp;
+	nvpair_t *header;
 
 	printf("Status: %u\n", req->status);
 
-	list_for_each_entry_safe(cur, tmp, &req->headers, list)
-		printf("%s: %s\n", cur->name, cur->val);
+	for (header = nvlist_next_nvpair(req->headers, NULL);
+	     header;
+	     header = nvlist_next_nvpair(req->headers, header))
+		printf("%s: %s\n", nvpair_name(header), pair2str(header));
 
 	printf("\n%s\n", req->body);
 
@@ -67,15 +69,9 @@ void req_output(struct req *req)
 
 void req_destroy(struct req *req)
 {
-	struct header *cur, *tmp;
-
 	vars_destroy(&req->vars);
 
-	list_for_each_entry_safe(cur, tmp, &req->headers, list) {
-		free(cur->name);
-		free(cur->val);
-		free(cur);
-	}
+	nvlist_free(req->headers);
 
 	free(req->request_body);
 	nvlist_free(req->request_headers);
@@ -91,24 +87,7 @@ void req_destroy(struct req *req)
 	free(req->body);
 }
 
-void req_head(struct req *req, char *name, const char *val)
+void req_head(struct req *req, const char *name, const char *val)
 {
-	struct header *cur, *tmp;
-
-	list_for_each_entry_safe(cur, tmp, &req->headers, list) {
-		if (!strcmp(cur->name, name)) {
-			free(cur->val);
-			list_del(&cur->list);
-			goto set;
-		}
-	}
-
-	cur = malloc(sizeof(struct header));
-	ASSERT(cur);
-
-	cur->name = xstrdup(name);
-
-set:
-	cur->val  = xstrdup(val);
-	list_add_tail(&cur->list, &req->headers);
+	nvl_set_str(req->headers, name, val);
 }

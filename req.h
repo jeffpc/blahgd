@@ -40,12 +40,6 @@ struct qs {
 	char *feed;
 };
 
-struct header {
-	struct list_head list;
-	char *name;
-	char *val;
-};
-
 struct req {
 	union {
 		struct {
@@ -62,7 +56,7 @@ struct req {
 
 	/* response */
 	unsigned int status;
-	struct list_head headers;
+	nvlist_t *headers;
 	char *body;
 
 	/* state */
@@ -82,7 +76,6 @@ extern void req_init_scgi(struct req *req, int fd);
 extern void req_init_cgi(struct req *req);
 extern void req_destroy(struct req *req);
 extern void req_output(struct req *req);
-extern void req_head(struct req *req, char *name, const char *val);
-
+extern void req_head(struct req *req, const char *name, const char *val);
 
 #endif

@@ -50,7 +50,7 @@ void vars_scope_pop(struct vars *vars)
 	ASSERT(vars->cur >= 0);
 }
 
-void vars_set_str(struct vars *vars, const char *name, char *val)
+void vars_set_str(struct vars *vars, const char *name, const char *val)
 {
 	nvl_set_str(C(vars), name, val);
 }
@@ -136,7 +136,7 @@ nvlist_t *nvl_alloc()
 	return out;
 }
 
-void nvl_set_str(nvlist_t *nvl, const char *name, char *val)
+void nvl_set_str(nvlist_t *nvl, const char *name, const char *val)
 {
 	int ret;
 
