@@ -9,7 +9,7 @@
 #include <sys/mman.h>
 
 #include "post.h"
-#include "main.h"
+#include "req.h"
 #include "config.h"
 #include "sidebar.h"
 #include "parse.h"

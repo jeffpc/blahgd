@@ -7,10 +7,11 @@
 #include "config.h"
 #include "db.h"
 #include "render.h"
-#include "main.h"
+#include "req.h"
 #include "utils.h"
 #include "sidebar.h"
 #include "error.h"
+#include "post.h"
 
 static const char *wordpress_catn[] = {
 	[1]  = "miscellaneous",
@@ -100,7 +101,7 @@ int __tagcat(struct req *req, const char *tagcat, int page, char *tmpl,
 
 	req_head(req, "Content-Type", "text/html");
 
-	page = max(page, 0);
+	page = MAX(page, 0);
 
 	__store_title(&req->vars, tagcat);
 	__store_pages(&req->vars, page);

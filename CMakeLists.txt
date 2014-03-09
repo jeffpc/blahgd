@@ -33,19 +33,50 @@ find_path(SQLITE_INC sqlite3.h)
 
 include_directories(${SQLITE_INC})
 
-add_executable(blahg render.c post.c main.c
-	db.c ${PINGBACK_SRC} val.c pipeline.c
-	vars.c vars_dump.c
-	req.c
-	${FLEX_tmpl_OUTPUTS} ${BISON_tmpl_OUTPUTS}
+set(COMMON_SOURCES
+	# post - all formats
+	post.c
+
+	# post - format 3
 	${FLEX_fmt3_OUTPUTS} ${BISON_fmt3_OUTPUTS}
 	post_fmt3_cmds.c
-	index.c sidebar.c story.c tag.c comment.c
-	admin.c
-	listing.c utils.c error.c mangle.c
 	str.c
-	decode.c fsm.c
+	listing.c mangle.c
+
+	# templates
+	${FLEX_tmpl_OUTPUTS} ${BISON_tmpl_OUTPUTS}
+	render.c
+	pipeline.c
+
+	# nvlist related things
 	qstring.c
+	decode.c fsm.c
+	vars.c vars_dump.c
+	val.c
+
+	# request processing
+	req.c
+
+	# pages
+	admin.c
+	comment.c
+	index.c
+	sidebar.c
+	story.c
+	tag.c
+
+	# database
+	db.c
+
+	# misc
+	error.c
+	utils.c
+)
+
+add_executable(blahg
+	main.c
+	${COMMON_SOURCES}
+	${PINGBACK_SRC}
 )
 
 target_link_libraries(blahg
@@ -60,20 +91,20 @@ target_link_libraries(blahg
 
 add_executable(blahgd
 	daemon.c helpers.c
-	vars.c vars_dump.c
-	req.c
 	scgi.c
-	error.c
-	qstring.c
-	decode.c fsm.c
+	${COMMON_SOURCES}
+	${PINGBACK_SRC}
 )
 
 target_link_libraries(blahgd
+	${OPENSSL_CRYPTO_LIBRARY}
+	${SQLITE_LIB}
 	pthread
 	socket
 	nsl
 	umem
 	nvpair
+	m
 )
 
 add_executable(test_fmt3

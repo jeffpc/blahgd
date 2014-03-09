@@ -20,13 +20,13 @@ static LIST_INIT(queue);
 
 static void process_request(struct req *req)
 {
-	nvl_dump(req->request_headers);
+	int ret;
 
 	parse_query_string(req->request_qs,
 			   nvl_lookup_str(req->request_headers,
 					  "QUERY_STRING"));
 
-	nvl_dump(req->request_qs);
+	ret = req_dispatch(req);
 
 	req_output(req);
 }

@@ -199,6 +199,9 @@ int main(int argc, char **argv)
 {
 	int ret;
 
+	init_val_subsys();
+	init_pipe_subsys();
+
 	handle_signals();
 
 	ret = start_helpers();

@@ -80,5 +80,20 @@ extern void req_init_cgi(struct req *req);
 extern void req_destroy(struct req *req);
 extern void req_output(struct req *req);
 extern void req_head(struct req *req, const char *name, const char *val);
+extern int req_dispatch(struct req *req);
+
+extern int R404(struct req *req, char *tmpl);
+extern int R301(struct req *req, const char *url);
+
+extern int blahg_archive(struct req *req, int m, int paged);
+extern int blahg_category(struct req *req, char *cat, int page);
+extern int blahg_tag(struct req *req, char *tag, int paged);
+extern int blahg_comment(struct req *req);
+extern int blahg_index(struct req *req, int paged);
+extern int blahg_story(struct req *req, int p, bool preview);
+extern int blahg_admin(struct req *req);
+#ifdef USE_XMLRPC
+extern int blahg_pingback();
+#endif
 
 #endif

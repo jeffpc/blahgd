@@ -15,7 +15,7 @@
 #include "post.h"
 #include "list.h"
 #include "vars.h"
-#include "main.h"
+#include "req.h"
 #include "db.h"
 #include "parse.h"
 #include "error.h"

@@ -1,7 +1,7 @@
 #ifndef __PARSE_H
 #define __PARSE_H
 
-#include "main.h"
+#include "req.h"
 #include "post.h"
 #include "str.h"
 

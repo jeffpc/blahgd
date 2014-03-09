@@ -5,7 +5,7 @@
 #include <errno.h>
 
 #include "post.h"
-#include "main.h"
+#include "req.h"
 #include "render.h"
 #include "sidebar.h"
 #include "error.h"

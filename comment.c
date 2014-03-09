@@ -10,15 +10,16 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#include "main.h"
+#include "req.h"
 #include "sidebar.h"
 #include "render.h"
 #include "db.h"
-
+#include "utils.h"
 #include "config.h"
 #include "comment.h"
 #include "decode.h"
 #include "error.h"
+#include "post.h"
 
 #define INTERNAL_ERR		"Ouch!  Encountered an internal error.  " \
 				"Please contact me to resolve this issue."

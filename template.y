@@ -14,6 +14,7 @@
 #include "render.h"
 #include "pipeline.h"
 #include "utils.h"
+#include "val.h"
 
 #include "parse.h"
 

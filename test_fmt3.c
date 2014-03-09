@@ -4,6 +4,7 @@
 #include "error.h"
 #include "utils.h"
 #include "str.h"
+#include "val.h"
 
 static int onefile(struct post *post, char *ibuf, size_t len)
 {

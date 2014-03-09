@@ -2,7 +2,7 @@
 #include <string.h>
 #include <math.h>
 
-#include "main.h"
+#include "req.h"
 #include "vars.h"
 #include "db.h"
 #include "sidebar.h"
