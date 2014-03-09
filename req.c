@@ -32,6 +32,8 @@ static void req_init(struct req *req, enum req_via via)
 void req_init_cgi(struct req *req)
 {
 	req_init(req, REQ_CGI);
+
+	req->out = stdout;
 }
 
 void req_init_scgi(struct req *req, int fd)
@@ -39,27 +41,30 @@ void req_init_scgi(struct req *req, int fd)
 	req_init(req, REQ_SCGI);
 
 	req->scgi.fd = fd;
+	req->out = fdopen(fd, "wb");
+
+	ASSERT(req->out);
 }
 
 void req_output(struct req *req)
 {
 	nvpair_t *header;
 
-	printf("Status: %u\n", req->status);
+	fprintf(req->out, "Status: %u\n", req->status);
 
 	for (header = nvlist_next_nvpair(req->headers, NULL);
 	     header;
 	     header = nvlist_next_nvpair(req->headers, header))
-		printf("%s: %s\n", nvpair_name(header), pair2str(header));
+		fprintf(req->out, "%s: %s\n", nvpair_name(header), pair2str(header));
 
-	printf("\n%s\n", req->body);
+	fprintf(req->out, "\n%s\n", req->body);
 
 	if (req->dump_latency) {
 		uint64_t delta;
 
 		delta = gettime() - req->start;
 
-		printf("<!-- time to render: %lu.%09lu seconds -->\n",
+		fprintf(req->out, "<!-- time to render: %lu.%09lu seconds -->\n",
 		       delta / 1000000000UL,
 		       delta % 1000000000UL);
 	}
@@ -78,6 +83,7 @@ void req_destroy(struct req *req)
 		case REQ_CGI:
 			break;
 		case REQ_SCGI:
+			fclose(req->out);
 			close(req->scgi.fd);
 			break;
 	}

@@ -70,6 +70,8 @@ struct req {
 	struct {
 		int index_stories;
 	} opts;
+
+	FILE *out;
 };
 
 extern void req_init_scgi(struct req *req, int fd);
