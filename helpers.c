@@ -6,6 +6,7 @@
 #include <errno.h>
 
 #include "req.h"
+#include "qstring.h"
 #include "helpers.h"
 #include "scgi.h"
 #include "mx.h"
@@ -21,6 +22,15 @@ static LIST_INIT(queue);
 
 static void process_request(struct req *req)
 {
+	char *qs;
+
+	nvl_dump(req->request_headers);
+
+	qs = nvl_lookup_str(req->request_headers, "QUERY_STRING");
+	parse_query_string(req->request_qs, qs, qs ? strlen(qs) : 0);
+
+	nvl_dump(req->request_qs);
+
 	req_output(req);
 }
 
@@ -39,8 +49,6 @@ static void *queue_processor(void *arg)
 		MXUNLOCK(&lock);
 
 		scgi_read_request(req);
-
-		nvl_dump(req->request_headers);
 
 		process_request(req);
 

@@ -64,6 +64,8 @@ add_executable(blahgd
 	req.c
 	scgi.c
 	error.c
+	qstring.c
+	decode.c fsm.c
 )
 
 target_link_libraries(blahgd
