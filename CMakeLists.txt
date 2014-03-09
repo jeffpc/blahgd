@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8.5)
 enable_testing()
 
 include(config.cmake)
-set(CMAKE_C_FLAGS "-Wall -O2 -g -std=gnu99 -D_XOPEN_SOURCE=700 -D_STDC_C99 -D_XPG6 -D__EXTENSIONS__")
+set(CMAKE_C_FLAGS "-Wall -O2 -g -std=gnu99 -D_XOPEN_SOURCE=700 -D_STDC_C99 -D_XPG6 -D__EXTENSIONS__ -D_REENTRANT")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-inline-small-functions")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-inline-functions-called-once")
 
@@ -55,6 +55,21 @@ target_link_libraries(blahg
 	avl
 	nvpair
 	m
+)
+
+add_executable(blahgd
+	daemon.c helpers.c
+	vars.c vars_dump.c
+	scgi.c
+	error.c
+)
+
+target_link_libraries(blahgd
+	pthread
+	socket
+	nsl
+	umem
+	nvpair
 )
 
 add_executable(test_fmt3
