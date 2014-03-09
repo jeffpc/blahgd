@@ -15,22 +15,12 @@
 #include "sidebar.h"
 #include "pipeline.h"
 #include "req.h"
+#include "qstring.h"
 
-static char *nullterminate(char *s)
-{
-	while(*s && (*s != '&'))
-		s++;
-
-	*s = '\0';
-
-	return s + 1;
-}
-
-static void parse_qs(char *qs, struct req *req)
+static void parse_qs(struct req *req)
 {
 	struct qs *args = &req->args;
-	char *tmp;
-	char *end;
+	nvpair_t *cur;
 
 	args->page = PAGE_INDEX;
 	args->p = -1;
@@ -44,63 +34,48 @@ static void parse_qs(char *qs, struct req *req)
 	args->feed = NULL;
 	args->preview = 0;
 
-	if (!qs)
-		return;
+	for (cur = nvlist_next_nvpair(req->request_qs, NULL);
+	     cur;
+	     cur = nvlist_next_nvpair(req->request_qs, cur)) {
+		char *name, *val;;
+		char **cptr;
+		int *iptr;
 
-	end = qs + strlen(qs);
-	tmp = qs;
+		iptr = NULL;
+		cptr = NULL;
 
-	while (end > tmp) {
-		int *iptr = NULL;
-		char **cptr = NULL;
-		int len;
+		name = nvpair_name(cur);
+		val = pair2str(cur);
 
-		if (!strncmp(qs, "p=", 2)) {
+		if (!strcmp(name, "p")) {
 			iptr = &args->p;
-			len = 2;
-		} else if (!strncmp(qs, "paged=", 6)) {
+		} else if (!strcmp(name, "paged")) {
 			iptr = &args->paged;
-			len = 6;
-		} else if (!strncmp(qs, "m=", 2)) {
+		} else if (!strcmp(name, "m")) {
 			iptr = &args->m;
-			len = 2;
-		} else if (!strncmp(qs, "cat=", 4)) {
+		} else if (!strcmp(name, "cat")) {
 			cptr = &args->cat;
-			len = 4;
-		} else if (!strncmp(qs, "tag=", 4)) {
+		} else if (!strcmp(name, "tag")) {
 			cptr = &args->tag;
-			len = 4;
-		} else if (!strncmp(qs, "feed=", 5)) {
+		} else if (!strcmp(name, "feed")) {
 			cptr = &args->feed;
-			len = 5;
-		} else if (!strncmp(qs, "comment=", 8)) {
+		} else if (!strcmp(name, "comment")) {
 			iptr = &args->comment;
-			len = 8;
-		} else if (!strncmp(qs, "preview=", 8)) {
+		} else if (!strcmp(name, "preview")) {
 			iptr = &args->preview;
-			len = 8;
-		} else if (!strncmp(qs, "xmlrpc=", 7)) {
+		} else if (!strcmp(name, "xmlrpc")) {
 			iptr = &args->xmlrpc;
-			len = 7;
-		} else if (!strncmp(qs, "admin=", 6)) {
+		} else if (!strcmp(name, "admin")) {
 			iptr = &args->admin;
-			len = 6;
 		} else {
 			args->page = PAGE_MALFORMED;
 			return;
 		}
 
-		qs += len;
-		tmp = nullterminate(qs);
-
-		if (iptr) {
-			*iptr = atoi(qs);
-		} else if (cptr) {
-			urldecode(qs, strlen(qs), qs);
-			*cptr = qs;
-		}
-
-		qs = tmp;
+		if (iptr)
+			*iptr = atoi(val);
+		else if (cptr)
+			*cptr = val;
 	}
 
 	if (args->xmlrpc)
@@ -209,6 +184,7 @@ static bool switch_content_type(struct req *req)
 int main(int argc, char **argv)
 {
 	struct req req;
+	char *qs;
 	int ret;
 
 	openlog("blahg", LOG_NDELAY | LOG_PID, LOG_LOCAL0);
@@ -218,7 +194,10 @@ int main(int argc, char **argv)
 
 	req_init_cgi(&req);
 
-	parse_qs(getenv("QUERY_STRING"), &req);
+	qs = getenv("QUERY_STRING");
+	parse_query_string(req.request_qs, qs, qs ? strlen(qs) : 0);
+
+	parse_qs(&req);
 
 #ifdef USE_XMLRPC
 	req_head(&req, "X-Pingback", BASE_URL "/?xmlrpc=1");

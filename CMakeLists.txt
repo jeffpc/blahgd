@@ -45,6 +45,7 @@ add_executable(blahg render.c post.c main.c
 	listing.c utils.c error.c mangle.c
 	str.c
 	decode.c fsm.c
+	qstring.c
 )
 
 target_link_libraries(blahg
