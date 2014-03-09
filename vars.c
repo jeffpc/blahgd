@@ -68,14 +68,13 @@ void vars_set_nvl_array(struct vars *vars, const char *name,
 
 nvpair_t *vars_lookup(struct vars *vars, const char *name)
 {
-	nvpair_t *out;
+	nvpair_t *ret;
 	int scope;
-	int ret;
 
 	for (scope = vars->cur; scope >= 0; scope--) {
-		ret = nvlist_lookup_nvpair(C(vars), name, &out);
-		if (!ret)
-			return out;
+		ret = nvl_lookup(C(vars), name);
+		if (ret)
+			return ret;
 	}
 
 	return NULL;
@@ -172,4 +171,40 @@ void nvl_set_nvl_array(nvlist_t *nvl, const char *name, nvlist_t **val,
 	ret = nvlist_add_nvlist_array(nvl, name, val, nval);
 
 	ASSERT0(ret);
+}
+
+nvpair_t *nvl_lookup(nvlist_t *nvl, const char *name)
+{
+	nvpair_t *pair;
+	int ret;
+
+	ret = nvlist_lookup_nvpair(nvl, name, &pair);
+	if (!ret)
+		return pair;
+
+	return NULL;
+}
+
+char *nvl_lookup_str(nvlist_t *nvl, const char *name)
+{
+	nvpair_t *pair;
+
+	pair = nvl_lookup(nvl, name);
+	ASSERT(pair);
+
+	ASSERT3U(nvpair_type(pair), ==, DATA_TYPE_STRING);
+
+	return pair2str(pair);
+}
+
+uint64_t nvl_lookup_int(nvlist_t *nvl, const char *name)
+{
+	nvpair_t *pair;
+
+	pair = nvl_lookup(nvl, name);
+	ASSERT(pair);
+
+	ASSERT3U(nvpair_type(pair), ==, DATA_TYPE_UINT64);
+
+	return pair2int(pair);
 }

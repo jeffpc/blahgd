@@ -22,9 +22,6 @@ extern nvpair_t *vars_lookup(struct vars *vars, const char *name);
 extern char *vars_lookup_str(struct vars *vars, const char *name);
 extern uint64_t vars_lookup_int(struct vars *vars, const char *name);
 extern void vars_merge(struct vars *vars, nvlist_t *items);
-extern char *pair2str(nvpair_t *pair);
-extern uint64_t pair2int(nvpair_t *pair);
-extern nvlist_t *pair2nvl(nvpair_t *pair);
 extern void vars_dump(struct vars *vars);
 
 extern nvlist_t *nvl_alloc();
@@ -34,6 +31,13 @@ extern void nvl_set_str_array(nvlist_t *nvl, const char *name, char **val,
 			      uint_t nval);
 extern void nvl_set_nvl_array(nvlist_t *nvl, const char *name,
 			      nvlist_t **val, uint_t nval);
+extern nvpair_t *nvl_lookup(nvlist_t *nvl, const char *name);
+extern char *nvl_lookup_str(nvlist_t *nvl, const char *name);
+extern uint64_t nvl_lookup_int(nvlist_t *nvl, const char *name);
 extern void nvl_dump(nvlist_t *nvl);
+
+extern char *pair2str(nvpair_t *pair);
+extern uint64_t pair2int(nvpair_t *pair);
+extern nvlist_t *pair2nvl(nvpair_t *pair);
 
 #endif
