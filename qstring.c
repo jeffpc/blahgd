@@ -65,7 +65,7 @@ static void insert(nvlist_t *vars, struct qstr *name, struct qstr *val)
 	nvl_set_str(vars, name->buf, val->buf);
 }
 
-void parse_query_string(nvlist_t *vars, const char *qs, size_t len)
+void parse_query_string_len(nvlist_t *vars, const char *qs, size_t len)
 {
 	struct qstr *name, *val;
 	const char *cur, *end;

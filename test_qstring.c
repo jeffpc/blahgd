@@ -10,7 +10,7 @@ static int onefile(char *ibuf, size_t len)
 
 	vars = nvl_alloc();
 
-	parse_query_string(vars, ibuf, len);
+	parse_query_string_len(vars, ibuf, len);
 
 	nvlist_free(vars);
 

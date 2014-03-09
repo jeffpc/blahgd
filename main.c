@@ -184,7 +184,6 @@ static bool switch_content_type(struct req *req)
 int main(int argc, char **argv)
 {
 	struct req req;
-	char *qs;
 	int ret;
 
 	openlog("blahg", LOG_NDELAY | LOG_PID, LOG_LOCAL0);
@@ -194,8 +193,7 @@ int main(int argc, char **argv)
 
 	req_init_cgi(&req);
 
-	qs = getenv("QUERY_STRING");
-	parse_query_string(req.request_qs, qs, qs ? strlen(qs) : 0);
+	parse_query_string(req.request_qs, getenv("QUERY_STRING"));
 
 	parse_qs(&req);
 

@@ -22,12 +22,11 @@ static LIST_INIT(queue);
 
 static void process_request(struct req *req)
 {
-	char *qs;
-
 	nvl_dump(req->request_headers);
 
-	qs = nvl_lookup_str(req->request_headers, "QUERY_STRING");
-	parse_query_string(req->request_qs, qs, qs ? strlen(qs) : 0);
+	parse_query_string(req->request_qs,
+			   nvl_lookup_str(req->request_headers,
+					  "QUERY_STRING"));
 
 	nvl_dump(req->request_qs);
 
