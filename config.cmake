@@ -11,6 +11,8 @@ macro(set_default name default)
 	endif()
 endmacro()
 
+set_default(SCGI_NHELPERS		32)
+
 set_default(HTML_INDEX_STORIES		10)
 set_default(FEED_INDEX_STORIES		15)
 

@@ -7,6 +7,8 @@
 #cmakedefine USE_XMLRPC 1
 
 /* settings */
+#cmakedefine SCGI_NHELPERS		${SCGI_NHELPERS}
+
 #cmakedefine HTML_INDEX_STORIES		${HTML_INDEX_STORIES}
 #cmakedefine FEED_INDEX_STORIES		${FEED_INDEX_STORIES}
 

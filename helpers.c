@@ -11,10 +11,8 @@
 #include "scgi.h"
 #include "mx.h"
 
-#define NHELPERS	32
-
 static int nhelpers;
-static pthread_t helpers[NHELPERS];
+static pthread_t helpers[SCGI_NHELPERS];
 
 static pthread_mutex_t lock;
 static pthread_cond_t enqueued;
@@ -84,7 +82,7 @@ int start_helpers()
 	MXINIT(&lock);
 	CONDINIT(&enqueued);
 
-	for (i = 0; i < NHELPERS; i++) {
+	for (i = 0; i < SCGI_NHELPERS; i++) {
 		ret = pthread_create(&helpers[i], NULL, queue_processor, NULL);
 		if (ret) {
 			stop_helpers();
