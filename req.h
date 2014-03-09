@@ -51,6 +51,7 @@ struct req {
 	/* request */
 	enum req_via via;
 	nvlist_t *request_headers;
+	nvlist_t *request_qs;
 	char *request_body;
 	struct qs args;
 

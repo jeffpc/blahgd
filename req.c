@@ -22,6 +22,7 @@ static void req_init(struct req *req, enum req_via via)
 	req->via = via;
 	req->request_headers = NULL;
 	req->request_body = NULL;
+	req->request_qs = nvl_alloc();
 
 	/* response */
 	req->status = 200;
@@ -78,6 +79,7 @@ void req_destroy(struct req *req)
 
 	free(req->request_body);
 	nvlist_free(req->request_headers);
+	nvlist_free(req->request_qs);
 
 	switch (req->via) {
 		case REQ_CGI:
