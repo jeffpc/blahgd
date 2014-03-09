@@ -1,8 +1,6 @@
 #ifndef __VAL_H
 #define __VAL_H
 
-#include <sys/avl.h>
-
 #include "config.h"
 #include "utils.h"
 

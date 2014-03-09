@@ -53,7 +53,6 @@ target_link_libraries(blahg
 	${SQLITE_LIB}
 	rt
 	umem
-	avl
 	nvpair
 	m
 )
@@ -87,7 +86,6 @@ add_executable(test_fmt3
 target_link_libraries(test_fmt3
 	${OPENSSL_CRYPTO_LIBRARY}
 	umem
-	avl
 )
 
 function(simple_c_test type section data)
