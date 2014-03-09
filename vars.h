@@ -34,5 +34,6 @@ extern void nvl_set_str_array(nvlist_t *nvl, const char *name, char **val,
 			      uint_t nval);
 extern void nvl_set_nvl_array(nvlist_t *nvl, const char *name,
 			      nvlist_t **val, uint_t nval);
+extern void nvl_dump(nvlist_t *nvl);
 
 #endif

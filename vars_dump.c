@@ -110,6 +110,12 @@ static void __dump(nvlist_t *list, int indent)
 	}
 }
 
+void nvl_dump(nvlist_t *nvl)
+{
+	fprintf(stderr, "nvlist dump @ %p\n", nvl);
+	__dump(nvl, INDENT);
+}
+
 void vars_dump(struct vars *vars)
 {
 	int i;
