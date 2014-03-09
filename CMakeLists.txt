@@ -88,6 +88,20 @@ target_link_libraries(test_fmt3
 	umem
 )
 
+add_executable(test_qstring
+	test_qstring.c
+	error.c
+	utils.c
+	vars.c vars_dump.c
+	qstring.c
+	decode.c fsm.c
+)
+
+target_link_libraries(test_qstring
+	umem
+	nvpair
+)
+
 function(simple_c_test type section data)
 	add_test(NAME "${type}:${section}:${data}"
 		 COMMAND "${CMAKE_BINARY_DIR}/test_${type}"

@@ -1,6 +1,7 @@
 blahg
 blahgd
 test_fmt3
+test_qstring
 
 post_fmt3.lex.c
 post_fmt3.tab.c
