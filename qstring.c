@@ -71,7 +71,7 @@ void parse_query_string(nvlist_t *vars, const char *qs, size_t len)
 	const char *cur, *end;
 	int state;
 
-	if (!qs)
+	if (!qs || !len)
 		return;
 
 	name = alloc_str(VAR_NAME_MAXLEN);
