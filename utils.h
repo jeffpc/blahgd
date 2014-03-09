@@ -1,7 +1,9 @@
 #ifndef __UTILS_H
 #define __UTILS_H
 
+#include <sys/sysmacros.h>
 #include <string.h>
+#include <errno.h>
 
 #include "error.h"
 
@@ -36,5 +38,41 @@ static inline char *xstrdup(const char *s)
 {
 	return xstrdup_def(s, "");
 }
+
+#define STR_TO_INT(size, imax)						\
+static inline int __str2u##size(const char *restrict s,			\
+				uint##size##_t *i,			\
+				int base)				\
+{									\
+	char *endptr;							\
+	uint64_t tmp;							\
+									\
+	*i = 0;								\
+									\
+	errno = 0;							\
+	tmp = strtoull(s, &endptr, base);				\
+									\
+	if (errno)							\
+		return errno;						\
+									\
+	if (endptr == s)						\
+		return EINVAL;						\
+									\
+	if (tmp > imax)							\
+		return ERANGE;						\
+									\
+	*i = tmp;							\
+	return 0;							\
+}
+
+STR_TO_INT(16, 0x000000000000fffful)
+STR_TO_INT(32, 0x00000000fffffffful)
+STR_TO_INT(64, 0xfffffffffffffffful)
+
+#undef STR_TO_INT
+
+#define str2u64(s, i)	__str2u64((s), (i), 10)
+#define str2u32(s, i)	__str2u32((s), (i), 10)
+#define str2u16(s, i)	__str2u16((s), (i), 10)
 
 #endif
