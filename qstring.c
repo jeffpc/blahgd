@@ -111,6 +111,4 @@ void parse_query_string(nvlist_t *vars, const char *qs, size_t len)
 
 	free_str(name);
 	free_str(val);
-
-	nvl_dump(vars);
 }
