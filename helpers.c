@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <errno.h>
 
+#include "req.h"
 #include "helpers.h"
 #include "scgi.h"
 #include "mx.h"
@@ -27,47 +28,46 @@ static void xsend(int fd, void *buf, size_t len)
 	ASSERT3S(ret, ==, len);
 }
 
-static void process_request(struct conn *conn)
+static void process_request(struct req *req)
 {
 	char buf[200];
 	size_t len;
 
 	len = snprintf(buf, sizeof(buf), "Status: 200 OK\r\n");
-	xsend(conn->fd, buf, len);
+	xsend(req->scgi.fd, buf, len);
 
 	len = snprintf(buf, sizeof(buf), "Content-Type: text/plain\r\n");
-	xsend(conn->fd, buf, len);
+	xsend(req->scgi.fd, buf, len);
 
 	len = snprintf(buf, sizeof(buf), "\r\n");
-	xsend(conn->fd, buf, len);
+	xsend(req->scgi.fd, buf, len);
 
 	len = snprintf(buf, sizeof(buf), "the content!");
-	xsend(conn->fd, buf, len);
+	xsend(req->scgi.fd, buf, len);
 }
 
 static void *queue_processor(void *arg)
 {
-	struct conn *conn;
+	struct req *req;
 
 	for (;;) {
 		MXLOCK(&lock);
 		while (list_empty(&queue))
 			CONDWAIT(&enqueued, &lock);
 
-		conn = list_first_entry(&queue, struct conn, queue);
+		req = list_first_entry(&queue, struct req, scgi.queue);
 
-		list_del(&conn->queue);
+		list_del(&req->scgi.queue);
 		MXUNLOCK(&lock);
 
-		// FIXME: actually service the conn
-		scgi_read_request(conn);
+		scgi_read_request(req);
 
-		process_request(conn);
+		nvl_dump(req->request_headers);
 
-		close(conn->fd);
-		nvlist_free(conn->headers);
-		free(conn->body);
-		free(conn);
+		process_request(req);
+
+		req_destroy(req);
+		free(req);
 	}
 
 	return NULL;
@@ -75,17 +75,16 @@ static void *queue_processor(void *arg)
 
 int enqueue_fd(int fd)
 {
-	struct conn *conn;
+	struct req *req;
 
-	conn = malloc(sizeof(struct conn));
-	if (!conn)
+	req = malloc(sizeof(struct req));
+	if (!req)
 		return ENOMEM;
 
-	conn->fd = fd;
-	conn->body = NULL;
+	req_init_scgi(req, fd);
 
 	MXLOCK(&lock);
-	list_add_tail(&conn->queue, &queue);
+	list_add_tail(&req->scgi.queue, &queue);
 	CONDSIG(&enqueued);
 	MXUNLOCK(&lock);
 

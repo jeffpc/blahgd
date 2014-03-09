@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <libgen.h>
+#include <unistd.h>
 #include <syslog.h>
 
 #include "main.h"
@@ -13,6 +14,7 @@
 #include "render.h"
 #include "sidebar.h"
 #include "pipeline.h"
+#include "req.h"
 
 static char *nullterminate(char *s)
 {
@@ -156,80 +158,6 @@ int R301(struct req *req, const char *url)
 	return 0;
 }
 
-static void req_init(struct req *req)
-{
-	req->dump_latency = true;
-	req->start = gettime();
-	req->body  = NULL;
-	req->fmt   = NULL;
-	INIT_LIST_HEAD(&req->headers);
-
-	req->status = 200;
-
-	vars_init(&req->vars);
-
-	vars_set_str(&req->vars, "baseurl", BASE_URL);
-	vars_set_int(&req->vars, "now", gettime());
-
-	vars_set_int(&req->vars, "captcha_a", COMMENT_CAPTCHA_A);
-	vars_set_int(&req->vars, "captcha_b", COMMENT_CAPTCHA_B);
-
-	vars_set_nvl_array(&req->vars, "posts", NULL, 0);
-}
-
-static void req_destroy(struct req *req)
-{
-	struct header *cur, *tmp;
-
-	vars_destroy(&req->vars);
-
-	printf("Status: %u\n", req->status);
-
-	list_for_each_entry_safe(cur, tmp, &req->headers, list) {
-		printf("%s: %s\n", cur->name, cur->val);
-
-		free(cur->name);
-		free(cur->val);
-		free(cur);
-	}
-
-	printf("\n%s\n", req->body);
-
-	if (req->dump_latency) {
-		uint64_t delta;
-
-		delta = gettime() - req->start;
-
-		printf("<!-- time to render: %lu.%09lu seconds -->\n",
-		       delta / 1000000000UL,
-		       delta % 1000000000UL);
-	}
-
-	free(req->body);
-}
-
-void req_head(struct req *req, char *name, const char *val)
-{
-	struct header *cur, *tmp;
-
-	list_for_each_entry_safe(cur, tmp, &req->headers, list) {
-		if (!strcmp(cur->name, name)) {
-			free(cur->val);
-			list_del(&cur->list);
-			goto set;
-		}
-	}
-
-	cur = malloc(sizeof(struct header));
-	ASSERT(cur);
-
-	cur->name = xstrdup(name);
-
-set:
-	cur->val  = xstrdup(val);
-	list_add_tail(&cur->list, &req->headers);
-}
-
 static bool switch_content_type(struct req *req)
 {
 	char *fmt = req->args.feed;
@@ -288,7 +216,7 @@ int main(int argc, char **argv)
 	init_val_subsys();
 	init_pipe_subsys();
 
-	req_init(&req);
+	req_init_cgi(&req);
 
 	parse_qs(getenv("QUERY_STRING"), &req);
 
@@ -343,6 +271,7 @@ int main(int argc, char **argv)
 	}
 
 out:
+	req_output(&req);
 	req_destroy(&req);
 
 	return ret;

@@ -75,4 +75,13 @@ STR_TO_INT(64, 0xfffffffffffffffful)
 #define str2u32(s, i)	__str2u32((s), (i), 10)
 #define str2u16(s, i)	__str2u16((s), (i), 10)
 
+static inline uint64_t gettime()
+{
+	struct timespec ts;
+
+	clock_gettime(CLOCK_REALTIME, &ts);
+
+	return ts.tv_sec * 1000000000ULL + ts.tv_nsec;
+}
+
 #endif

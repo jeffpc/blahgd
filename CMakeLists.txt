@@ -36,6 +36,7 @@ include_directories(${SQLITE_INC})
 add_executable(blahg render.c post.c main.c
 	db.c ${PINGBACK_SRC} val.c pipeline.c
 	vars.c vars_dump.c
+	req.c
 	${FLEX_tmpl_OUTPUTS} ${BISON_tmpl_OUTPUTS}
 	${FLEX_fmt3_OUTPUTS} ${BISON_fmt3_OUTPUTS}
 	post_fmt3_cmds.c
@@ -60,6 +61,7 @@ target_link_libraries(blahg
 add_executable(blahgd
 	daemon.c helpers.c
 	vars.c vars_dump.c
+	req.c
 	scgi.c
 	error.c
 )

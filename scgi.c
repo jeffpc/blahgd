@@ -5,11 +5,11 @@
 #include <string.h>
 
 #include "error.h"
-#include "helpers.h"
+#include "req.h"
 #include "vars.h"
 #include "utils.h"
 
-static int read_netstring_length(struct conn *conn, size_t *len)
+static int read_netstring_length(struct req *req, size_t *len)
 {
 	ssize_t ret;
 	size_t v;
@@ -19,7 +19,7 @@ static int read_netstring_length(struct conn *conn, size_t *len)
 	for (;;) {
 		char c;
 
-		ret = recv(conn->fd, &c, sizeof(c), 0);
+		ret = recv(req->scgi.fd, &c, sizeof(c), 0);
 		ASSERT3S(ret, !=, -1);
 		ASSERT3S(ret, ==, 1);
 
@@ -38,7 +38,7 @@ static int read_netstring_length(struct conn *conn, size_t *len)
 	}
 }
 
-static int read_netstring_string(struct conn *conn, size_t len)
+static int read_netstring_string(struct req *req, size_t len)
 {
 	nvlist_t *nvl;
 	char *cur, *end;
@@ -49,7 +49,7 @@ static int read_netstring_string(struct conn *conn, size_t len)
 	if (!buf)
 		return ENOMEM;
 
-	ret = recv(conn->fd, buf, len + 1, MSG_WAITALL);
+	ret = recv(req->scgi.fd, buf, len + 1, MSG_WAITALL);
 	ASSERT3S(ret, !=, -1);
 
 	if (ret != (len + 1)) {
@@ -82,7 +82,7 @@ static int read_netstring_string(struct conn *conn, size_t len)
 		cur = val + strlen(val) + 1;
 	}
 
-	conn->headers = nvl;
+	req->request_headers = nvl;
 
 	free(buf);
 
@@ -94,7 +94,7 @@ struct cvth {
 	data_type_t type;
 };
 
-static void cvt_headers(struct conn *conn)
+static void cvt_headers(struct req *req)
 {
 	struct cvth table[] = {
 		{ .name = "CONTENT_LENGTH", .type = DATA_TYPE_UINT64, },
@@ -112,8 +112,8 @@ static void cvt_headers(struct conn *conn)
 	for (i = 0; table[i].name; i++) {
 		nvpair_t *pair;
 
-		ret = nvlist_lookup_nvpair(conn->headers, table[i].name,
-					   &pair);
+		ret = nvlist_lookup_nvpair(req->request_headers,
+					   table[i].name, &pair);
 		if (ret)
 			continue;
 
@@ -128,7 +128,7 @@ static void cvt_headers(struct conn *conn)
 			case DATA_TYPE_UINT64:
 				ret = str2u64(str, &intval);
 				if (!ret)
-					nvl_set_int(conn->headers,
+					nvl_set_int(req->request_headers,
 						    table[i].name, intval);
 				break;
 			default:
@@ -137,31 +137,31 @@ static void cvt_headers(struct conn *conn)
 	}
 }
 
-static int read_netstring(struct conn *conn)
+static int read_netstring(struct req *req)
 {
 	size_t len;
 	int ret;
 
-	ret = read_netstring_length(conn, &len);
+	ret = read_netstring_length(req, &len);
 	if (ret)
 		return ret;
 
-	ret = read_netstring_string(conn, len);
+	ret = read_netstring_string(req, len);
 	if (ret)
 		return ret;
 
-	cvt_headers(conn);
+	cvt_headers(req);
 
 	return 0;
 }
 
-static int read_body(struct conn *conn)
+static int read_body(struct req *req)
 {
 	uint64_t content_len;
 	ssize_t ret;
 	char *buf;
 
-	ret = nvlist_lookup_uint64(conn->headers, "CONTENT_LENGTH",
+	ret = nvlist_lookup_uint64(req->request_headers, "CONTENT_LENGTH",
 				   &content_len);
 	if (ret)
 		return ret;
@@ -173,24 +173,24 @@ static int read_body(struct conn *conn)
 	if (!buf)
 		return ENOMEM;
 
-	ret = recv(conn->fd, buf, content_len, MSG_WAITALL);
+	ret = recv(req->scgi.fd, buf, content_len, MSG_WAITALL);
 	ASSERT3S(ret, !=, -1);
 	ASSERT3S(ret, ==, content_len);
 
-	conn->body = buf;
+	req->request_body = buf;
 
 	return 0;
 }
 
-int scgi_read_request(struct conn *conn)
+int scgi_read_request(struct req *req)
 {
 	int ret;
 
 	/* read the headers */
-	ret = read_netstring(conn);
+	ret = read_netstring(req);
 	if (ret)
 		return ret;
 
 	/* read the body */
-	return read_body(conn);
+	return read_body(req);
 }
