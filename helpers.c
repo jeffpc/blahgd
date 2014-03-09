@@ -1,3 +1,5 @@
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -16,6 +18,33 @@ static pthread_mutex_t lock;
 static pthread_cond_t enqueued;
 static LIST_INIT(queue);
 
+static void xsend(int fd, void *buf, size_t len)
+{
+	ssize_t ret;
+
+	ret = send(fd, buf, len, 0);
+	ASSERT3S(ret, !=, -1);
+	ASSERT3S(ret, ==, len);
+}
+
+static void process_request(struct conn *conn)
+{
+	char buf[200];
+	size_t len;
+
+	len = snprintf(buf, sizeof(buf), "Status: 200 OK\r\n");
+	xsend(conn->fd, buf, len);
+
+	len = snprintf(buf, sizeof(buf), "Content-Type: text/plain\r\n");
+	xsend(conn->fd, buf, len);
+
+	len = snprintf(buf, sizeof(buf), "\r\n");
+	xsend(conn->fd, buf, len);
+
+	len = snprintf(buf, sizeof(buf), "the content!");
+	xsend(conn->fd, buf, len);
+}
+
 static void *queue_processor(void *arg)
 {
 	struct conn *conn;
@@ -32,6 +61,8 @@ static void *queue_processor(void *arg)
 
 		// FIXME: actually service the conn
 		scgi_read_request(conn);
+
+		process_request(conn);
 
 		close(conn->fd);
 		nvlist_free(conn->headers);
