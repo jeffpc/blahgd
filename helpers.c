@@ -20,15 +20,14 @@ static LIST_INIT(queue);
 
 static void process_request(struct req *req)
 {
-	int ret;
-
 	parse_query_string(req->request_qs,
 			   nvl_lookup_str(req->request_headers,
 					  "QUERY_STRING"));
 
-	ret = req_dispatch(req);
+	req_dispatch(req);
 
 	req_output(req);
+	req_destroy(req);
 }
 
 static void *queue_processor(void *arg)
@@ -49,7 +48,6 @@ static void *queue_processor(void *arg)
 
 		process_request(req);
 
-		req_destroy(req);
 		free(req);
 	}
 
