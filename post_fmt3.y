@@ -125,6 +125,8 @@ static int __render_math(char *tex, char *md, char *dstpath, char *texpath,
 	if (!f)
 		goto err;
 
+#warning chdir does not work for blahgd
+
 	chdir(TEX_TMP_DIR);
 
 	fprintf(f, "\\documentclass{article}\n");
