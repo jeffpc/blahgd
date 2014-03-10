@@ -3,6 +3,7 @@
 
 #include "config.h"
 #include "utils.h"
+#include "atomic.h"
 
 enum val_type {
 	VT_INT = 0,	/* 64-bit uint */
@@ -11,7 +12,7 @@ enum val_type {
 
 struct val {
 	enum val_type type;
-	int refcnt;
+	atomic_t refcnt;
 	union {
 		uint64_t i;
 		char *str;
@@ -31,9 +32,10 @@ static inline struct val *val_getref(struct val *vv)
 	if (!vv)
 		return NULL;
 
-	ASSERT3U(vv->refcnt, >=, 1);
+	ASSERT3U(atomic_read(&vv->refcnt), >=, 1);
 
-	vv->refcnt++;
+	atomic_inc(&vv->refcnt);
+
 	return vv;
 }
 
@@ -42,11 +44,9 @@ static inline void val_putref(struct val *vv)
 	if (!vv)
 		return;
 
-	ASSERT3S(vv->refcnt, >=, 1);
+	ASSERT3S(atomic_read(&vv->refcnt), >=, 1);
 
-	vv->refcnt--;
-
-	if (!vv->refcnt)
+	if (!atomic_dec(&vv->refcnt))
 		val_free(vv);
 }
 
