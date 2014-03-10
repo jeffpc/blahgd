@@ -106,7 +106,7 @@ char *foreach(struct req *req, char *varname, char *tmpl)
 	} else if (nvpair_type(var) == DATA_TYPE_STRING_ARRAY) {
 		ret = __foreach_str(req, var, tmpl);
 	} else {
-		vars_dump(&req->vars);
+		//vars_dump(&req->vars);
 		LOG("%s called with '%s' which has type %d", __func__,
 		    varname, nvpair_type(var));
 		ASSERT(0);

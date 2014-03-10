@@ -45,6 +45,7 @@ set(COMMON_SOURCES
 
 	# templates
 	${FLEX_tmpl_OUTPUTS} ${BISON_tmpl_OUTPUTS}
+	template_cache.c
 	render.c
 	pipeline.c
 
@@ -86,6 +87,7 @@ target_link_libraries(blahg
 	rt
 	umem
 	nvpair
+	avl
 	m
 )
 
@@ -104,6 +106,7 @@ target_link_libraries(blahgd
 	nsl
 	umem
 	nvpair
+	avl
 	m
 )
 

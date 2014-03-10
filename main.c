@@ -16,6 +16,7 @@
 #include "req.h"
 #include "qstring.h"
 #include "val.h"
+#include "template_cache.h"
 
 int main(int argc, char **argv)
 {
@@ -26,6 +27,7 @@ int main(int argc, char **argv)
 
 	init_val_subsys();
 	init_pipe_subsys();
+	init_template_cache();
 
 	init_db();
 

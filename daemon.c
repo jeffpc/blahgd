@@ -18,6 +18,7 @@
 #include "db.h"
 #include "val.h"
 #include "pipeline.h"
+#include "template_cache.h"
 
 #define HOST		NULL
 #define PORT		2014
@@ -204,6 +205,7 @@ int main(int argc, char **argv)
 
 	init_val_subsys();
 	init_pipe_subsys();
+	init_template_cache();
 
 	init_db();
 
