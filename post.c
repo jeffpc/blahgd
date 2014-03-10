@@ -232,6 +232,8 @@ static int __load_post_comments(struct post *post)
 		post->numcom++;
 	}
 
+	SQL_END();
+
 	return 0;
 }
 
@@ -353,6 +355,8 @@ nvlist_t *load_post(struct req *req, int postid, const char *titlevar, bool prev
 			goto err;
 		}
 
+		SQL_END();
+
 		SQL(stmt, "SELECT tag FROM post_tags WHERE post=? ORDER BY tag");
 		SQL_BIND_INT(stmt, 1, postid);
 		SQL_FOR_EACH(stmt) {
@@ -366,6 +370,8 @@ nvlist_t *load_post(struct req *req, int postid, const char *titlevar, bool prev
 
 			list_add_tail(&tag->list, &post.tags);
 		}
+
+		SQL_END();
 
 		err = __load_post_comments(&post);
 	}

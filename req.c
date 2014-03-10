@@ -87,8 +87,12 @@ void req_destroy(struct req *req)
 		case REQ_CGI:
 			break;
 		case REQ_SCGI:
+			fflush(req->out);
 			fclose(req->out);
-			close(req->scgi.fd);
+			/*
+			 * NOTE: do *not* close the fd itself since fclose
+			 * already closed it for us
+			 */
 			break;
 	}
 

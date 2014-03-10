@@ -27,6 +27,8 @@ static void __load_posts(struct req *req, int page)
 	SQL_BIND_INT(stmt, 2, page * req->opts.index_stories);
 
 	load_posts(req, stmt);
+
+	SQL_END();
 }
 
 static void __load_posts_archive(struct req *req, int page, int archid)
@@ -55,6 +57,8 @@ static void __load_posts_archive(struct req *req, int page, int archid)
 	SQL_BIND_INT(stmt, 4, page * req->opts.index_stories);
 
 	load_posts(req, stmt);
+
+	SQL_END();
 }
 
 static void __store_title(struct vars *vars, char *title)

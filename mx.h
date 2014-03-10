@@ -1,6 +1,8 @@
 #ifndef __MX_H
 #define __MX_H
 
+#include <pthread.h>
+
 #include "error.h"
 
 #define MXINIT(l)	ASSERT0(pthread_mutex_init((l), NULL))

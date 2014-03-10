@@ -27,6 +27,8 @@ int main(int argc, char **argv)
 	init_val_subsys();
 	init_pipe_subsys();
 
+	init_db();
+
 	req_init_cgi(&req);
 
 	parse_query_string(req.request_qs, getenv("QUERY_STRING"));
