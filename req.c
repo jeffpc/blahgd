@@ -30,6 +30,10 @@ static void req_init(struct req *req, enum req_via via)
 	req->status = 200;
 	req->headers = nvl_alloc();
 	req->body  = NULL;
+
+#ifdef USE_XMLRPC
+	req_head(req, "X-Pingback", BASE_URL "/?xmlrpc=1");
+#endif
 }
 
 void req_init_cgi(struct req *req)

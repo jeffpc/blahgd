@@ -35,10 +35,6 @@ int main(int argc, char **argv)
 
 	parse_query_string(req.request_qs, getenv("QUERY_STRING"));
 
-#ifdef USE_XMLRPC
-	req_head(&req, "X-Pingback", BASE_URL "/?xmlrpc=1");
-#endif
-
 	ret = req_dispatch(&req);
 
 	req_output(&req);
