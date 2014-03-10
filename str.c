@@ -17,7 +17,7 @@ struct str *str_alloc(char *s)
 	if (!str)
 		return NULL;
 
-	str->refcnt = 1;
+	atomic_set(&str->refcnt, 1);
 	str->str = s;
 
 	return str;
@@ -67,7 +67,7 @@ void str_free(struct str *str)
 	if (!str)
 		return;
 
-	ASSERT3U(str->refcnt, ==, 0);
+	ASSERT3U(atomic_read(&str->refcnt), ==, 0);
 
 	free(str->str);
 	free(str);
@@ -78,9 +78,10 @@ struct str *str_getref(struct str *str)
 	if (!str)
 		return NULL;
 
-	ASSERT3U(str->refcnt, >=, 1);
+	ASSERT3U(atomic_read(&str->refcnt), >=, 1);
 
-	str->refcnt++;
+	atomic_inc(&str->refcnt);
+
 	return str;
 }
 
@@ -89,10 +90,8 @@ void str_putref(struct str *str)
 	if (!str)
 		return;
 
-	ASSERT3S(str->refcnt, >=, 1);
+	ASSERT3S(atomic_read(&str->refcnt), >=, 1);
 
-	str->refcnt--;
-
-	if (!str->refcnt)
+	if (!atomic_dec(&str->refcnt))
 		str_free(str);
 }

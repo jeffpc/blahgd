@@ -2,12 +2,13 @@
 #define __STR_H
 
 #include "vars.h"
+#include "atomic.h"
 
 /* ref-counted string */
 
 struct str {
 	char *str;
-	int refcnt;
+	atomic_t refcnt;
 };
 
 extern struct str *str_alloc(char *s);
