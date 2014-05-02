@@ -344,6 +344,7 @@ mexpr : WORD				{ $$ = $1; }
       | mexpr ASTERISK mexpr	 	{ $$ = valcat3($1, VAL_DUP_STR("*"), $3); }
       | mexpr SLASH mexpr	 	{ $$ = valcat3($1, VAL_DUP_STR("/"), $3); }
       | BSLASH WORD			{ $$ = valcat(VAL_DUP_STR("\\"), $2); }
+      | BSLASH USCORE			{ $$ = VAL_DUP_STR("\\_"); }
       | OPAREN math CPAREN		{ $$ = valcat3(VAL_DUP_STR("("), $2, VAL_DUP_STR(")")); }
       | OCURLY math CCURLY		{ $$ = valcat3(VAL_DUP_STR("{"), $2, VAL_DUP_STR("}")); }
       ;
