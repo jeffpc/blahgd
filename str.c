@@ -28,38 +28,43 @@ struct str *str_cat5(struct str *a, struct str *b, struct str *c,
 {
 #define NSTRS	5
 	struct str *strs[NSTRS] = {a, b, c, d, e};
-	struct str *out;
-	size_t len;
-	char *buf;
+	size_t len[NSTRS];
+	size_t totallen;
+	struct str *ret;
+	char *buf, *out;
 	int i;
 
-	len = 0;
+	totallen = 0;
 
 	for (i = 0; i < NSTRS; i++) {
 		if (!strs[i])
 			continue;
 
-		len += strlen(strs[i]->str);
+		len[i] = strlen(strs[i]->str);
+
+		totallen += len[i];
 	}
 
-	buf = malloc(len + 1);
+	buf = malloc(totallen + 1);
 	ASSERT(buf);
 
-	buf[0] = '\0';
+	out = buf;
 
 	for (i = 0; i < NSTRS; i++) {
 		if (!strs[i])
 			continue;
 
-		strcat(buf, strs[i]->str);
+		strcpy(out, strs[i]->str);
+
+		out += len[i];
 
 		str_putref(strs[i]);
 	}
 
-	out = str_alloc(buf);
-	ASSERT(out);
+	ret = str_alloc(buf);
+	ASSERT(ret);
 
-	return out;
+	return ret;
 }
 
 void str_free(struct str *str)
