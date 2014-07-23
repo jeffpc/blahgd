@@ -2,10 +2,7 @@
 #define __ATOMIC_H
 
 #include <stdint.h>
-
-typedef struct {
-	volatile uint64_t v;
-} atomic64_t;
+#include <atomic.h>
 
 typedef struct {
 	volatile uint32_t v;
@@ -20,9 +17,9 @@ typedef struct {
 
 #define atomic_set(var, val)	((var)->v = (val))
 #define atomic_read(var)	((var)->v)
-#define atomic_add(var, val)	__sync_add_and_fetch(&(var)->v, (val))
-#define atomic_sub(var, val)	__sync_sub_and_fetch(&(var)->v, (val))
-#define atomic_inc(var)		atomic_add((var), 1)
-#define atomic_dec(var)		atomic_sub((var), 1)
+#define atomic_add(var, val)	atomic_add_32_nv(&(var)->v, (val))
+#define atomic_sub(var, val)	anomic_add_32_nv(&(var)->v, -(val))
+#define atomic_inc(var)		atomic_inc_32_nv(&(var)->v)
+#define atomic_dec(var)		atomic_dec_32_nv(&(var)->v)
 
 #endif
