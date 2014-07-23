@@ -3,8 +3,8 @@
 
 #include <libnvpair.h>
 #include <stdbool.h>
+#include <sys/list.h>
 
-#include "list.h"
 #include "vars.h"
 
 enum {
@@ -43,7 +43,7 @@ struct qs {
 struct req {
 	union {
 		struct {
-			struct list_head queue;
+			list_node_t queue;
 			int fd;
 		} scgi;
 	};

@@ -13,7 +13,6 @@
 #include <dirent.h>
 
 #include "post.h"
-#include "list.h"
 #include "vars.h"
 #include "req.h"
 #include "db.h"
@@ -219,7 +218,7 @@ static int __load_post_comments(struct post *post)
 		comm = malloc(sizeof(struct comment));
 		ASSERT(comm);
 
-		list_add_tail(&comm->list, &post->comments);
+		list_insert_tail(&post->comments, comm);
 
 		comm->id     = SQL_COL_INT(stmt, 0);
 		comm->author = xstrdup_def(SQL_COL_STR(stmt, 1), "[unknown]");
@@ -237,23 +236,23 @@ static int __load_post_comments(struct post *post)
 	return 0;
 }
 
-static void __tag_val(nvlist_t *post, struct list_head *list)
+static void __tag_val(nvlist_t *post, list_t *list)
 {
-	struct post_tag *cur, *tmp;
+	struct post_tag *cur;
 	char **tags;
 	int ntags;
 	int i;
 
 	/* count the tags */
 	ntags = 0;
-	list_for_each_entry_safe(cur, tmp, list, list)
+	for (cur = list_head(list); cur; cur = list_next(list, cur))
 		ntags++;
 
 	tags = malloc(sizeof(char *) * ntags);
 	ASSERT(tags);
 
 	i = 0;
-	list_for_each_entry_safe(cur, tmp, list, list)
+	for (cur = list_head(list); cur; cur = list_next(list, cur))
 		tags[i++] = cur->tag;
 
 	nvl_set_str_array(post, "tags", tags, ntags);
@@ -261,23 +260,23 @@ static void __tag_val(nvlist_t *post, struct list_head *list)
 	free(tags);
 }
 
-static void __com_val(nvlist_t *post, struct list_head *list)
+static void __com_val(nvlist_t *post, list_t *list)
 {
-	struct comment *cur, *tmp;
+	struct comment *cur;
 	nvlist_t **comments;
 	uint_t ncomments;
 	int i;
 
 	/* count the comments */
 	ncomments = 0;
-	list_for_each_entry_safe(cur, tmp, list, list)
+	for (cur = list_head(list); cur; cur = list_next(list, cur))
 		ncomments++;
 
 	comments = malloc(sizeof(nvlist_t *) * ncomments);
 	ASSERT(comments);
 
 	i = 0;
-	list_for_each_entry_safe(cur, tmp, list, list) {
+	for (cur = list_head(list); cur; cur = list_next(list, cur)) {
 		comments[i] = nvl_alloc();
 
 		nvl_set_int(comments[i], "commid", cur->id);
@@ -332,8 +331,10 @@ nvlist_t *load_post(struct req *req, int postid, const char *titlevar, bool prev
 	post.title = NULL;
 	post.body = NULL;
 	post.numcom = 0;
-	INIT_LIST_HEAD(&post.tags);
-	INIT_LIST_HEAD(&post.comments);
+	list_create(&post.tags, sizeof(struct post_tag),
+		    offsetof(struct post_tag, list));
+	list_create(&post.comments, sizeof(struct comment),
+		    offsetof(struct comment, list));
 
 	if (preview) {
 		post.title = xstrdup("PREVIEW");
@@ -368,7 +369,7 @@ nvlist_t *load_post(struct req *req, int postid, const char *titlevar, bool prev
 			tag->tag = xstrdup(SQL_COL_STR(stmt, 0));
 			ASSERT(tag->tag);
 
-			list_add_tail(&tag->list, &post.tags);
+			list_insert_tail(&post.tags, tag);
 		}
 
 		SQL_END();
@@ -390,15 +391,15 @@ err:
 
 void destroy_post(struct post *post)
 {
-	struct post_tag *pt, *pttmp;
-	struct comment *com, *comtmp;
+	struct post_tag *pt;
+	struct comment *com;
 
-	list_for_each_entry_safe(pt, pttmp, &post->tags, list) {
+	while ((pt = list_remove_head(&post->tags))) {
 		free(pt->tag);
 		free(pt);
 	}
 
-	list_for_each_entry_safe(com, comtmp, &post->comments, list) {
+	while ((com = list_remove_head(&post->comments))) {
 		free(com->author);
 		free(com->email);
 		free(com->ip);

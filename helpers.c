@@ -16,7 +16,7 @@ static pthread_t helpers[SCGI_NHELPERS];
 
 static pthread_mutex_t lock;
 static pthread_cond_t enqueued;
-static LIST_INIT(queue);
+static list_t queue;
 
 static void process_request(struct req *req)
 {
@@ -36,12 +36,10 @@ static void *queue_processor(void *arg)
 
 	for (;;) {
 		MXLOCK(&lock);
-		while (list_empty(&queue))
+		while (list_is_empty(&queue))
 			CONDWAIT(&enqueued, &lock);
 
-		req = list_first_entry(&queue, struct req, scgi.queue);
-
-		list_del(&req->scgi.queue);
+		req = list_remove_head(&queue);
 		MXUNLOCK(&lock);
 
 		scgi_read_request(req);
@@ -65,7 +63,7 @@ int enqueue_fd(int fd)
 	req_init_scgi(req, fd);
 
 	MXLOCK(&lock);
-	list_add_tail(&req->scgi.queue, &queue);
+	list_insert_tail(&queue, req);
 	CONDSIG(&enqueued);
 	MXUNLOCK(&lock);
 
@@ -79,6 +77,8 @@ int start_helpers()
 
 	MXINIT(&lock);
 	CONDINIT(&enqueued);
+	list_create(&queue, sizeof(struct req), offsetof(struct req,
+							 scgi.queue));
 
 	for (i = 0; i < SCGI_NHELPERS; i++) {
 		ret = pthread_create(&helpers[i], NULL, queue_processor, NULL);

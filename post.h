@@ -3,18 +3,18 @@
 
 #include <time.h>
 #include <stdbool.h>
+#include <sys/list.h>
 
 #include "db.h"
-#include "list.h"
 #include "vars.h"
 
 struct post_tag {
-	struct list_head list;
+	list_node_t list;
 	char *tag;
 };
 
 struct comment {
-	struct list_head list;
+	list_node_t list;
 	unsigned int id;
 	char *author;
 	char *email;
@@ -33,10 +33,10 @@ struct post {
 	unsigned int fmt;
 
 	/* from 'post_tags' table */
-	struct list_head tags;
+	list_t tags;
 
 	/* from 'comments' table */
-	struct list_head comments;
+	list_t comments;
 	unsigned int numcom;
 
 	/* body */
