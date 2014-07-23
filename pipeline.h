@@ -1,22 +1,29 @@
 #ifndef __PIPELINE_H
 #define __PIPELINE_H
 
-#include "list.h"
+#include <sys/list.h>
+
 #include "vars.h"
 
-struct pipestages {
+struct pipestageinfo {
 	const char *name;
 	struct val *(*f)(struct val *);
 };
 
+struct pipestage {
+	list_node_t pipe;
+	const struct pipestageinfo *stage;
+};
+
 struct pipeline {
-	struct list_head pipe;
-	const struct pipestages *stage;
+	list_t pipe;
 };
 
 extern void init_pipe_subsys();
 
-extern struct pipeline *pipestage(char *name);
-extern void pipeline_destroy(struct list_head *pipelist);
+extern struct pipestage *pipestage_alloc(char *name);
+extern struct pipeline *pipestage_to_pipeline(struct pipestage *stage);
+extern void pipeline_append(struct pipeline *line, struct pipestage *stage);
+extern void pipeline_destroy(struct pipeline *line);
 
 #endif

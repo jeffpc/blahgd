@@ -88,6 +88,7 @@ target_link_libraries(blahg
 	umem
 	nvpair
 	avl
+	cmdutils
 	m
 )
 
@@ -107,6 +108,7 @@ target_link_libraries(blahgd
 	umem
 	nvpair
 	avl
+	cmdutils
 	m
 )
 

@@ -160,11 +160,9 @@ static char *print_var(nvpair_t *var)
 	return xstrdup(tmp);
 }
 
-static char *pipeline(struct req *req, char *varname, struct pipeline *pipe)
+static char *pipeline(struct req *req, char *varname, struct pipeline *line)
 {
-	struct list_head line;
-	struct pipeline *cur;
-	struct pipeline *tmp;
+	struct pipestage *cur;
 	struct val *val;
 	nvpair_t *var;
 	char *out;
@@ -172,12 +170,6 @@ static char *pipeline(struct req *req, char *varname, struct pipeline *pipe)
 	var = vars_lookup(&req->vars, varname);
 	if (!var)
 		return xstrdup("");
-
-	/* wedge the sentinel list head into the pipeline */
-	line.next = &pipe->pipe;
-	line.prev = pipe->pipe.prev;
-	pipe->pipe.prev->next = &line;
-	pipe->pipe.prev = &line;
 
 	switch (nvpair_type(var)) {
 		case DATA_TYPE_STRING:
@@ -194,10 +186,10 @@ static char *pipeline(struct req *req, char *varname, struct pipeline *pipe)
 			break;
 	}
 
-	list_for_each_entry_safe(cur, tmp, &line, pipe)
+	for (cur = list_head(&line->pipe); cur; cur = list_next(&line->pipe, cur))
 		val = cur->stage->f(val);
 
-	pipeline_destroy(&line);
+	pipeline_destroy(line);
 
 	out = print_val(val);
 
@@ -210,14 +202,16 @@ static char *pipeline(struct req *req, char *varname, struct pipeline *pipe)
 %union {
 	char c;
 	char *ptr;
-	struct pipeline *pipe;
+	struct pipestage *pipestage;
+	struct pipeline *pipeline;
 };
 
 %token <ptr> WORD
 %token <c> CHAR
 
 %type <ptr> words cmd
-%type <pipe> pipeline pipe
+%type <pipeline> pipeline
+%type <pipestage> pipe
 
 %%
 
@@ -256,13 +250,13 @@ cmd : '{' WORD pipeline '}'		{
     ;
 
 pipeline : pipeline pipe		{
-						list_add_tail(&$2->pipe, &$1->pipe);
+						pipeline_append($1, $2);
 						$$ = $1;
 					}
-	 | pipe				{ $$ = $1; }
+	 | pipe				{ $$ = pipestage_to_pipeline($1); }
          ;
 
-pipe : '|' WORD				{ $$ = pipestage($2); free($2); }
+pipe : '|' WORD				{ $$ = pipestage_alloc($2); free($2); }
      ;
 
 %%
