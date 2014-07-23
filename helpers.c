@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <errno.h>
 
+#include "iter.h"
 #include "req.h"
 #include "qstring.h"
 #include "helpers.h"

@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "config.h"
+#include "iter.h"
 #include "vars.h"
 #include "error.h"
 #include "render.h"
@@ -186,7 +187,7 @@ static char *pipeline(struct req *req, char *varname, struct pipeline *line)
 			break;
 	}
 
-	for (cur = list_head(&line->pipe); cur; cur = list_next(&line->pipe, cur))
+	list_for_each(cur, &line->pipe)
 		val = cur->stage->f(val);
 
 	pipeline_destroy(line);

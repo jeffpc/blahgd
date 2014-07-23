@@ -3,8 +3,6 @@
 
 #include <libnvpair.h>
 
-#include "list.h"
-
 extern int start_helpers();
 extern void stop_helpers();
 extern int enqueue_fd(int fd);

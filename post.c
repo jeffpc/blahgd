@@ -12,6 +12,7 @@
 #include <time.h>
 #include <dirent.h>
 
+#include "iter.h"
 #include "post.h"
 #include "vars.h"
 #include "req.h"
@@ -245,14 +246,14 @@ static void __tag_val(nvlist_t *post, list_t *list)
 
 	/* count the tags */
 	ntags = 0;
-	for (cur = list_head(list); cur; cur = list_next(list, cur))
+	list_for_each(cur, list)
 		ntags++;
 
 	tags = malloc(sizeof(char *) * ntags);
 	ASSERT(tags);
 
 	i = 0;
-	for (cur = list_head(list); cur; cur = list_next(list, cur))
+	list_for_each(cur, list)
 		tags[i++] = cur->tag;
 
 	nvl_set_str_array(post, "tags", tags, ntags);
@@ -269,14 +270,14 @@ static void __com_val(nvlist_t *post, list_t *list)
 
 	/* count the comments */
 	ncomments = 0;
-	for (cur = list_head(list); cur; cur = list_next(list, cur))
+	list_for_each(cur, list)
 		ncomments++;
 
 	comments = malloc(sizeof(nvlist_t *) * ncomments);
 	ASSERT(comments);
 
 	i = 0;
-	for (cur = list_head(list); cur; cur = list_next(list, cur)) {
+	list_for_each(cur, list) {
 		comments[i] = nvl_alloc();
 
 		nvl_set_int(comments[i], "commid", cur->id);
