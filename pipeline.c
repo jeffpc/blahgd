@@ -227,5 +227,5 @@ void pipeline_destroy(struct pipeline *line)
 	while (!list_is_empty(&line->pipe))
 		umem_cache_free(pipestage_cache, list_remove_head(&line->pipe));
 
-	free(line);
+	umem_cache_free(pipeline_cache, line);
 }
