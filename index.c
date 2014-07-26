@@ -128,6 +128,8 @@ int blahg_archive(struct req *req, int m, int page)
 
 	sidebar(req);
 
+	vars_scope_push(&req->vars);
+
 	__load_posts_archive(req, page, m);
 
 	req->body = render_page(req, "{archive}");
