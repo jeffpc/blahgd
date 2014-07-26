@@ -72,7 +72,7 @@ nvpair_t *vars_lookup(struct vars *vars, const char *name)
 	int scope;
 
 	for (scope = vars->cur; scope >= 0; scope--) {
-		ret = nvl_lookup(C(vars), name);
+		ret = nvl_lookup(SCOPE(vars, scope), name);
 		if (ret)
 			return ret;
 	}

@@ -3,6 +3,7 @@
 
 #include "vars.h"
 
-#define C(vars)		((vars)->scopes[(vars)->cur])
+#define SCOPE(vars, scope)	((vars)->scopes[scope])
+#define C(vars)			SCOPE((vars), (vars)->cur)
 
 #endif
