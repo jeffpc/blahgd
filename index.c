@@ -86,6 +86,8 @@ int blahg_index(struct req *req, int page)
 
 	sidebar(req);
 
+	vars_scope_push(&req->vars);
+
 	__load_posts(req, page);
 
 	req->body = render_page(req, "{index}");
