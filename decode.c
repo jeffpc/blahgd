@@ -134,8 +134,12 @@ static struct fsm_state ud_state_table[4] = {
 static int ud_inp(struct fsm *fsm)
 {
 	struct ud_state *uds = fsm->private;
+	int ret;
 
-	int ret = uds->in[uds->ioff];
+	if (uds->ioff >= uds->len)
+		return -1;
+
+	ret = uds->in[uds->ioff];
 
 	return ret ? ret : -1;
 }
