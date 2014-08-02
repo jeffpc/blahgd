@@ -128,7 +128,7 @@ static void select_page(struct req *req)
 	for (cur = nvlist_next_nvpair(req->request_qs, NULL);
 	     cur;
 	     cur = nvlist_next_nvpair(req->request_qs, cur)) {
-		char *name, *val;;
+		char *name, *val;
 		char **cptr;
 		int *iptr;
 
