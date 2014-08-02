@@ -12,6 +12,8 @@ static int onefile(char *ibuf, size_t len)
 
 	parse_query_string_len(vars, ibuf, len);
 
+	dump_nvlist(vars, 0);
+
 	nvlist_free(vars);
 
 	return 0;
