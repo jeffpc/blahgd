@@ -13,6 +13,15 @@ extern void __my_assfail3(const char *a, uintmax_t lv, const char *op,
 
 #define LOG(...)	__my_log(__VA_ARGS__)
 
+#define ASSERT3P(l, op, r)						\
+	do {								\
+		uintptr_t lhs = (uintptr_t)(l);				\
+		uintptr_t rhs = (uintptr_t)(r);				\
+		if (!(lhs op rhs))					\
+			__my_assfail3(#l " " #op " " #r, lhs, #op, rhs,	\
+				      __FILE__, __LINE__);		\
+	} while(0)
+
 #define ASSERT3U(l, op, r)						\
 	do {								\
 		uint64_t lhs = (l);					\
