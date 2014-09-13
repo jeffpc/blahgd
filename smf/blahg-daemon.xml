@@ -17,7 +17,7 @@
 			<service_fmri value="svc:/poc/math"/>
 		</dependency>
 
-		<method_context>
+		<method_context working_directory="/blahg/web">
 			<method_credential user="jeffpc" group="www"/>
 		</method_context>
 
