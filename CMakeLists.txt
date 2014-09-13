@@ -42,6 +42,7 @@ set(COMMON_SOURCES
 	post_fmt3_cmds.c
 	str.c
 	listing.c mangle.c
+	math.c
 
 	# templates
 	${FLEX_tmpl_OUTPUTS} ${BISON_tmpl_OUTPUTS}
@@ -117,6 +118,7 @@ add_executable(test_fmt3
 	val.c
 	${FLEX_fmt3_OUTPUTS} ${BISON_fmt3_OUTPUTS}
 	post_fmt3_cmds.c
+	math.c
 	listing.c
 	mangle.c utils.c error.c
 	str.c

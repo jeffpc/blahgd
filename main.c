@@ -17,6 +17,7 @@
 #include "qstring.h"
 #include "val.h"
 #include "template_cache.h"
+#include "math.h"
 
 int main(int argc, char **argv)
 {
@@ -25,6 +26,7 @@ int main(int argc, char **argv)
 
 	openlog("blahg", LOG_NDELAY | LOG_PID, LOG_LOCAL0);
 
+	init_math(false);
 	init_val_subsys();
 	init_pipe_subsys();
 	init_template_cache();

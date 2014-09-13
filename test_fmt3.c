@@ -5,6 +5,7 @@
 #include "utils.h"
 #include "str.h"
 #include "val.h"
+#include "math.h"
 
 static int onefile(struct post *post, char *ibuf, size_t len)
 {
@@ -49,6 +50,7 @@ int main(int argc, char **argv)
 	ASSERT0(putenv("UMEM_DEBUG=default,verbose"));
 	ASSERT0(putenv("BLAHG_DISABLE_SYSLOG=1"));
 
+	init_math(false);
 	init_val_subsys();
 
 	for (i = 1; i < argc; i++) {
