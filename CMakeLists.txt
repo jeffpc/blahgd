@@ -113,6 +113,19 @@ target_link_libraries(blahgd
 	m
 )
 
+add_executable(mathd
+	mathd.c
+	math.c
+	error.c
+	val.c
+	str.c
+)
+
+target_link_libraries(mathd
+	${OPENSSL_CRYPTO_LIBRARY}
+	umem
+)
+
 add_executable(test_fmt3
 	test_fmt3.c
 	val.c

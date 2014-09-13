@@ -20,6 +20,8 @@
 #cmakedefine DATA_DIR			"${DATA_DIR}"
 #cmakedefine DB_FILE			"${DB_FILE}"
 
+#cmakedefine MATHD_DOOR_PATH		"${MATHD_DOOR_PATH}"
+
 #cmakedefine BASE_URL			"${BASE_URL}"
 #cmakedefine BUG_BASE_URL		"${BUG_BASE_URL}"
 #cmakedefine WIKI_BASE_URL		"${WIKI_BASE_URL}"
