@@ -2,6 +2,9 @@
 <!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
 <service_bundle type="manifest" name="blahg">
 	<service name="poc/blahg" type="service" version="1">
+		<create_default_instance enabled="false" />
+		<single_instance />
+		
 		<dependency name="network" grouping="require_all" restart_on="error" type="service">
 			<service_fmri value="svc:/milestone/network:default"/>
 		</dependency>
@@ -29,9 +32,6 @@
 		<property_group name="config" type="application">
 		</property_group>
 
-		<create_default_instance enabled="false" />
-		<single_instance />
-		
 		<stability value="Evolving"/>
 
 		<template>
