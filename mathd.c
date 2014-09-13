@@ -7,19 +7,43 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <alloca.h>
 
 #include "error.h"
 #include "math.h"
 #include "val.h"
+#include "str.h"
+#include "mx.h"
 #include "config.h"
+
+static pthread_mutex_t lock;
 
 static void process(void *cookie, char *argp, size_t argsz, door_desc_t *dp,
 		    uint_t ndesc)
 {
-	printf("argp = %p\n", argp);
-	printf("argsz = %zu\n", argsz);
+	struct str *in;
+	struct str *out;
+	char *str;
 
-	door_return(NULL, 0, NULL, 0);
+	MXLOCK(&lock);
+
+	printf("arg: '%s'\n", argp);
+
+	in = STR_DUP(argp);
+
+	out = render_math(in);
+
+	str = alloca(strlen(out->str) + 1);
+
+	strcpy(str, out->str);
+
+	str_putref(out);
+
+	printf("out: '%s'\n", str);
+
+	MXUNLOCK(&lock);
+
+	door_return(str, strlen(str) + 1, NULL, 0);
 }
 
 static int setup_door()
@@ -59,6 +83,8 @@ int main(int argc, char **argv)
 
 	init_math(false);
 	init_val_subsys();
+
+	MXINIT(&lock);
 
 	ret = setup_door();
 	if (ret)

@@ -4,13 +4,16 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdbool.h>
+#include <door.h>
 
 #include <openssl/sha.h>
 
 #include "utils.h"
 #include "math.h"
+#include "error.h"
 
 static bool use_door_call;
+static int doorfd;
 
 static inline char asciify(unsigned char c)
 {
@@ -146,16 +149,42 @@ out:
 	                STR_DUP("\" alt=\"$"), val, STR_DUP("$\" />"));
 }
 
+static struct str *door_call_render_math(struct str *val)
+{
+	door_arg_t params = {
+		.data_ptr = val->str,
+		.data_size = strlen(val->str) + 1,
+		.desc_ptr = NULL,
+		.desc_num = 0,
+	};
+	int ret;
+
+	ret = door_call(doorfd, &params);
+	ASSERT3S(ret, >=, 0);
+
+	str_putref(val);
+
+	val = STR_DUP(params.rbuf);
+
+	return val;
+}
+
 struct str *render_math(struct str *val)
 {
 	if (!use_door_call)
 		return do_render_math(val);
 
-#warning implement door call
-	return NULL;
+	return door_call_render_math(val);
 }
 
 void init_math(bool daemonized)
 {
+	if (use_door_call && !daemonized) {
+		close(doorfd);
+	} else if (!use_door_call && daemonized) {
+		doorfd = open(MATHD_DOOR_PATH, O_RDWR);
+		ASSERT3S(doorfd, >=, 0);
+	}
+
 	use_door_call = daemonized;
 }
