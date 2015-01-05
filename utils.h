@@ -75,7 +75,7 @@ STR_TO_INT(64, 0xfffffffffffffffful)
 #define str2u32(s, i)	__str2u32((s), (i), 10)
 #define str2u16(s, i)	__str2u16((s), (i), 10)
 
-static inline uint64_t gettime()
+static inline uint64_t gettime(void)
 {
 	struct timespec ts;
 

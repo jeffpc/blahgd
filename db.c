@@ -7,7 +7,7 @@
 sqlite3 *db;
 pthread_mutex_t db_lock;
 
-void init_db()
+void init_db(void)
 {
 	pthread_mutexattr_t attr;
 
@@ -19,7 +19,7 @@ void init_db()
 	ASSERT0(pthread_mutexattr_destroy(&attr));
 }
 
-int open_db()
+int open_db(void)
 {
 	sqlite3_stmt *stmt;
 	int ret;

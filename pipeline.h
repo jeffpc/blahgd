@@ -19,7 +19,7 @@ struct pipeline {
 	list_t pipe;
 };
 
-extern void init_pipe_subsys();
+extern void init_pipe_subsys(void);
 
 extern struct pipestage *pipestage_alloc(char *name);
 extern struct pipeline *pipestage_to_pipeline(struct pipestage *stage);

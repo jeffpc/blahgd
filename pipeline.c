@@ -13,7 +13,7 @@
 static umem_cache_t *pipestage_cache;
 static umem_cache_t *pipeline_cache;
 
-void init_pipe_subsys()
+void init_pipe_subsys(void)
 {
 	pipestage_cache = umem_cache_create("pipestage-cache",
 					    sizeof(struct pipestage), 0, NULL,

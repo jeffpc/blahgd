@@ -123,7 +123,7 @@ void vars_merge(struct vars *vars, nvlist_t *items)
 	ASSERT0(ret);
 }
 
-nvlist_t *nvl_alloc()
+nvlist_t *nvl_alloc(void)
 {
 	nvlist_t *out;
 	int ret;

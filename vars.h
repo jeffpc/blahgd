@@ -24,7 +24,7 @@ extern uint64_t vars_lookup_int(struct vars *vars, const char *name);
 extern void vars_merge(struct vars *vars, nvlist_t *items);
 extern void vars_dump(struct vars *vars);
 
-extern nvlist_t *nvl_alloc();
+extern nvlist_t *nvl_alloc(void);
 extern void nvl_set_str(nvlist_t *nvl, const char *name, const char *val);
 extern void nvl_set_int(nvlist_t *nvl, const char *name, uint64_t val);
 extern void nvl_set_str_array(nvlist_t *nvl, const char *name, char **val,

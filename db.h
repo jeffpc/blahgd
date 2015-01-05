@@ -10,8 +10,8 @@
 extern sqlite3 *db;
 extern pthread_mutex_t db_lock;
 
-extern void init_db();
-extern int open_db();
+extern void init_db(void);
+extern int open_db(void);
 
 #define SQL(s, sql)	\
 	do { \

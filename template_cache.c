@@ -32,7 +32,7 @@ static int filename_cmp(const void *va, const void *vb)
 	return 0;
 }
 
-void init_template_cache()
+void init_template_cache(void)
 {
 	MXINIT(&cache_lock);
 
