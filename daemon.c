@@ -43,7 +43,7 @@ static void sigterm_handler(int signum, siginfo_t *info, void *unused)
 	atomic_set(&server_shutdown, 1);
 }
 
-static void handle_signals()
+static void handle_signals(void)
 {
 	struct sigaction action;
 	int ret;
@@ -90,7 +90,7 @@ err:
 	return ret;
 }
 
-static int start_listening()
+static int start_listening(void)
 {
 	struct addrinfo hints, *res, *p;
 	char port[10];
@@ -145,7 +145,7 @@ static int start_listening()
 	return 0;
 }
 
-static void stop_listening()
+static void stop_listening(void)
 {
 	int i;
 
@@ -153,7 +153,7 @@ static void stop_listening()
 		close(fds[i]);
 }
 
-static void accept_conns()
+static void accept_conns(void)
 {
 	fd_set set;
 	int maxfd;

@@ -11,7 +11,7 @@
 
 static umem_cache_t *val_cache;
 
-void init_val_subsys()
+void init_val_subsys(void)
 {
 	val_cache = umem_cache_create("val-cache", sizeof(struct val),
 				      0, NULL, NULL, NULL, NULL, NULL, 0);

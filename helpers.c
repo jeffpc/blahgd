@@ -71,7 +71,7 @@ int enqueue_fd(int fd)
 	return 0;
 }
 
-int start_helpers()
+int start_helpers(void)
 {
 	int ret;
 	int i;
@@ -92,7 +92,7 @@ int start_helpers()
 	return 0;
 }
 
-void stop_helpers()
+void stop_helpers(void)
 {
 	int i;
 

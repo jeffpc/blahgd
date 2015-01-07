@@ -46,7 +46,7 @@ static void process(void *cookie, char *argp, size_t argsz, door_desc_t *dp,
 	door_return(str, strlen(str) + 1, NULL, 0);
 }
 
-static int setup_door()
+static int setup_door(void)
 {
 	int tmp;
 	int fd;

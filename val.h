@@ -19,7 +19,7 @@ struct val {
 	};
 };
 
-extern void init_val_subsys();
+extern void init_val_subsys(void);
 
 extern struct val *val_alloc(enum val_type type);
 extern void val_free(struct val *v);
