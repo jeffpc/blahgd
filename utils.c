@@ -15,15 +15,12 @@
 #define HDD_2DOT	2
 #define HDD_OK		3
 
-int hasdotdot(char *path)
+int hasdotdot(const char *path)
 {
 	int state = HDD_START;
-	char tmp;
 
 	while(*path) {
-		tmp = *path;
-
-		switch(tmp) {
+		switch(*path) {
 			case '.':
 				if (state == HDD_START)
 					state = HDD_1DOT;

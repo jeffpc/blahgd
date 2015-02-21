@@ -9,7 +9,7 @@
 
 #define ARRAY_LEN(a)		(sizeof(a) / sizeof(a[0]))
 
-extern int hasdotdot(char *path);
+extern int hasdotdot(const char *path);
 extern int xread(int fd, void *buf, size_t nbyte);
 extern int xwrite(int fd, const void *buf, size_t nbyte);
 extern char *read_file_len(const char *fname, size_t *len);
