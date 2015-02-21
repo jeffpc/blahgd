@@ -293,6 +293,9 @@ static void __com_val(nvlist_t *post, list_t *list)
 
 	nvl_set_nvl_array(post, "comments", comments, ncomments);
 
+	while (--i >= 0)
+		nvlist_free(comments[i]);
+
 	free(comments);
 }
 
