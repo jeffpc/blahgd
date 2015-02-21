@@ -190,7 +190,8 @@ char *nvl_lookup_str(nvlist_t *nvl, const char *name)
 	nvpair_t *pair;
 
 	pair = nvl_lookup(nvl, name);
-	ASSERT(pair);
+	if (!pair)
+		return NULL;
 
 	ASSERT3U(nvpair_type(pair), ==, DATA_TYPE_STRING);
 
