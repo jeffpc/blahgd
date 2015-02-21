@@ -139,6 +139,9 @@ void nvl_set_str(nvlist_t *nvl, const char *name, const char *val)
 {
 	int ret;
 
+	if (!val)
+		return;
+
 	ret = nvlist_add_string(nvl, name, val);
 
 	ASSERT0(ret);
