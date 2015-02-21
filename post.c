@@ -73,6 +73,11 @@ static int __do_load_post_body_fmt3(struct post *post, char *ibuf, size_t len)
 	return 0;
 }
 
+/*
+ * Concatenate @a with @b.  Only @blen chars are appended to the output.
+ *
+ * Note: @a will be freed
+ */
 static char *cc(char *a, char *b, int blen)
 {
 	int alen;
@@ -86,6 +91,8 @@ static char *cc(char *a, char *b, int blen)
 	memcpy(ret, a, alen);
 	memcpy(ret + alen, b, blen);
 	ret[alen + blen] = '\0';
+
+	free(a);
 
 	return ret;
 }
