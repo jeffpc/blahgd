@@ -25,6 +25,14 @@
 #define SERVER_PORT		"SERVER_PORT"
 #define SERVER_PROTOCOL		"SERVER_PROTOCOL"	/* e.g., HTTP/1.1 */
 
+/*
+ * convert header @name to type @type
+ */
+struct convert_header_info {
+	const char *name;
+	data_type_t type;
+};
+
 enum {
 	PAGE_ARCHIVE,
 	PAGE_CATEGORY,
@@ -99,6 +107,8 @@ extern void req_destroy(struct req *req);
 extern void req_output(struct req *req);
 extern void req_head(struct req *req, const char *name, const char *val);
 extern int req_dispatch(struct req *req);
+
+extern void convert_headers(nvlist_t *, const struct convert_header_info *);
 
 extern int R404(struct req *req, char *tmpl);
 extern int R301(struct req *req, const char *url);

@@ -89,52 +89,14 @@ static int read_netstring_string(struct req *req, size_t len)
 	return 0;
 }
 
-struct cvth {
-	const char *name;
-	data_type_t type;
-};
-
 static void cvt_headers(struct req *req)
 {
-	struct cvth table[] = {
-		{ .name = CONTENT_LENGTH, .type = DATA_TYPE_UINT64, },
-		{ .name = REMOTE_PORT, .type = DATA_TYPE_UINT64, },
-		{ .name = "SCGI", .type = DATA_TYPE_UINT64, },
-		{ .name = SERVER_PORT, .type = DATA_TYPE_UINT64, },
+	static const struct convert_header_info table[] = {
+		{ .name = "SCGI",		.type = DATA_TYPE_UINT64, },
 		{ .name = NULL, },
 	};
 
-	uint64_t intval;
-	char *str;
-	int ret;
-	int i;
-
-	for (i = 0; table[i].name; i++) {
-		nvpair_t *pair;
-
-		ret = nvlist_lookup_nvpair(req->request_headers,
-					   table[i].name, &pair);
-		if (ret)
-			continue;
-
-		if (nvpair_type(pair) != DATA_TYPE_STRING)
-			continue;
-
-		ret = nvpair_value_string(pair, &str);
-		if (ret)
-			continue;
-
-		switch (table[i].type) {
-			case DATA_TYPE_UINT64:
-				ret = str2u64(str, &intval);
-				if (!ret)
-					nvl_set_int(req->request_headers,
-						    table[i].name, intval);
-				break;
-			default:
-				ASSERT(0);
-		}
-	}
+	convert_headers(req->request_headers, table);
 }
 
 static int read_netstring(struct req *req)
