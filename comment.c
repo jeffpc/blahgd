@@ -135,9 +135,7 @@ const char *write_out_comment(struct req *req, int id, char *author,
 		return INTERNAL_ERR;
 	}
 
-	remote_addr = getenv("HTTP_X_REAL_IP");
-	if (!remote_addr)
-		remote_addr = getenv("REMOTE_ADDR");
+	remote_addr = nvl_lookup_str(req->request_headers, REMOTE_ADDR);
 
 	sql = sqlite3_mprintf("INSERT INTO comments "
 			      "(post, id, author, email, time, "
@@ -192,7 +190,7 @@ static const char *save_comment(struct req *req)
 	bool nonempty = false;
 	int id = 0;
 
-	if (!getenv("HTTP_USER_AGENT")) {
+	if (!nvl_lookup_str(req->request_headers, HTTP_USER_AGENT)) {
 		LOG("Missing user agent...");
 		return USERAGENT_MISSING;
 	}
