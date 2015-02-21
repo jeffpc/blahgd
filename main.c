@@ -35,8 +35,6 @@ int main(int argc, char **argv)
 
 	req_init_cgi(&req);
 
-	parse_query_string(req.request_qs, getenv("QUERY_STRING"));
-
 	ret = req_dispatch(&req);
 
 	req_output(&req);

@@ -4,6 +4,7 @@
 #include "utils.h"
 #include "sidebar.h"
 #include "render.h"
+#include "qstring.h"
 #include "static.h"
 
 static void req_init(struct req *req, enum req_via via)
@@ -330,6 +331,10 @@ void convert_headers(nvlist_t *headers, const struct convert_header_info *table)
 
 int req_dispatch(struct req *req)
 {
+	parse_query_string(req->request_qs,
+			   nvl_lookup_str(req->request_headers,
+					  QUERY_STRING));
+
 	if (!select_page(req))
 		return R404(req, NULL);
 
