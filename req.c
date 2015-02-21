@@ -27,9 +27,10 @@ static void req_init(struct req *req, enum req_via via)
 	req->request_qs = nvl_alloc();
 
 	/* response */
-	req->status = 200;
+	req->status  = 200;
 	req->headers = nvl_alloc();
-	req->body  = NULL;
+	req->body    = NULL;
+	req->bodylen = 0;
 
 #ifdef USE_XMLRPC
 	req_head(req, "X-Pingback", BASE_URL "/?xmlrpc=1");
@@ -57,21 +58,32 @@ void req_output(struct req *req)
 {
 	nvpair_t *header;
 
+	/* return status */
 	fprintf(req->out, "Status: %u\n", req->status);
 
+	/* write out the headers */
 	for (header = nvlist_next_nvpair(req->headers, NULL);
 	     header;
 	     header = nvlist_next_nvpair(req->headers, header))
 		fprintf(req->out, "%s: %s\n", nvpair_name(header), pair2str(header));
 
-	fprintf(req->out, "\n%s\n", req->body);
+	/* separate headers from body */
+	fprintf(req->out, "\n");
 
+	/* if body length is 0, we automatically figure out the length */
+	if (!req->bodylen)
+		req->bodylen = strlen(req->body);
+
+	/* write out the body */
+	fwrite(req->body, 1, req->bodylen, req->out);
+
+	/* when requested, write out the latency for this operation */
 	if (req->dump_latency) {
 		uint64_t delta;
 
 		delta = gettime() - req->start;
 
-		fprintf(req->out, "<!-- time to render: %lu.%09lu seconds -->\n",
+		fprintf(req->out, "\n<!-- time to render: %lu.%09lu seconds -->\n",
 		       delta / 1000000000UL,
 		       delta % 1000000000UL);
 	}

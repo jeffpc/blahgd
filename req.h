@@ -58,7 +58,8 @@ struct req {
 	/* response */
 	unsigned int status;
 	nvlist_t *headers;
-	char *body;
+	void *body;
+	size_t bodylen;
 
 	/* state */
 	bool dump_latency;	/* request latency calculation */
