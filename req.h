@@ -8,8 +8,6 @@
 #include "vars.h"
 
 enum {
-	PAGE_MALFORMED,
-
 	PAGE_ARCHIVE,
 	PAGE_CATEGORY,
 	PAGE_TAG,
@@ -18,6 +16,7 @@ enum {
 	PAGE_STORY,
 	PAGE_XMLRPC,
 	PAGE_ADMIN,
+	PAGE_STATIC,
 };
 
 enum req_via {

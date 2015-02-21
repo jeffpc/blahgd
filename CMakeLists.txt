@@ -66,6 +66,7 @@ set(COMMON_SOURCES
 	sidebar.c
 	story.c
 	tag.c
+	static.c
 
 	# database
 	db.c

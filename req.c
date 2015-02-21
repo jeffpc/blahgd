@@ -4,6 +4,7 @@
 #include "utils.h"
 #include "sidebar.h"
 #include "render.h"
+#include "static.h"
 
 static void req_init(struct req *req, enum req_via via)
 {
@@ -120,10 +121,11 @@ void req_head(struct req *req, const char *name, const char *val)
 	nvl_set_str(req->headers, name, val);
 }
 
-static void select_page(struct req *req)
+static bool select_page(struct req *req)
 {
 	struct qs *args = &req->args;
 	nvpair_t *cur;
+	char *uri;
 
 	args->page = PAGE_INDEX;
 	args->p = -1;
@@ -136,6 +138,21 @@ static void select_page(struct req *req)
 	args->tag = NULL;
 	args->feed = NULL;
 	args->preview = 0;
+
+	uri = nvl_lookup_str(req->request_headers, "DOCUMENT_URI");
+
+	switch (get_uri_type(uri)) {
+		case URI_STATIC:
+			/* static file */
+			args->page = PAGE_STATIC;
+			return true;
+		case URI_DYNAMIC:
+			/* regular dynamic request */
+			break;
+		case URI_BAD:
+			/* bad, bad request */
+			return false;
+	}
 
 	for (cur = nvlist_next_nvpair(req->request_qs, NULL);
 	     cur;
@@ -171,8 +188,7 @@ static void select_page(struct req *req)
 		} else if (!strcmp(name, "admin")) {
 			iptr = &args->admin;
 		} else {
-			args->page = PAGE_MALFORMED;
-			return;
+			return false;
 		}
 
 		if (iptr)
@@ -195,8 +211,20 @@ static void select_page(struct req *req)
 		args->page = PAGE_STORY;
 	else if (args->admin)
 		args->page = PAGE_ADMIN;
+
+	return true;
 }
 
+/*
+ * Switch the request's content type to match the output format.
+ * Furthermore, tweak the opts a bit based on what page we're going to be
+ * serving.
+ *
+ * Note: We totally ignore the possibility of static files because we'll
+ * override everything later on when we have a better idea of what we're
+ * dealing with exactly.  So, after this function is through, it'll look
+ * like we're dealing with a html page that's not PAGE_INDEX/PAGE_STORY.
+ */
 static bool switch_content_type(struct req *req)
 {
 	char *fmt = req->args.feed;
@@ -247,7 +275,8 @@ static bool switch_content_type(struct req *req)
 
 int req_dispatch(struct req *req)
 {
-	select_page(req);
+	if (!select_page(req))
+		return R404(req, NULL);
 
 	/*
 	 * If we got a feed format, we'll be switching (most likely) to it
@@ -256,6 +285,8 @@ int req_dispatch(struct req *req)
 		return R404(req, "{error_unsupported_feed_fmt}");
 
 	switch (req->args.page) {
+		case PAGE_STATIC:
+			return blahg_static(req);
 		case PAGE_ARCHIVE:
 			return blahg_archive(req, req->args.m,
 					     req->args.paged);
