@@ -139,7 +139,7 @@ static bool select_page(struct req *req)
 	args->feed = NULL;
 	args->preview = 0;
 
-	uri = nvl_lookup_str(req->request_headers, "DOCUMENT_URI");
+	uri = nvl_lookup_str(req->request_headers, DOCUMENT_URI);
 
 	switch (get_uri_type(uri)) {
 		case URI_STATIC:

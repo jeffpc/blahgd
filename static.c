@@ -59,7 +59,7 @@ int blahg_static(struct req *req)
 	const struct uri_info *info;
 	const char *uri;
 
-	uri = nvl_lookup_str(req->request_headers, "DOCUMENT_URI");
+	uri = nvl_lookup_str(req->request_headers, DOCUMENT_URI);
 	ASSERT(uri);
 
 	info = get_uri_info(uri);

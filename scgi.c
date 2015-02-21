@@ -97,10 +97,10 @@ struct cvth {
 static void cvt_headers(struct req *req)
 {
 	struct cvth table[] = {
-		{ .name = "CONTENT_LENGTH", .type = DATA_TYPE_UINT64, },
-		{ .name = "REMOTE_PORT", .type = DATA_TYPE_UINT64, },
+		{ .name = CONTENT_LENGTH, .type = DATA_TYPE_UINT64, },
+		{ .name = REMOTE_PORT, .type = DATA_TYPE_UINT64, },
 		{ .name = "SCGI", .type = DATA_TYPE_UINT64, },
-		{ .name = "SERVER_PORT", .type = DATA_TYPE_UINT64, },
+		{ .name = SERVER_PORT, .type = DATA_TYPE_UINT64, },
 		{ .name = NULL, },
 	};
 

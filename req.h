@@ -7,6 +7,24 @@
 
 #include "vars.h"
 
+/*
+ * Defines to make it easier to keep track of required headers in
+ * req->request_headers.
+ */
+#define CONTENT_LENGTH		"CONTENT_LENGTH"
+#define CONTENT_TYPE		"CONTENT_TYPE"
+#define DOCUMENT_URI		"DOCUMENT_URI"		/* excludes QS */
+#define HTTP_REFERER		"HTTP_REFERER"
+#define HTTP_USER_AGENT		"HTTP_USER_AGENT"
+#define QUERY_STRING		"QUERY_STRING"
+#define REMOTE_ADDR		"REMOTE_ADDR"
+#define REMOTE_PORT		"REMOTE_PORT"
+#define REQUEST_METHOD		"REQUEST_METHOD"
+#define REQUEST_URI		"REQUEST_URI"		/* includes QS */
+#define SERVER_NAME		"SERVER_NAME"
+#define SERVER_PORT		"SERVER_PORT"
+#define SERVER_PROTOCOL		"SERVER_PROTOCOL"	/* e.g., HTTP/1.1 */
+
 enum {
 	PAGE_ARCHIVE,
 	PAGE_CATEGORY,
