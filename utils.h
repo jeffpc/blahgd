@@ -12,7 +12,7 @@
 extern int hasdotdot(char *path);
 extern int xread(int fd, void *buf, size_t nbyte);
 extern int xwrite(int fd, const void *buf, size_t nbyte);
-extern char *read_file(const char *fname);
+extern char *read_file_len(const char *fname, size_t *len);
 extern int write_file(const char *fname, const char *data, size_t len);
 extern char *concat5(char *a, char *b, char *c, char *d, char *e);
 
@@ -82,6 +82,11 @@ static inline uint64_t gettime(void)
 	clock_gettime(CLOCK_REALTIME, &ts);
 
 	return ts.tv_sec * 1000000000ULL + ts.tv_nsec;
+}
+
+static inline char *read_file(const char *fname)
+{
+	return read_file_len(fname, NULL);
 }
 
 #endif
