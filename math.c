@@ -106,17 +106,20 @@ static struct str *do_render_math(struct str *val)
 	struct stat statbuf;
 	unsigned char md[20];
 	char amd[41];
+	uint32_t id;
 	int ret;
 
 	SHA1((const unsigned char*) tex, strlen(tex), md);
 	hexdump(amd, md, 20);
 
+	id = arc4random();
+
 	snprintf(finalpath, FILENAME_MAX, "math/%s.png", amd);
-	snprintf(texpath, FILENAME_MAX, "%s/blahg_math_%s_%d.tex", TEX_TMP_DIR, amd, getpid());
-	snprintf(logpath, FILENAME_MAX, "%s/blahg_math_%s_%d.log", TEX_TMP_DIR, amd, getpid());
-	snprintf(auxpath, FILENAME_MAX, "%s/blahg_math_%s_%d.aux", TEX_TMP_DIR, amd, getpid());
-	snprintf(dvipath, FILENAME_MAX, "%s/blahg_math_%s_%d.dvi", TEX_TMP_DIR, amd, getpid());
-	snprintf(pngpath, FILENAME_MAX, "%s/blahg_math_%s_%d.png", TEX_TMP_DIR, amd, getpid());
+	snprintf(texpath, FILENAME_MAX, "%s/blahg_math_%s_%d.tex", TEX_TMP_DIR, amd, id);
+	snprintf(logpath, FILENAME_MAX, "%s/blahg_math_%s_%d.log", TEX_TMP_DIR, amd, id);
+	snprintf(auxpath, FILENAME_MAX, "%s/blahg_math_%s_%d.aux", TEX_TMP_DIR, amd, id);
+	snprintf(dvipath, FILENAME_MAX, "%s/blahg_math_%s_%d.dvi", TEX_TMP_DIR, amd, id);
+	snprintf(pngpath, FILENAME_MAX, "%s/blahg_math_%s_%d.png", TEX_TMP_DIR, amd, id);
 
 	unlink(texpath);
 	unlink(logpath);
