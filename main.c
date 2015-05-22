@@ -26,6 +26,35 @@ static char *get_remote_addr()
 	return remote_addr ? remote_addr : getenv("REMOTE_ADDR");
 }
 
+static void read_body(struct req *req)
+{
+	uint64_t content_len;
+	char *buf, *tmp;
+	char c;
+
+	content_len = 0;
+	buf = NULL;
+
+	while ((c = getchar()) != EOF) {
+		content_len++;
+
+		tmp = realloc(buf, content_len + 1);
+		if (!tmp) {
+			free(buf);
+			ASSERT(0);
+		}
+
+		buf = tmp;
+
+		buf[content_len - 1] = c;
+		buf[content_len] = '\0';
+	}
+
+	req->request_body = buf;
+
+	nvl_set_int(req->request_headers, CONTENT_LENGTH, content_len);
+}
+
 /*
  * Slurp up the environment into request headers.
  */
@@ -57,6 +86,8 @@ static void cgi_read_request(struct req *req)
 	req->request_headers = nvl;
 
 	convert_headers(req->request_headers, NULL);
+
+	read_body(req);
 }
 
 int main(int argc, char **argv)
