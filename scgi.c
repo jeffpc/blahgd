@@ -131,13 +131,15 @@ static int read_body(struct req *req)
 	if (!content_len)
 		return 0;
 
-	buf = malloc(content_len);
+	buf = malloc(content_len + 1);
 	if (!buf)
 		return ENOMEM;
 
 	ret = recv(req->scgi.fd, buf, content_len, MSG_WAITALL);
 	ASSERT3S(ret, !=, -1);
 	ASSERT3S(ret, ==, content_len);
+
+	buf[content_len] = '\0';
 
 	req->request_body = buf;
 
