@@ -1,3 +1,5 @@
+#include <sys/inttypes.h>
+
 #include "error.h"
 #include "vars_impl.h"
 
@@ -93,7 +95,7 @@ static void __dump(nvlist_t *list, int indent)
 				__dump_string_array(pair, indent + INDENT);
 				break;
 			case DATA_TYPE_UINT64:
-				fprintf(stderr, "\n%*svalue=%lu\n",
+				fprintf(stderr, "\n%*svalue=%"PRIu64"\n",
 					indent + INDENT, "", pair2int(pair));
 				break;
 			case DATA_TYPE_NVLIST:

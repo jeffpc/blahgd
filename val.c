@@ -89,7 +89,7 @@ void val_dump(struct val *val, int indent)
 			fprintf(stderr, "%*s'%s'\n", indent, "", val->str);
 			break;
 		case VT_INT:
-			fprintf(stderr, "%*s%lu\n", indent, "", val->i);
+			fprintf(stderr, "%*s%"PRIu64"\n", indent, "", val->i);
 			break;
 		default:
 			fprintf(stderr, "Unknown type %d\n", val->type);

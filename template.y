@@ -128,7 +128,7 @@ static char *print_val(struct val *val)
 			tmp = val->str;
 			break;
 		case VT_INT:
-			snprintf(buf, sizeof(buf), "%lu", val->i);
+			snprintf(buf, sizeof(buf), "%"PRIu64, val->i);
 			tmp = buf;
 			break;
 	}
@@ -148,7 +148,7 @@ static char *print_var(nvpair_t *var)
 			tmp = pair2str(var);
 			break;
 		case DATA_TYPE_UINT64:
-			snprintf(buf, sizeof(buf), "%lu", pair2int(var));
+			snprintf(buf, sizeof(buf), "%"PRIu64, pair2int(var));
 			tmp = buf;
 			break;
 		default:

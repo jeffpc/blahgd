@@ -34,7 +34,8 @@ void __my_assfail3(const char *a, uintmax_t lv, const char *op, uintmax_t rv,
 {
 	char msg[512];
 
-	snprintf(msg, sizeof(msg), "%s (0x%lx %s 0x%lx)", a, lv, op, rv);
+	snprintf(msg, sizeof(msg), "%s (0x%"PRIx64" %s 0x%"PRIx64")", a, lv,
+		 op, rv);
 
 	LOG("assertion failed: %s, file: %s, line: %d", msg, f, l);
 

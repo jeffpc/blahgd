@@ -112,7 +112,7 @@ const char *write_out_comment(struct req *req, int id, char *author,
 
 	strftime(curdate, 31, "%Y-%m-%d %H:%M", now_tm);
 
-	snprintf(basepath, FILENAME_MAX, DATA_DIR "/pending-comments/%d-%08lx.%08lx.%05x",
+	snprintf(basepath, FILENAME_MAX, DATA_DIR "/pending-comments/%d-%08lx.%08"PRIx64".%05x",
 		 id, now_sec, now_nsec, arc4random());
 
 	snprintf(dirpath,  FILENAME_MAX, "%sW", basepath);

@@ -85,7 +85,7 @@ void req_output(struct req *req)
 
 		delta = gettime() - req->start;
 
-		fprintf(req->out, "\n<!-- time to render: %lu.%09lu seconds -->\n",
+		fprintf(req->out, "\n<!-- time to render: %"PRIu64".%09"PRIu64" seconds -->\n",
 		       delta / 1000000000UL,
 		       delta % 1000000000UL);
 	}
