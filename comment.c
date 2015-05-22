@@ -171,7 +171,7 @@ const char *write_out_comment(struct req *req, int id, char *author,
 
 static const char *save_comment(struct req *req)
 {
-	int in;
+	char *in;
 	char tmp;
 	uint64_t now, deltat;
 
@@ -200,8 +200,13 @@ static const char *save_comment(struct req *req)
 	url_buf[0] = '\0'; /* better be paranoid */
 	comment_buf[0] = '\0'; /* better be paranoid */
 
-	for(state = SC_IGNORE; (in = getchar()) != EOF; ) {
-		tmp = in;
+	if (!req->request_body)
+		return INTERNAL_ERR;
+
+	in = req->request_body;
+
+	for (state = SC_IGNORE; *in; in++) {
+		tmp = *in;
 
 #if 0
 		LOG("|'%c' %d|", tmp, state);
