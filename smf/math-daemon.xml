@@ -14,9 +14,11 @@
 		</dependency>
 
 		<method_context working_directory="/blahg/web">
-			<method_credential user="jeffpc" group="www"/>
-			<method_environment name="UMEM_DEBUG" value="default" />
-			<method_environment name="UMEM_LOGGING" value="fail" />
+			<method_credential user="jeffpc" group="webservd"/>
+			<method_environment>
+				<envvar name="UMEM_DEBUG" value="default" />
+				<envvar name="UMEM_LOGGING" value="fail" />
+			</method_environment>
 		</method_context>
 
 		<exec_method type="method" name="start" exec="/blahg/mathd" timeout_seconds="60"/>
