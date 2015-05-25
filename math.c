@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <stdbool.h>
 #include <door.h>
+#include <atomic.h>
 
 #include <openssl/sha.h>
 
@@ -95,6 +96,8 @@ err:
 
 static struct str *do_render_math(struct str *val)
 {
+	static uint32_t nonce;
+
 	char finalpath[FILENAME_MAX];
 	char texpath[FILENAME_MAX];
 	char logpath[FILENAME_MAX];
@@ -112,7 +115,7 @@ static struct str *do_render_math(struct str *val)
 	SHA1((const unsigned char*) tex, strlen(tex), md);
 	hexdump(amd, md, 20);
 
-	id = arc4random();
+	id = atomic_inc_32_nv(&nonce);
 
 	snprintf(finalpath, FILENAME_MAX, "math/%s.png", amd);
 	snprintf(texpath, FILENAME_MAX, "%s/blahg_math_%s_%d.tex", TEX_TMP_DIR, amd, id);
