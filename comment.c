@@ -407,8 +407,7 @@ int blahg_comment(struct req *req)
 	errmsg = save_comment(req);
 	if (errmsg) {
 		tmpl = "{comment_error}";
-		vars_set_str(&req->vars, "comment_error_str",
-			     xstrdup(errmsg));
+		vars_set_str(&req->vars, "comment_error_str", errmsg);
 		// FIXME: __store_title(&req->vars, "Error");
 	} else {
 		tmpl = "{comment_saved}";
