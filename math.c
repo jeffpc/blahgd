@@ -5,13 +5,13 @@
 #include <sys/stat.h>
 #include <stdbool.h>
 #include <door.h>
-#include <atomic.h>
 
 #include <openssl/sha.h>
 
 #include "utils.h"
 #include "math.h"
 #include "error.h"
+#include "atomic.h"
 
 static bool use_door_call;
 static int doorfd;
@@ -96,7 +96,7 @@ err:
 
 static struct str *do_render_math(struct str *val)
 {
-	static uint32_t nonce;
+	static atomic_t nonce;
 
 	char finalpath[FILENAME_MAX];
 	char texpath[FILENAME_MAX];
@@ -115,7 +115,7 @@ static struct str *do_render_math(struct str *val)
 	SHA1((const unsigned char*) tex, strlen(tex), md);
 	hexdump(amd, md, 20);
 
-	id = atomic_inc_32_nv(&nonce);
+	id = atomic_inc(&nonce);
 
 	snprintf(finalpath, FILENAME_MAX, "math/%s.png", amd);
 	snprintf(texpath, FILENAME_MAX, "%s/blahg_math_%s_%d.tex", TEX_TMP_DIR, amd, id);

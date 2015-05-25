@@ -9,7 +9,6 @@
 #include <sys/file.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <atomic.h>
 
 #include "req.h"
 #include "sidebar.h"
@@ -21,6 +20,7 @@
 #include "decode.h"
 #include "error.h"
 #include "post.h"
+#include "atomic.h"
 
 #define INTERNAL_ERR		"Ouch!  Encountered an internal error.  " \
 				"Please contact me to resolve this issue."
@@ -65,7 +65,7 @@
 const char *write_out_comment(struct req *req, int id, char *author,
 			      char *email, char *url, char *comment)
 {
-	static uint32_t nonce;
+	static atomic_t nonce;
 
 	char basepath[FILENAME_MAX];
 	char dirpath[FILENAME_MAX];
@@ -116,7 +116,7 @@ const char *write_out_comment(struct req *req, int id, char *author,
 	strftime(curdate, 31, "%Y-%m-%d %H:%M", now_tm);
 
 	snprintf(basepath, FILENAME_MAX, DATA_DIR "/pending-comments/%d-%08lx.%08"PRIx64".%05x",
-		 id, now_sec, now_nsec, atomic_inc_32_nv(&nonce));
+		 id, now_sec, now_nsec, atomic_inc(&nonce));
 
 	snprintf(dirpath,  FILENAME_MAX, "%sW", basepath);
 	snprintf(textpath, FILENAME_MAX, "%s/text.txt", dirpath);
