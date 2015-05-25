@@ -1,6 +1,7 @@
 #include "error.h"
 
 #include <sys/debug.h>
+#include <sys/inttypes.h>
 #include <syslog.h>
 #include <stdarg.h>
 

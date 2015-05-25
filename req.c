@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <sys/inttypes.h>
 
 #include "req.h"
 #include "utils.h"
