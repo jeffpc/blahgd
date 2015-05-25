@@ -169,8 +169,10 @@ static char *pipeline(struct req *req, char *varname, struct pipeline *line)
 	char *out;
 
 	var = vars_lookup(&req->vars, varname);
-	if (!var)
+	if (!var) {
+		pipeline_destroy(line);
 		return xstrdup("");
+	}
 
 	switch (nvpair_type(var)) {
 		case DATA_TYPE_STRING:
