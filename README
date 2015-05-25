@@ -24,7 +24,6 @@ Comment Spam Techniques
 3) Math captcha - a simple math problem.  User must set it to the sum of
    COMMENT_CAPTCHA_A and COMMENT_CAPTCHA_B.
 
-4) User agent - the user agent header (HTTP_USER_AGENT env var for CGI) must
-   be present.
+4) User agent - the user agent header (HTTP_USER_AGENT) must be present.
 
    Idea from: http://utcc.utoronto.ca/~cks/space/blog/web/CommentSpamPrecautions

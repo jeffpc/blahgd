@@ -46,7 +46,6 @@ enum {
 };
 
 enum req_via {
-	REQ_CGI,
 	REQ_SCGI,
 };
 
@@ -102,7 +101,6 @@ struct req {
 };
 
 extern void req_init_scgi(struct req *req, int fd);
-extern void req_init_cgi(struct req *req);
 extern void req_destroy(struct req *req);
 extern void req_output(struct req *req);
 extern void req_head(struct req *req, const char *name, const char *val);
