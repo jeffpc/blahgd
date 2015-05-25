@@ -34,10 +34,10 @@ find_path(SQLITE_INC sqlite3.h)
 
 include_directories(${SQLITE_INC})
 
-set(AVL_LIB /usr/lib/libavl.so.1)
-set(CMDUTILS_LIB /usr/lib/libcmdutils.so.1)
+add_executable(blahgd
+	daemon.c helpers.c
+	scgi.c
 
-set(COMMON_SOURCES
 	# post - all formats
 	post.c
 
@@ -78,30 +78,7 @@ set(COMMON_SOURCES
 	# misc
 	error.c
 	utils.c
-)
 
-add_executable(blahg
-	main.c
-	${COMMON_SOURCES}
-	${PINGBACK_SRC}
-)
-
-target_link_libraries(blahg
-	${OPENSSL_CRYPTO_LIBRARY}
-	${XMLRPC_LIBRARIES}
-	${SQLITE_LIB}
-	rt
-	umem
-	nvpair
-	${AVL_LIB}
-	${CMDUTILS_LIB}
-	m
-)
-
-add_executable(blahgd
-	daemon.c helpers.c
-	scgi.c
-	${COMMON_SOURCES}
 	${PINGBACK_SRC}
 )
 
@@ -113,8 +90,8 @@ target_link_libraries(blahgd
 	nsl
 	umem
 	nvpair
-	${AVL_LIB}
-	${CMDUTILS_LIB}
+	/usr/lib/libavl.so.1
+	/usr/lib/libcmdutils.so.1
 	m
 )
 

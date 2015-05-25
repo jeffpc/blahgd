@@ -40,13 +40,6 @@ static void req_init(struct req *req, enum req_via via)
 #endif
 }
 
-void req_init_cgi(struct req *req)
-{
-	req_init(req, REQ_CGI);
-
-	req->out = stdout;
-}
-
 void req_init_scgi(struct req *req, int fd)
 {
 	req_init(req, REQ_SCGI);
@@ -103,8 +96,6 @@ void req_destroy(struct req *req)
 	nvlist_free(req->request_qs);
 
 	switch (req->via) {
-		case REQ_CGI:
-			break;
 		case REQ_SCGI:
 			fflush(req->out);
 			fclose(req->out);
