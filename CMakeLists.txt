@@ -34,6 +34,9 @@ find_path(SQLITE_INC sqlite3.h)
 
 include_directories(${SQLITE_INC})
 
+set(AVL_LIB /usr/lib/libavl.so.1)
+set(CMDUTILS_LIB /usr/lib/libcmdutils.so.1)
+
 set(COMMON_SOURCES
 	# post - all formats
 	post.c
@@ -90,8 +93,8 @@ target_link_libraries(blahg
 	rt
 	umem
 	nvpair
-	avl
-	cmdutils
+	${AVL_LIB}
+	${CMDUTILS_LIB}
 	m
 )
 
@@ -110,8 +113,8 @@ target_link_libraries(blahgd
 	nsl
 	umem
 	nvpair
-	avl
-	cmdutils
+	${AVL_LIB}
+	${CMDUTILS_LIB}
 	m
 )
 
