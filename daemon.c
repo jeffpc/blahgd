@@ -49,6 +49,14 @@ static void handle_signals(void)
 	int ret;
 
 	sigemptyset(&action.sa_mask);
+
+	action.sa_handler = SIG_IGN;
+	action.sa_flags = 0;
+
+	ret = sigaction(SIGPIPE, &action, NULL);
+	if (ret)
+		LOG("Failed to ignore SIGPIPE: %s", strerror(errno));
+
 	action.sa_sigaction = sigterm_handler;
 	action.sa_flags = SA_SIGINFO;
 
