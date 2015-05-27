@@ -2,6 +2,7 @@
 %option noinput
 %option reentrant
 %option bison-bridge
+%option never-interactive
 
 %{
 #include <stdlib.h>
