@@ -30,7 +30,7 @@
 
 		<property_group name="startd" type="framework">
 			<propval name="duration" type="astring" value="child"/>
-			<propval name="ignore_error" type="astring" value="core,signal"/>
+			<propval name="ignore_error" type="astring" value="signal"/>
 		</property_group>
 
 		<property_group name="config" type="application">
