@@ -69,6 +69,7 @@ static void __store_tag(struct vars *vars, const char *tag)
 static void __store_pages(struct vars *vars, int page)
 {
 	vars_set_int(vars, "prevpage", page + 1);
+	vars_set_int(vars, "curpage",  page);
 	vars_set_int(vars, "nextpage", page - 1);
 }
 
