@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <errno.h>
+#include <priv.h>
 
 #include "error.h"
 #include "utils.h"
@@ -208,9 +209,51 @@ static void accept_conns(void)
 	}
 }
 
+static int drop_privs()
+{
+	static const char *privs[] = {
+		"file_read",
+		"file_write",
+		"net_access",
+		NULL,
+	};
+
+	priv_set_t *wanted;
+	int ret;
+	int i;
+
+	wanted = priv_allocset();
+	if (!wanted)
+		return errno;
+
+	priv_emptyset(wanted);
+
+	for (i = 0; privs[i]; i++) {
+		ret = priv_addset(wanted, privs[i]);
+		if (ret) {
+			ret = errno;
+			goto err_free;
+		}
+	}
+
+	priv_inverse(wanted);
+
+	ret = setppriv(PRIV_OFF, PRIV_PERMITTED, wanted);
+
+err_free:
+	priv_freeset(wanted);
+
+	return ret;
+}
+
 int main(int argc, char **argv)
 {
 	int ret;
+
+	/* drop unneeded privs */
+	ret = drop_privs();
+	if (ret)
+		goto err;
 
 	init_math(true);
 	init_val_subsys();
@@ -223,11 +266,11 @@ int main(int argc, char **argv)
 
 	ret = start_helpers();
 	if (ret)
-		goto err;
+		goto err_helpers;
 
 	ret = start_listening();
 	if (ret)
-		goto err;
+		goto err_helpers;
 
 	accept_conns();
 
@@ -237,9 +280,10 @@ int main(int argc, char **argv)
 
 	return 0;
 
-err:
+err_helpers:
 	stop_helpers();
 
+err:
 	LOG("Failed to inintialize: %s", strerror(ret));
 
 	return ret;
