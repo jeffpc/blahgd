@@ -236,17 +236,73 @@ static char *variable(struct parser_output *data, struct req *req, char *name)
 		return print_var(var);
 }
 
-static char *function(struct parser_output *data, struct req *req,
-                      const char *fxn, void *args)
+enum if_fxns {
+	IFFXN_GT,
+	IFFXN_LT,
+	IFFXN_EQ,
+};
+
+static uint64_t __function_get_arg(struct req *req, const char *arg)
 {
-	fprintf(stderr, "%s(%p, .., %s)\n", __func__, data, fxn);
+	nvpair_t *var;
+	uint64_t val;
+
+	if (!str2u64(arg, &val))
+		return val;
+
+	var = vars_lookup(&req->vars, arg);
+	if (!var)
+		return 0;
+
+	switch (nvpair_type(var)) {
+		case DATA_TYPE_UINT64:
+			return pair2int(var);
+		default:
+			ASSERT(0);
+	}
+}
+
+static char *__function(struct parser_output *data, struct req *req,
+			enum if_fxns fxn, const char *sa1,
+			const char *sa2)
+{
+	uint64_t ia1, ia2;		/* int value of saX */
+	bool result = true;
+
+	ia1 = __function_get_arg(req, sa1);
+	ia2 = __function_get_arg(req, sa2);
+
+	fprintf(stderr, "%s: %"PRIu64" %"PRIu64"\n", __func__, ia1, ia2);
+
+	switch (fxn) {
+		case IFFXN_GT:
+			result = ia1 > ia2;
+			break;
+		case IFFXN_LT:
+			result = ia1 < ia2;
+			break;
+		case IFFXN_EQ:
+			result = ia1 == ia2;
+			break;
+	}
+
+	cond_if(data, result);
+
+	return xstrdup(NULL);
+}
+
+static char *function(struct parser_output *data, struct req *req,
+                      const char *fxn, const char *sa1, const char *sa2)
+{
+	fprintf(stderr, "%s(%p, .., %s, %s, %s)\n", __func__, data, fxn,
+		sa1, sa2);
 
 	if (!strcmp(fxn, "ifgt")) {
-		cond_if(data, true /* FIXME */);
+		return __function(data, req, IFFXN_GT, sa1, sa2);
 	} else if (!strcmp(fxn, "iflt")) {
-		cond_if(data, true /* FIXME */);
+		return __function(data, req, IFFXN_LT, sa1, sa2);
 	} else if (!strcmp(fxn, "ifeq")) {
-		cond_if(data, true /* FIXME */);
+		return __function(data, req, IFFXN_EQ, sa1, sa2);
 	} else if (!strcmp(fxn, "endif")) {
 		cond_endif(data);
 	} else if (!strcmp(fxn, "else")) {
@@ -273,8 +329,6 @@ static char *function(struct parser_output *data, struct req *req,
 %type <ptr> words cmd
 %type <pipeline> pipeline
 %type <pipestage> pipe
-%type <ptr> args
- /* FIXME */
 
 %%
 
@@ -301,12 +355,16 @@ cmd : '{' WORD pipeline '}'		{
 						free($2);
 						free($4);
 					}
-    | '{' WORD '(' args ')' '}'		{
-						$$ = function(data, data->req, $2, $4);
+    | '{' WORD '(' WORD ',' WORD ')' '}'{
+						$$ = function(data, data->req, $2, $4, $6);
+						free($2);
+					}
+    | '{' WORD '(' WORD ')' '}'		{
+						$$ = function(data, data->req, $2, $4, NULL);
 						free($2);
 					}
     | '{' WORD '(' ')' '}'		{
-						$$ = function(data, data->req, $2, NULL);
+						$$ = function(data, data->req, $2, NULL, NULL);
 						free($2);
 					}
     | '{' WORD '}'			{
@@ -324,12 +382,5 @@ pipeline : pipeline pipe		{
 
 pipe : '|' WORD				{ $$ = pipestage_alloc($2); free($2); }
      ;
-
-args : args ',' arg			{ $$ = NULL; }
-     | arg				{ $$ = NULL; }
-     ;
-
-arg : WORD
-    ;
 
 %%
