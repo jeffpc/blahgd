@@ -236,9 +236,7 @@ static int drop_privs()
 		}
 	}
 
-	priv_inverse(wanted);
-
-	ret = setppriv(PRIV_OFF, PRIV_PERMITTED, wanted);
+	ret = setppriv(PRIV_SET, PRIV_PERMITTED, wanted);
 
 err_free:
 	priv_freeset(wanted);
