@@ -27,8 +27,15 @@ extern int open_db(void);
 		} \
 	} while(0)
 
-#define SQL_END()	\
+#define SQL_END(s)	\
 	do { \
+		ret = sqlite3_finalize(s); \
+		if (ret != SQLITE_OK) { \
+			LOG("Error %s:%d: %s (%d)", \
+				__FILE__, __LINE__, sqlite3_errmsg(db), \
+				ret); \
+			abort(); \
+		} \
 		MXUNLOCK(&db_lock); \
 	} while (0)
 

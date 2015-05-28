@@ -78,6 +78,7 @@ static void __load_posts_tag(struct req *req, int page, const char *tag,
 	const char *tc = istag ? "tag" : "cat";
 	sqlite3_stmt *stmt;
 	char sql[256];
+	int ret;
 
 	snprintf(sql, sizeof(sql), "SELECT post_%ss.post, strftime(\"%%s\", time) "
 		 "FROM post_%ss,posts "
@@ -92,7 +93,7 @@ static void __load_posts_tag(struct req *req, int page, const char *tag,
 
 	load_posts(req, stmt);
 
-	SQL_END();
+	SQL_END(stmt);
 }
 
 int __tagcat(struct req *req, const char *tagcat, int page, char *tmpl,

@@ -21,6 +21,7 @@
 static void __load_posts(struct req *req, int page)
 {
 	sqlite3_stmt *stmt;
+	int ret;
 
 	SQL(stmt, "SELECT id, strftime(\"%s\", time) FROM posts ORDER BY time DESC LIMIT ? OFFSET ?");
 	SQL_BIND_INT(stmt, 1, req->opts.index_stories);
@@ -28,7 +29,7 @@ static void __load_posts(struct req *req, int page)
 
 	load_posts(req, stmt);
 
-	SQL_END();
+	SQL_END(stmt);
 }
 
 static void __load_posts_archive(struct req *req, int page, int archid)
@@ -37,6 +38,7 @@ static void __load_posts_archive(struct req *req, int page, int archid)
 	char totime[32];
 	sqlite3_stmt *stmt;
 	int toyear, tomonth;
+	int ret;
 
 	toyear = archid / 100;
 	tomonth = (archid % 100) + 1;
@@ -58,7 +60,7 @@ static void __load_posts_archive(struct req *req, int page, int archid)
 
 	load_posts(req, stmt);
 
-	SQL_END();
+	SQL_END(stmt);
 }
 
 static void __store_title(struct vars *vars, char *title)

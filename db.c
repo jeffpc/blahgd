@@ -36,7 +36,7 @@ int open_db(void)
 
 	SQL(stmt, "PRAGMA foreign_keys = ON");
 	SQL_RUN(stmt);
-	SQL_END();
+	SQL_END(stmt);
 
 	return 0;
 }

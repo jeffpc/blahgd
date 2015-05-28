@@ -45,7 +45,7 @@ static void tagcloud(struct req *req)
 		nitems = SQL_COL_INT(stmt, 2);
 	}
 
-	SQL_END();
+	SQL_END(stmt);
 
 	/*
 	 * allocate enough space for every tag, even if we don't care about
@@ -75,7 +75,7 @@ static void tagcloud(struct req *req)
 		i++;
 	}
 
-	SQL_END();
+	SQL_END(stmt);
 
 	vars_set_nvl_array(&req->vars, "tagcloud", cloud, i);
 
@@ -123,7 +123,7 @@ static void archive(struct req *req)
 		narchives++;
 	}
 
-	SQL_END();
+	SQL_END(stmt);
 
 	vars_set_nvl_array(&req->vars, "archives", archives, narchives);
 
