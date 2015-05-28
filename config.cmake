@@ -11,6 +11,8 @@ macro(set_default name default)
 	endif()
 endmacro()
 
+set_default(SCGI_NHELPERS		32)
+
 set_default(HTML_INDEX_STORIES		10)
 set_default(FEED_INDEX_STORIES		15)
 
@@ -21,6 +23,8 @@ set_default(COMMENT_CAPTCHA_B		7)	# second number to add
 
 set_default(DATA_DIR			"data")
 set_default(DB_FILE			"${DATA_DIR}/db2")
+
+set_default(MATHD_DOOR_PATH		"/tmp/mathd_door")
 
 set_default(BASE_URL			"http://blahg.josefsipek.net")
 set_default(BUG_BASE_URL		"http://bugs.31bits.net")

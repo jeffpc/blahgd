@@ -4,6 +4,7 @@
 #include "post_fmt3_cmds.h"
 #include "listing.h"
 #include "utils.h"
+#include "str.h"
 
 /*
  * NOTE:
@@ -14,266 +15,266 @@
  *  (3) create a function __process_foo(...)
  */
 
-static struct val *__process_listing(struct post *post, struct val *txt, struct val *opt)
+static struct str *__process_listing(struct post *post, struct str *txt, struct str *opt)
 {
-	struct val *val;
+	struct str *str;
 
-	val = listing(post, txt->str);
+	str = listing(post, txt->str);
 
-	val_putref(txt);
-	val_putref(opt);
+	str_putref(txt);
+	str_putref(opt);
 
-	return valcat3(VAL_DUP_STR("</p><pre>"), val, VAL_DUP_STR("</pre><p>"));
+	return str_cat3(STR_DUP("</p><pre>"), str, STR_DUP("</pre><p>"));
 }
 
-static struct val *__process_link(struct post *post, struct val *txt, struct val *opt)
-{
-	if (!opt)
-		val_getref(txt);
-
-	return valcat5(VAL_DUP_STR("<a href=\""), txt, VAL_DUP_STR("\">"),
-		       opt ? opt : txt, VAL_DUP_STR("</a>"));
-}
-
-static struct val *__process_photolink(struct post *post, struct val *txt, struct val *opt)
+static struct str *__process_link(struct post *post, struct str *txt, struct str *opt)
 {
 	if (!opt)
-		val_getref(txt);
+		str_getref(txt);
 
-	return valcat5(VAL_DUP_STR("<a href=\"" PHOTO_BASE_URL "/"), txt,
-		       VAL_DUP_STR("\">"), opt ? opt : txt, VAL_DUP_STR("</a>"));
+	return str_cat5(STR_DUP("<a href=\""), txt, STR_DUP("\">"),
+		        opt ? opt : txt, STR_DUP("</a>"));
 }
 
-static struct val *__process_img(struct post *post, struct val *txt, struct val *opt)
+static struct str *__process_photolink(struct post *post, struct str *txt, struct str *opt)
 {
-	return valcat5(VAL_DUP_STR("<img src=\""), txt, VAL_DUP_STR("\" alt=\""),
-		       opt, VAL_DUP_STR("\" />"));
+	if (!opt)
+		str_getref(txt);
+
+	return str_cat5(STR_DUP("<a href=\"" PHOTO_BASE_URL "/"), txt,
+		        STR_DUP("\">"), opt ? opt : txt, STR_DUP("</a>"));
 }
 
-static struct val *__process_photo(struct post *post, struct val *txt, struct val *opt)
+static struct str *__process_img(struct post *post, struct str *txt, struct str *opt)
 {
-	return valcat5(VAL_DUP_STR("<img src=\"" PHOTO_BASE_URL "/"), txt,
-		       VAL_DUP_STR("\" alt=\""), opt, VAL_DUP_STR("\" />"));
+	return str_cat5(STR_DUP("<img src=\""), txt, STR_DUP("\" alt=\""),
+		        opt, STR_DUP("\" />"));
 }
 
-static struct val *__process_emph(struct post *post, struct val *txt, struct val *opt)
+static struct str *__process_photo(struct post *post, struct str *txt, struct str *opt)
 {
-	return valcat3(VAL_DUP_STR("<em>"), txt, VAL_DUP_STR("</em>"));
+	return str_cat5(STR_DUP("<img src=\"" PHOTO_BASE_URL "/"), txt,
+		        STR_DUP("\" alt=\""), opt, STR_DUP("\" />"));
 }
 
-static struct val *__process_texttt(struct post *post, struct val *txt, struct val *opt)
+static struct str *__process_emph(struct post *post, struct str *txt, struct str *opt)
 {
-	return valcat3(VAL_DUP_STR("<tt>"), txt, VAL_DUP_STR("</tt>"));
+	return str_cat3(STR_DUP("<em>"), txt, STR_DUP("</em>"));
 }
 
-static struct val *__process_textbf(struct post *post, struct val *txt, struct val *opt)
+static struct str *__process_texttt(struct post *post, struct str *txt, struct str *opt)
 {
-	return valcat3(VAL_DUP_STR("<strong>"), txt, VAL_DUP_STR("</strong>"));
+	return str_cat3(STR_DUP("<tt>"), txt, STR_DUP("</tt>"));
 }
 
-static struct val *__process_textit(struct post *post, struct val *txt, struct val *opt)
+static struct str *__process_textbf(struct post *post, struct str *txt, struct str *opt)
 {
-	return valcat3(VAL_DUP_STR("<i>"), txt, VAL_DUP_STR("</i>"));
+	return str_cat3(STR_DUP("<strong>"), txt, STR_DUP("</strong>"));
 }
 
-static struct val *__process_begin(struct post *post, struct val *txt, struct val *opt)
+static struct str *__process_textit(struct post *post, struct str *txt, struct str *opt)
+{
+	return str_cat3(STR_DUP("<i>"), txt, STR_DUP("</i>"));
+}
+
+static struct str *__process_begin(struct post *post, struct str *txt, struct str *opt)
 {
 	if (!strcmp(txt->str, "texttt")) {
 		post->texttt_nesting++;
-		val_putref(txt);
-		return VAL_DUP_STR("</p><pre>");
+		str_putref(txt);
+		return STR_DUP("</p><pre>");
 	}
 
 	if (!strcmp(txt->str, "enumerate")) {
-		val_putref(txt);
-		return VAL_DUP_STR("</p><ol>");
+		str_putref(txt);
+		return STR_DUP("</p><ol>");
 	}
 
 	if (!strcmp(txt->str, "itemize")) {
-		val_putref(txt);
-		return VAL_DUP_STR("</p><ul>");
+		str_putref(txt);
+		return STR_DUP("</p><ul>");
 	}
 
 	if (!strcmp(txt->str, "description")) {
-		val_putref(txt);
-		return VAL_DUP_STR("</p><dl>");
+		str_putref(txt);
+		return STR_DUP("</p><dl>");
 	}
 
 	if (!strcmp(txt->str, "quote")) {
-		val_putref(txt);
-		return VAL_DUP_STR("</p><blockquote><p>");
+		str_putref(txt);
+		return STR_DUP("</p><blockquote><p>");
 	}
 
 	if (!strcmp(txt->str, "tabular")) {
-		val_putref(txt);
+		str_putref(txt);
 
 		if (post->table_nesting++)
-			return VAL_DUP_STR("<table>");
-		return VAL_DUP_STR("</p><table>");
+			return STR_DUP("<table>");
+		return STR_DUP("</p><table>");
 	}
 
 	LOG("post_fmt3: invalid environment '%s' (post #%u)", txt->str, post->id);
 
-	return valcat3(VAL_DUP_STR("[INVAL ENVIRON '"), txt, VAL_DUP_STR("']"));
+	return str_cat3(STR_DUP("[INVAL ENVIRON '"), txt, STR_DUP("']"));
 }
 
-static struct val *__process_end(struct post *post, struct val *txt, struct val *opt)
+static struct str *__process_end(struct post *post, struct str *txt, struct str *opt)
 {
 	if (!strcmp(txt->str, "texttt")) {
 		post->texttt_nesting--;
-		val_putref(txt);
-		return VAL_DUP_STR("</pre><p>");
+		str_putref(txt);
+		return STR_DUP("</pre><p>");
 	}
 
 	if (!strcmp(txt->str, "enumerate")) {
-		val_putref(txt);
-		return VAL_DUP_STR("</ol><p>");
+		str_putref(txt);
+		return STR_DUP("</ol><p>");
 	}
 
 	if (!strcmp(txt->str, "itemize")) {
-		val_putref(txt);
-		return VAL_DUP_STR("</ul><p>");
+		str_putref(txt);
+		return STR_DUP("</ul><p>");
 	}
 
 	if (!strcmp(txt->str, "description")) {
-		val_putref(txt);
-		return VAL_DUP_STR("</dl><p>");
+		str_putref(txt);
+		return STR_DUP("</dl><p>");
 	}
 
 	if (!strcmp(txt->str, "quote")) {
-		val_putref(txt);
-		return VAL_DUP_STR("</p></blockquote><p>");
+		str_putref(txt);
+		return STR_DUP("</p></blockquote><p>");
 	}
 
 	if (!strcmp(txt->str, "tabular")) {
-		val_putref(txt);
+		str_putref(txt);
 
 		if (--post->table_nesting)
-			return VAL_DUP_STR("</table>");
-		return VAL_DUP_STR("</table><p>");
+			return STR_DUP("</table>");
+		return STR_DUP("</table><p>");
 	}
 
 	LOG("post_fmt3: invalid environment '%s' (post #%u)", txt->str, post->id);
 
-	return valcat3(VAL_DUP_STR("[INVAL ENVIRON '"), txt, VAL_DUP_STR("']"));
+	return str_cat3(STR_DUP("[INVAL ENVIRON '"), txt, STR_DUP("']"));
 }
 
-static struct val *__process_item(struct post *post, struct val *txt, struct val *opt)
+static struct str *__process_item(struct post *post, struct str *txt, struct str *opt)
 {
 	// FIXME: we should keep track of what commands we've
 	// encountered and then decide if <li> is the right tag to
 	// use
 	if (!opt)
-		return valcat3(VAL_DUP_STR("<li>"), txt, VAL_DUP_STR("</li>"));
-	return valcat5(VAL_DUP_STR("<dt>"), opt, VAL_DUP_STR("</dt><dd>"), txt,
-		       VAL_DUP_STR("</dd>"));
+		return str_cat3(STR_DUP("<li>"), txt, STR_DUP("</li>"));
+	return str_cat5(STR_DUP("<dt>"), opt, STR_DUP("</dt><dd>"), txt,
+		        STR_DUP("</dd>"));
 }
 
-static struct val *__process_abbrev(struct post *post, struct val *txt, struct val *opt)
+static struct str *__process_abbrev(struct post *post, struct str *txt, struct str *opt)
 {
 	if (!opt)
-		val_getref(txt);
+		str_getref(txt);
 
-	return valcat5(VAL_DUP_STR("<abbr title=\""), opt ? opt : txt,
-		       VAL_DUP_STR("\">"), txt, VAL_DUP_STR("</abbr>"));
+	return str_cat5(STR_DUP("<abbr title=\""), opt ? opt : txt,
+		        STR_DUP("\">"), txt, STR_DUP("</abbr>"));
 }
 
-static struct val *__process_section(struct post *post, struct val *txt, struct val *opt)
+static struct str *__process_section(struct post *post, struct str *txt, struct str *opt)
 {
-	return valcat3(VAL_DUP_STR("</p><h3>"), txt, VAL_DUP_STR("</h3><p>"));
+	return str_cat3(STR_DUP("</p><h3>"), txt, STR_DUP("</h3><p>"));
 }
 
-static struct val *__process_subsection(struct post *post, struct val *txt, struct val *opt)
+static struct str *__process_subsection(struct post *post, struct str *txt, struct str *opt)
 {
-	return valcat3(VAL_DUP_STR("</p><h4>"), txt, VAL_DUP_STR("</h4><p>"));
+	return str_cat3(STR_DUP("</p><h4>"), txt, STR_DUP("</h4><p>"));
 }
 
-static struct val *__process_subsubsection(struct post *post, struct val *txt, struct val *opt)
+static struct str *__process_subsubsection(struct post *post, struct str *txt, struct str *opt)
 {
-	return valcat3(VAL_DUP_STR("</p><h5>"), txt, VAL_DUP_STR("</h5><p>"));
+	return str_cat3(STR_DUP("</p><h5>"), txt, STR_DUP("</h5><p>"));
 }
 
-static struct val *__process_wiki(struct post *post, struct val *txt, struct val *opt)
+static struct str *__process_wiki(struct post *post, struct str *txt, struct str *opt)
 {
 	if (!opt)
-		val_getref(txt);
+		str_getref(txt);
 
-	return valcat5(VAL_DUP_STR("<a href=\"" WIKI_BASE_URL "/"), txt,
-		VAL_DUP_STR("\"><img src=\"" BASE_URL "/wiki.png\" alt=\"Wikipedia article:\" />&nbsp;"),
-		opt ? opt : txt, VAL_DUP_STR("</a>"));
+	return str_cat5(STR_DUP("<a href=\"" WIKI_BASE_URL "/"), txt,
+		STR_DUP("\"><img src=\"" BASE_URL "/wiki.png\" alt=\"Wikipedia article:\" />&nbsp;"),
+		opt ? opt : txt, STR_DUP("</a>"));
 }
 
-static struct val *__process_bug(struct post *post, struct val *txt, struct val *opt)
+static struct str *__process_bug(struct post *post, struct str *txt, struct str *opt)
 {
-	val_getref(txt);
+	str_getref(txt);
 
-	return valcat5(VAL_DUP_STR("<a href=\"" BUG_BASE_URL "/"), txt,
-		VAL_DUP_STR("\"><img src=\"" BASE_URL "/bug.png\" alt=\"bug #\" />&nbsp;"),
-		txt, VAL_DUP_STR("</a>"));
+	return str_cat5(STR_DUP("<a href=\"" BUG_BASE_URL "/"), txt,
+		STR_DUP("\"><img src=\"" BASE_URL "/bug.png\" alt=\"bug #\" />&nbsp;"),
+		txt, STR_DUP("</a>"));
 }
 
-static struct val *__process_post(struct post *post, struct val *txt, struct val *opt)
+static struct str *__process_post(struct post *post, struct str *txt, struct str *opt)
 {
 	char buf[1024];
 
 	snprintf(buf, sizeof(buf), "<a href=\"" BASE_URL "/?p=%s\">%s</a>",
 		 txt->str, opt ? opt->str : txt->str);
 
-	val_putref(txt);
-	val_putref(opt);
+	str_putref(txt);
+	str_putref(opt);
 
-	return VAL_DUP_STR(buf);
+	return STR_DUP(buf);
 }
 
-static struct val *__process_taglink(struct post *post, struct val *txt, struct val *opt)
+static struct str *__process_taglink(struct post *post, struct str *txt, struct str *opt)
 {
 	char buf[1024];
 
 	snprintf(buf, sizeof(buf), "<a href=\"" BASE_URL "/?tag=%s\">%s</a>",
 		 txt->str, opt ? opt->str : txt->str);
 
-	val_putref(txt);
-	val_putref(opt);
+	str_putref(txt);
+	str_putref(opt);
 
-	return VAL_DUP_STR(buf);
+	return STR_DUP(buf);
 }
 
-static struct val *__process_degree(struct post *post, struct val *txt, struct val *opt)
+static struct str *__process_degree(struct post *post, struct str *txt, struct str *opt)
 {
-	return valcat(VAL_DUP_STR("\xc2\xb0"), txt);
+	return str_cat(STR_DUP("\xc2\xb0"), txt);
 }
 
-static struct val *__process_trow(struct post *post, struct val *txt, struct val *opt)
+static struct str *__process_trow(struct post *post, struct str *txt, struct str *opt)
 {
-	return valcat3(VAL_DUP_STR("<tr><td>"), txt, VAL_DUP_STR("</td></tr>"));
+	return str_cat3(STR_DUP("<tr><td>"), txt, STR_DUP("</td></tr>"));
 }
 
-static struct val *__process_leftarrow(struct post *post, struct val *txt, struct val *opt)
+static struct str *__process_leftarrow(struct post *post, struct str *txt, struct str *opt)
 {
-	return VAL_DUP_STR("&larr;");
+	return STR_DUP("&larr;");
 }
 
-static struct val *__process_rightarrow(struct post *post, struct val *txt, struct val *opt)
+static struct str *__process_rightarrow(struct post *post, struct str *txt, struct str *opt)
 {
-	return VAL_DUP_STR("&rarr;");
+	return STR_DUP("&rarr;");
 }
 
-static struct val *__process_leftrightarrow(struct post *post, struct val *txt, struct val *opt)
+static struct str *__process_leftrightarrow(struct post *post, struct str *txt, struct str *opt)
 {
-	return VAL_DUP_STR("&harr;");
+	return STR_DUP("&harr;");
 }
 
-static struct val *__process_tm(struct post *post, struct val *txt, struct val *opt)
+static struct str *__process_tm(struct post *post, struct str *txt, struct str *opt)
 {
-	return VAL_DUP_STR("&trade;");
+	return STR_DUP("&trade;");
 }
 
-static struct val *__process_nop(struct post *post, struct val *txt, struct val *opt)
+static struct str *__process_nop(struct post *post, struct str *txt, struct str *opt)
 {
-	val_putref(txt);
-	val_putref(opt);
+	str_putref(txt);
+	str_putref(opt);
 
-	return VAL_DUP_STR("");
+	return STR_DUP("");
 }
 
 typedef enum {
@@ -284,7 +285,7 @@ typedef enum {
 
 struct cmd {
 	const char *name;
-	struct val *(*fxn)(struct post *, struct val *txt, struct val *opt);
+	struct str *(*fxn)(struct post *, struct str *txt, struct str *opt);
 	tri square;
 	tri curly;
 };
@@ -370,7 +371,7 @@ static const struct cmd cmds[] = {
 	CMD_REQ(trow),
 };
 
-static void __check_arg(tri r, struct val *ptr)
+static void __check_arg(tri r, struct str *ptr)
 {
 	if (r == REQUIRED)
 		ASSERT(ptr);
@@ -379,19 +380,11 @@ static void __check_arg(tri r, struct val *ptr)
 		ASSERT(!ptr);
 }
 
-struct val *process_cmd(struct post *post, struct val *cmd, struct val *txt,
-			struct val *opt)
+struct str *process_cmd(struct post *post, struct str *cmd, struct str *txt,
+			struct str *opt)
 {
 	struct cmd key;
 	const struct cmd *c;
-
-	ASSERT3U(cmd->type, ==, VT_STR);
-
-	if (txt)
-		ASSERT3U(txt->type, ==, VT_STR);
-
-	if (opt)
-		ASSERT3U(opt->type, ==, VT_STR);
 
 	key.name = cmd->str;
 
@@ -399,17 +392,17 @@ struct val *process_cmd(struct post *post, struct val *cmd, struct val *txt,
 	if (!c) {
 		LOG("post_fmt3: invalid command '%s' (post #%u)", cmd->str, post->id);
 
-		val_putref(txt);
-		val_putref(opt);
+		str_putref(txt);
+		str_putref(opt);
 
-		return valcat3(VAL_DUP_STR("[INVAL CMD '"), cmd,
-			       VAL_DUP_STR("']"));
+		return str_cat3(STR_DUP("[INVAL CMD '"), cmd,
+			        STR_DUP("']"));
 	}
 
 	__check_arg(c->square, opt);
 	__check_arg(c->curly, txt);
 
-	val_putref(cmd);
+	str_putref(cmd);
 
 	return c->fxn(post, txt, opt);
 }

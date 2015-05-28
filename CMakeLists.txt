@@ -3,7 +3,8 @@ cmake_minimum_required(VERSION 2.8.5)
 enable_testing()
 
 include(config.cmake)
-set(CMAKE_C_FLAGS "-Wall -O2 -g -std=gnu99 -D_XOPEN_SOURCE=700 -D_STDC_C99 -D_XPG6 -D__EXTENSIONS__")
+set(CMAKE_C_FLAGS "-Wall -O2 -g -std=gnu99 -D_XOPEN_SOURCE=700 -D__EXTENSIONS__ -D_REENTRANT")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-omit-frame-pointer")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-inline-small-functions")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-inline-functions-called-once")
 
@@ -33,40 +34,108 @@ find_path(SQLITE_INC sqlite3.h)
 
 include_directories(${SQLITE_INC})
 
-add_executable(blahg render.c post.c main.c
-	db.c ${PINGBACK_SRC} vars.c pipeline.c
-	${FLEX_tmpl_OUTPUTS} ${BISON_tmpl_OUTPUTS}
+add_executable(blahgd
+	daemon.c helpers.c
+	scgi.c
+
+	# post - all formats
+	post.c
+
+	# post - format 3
 	${FLEX_fmt3_OUTPUTS} ${BISON_fmt3_OUTPUTS}
 	post_fmt3_cmds.c
-	index.c sidebar.c story.c tag.c comment.c
-	admin.c
-	listing.c utils.c error.c mangle.c
+	str.c
+	listing.c mangle.c
+	math.c
+
+	# templates
+	${FLEX_tmpl_OUTPUTS} ${BISON_tmpl_OUTPUTS}
+	template_cache.c
+	render.c
+	pipeline.c
+
+	# nvlist related things
+	qstring.c
 	decode.c fsm.c
+	vars.c vars_dump.c
+	val.c
+
+	# request processing
+	req.c
+
+	# pages
+	admin.c
+	comment.c
+	index.c
+	sidebar.c
+	story.c
+	tag.c
+	static.c
+
+	# database
+	db.c
+
+	# misc
+	error.c
+	utils.c
+
+	${PINGBACK_SRC}
 )
 
-target_link_libraries(blahg
+target_link_libraries(blahgd
 	${OPENSSL_CRYPTO_LIBRARY}
-	${XMLRPC_LIBRARIES}
 	${SQLITE_LIB}
-	rt
+	pthread
+	socket
+	nsl
 	umem
-	avl
+	nvpair
+	/usr/lib/libavl.so.1
+	/usr/lib/libcmdutils.so.1
 	m
+)
+
+add_executable(mathd
+	mathd.c
+	math.c
+	error.c
+	val.c
+	str.c
+)
+
+target_link_libraries(mathd
+	${OPENSSL_CRYPTO_LIBRARY}
+	umem
 )
 
 add_executable(test_fmt3
 	test_fmt3.c
-	vars.c
+	val.c
 	${FLEX_fmt3_OUTPUTS} ${BISON_fmt3_OUTPUTS}
 	post_fmt3_cmds.c
+	math.c
 	listing.c
 	mangle.c utils.c error.c
+	str.c
 )
 
 target_link_libraries(test_fmt3
 	${OPENSSL_CRYPTO_LIBRARY}
 	umem
-	avl
+)
+
+add_executable(test_qstring
+	test_qstring.c
+	error.c
+	utils.c
+	vars.c vars_dump.c
+	qstring.c
+	decode.c fsm.c
+)
+
+target_link_libraries(test_qstring
+	umem
+	nvpair
 )
 
 function(simple_c_test type section data)

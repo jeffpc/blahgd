@@ -5,14 +5,18 @@
 #include <sqlite3.h>
 
 #include "error.h"
+#include "mx.h"
 
 extern sqlite3 *db;
+extern pthread_mutex_t db_lock;
 
-extern int open_db();
+extern void init_db(void);
+extern int open_db(void);
 
 #define SQL(s, sql)	\
 	do { \
 		int ret; \
+		MXLOCK(&db_lock); \
 		open_db(); \
 		ret = sqlite3_prepare_v2(db, (sql), strlen(sql) + 1, &(s), NULL); \
 		if (ret != SQLITE_OK) { \
@@ -22,6 +26,18 @@ extern int open_db();
 			abort(); \
 		} \
 	} while(0)
+
+#define SQL_END(s)	\
+	do { \
+		ret = sqlite3_finalize(s); \
+		if (ret != SQLITE_OK) { \
+			LOG("Error %s:%d: %s (%d)", \
+				__FILE__, __LINE__, sqlite3_errmsg(db), \
+				ret); \
+			abort(); \
+		} \
+		MXUNLOCK(&db_lock); \
+	} while (0)
 
 #define SQL_BIND_INT(s, i, v)	\
 	do { \

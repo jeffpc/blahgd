@@ -15,15 +15,12 @@
 #define HDD_2DOT	2
 #define HDD_OK		3
 
-int hasdotdot(char *path)
+int hasdotdot(const char *path)
 {
 	int state = HDD_START;
-	char tmp;
 
 	while(*path) {
-		tmp = *path;
-
-		switch(tmp) {
+		switch(*path) {
 			case '.':
 				if (state == HDD_START)
 					state = HDD_1DOT;
@@ -103,7 +100,7 @@ int xwrite(int fd, const void *buf, size_t nbyte)
 	return total;
 }
 
-char *read_file(const char *fname)
+char *read_file_len(const char *fname, size_t *len)
 {
 	struct stat statbuf;
 	char *out;
@@ -130,6 +127,9 @@ char *read_file(const char *fname)
 		out = NULL;
 	} else {
 		out[statbuf.st_size] = '\0';
+
+		if (len)
+			*len = statbuf.st_size;
 	}
 
 err_close:
@@ -157,24 +157,31 @@ int write_file(const char *fname, const char *data, size_t len)
 	return ret != len;
 }
 
+#define NARGS	5
 char *concat5(char *a, char *b, char *c, char *d, char *e)
 {
-	char *src[] = { a, b, c, d, e, };
-	char *ret;
-	int nsrc;
-	int first;
-	int tofree;
-	int len;
+	char *src[NARGS] = { a, b, c, d, e, };
+	size_t len[NARGS]; /* source lengths */
+	size_t totallen; /* total output string len */
+	unsigned tofree; /* what to free bitmap */
+	char *ret, *out;
+	int first, last; /* the first and last non-NULL index */
+	int nsrc; /* number of non-NULL sources */
 	int i, j;
 
 	nsrc = 0;
-	len = 0;
+	totallen = 0;
 	first = -1;
+	last = -1;
 	tofree = 0x1f;
 
 	for (i = 0; i < 5; i++) {
+		len[i] = 0;
+
 		if (src[i]) {
-			len += strlen(src[i]);
+			len[i] = strlen(src[i]);
+
+			last = i;
 			if (first == -1)
 				first = i;
 
@@ -184,34 +191,44 @@ char *concat5(char *a, char *b, char *c, char *d, char *e)
 				if (src[i] == src[j])
 					tofree &= ~(1 << i);
 		}
+
+		totallen += len[i];
 	}
 
 	if (nsrc == 1)
 		return src[first];
 
-	if (!len) {
-		for (i = 0; i < 5; i++)
+	if (!totallen) {
+		for (i = first; i < last; i++)
 			if (tofree & (1 << i))
 				free(src[i]);
 
 		return xstrdup("");
 	}
 
-	ret = malloc(len + 1);
+	ret = malloc(totallen + 1);
 	ASSERT(ret);
 
-	for (i = 0; i < 5; i++) {
+	out = ret;
+
+	for (i = first; i <= last; i++) {
 		if (!src[i])
 			continue;
 
-		if (i == first)
-			strcpy(ret, src[i]);
-		else
-			strcat(ret, src[i]);
+		/* copy the source */
+		strcpy(out, src[i]);
+
+		/* advance the output */
+		out += len[i];
 
 		if (tofree & (1 << i))
 			free(src[i]);
 	}
+
+	/*
+	 * We're guaranteed that the above loop executed at least once, and
+	 * therefore the output is null-terminated
+	 */
 
 	return ret;
 }

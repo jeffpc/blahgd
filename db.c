@@ -5,8 +5,21 @@
 #include "config.h"
 
 sqlite3 *db;
+pthread_mutex_t db_lock;
 
-int open_db()
+void init_db(void)
+{
+	pthread_mutexattr_t attr;
+
+	ASSERT0(pthread_mutexattr_init(&attr));
+	ASSERT0(pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE));
+
+	ASSERT0(pthread_mutex_init(&db_lock, &attr));
+
+	ASSERT0(pthread_mutexattr_destroy(&attr));
+}
+
+int open_db(void)
 {
 	sqlite3_stmt *stmt;
 	int ret;
@@ -23,7 +36,7 @@ int open_db()
 
 	SQL(stmt, "PRAGMA foreign_keys = ON");
 	SQL_RUN(stmt);
+	SQL_END(stmt);
 
 	return 0;
 }
-

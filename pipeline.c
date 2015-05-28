@@ -8,11 +8,18 @@
 #include "error.h"
 #include "utils.h"
 #include "mangle.h"
+#include "val.h"
 
+static umem_cache_t *pipestage_cache;
 static umem_cache_t *pipeline_cache;
 
-void init_pipe_subsys()
+void init_pipe_subsys(void)
 {
+	pipestage_cache = umem_cache_create("pipestage-cache",
+					    sizeof(struct pipestage), 0, NULL,
+					    NULL, NULL, NULL, NULL, 0);
+	ASSERT(pipestage_cache);
+
 	pipeline_cache = umem_cache_create("pipeline-cache",
 					   sizeof(struct pipeline), 0, NULL,
 					   NULL, NULL, NULL, NULL, 0);
@@ -101,12 +108,6 @@ static struct val *__escape(struct val *val, char *(*cvt)(char*))
 	out = NULL;
 
 	switch (val->type) {
-		case VT_NV:
-		case VT_LIST:
-			out = xstrdup("FAKED");
-			val_dump(val, 10);
-			ASSERT(0);
-			break;
 		case VT_INT:
 			out = str_of_int(val->i);
 			break;
@@ -169,7 +170,7 @@ static struct val *rfc822_fxn(struct val *val)
 	return __datetime(val, "%a, %d %b %Y %H:%M:%S +0000");
 }
 
-static const struct pipestages stages[] = {
+static const struct pipestageinfo stages[] = {
 	{ "urlescape", urlescape_fxn, },
 	{ "escape", escape_fxn, },
 	{ "time", time_fxn, },
@@ -179,17 +180,16 @@ static const struct pipestages stages[] = {
 	{ NULL, },
 };
 
-static const struct pipestages nop = { "nop", nop_fxn, };
+static const struct pipestageinfo nop = { "nop", nop_fxn, };
 
-struct pipeline *pipestage(char *name)
+struct pipestage *pipestage_alloc(char *name)
 {
-	struct pipeline *pipe;
+	struct pipestage *pipe;
 	int i;
 
-	pipe = umem_cache_alloc(pipeline_cache, 0);
+	pipe = umem_cache_alloc(pipestage_cache, 0);
 	ASSERT(pipe);
 
-	INIT_LIST_HEAD(&pipe->pipe);
 	pipe->stage = &nop;
 
 	for (i = 0; stages[i].name; i++) {
@@ -202,12 +202,30 @@ struct pipeline *pipestage(char *name)
 	return pipe;
 }
 
-void pipeline_destroy(struct list_head *pipelist)
+struct pipeline *pipestage_to_pipeline(struct pipestage *stage)
 {
-	struct pipeline *cur;
-	struct pipeline *tmp;
+	struct pipeline *line;
 
-	list_for_each_entry_safe(cur, tmp, pipelist, pipe) {
-		umem_cache_free(pipeline_cache, cur);
-	}
+	line = umem_cache_alloc(pipeline_cache, 0);
+	ASSERT(line);
+
+	list_create(&line->pipe, sizeof(struct pipestage),
+		    offsetof(struct pipestage, pipe));
+
+	pipeline_append(line, stage);
+
+	return line;
+}
+
+void pipeline_append(struct pipeline *line, struct pipestage *stage)
+{
+	list_insert_tail(&line->pipe, stage);
+}
+
+void pipeline_destroy(struct pipeline *line)
+{
+	while (!list_is_empty(&line->pipe))
+		umem_cache_free(pipestage_cache, list_remove_head(&line->pipe));
+
+	umem_cache_free(pipeline_cache, line);
 }

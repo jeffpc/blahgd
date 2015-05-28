@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"
+	xmlns:dc="http://purl.org/dc/elements/1.1/"
+	xmlns:atom="http://www.w3.org/2005/Atom"
+>
+<channel>
+	<title>Comments on: {title|escape}</title>
+	<atom:link href="{baseurl}/?p={id}&amp;feed=rss2" rel="self" type="application/rss+xml" />
+	<link>{baseurl}/p={id}</link>
+	<language>en</language>
+	<description>{title|escape}</description>
+	<pubDate>{time|rfc822}</pubDate>
+
+{comments%comment}
+</channel>
+</rss>

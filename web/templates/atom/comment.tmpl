@@ -1,0 +1,14 @@
+<entry>
+	<author>
+		<name>{commauthor|escape}</name>
+		<uri>{baseurl}/p={id}#comment-{commid}</uri>
+	</author>
+	<title type="html"><![CDATA[By: {commauthor}]]></title>
+	<link rel="alternate" type="text/html" href="{baseurl}/?p={id}#comment-{commid}" />
+	<id>{baseurl}/?p={id}#comment-{commid}</id>
+	<updated>{commtime|zulu}</updated>
+	<published>{commtime|zulu}</published>
+
+	<summary type="html"><![CDATA[{commbody}]]></summary>
+	<content type="html" xml:base="{baseurl}/?p={id}#comment-{commid}"><![CDATA[{commbody}]]></content>
+</entry>

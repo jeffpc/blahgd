@@ -7,10 +7,11 @@
 #include "config.h"
 #include "db.h"
 #include "render.h"
-#include "main.h"
+#include "req.h"
 #include "utils.h"
 #include "sidebar.h"
 #include "error.h"
+#include "post.h"
 
 static const char *wordpress_catn[] = {
 	[1]  = "miscellaneous",
@@ -57,18 +58,18 @@ static const char *wordpress_catn[] = {
 
 static void __store_title(struct vars *vars, const char *title)
 {
-	VAR_SET_STR(vars, "title", xstrdup(title));
+	vars_set_str(vars, "title", title);
 }
 
 static void __store_tag(struct vars *vars, const char *tag)
 {
-	VAR_SET_STR(vars, "tagid", xstrdup(tag));
+	vars_set_str(vars, "tagid", tag);
 }
 
 static void __store_pages(struct vars *vars, int page)
 {
-	VAR_SET_INT(vars, "prevpage", page + 1);
-	VAR_SET_INT(vars, "nextpage", page - 1);
+	vars_set_int(vars, "prevpage", page + 1);
+	vars_set_int(vars, "nextpage", page - 1);
 }
 
 static void __load_posts_tag(struct req *req, int page, const char *tag,
@@ -77,6 +78,7 @@ static void __load_posts_tag(struct req *req, int page, const char *tag,
 	const char *tc = istag ? "tag" : "cat";
 	sqlite3_stmt *stmt;
 	char sql[256];
+	int ret;
 
 	snprintf(sql, sizeof(sql), "SELECT post_%ss.post, strftime(\"%%s\", time) "
 		 "FROM post_%ss,posts "
@@ -90,6 +92,8 @@ static void __load_posts_tag(struct req *req, int page, const char *tag,
 	SQL_BIND_INT(stmt, 3, page * req->opts.index_stories);
 
 	load_posts(req, stmt, req->opts.index_stories);
+
+	SQL_END(stmt);
 }
 
 int __tagcat(struct req *req, const char *tagcat, int page, char *tmpl,
@@ -100,7 +104,7 @@ int __tagcat(struct req *req, const char *tagcat, int page, char *tmpl,
 
 	req_head(req, "Content-Type", "text/html");
 
-	page = max(page, 0);
+	page = MAX(page, 0);
 
 	__store_title(&req->vars, tagcat);
 	__store_pages(&req->vars, page);

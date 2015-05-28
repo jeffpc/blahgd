@@ -8,7 +8,7 @@
 
 #define PAGE 4096
 
-struct val *listing(struct post *post, char *fname)
+struct str *listing(struct post *post, char *fname)
 {
 	char path[FILENAME_MAX];
 	char *in;
@@ -19,10 +19,10 @@ struct val *listing(struct post *post, char *fname)
 	if (!in)
 		goto err;
 
-	return listing_str(VAL_ALLOC_STR(in));
+	return listing_str(str_alloc(in));
 
 err:
 	snprintf(path, FILENAME_MAX, "Failed to read in listing '%d/%s'",
 		 post->id, fname);
-	return VAL_DUP_STR(path);
+	return STR_DUP(path);
 }

@@ -9,11 +9,13 @@
 #include <string.h>
 
 #include "config.h"
+#include "iter.h"
 #include "vars.h"
 #include "error.h"
 #include "render.h"
 #include "pipeline.h"
 #include "utils.h"
+#include "val.h"
 
 #include "parse.h"
 
@@ -49,48 +51,51 @@ static char *condconcat(struct parser_output *data, char *a, char *b)
 	return concat(a, b);
 }
 
-static char *__foreach_list(struct req *req, char *varname, char *tmpl,
-                            struct val *val)
+static char *__foreach_nv(struct req *req, nvpair_t *var, char *tmpl)
 {
-	avl_tree_t *tree;
-	struct val_item *vi;
-	char *ret;
+	nvlist_t **items;
+	uint_t nitems;
+	uint_t i;
 	char *out;
+	int ret;
 
-	tree = &val->tree;
+	out = NULL;
 
-	out = xstrdup("");
+	ret = nvpair_value_nvlist_array(var, &items, &nitems);
+	ASSERT0(ret);
 
-	for (vi = avl_first(tree); vi; vi = AVL_NEXT(tree, vi)) {
+	for (i = 0; i < nitems; i++) {
 		vars_scope_push(&req->vars);
 
-		/* NOTE: we're reusing the arg */
-		val = vi->val;
+		vars_merge(&req->vars, items[i]);
 
-		switch (val->type) {
-			case VT_STR:
-			case VT_INT:
-				VAR_SET(&req->vars, varname, val_getref(val));
-				break;
-			case VT_NV: {
-				struct val_item *vi;
+		out = concat(out, render_template(req, tmpl));
 
-				for (vi = avl_first(&val->tree); vi;
-				     vi = AVL_NEXT(&val->tree, vi))
-					VAR_SET(&req->vars, vi->key.name,
-					        val_getref(vi->val));
-				break;
-			}
-			default:
-				fprintf(stderr, "XXX %p\n", val);
-				val_dump(val, 0);
-				ASSERT(0);
-				break;
-		}
+		vars_scope_pop(&req->vars);
+	}
 
-		ret = render_template(req, tmpl);
+	return out;
+}
 
-		out = concat(out, ret);
+static char *__foreach_str(struct req *req, nvpair_t *var, char *tmpl)
+{
+	uint_t nitems;
+	uint_t i;
+	char **items;
+	char *out;
+	int ret;
+
+	out = NULL;
+
+	ret = nvpair_value_string_array(var, &items, &nitems);
+	ASSERT0(ret);
+
+	for (i = 0; i < nitems; i++) {
+		vars_scope_push(&req->vars);
+
+		vars_set_str(&req->vars, nvpair_name(var), items[i]);
+
+		out = concat(out, render_template(req, tmpl));
 
 		vars_scope_pop(&req->vars);
 	}
@@ -101,27 +106,24 @@ static char *__foreach_list(struct req *req, char *varname, char *tmpl,
 static char *foreach(struct parser_output *data, struct req *req, char *varname,
                      char *tmpl)
 {
-	struct vars *vars = &req->vars;
-	struct var *var;
-	struct val *val;
+	nvpair_t *var;
 	char *ret;
 
 	if (!cond_value(data))
 		return xstrdup("");
 
-	var = var_lookup(vars, varname);
+	var = vars_lookup(&req->vars, varname);
 	if (!var)
 		return xstrdup("");
 
-	val = var->val;
-	if (!val)
-		return xstrdup("");
-
-	if (val->type == VT_LIST) {
-		ret = __foreach_list(req, varname, tmpl, val);
+	if (nvpair_type(var) == DATA_TYPE_NVLIST_ARRAY) {
+		ret = __foreach_nv(req, var, tmpl);
+	} else if (nvpair_type(var) == DATA_TYPE_STRING_ARRAY) {
+		ret = __foreach_str(req, var, tmpl);
 	} else {
+		//vars_dump(&req->vars);
 		LOG("%s called with '%s' which has type %d", __func__,
-		    varname, val->type);
+		    varname, nvpair_type(var));
 		ASSERT(0);
 	}
 
@@ -140,54 +142,77 @@ static char *print_val(struct val *val)
 			tmp = val->str;
 			break;
 		case VT_INT:
-			snprintf(buf, sizeof(buf), "%lu", val->i);
+			snprintf(buf, sizeof(buf), "%"PRIu64, val->i);
 			tmp = buf;
-			break;
-		case VT_LIST:
-			tmp = "LIST";
-			break;
-		case VT_NV:
-			tmp = "NV";
 			break;
 	}
 
 	return xstrdup(tmp);
 }
 
-static char *print_var(struct var *var)
+static char *print_var(nvpair_t *var)
 {
-	return print_val(var->val);
+	char buf[32];
+	const char *tmp;
+
+	tmp = NULL;
+
+	switch (nvpair_type(var)) {
+		case DATA_TYPE_STRING:
+			tmp = pair2str(var);
+			break;
+		case DATA_TYPE_UINT64:
+			snprintf(buf, sizeof(buf), "%"PRIu64, pair2int(var));
+			tmp = buf;
+			break;
+		default:
+			LOG("%s called with '%s' which has type %d", __func__,
+			    nvpair_name(var), nvpair_type(var));
+			ASSERT(0);
+			break;
+	}
+
+	return xstrdup(tmp);
 }
 
-static char *pipeline(struct parser_output *data, struct req *req, char *var,
-                      struct pipeline *pipe)
+static char *pipeline(struct parser_output *data, struct req *req,
+		      char *varname, struct pipeline *line)
 {
-	struct list_head line;
+	struct pipestage *cur;
 	struct val *val;
-	struct var *v;
-	struct pipeline *cur;
-	struct pipeline *tmp;
+	nvpair_t *var;
 	char *out;
 
-	if (!cond_value(data))
+	if (!cond_value(data)) {
+		pipeline_destroy(line);
 		return xstrdup("");
+	}
 
-	v = var_lookup(&req->vars, var);
-	if (!v)
+	var = vars_lookup(&req->vars, varname);
+	if (!var) {
+		pipeline_destroy(line);
 		return xstrdup("");
+	}
 
-	/* wedge the sentinel list head into the pipeline */
-	line.next = &pipe->pipe;
-	line.prev = pipe->pipe.prev;
-	pipe->pipe.prev->next = &line;
-	pipe->pipe.prev = &line;
+	switch (nvpair_type(var)) {
+		case DATA_TYPE_STRING:
+			val = VAL_ALLOC_STR(xstrdup(pair2str(var)));
+			break;
+		case DATA_TYPE_UINT64:
+			val = VAL_ALLOC_INT(pair2int(var));
+			break;
+		default:
+			vars_dump(&req->vars);
+			LOG("%s called with '%s' which has type %d", __func__,
+			    varname, nvpair_type(var));
+			ASSERT(0);
+			break;
+	}
 
-	val = val_getref(v->val);
-
-	list_for_each_entry_safe(cur, tmp, &line, pipe)
+	list_for_each(cur, &line->pipe)
 		val = cur->stage->f(val);
 
-	pipeline_destroy(&line);
+	pipeline_destroy(line);
 
 	out = print_val(val);
 
@@ -198,15 +223,15 @@ static char *pipeline(struct parser_output *data, struct req *req, char *var,
 
 static char *variable(struct parser_output *data, struct req *req, char *name)
 {
-	struct var *var;
+	nvpair_t *var;
 
 	if (!cond_value(data))
 		return xstrdup("");
 
-	var = var_lookup(&data->req->vars, name);
+	var = vars_lookup(&req->vars, name);
 
 	if (!var)
-		return render_template(data->req, name);
+		return render_template(req, name);
 	else
 		return print_var(var);
 }
@@ -238,14 +263,16 @@ static char *function(struct parser_output *data, struct req *req,
 %union {
 	char c;
 	char *ptr;
-	struct pipeline *pipe;
+	struct pipestage *pipestage;
+	struct pipeline *pipeline;
 };
 
 %token <ptr> WORD
 %token <c> CHAR
 
 %type <ptr> words cmd
-%type <pipe> pipeline pipe
+%type <pipeline> pipeline
+%type <pipestage> pipe
 %type <ptr> args
  /* FIXME */
 
@@ -289,13 +316,13 @@ cmd : '{' WORD pipeline '}'		{
     ;
 
 pipeline : pipeline pipe		{
-						list_add_tail(&$2->pipe, &$1->pipe);
+						pipeline_append($1, $2);
 						$$ = $1;
 					}
-	 | pipe				{ $$ = $1; }
+	 | pipe				{ $$ = pipestage_to_pipeline($1); }
          ;
 
-pipe : '|' WORD				{ $$ = pipestage($2); free($2); }
+pipe : '|' WORD				{ $$ = pipestage_alloc($2); free($2); }
      ;
 
 args : args ',' arg			{ $$ = NULL; }

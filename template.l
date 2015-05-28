@@ -2,6 +2,7 @@
 %option noinput
 %option reentrant
 %option bison-bridge
+%option never-interactive
 
 %{
 #include <stdlib.h>
@@ -61,8 +62,5 @@ int tmpl_input_proc(char *buf, int size, yyscan_t scanner)
 
 int tmpl_wrap(yyscan_t scanner)
 {
-	struct yyguts_t * yyg = (struct yyguts_t*) scanner;
-
-	fclose(yyin);
 	return 1;
 }

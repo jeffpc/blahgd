@@ -9,7 +9,7 @@
 #include <sys/mman.h>
 
 #include "post.h"
-#include "main.h"
+#include "req.h"
 #include "config.h"
 #include "sidebar.h"
 #include "parse.h"
@@ -21,12 +21,15 @@
 static void __load_posts(struct req *req, int page)
 {
 	sqlite3_stmt *stmt;
+	int ret;
 
 	SQL(stmt, "SELECT id, strftime(\"%s\", time) FROM posts ORDER BY time DESC LIMIT ? OFFSET ?");
 	SQL_BIND_INT(stmt, 1, req->opts.index_stories);
 	SQL_BIND_INT(stmt, 2, page * req->opts.index_stories);
 
 	load_posts(req, stmt, req->opts.index_stories);
+
+	SQL_END(stmt);
 }
 
 static void __load_posts_archive(struct req *req, int page, int archid)
@@ -35,6 +38,7 @@ static void __load_posts_archive(struct req *req, int page, int archid)
 	char totime[32];
 	sqlite3_stmt *stmt;
 	int toyear, tomonth;
+	int ret;
 
 	toyear = archid / 100;
 	tomonth = (archid % 100) + 1;
@@ -55,23 +59,25 @@ static void __load_posts_archive(struct req *req, int page, int archid)
 	SQL_BIND_INT(stmt, 4, page * req->opts.index_stories);
 
 	load_posts(req, stmt, req->opts.index_stories);
+
+	SQL_END(stmt);
 }
 
 static void __store_title(struct vars *vars, char *title)
 {
-	VAR_SET_STR(vars, "title", xstrdup(title));
+	vars_set_str(vars, "title", title);
 }
 
 static void __store_pages(struct vars *vars, int page)
 {
-	VAR_SET_INT(vars, "prevpage", page + 1);
-	VAR_SET_INT(vars, "curpage",  page);
-	VAR_SET_INT(vars, "nextpage", page - 1);
+	vars_set_int(vars, "prevpage", page + 1);
+	vars_set_int(vars, "curpage",  page);
+	vars_set_int(vars, "nextpage", page - 1);
 }
 
 static void __store_archid(struct vars *vars, int archid)
 {
-	VAR_SET_INT(vars, "archid", archid);
+	vars_set_int(vars, "archid", archid);
 }
 
 int blahg_index(struct req *req, int page)
@@ -82,6 +88,8 @@ int blahg_index(struct req *req, int page)
 	__store_pages(&req->vars, page);
 
 	sidebar(req);
+
+	vars_scope_push(&req->vars);
 
 	__load_posts(req, page);
 
@@ -122,6 +130,8 @@ int blahg_archive(struct req *req, int m, int page)
 	__store_archid(&req->vars, m);
 
 	sidebar(req);
+
+	vars_scope_push(&req->vars);
 
 	__load_posts_archive(req, page, m);
 

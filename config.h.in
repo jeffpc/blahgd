@@ -7,6 +7,8 @@
 #cmakedefine USE_XMLRPC 1
 
 /* settings */
+#cmakedefine SCGI_NHELPERS		${SCGI_NHELPERS}
+
 #cmakedefine HTML_INDEX_STORIES		${HTML_INDEX_STORIES}
 #cmakedefine FEED_INDEX_STORIES		${FEED_INDEX_STORIES}
 
@@ -17,6 +19,8 @@
 
 #cmakedefine DATA_DIR			"${DATA_DIR}"
 #cmakedefine DB_FILE			"${DB_FILE}"
+
+#cmakedefine MATHD_DOOR_PATH		"${MATHD_DOOR_PATH}"
 
 #cmakedefine BASE_URL			"${BASE_URL}"
 #cmakedefine BUG_BASE_URL		"${BUG_BASE_URL}"

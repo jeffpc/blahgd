@@ -3,17 +3,18 @@
 
 #include <time.h>
 #include <stdbool.h>
+#include <sys/list.h>
 
 #include "db.h"
-#include "list.h"
+#include "vars.h"
 
 struct post_tag {
-	struct list_head list;
+	list_node_t list;
 	char *tag;
 };
 
 struct comment {
-	struct list_head list;
+	list_node_t list;
 	unsigned int id;
 	char *author;
 	char *email;
@@ -32,14 +33,14 @@ struct post {
 	unsigned int fmt;
 
 	/* from 'post_tags' table */
-	struct list_head tags;
+	list_t tags;
 
 	/* from 'comments' table */
-	struct list_head comments;
+	list_t comments;
 	unsigned int numcom;
 
 	/* body */
-	struct val *body;
+	struct str *body;
 
 	/* fmt3 */
 	int table_nesting;
@@ -64,7 +65,7 @@ struct post_old {
 
 struct req;
 
-extern struct val *load_post(struct req *req, int postid, const char *titlevar, bool preview);
+extern nvlist_t *load_post(struct req *req, int postid, const char *titlevar, bool preview);
 extern void dump_post(struct post_old *post);
 extern void destroy_post(struct post *post);
 extern void load_posts(struct req *req, sqlite3_stmt *stmt, int expected);

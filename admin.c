@@ -1,4 +1,4 @@
-#include "main.h"
+#include "req.h"
 
 int blahg_admin(struct req *req)
 {

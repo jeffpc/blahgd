@@ -10,15 +10,17 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#include "main.h"
+#include "req.h"
 #include "sidebar.h"
 #include "render.h"
 #include "db.h"
-
+#include "utils.h"
 #include "config.h"
 #include "comment.h"
 #include "decode.h"
 #include "error.h"
+#include "post.h"
+#include "atomic.h"
 
 #define INTERNAL_ERR		"Ouch!  Encountered an internal error.  " \
 				"Please contact me to resolve this issue."
@@ -28,6 +30,7 @@
 #define _REQ_FIELDS		"The required fields are: name, email " \
 				"address, the math field, and of course "\
 				"the content."
+#define USERAGENT_MISSING	"You need to send a user-agent."
 #define CAPTCHA_FAIL		"You need to get better at math."
 #define MISSING_EMAIL		"You need to supply a valid email address. " \
 				_REQ_FIELDS
@@ -55,11 +58,15 @@
 #define SC_ID_EQ		17
 #define SC_CAPTCHA		8
 #define SC_CAPTCHA_EQ		18
+#define SC_EMPTY		9
+#define SC_EMPTY_EQ		19
 #define SC_ERROR		99
 
 const char *write_out_comment(struct req *req, int id, char *author,
 			      char *email, char *url, char *comment)
 {
+	static atomic_t nonce;
+
 	char basepath[FILENAME_MAX];
 	char dirpath[FILENAME_MAX];
 	char textpath[FILENAME_MAX];
@@ -74,7 +81,7 @@ const char *write_out_comment(struct req *req, int id, char *author,
 	time_t now_sec;
 	struct tm *now_tm;
 
-	struct val *val;
+	nvlist_t *post;
 
 	if (strlen(email) == 0) {
 		LOG("You must fill in email (postid=%d)", id);
@@ -91,13 +98,11 @@ const char *write_out_comment(struct req *req, int id, char *author,
 		return MISSING_CONTENT;
 	}
 
-	val = load_post(req, id, NULL, false);
-	if (!val) {
+	post = load_post(req, id, NULL, false);
+	if (!post) {
 		LOG("Gah! %d (postid=%d)", -1, id);
 		return GENERIC_ERR_STR;
 	}
-
-	val_putref(val);
 
 	now = gettime();
 	now_sec  = now / 1000000000UL;
@@ -110,8 +115,8 @@ const char *write_out_comment(struct req *req, int id, char *author,
 
 	strftime(curdate, 31, "%Y-%m-%d %H:%M", now_tm);
 
-	snprintf(basepath, FILENAME_MAX, DATA_DIR "/pending-comments/%d-%08lx.%08lx.%05x",
-		 id, now_sec, now_nsec, (unsigned) getpid());
+	snprintf(basepath, FILENAME_MAX, DATA_DIR "/pending-comments/%d-%08lx.%08"PRIx64".%05x",
+		 id, now_sec, now_nsec, atomic_inc(&nonce));
 
 	snprintf(dirpath,  FILENAME_MAX, "%sW", basepath);
 	snprintf(textpath, FILENAME_MAX, "%s/text.txt", dirpath);
@@ -133,9 +138,7 @@ const char *write_out_comment(struct req *req, int id, char *author,
 		return INTERNAL_ERR;
 	}
 
-	remote_addr = getenv("HTTP_X_REAL_IP");
-	if (!remote_addr)
-		remote_addr = getenv("REMOTE_ADDR");
+	remote_addr = nvl_lookup_str(req->request_headers, REMOTE_ADDR);
 
 	sql = sqlite3_mprintf("INSERT INTO comments "
 			      "(post, id, author, email, time, "
@@ -171,7 +174,7 @@ const char *write_out_comment(struct req *req, int id, char *author,
 
 static const char *save_comment(struct req *req)
 {
-	int in;
+	char *in;
 	char tmp;
 	uint64_t now, deltat;
 
@@ -187,15 +190,26 @@ static const char *save_comment(struct req *req)
 	int comment_len = 0;
 	uint64_t date = 0;
 	uint64_t captcha = 0;
+	bool nonempty = false;
 	int id = 0;
+
+	if (!nvl_lookup_str(req->request_headers, HTTP_USER_AGENT)) {
+		LOG("Missing user agent...");
+		return USERAGENT_MISSING;
+	}
 
 	author_buf[0] = '\0'; /* better be paranoid */
 	email_buf[0] = '\0'; /* better be paranoid */
 	url_buf[0] = '\0'; /* better be paranoid */
 	comment_buf[0] = '\0'; /* better be paranoid */
 
-	for(state = SC_IGNORE; (in = getchar()) != EOF; ) {
-		tmp = in;
+	if (!req->request_body)
+		return INTERNAL_ERR;
+
+	in = req->request_body;
+
+	for (state = SC_IGNORE; *in; in++) {
+		tmp = *in;
 
 #if 0
 		LOG("|'%c' %d|", tmp, state);
@@ -219,6 +233,8 @@ static const char *save_comment(struct req *req)
 					state = SC_ID_EQ;
 				if (tmp == 'v')
 					state = SC_CAPTCHA_EQ;
+				if (tmp == 'x')
+					state = SC_EMPTY_EQ;
 				break;
 
 			case SC_AUTHOR_EQ:
@@ -251,6 +267,10 @@ static const char *save_comment(struct req *req)
 
 			case SC_CAPTCHA_EQ:
 				state = (tmp == '=') ? SC_CAPTCHA : SC_ERROR;
+				break;
+
+			case SC_EMPTY_EQ:
+				state = (tmp == '=') ? SC_EMPTY : SC_ERROR;
 				break;
 
 			case SC_AUTHOR:
@@ -318,6 +338,16 @@ static const char *save_comment(struct req *req)
 				else
 					captcha = (captcha * 10) + (tmp - '0');
 				break;
+
+			case SC_EMPTY:
+				if (tmp == '&') {
+					state = SC_IGNORE;
+				} else {
+					nonempty = true;
+					state = SC_ERROR;
+				}
+
+				break;
 		}
 
 		if (state == SC_ERROR)
@@ -336,6 +366,11 @@ static const char *save_comment(struct req *req)
 
 	now = gettime();
 	deltat = now - date;
+
+	if (nonempty) {
+		LOG("User filled out supposedly empty field... postid:%d", id);
+		return GENERIC_ERR_STR;
+	}
 
 	if ((deltat > COMMENT_MAX_DELAY) || (deltat < COMMENT_MIN_DELAY)) {
 		LOG("Flash-gordon or geriatric was here... load:%lu comment:%lu delta:%lu postid:%d",
@@ -372,8 +407,7 @@ int blahg_comment(struct req *req)
 	errmsg = save_comment(req);
 	if (errmsg) {
 		tmpl = "{comment_error}";
-		VAR_SET_STR(&req->vars, "comment_error_str",
-			    xstrdup(errmsg));
+		vars_set_str(&req->vars, "comment_error_str", errmsg);
 		// FIXME: __store_title(&req->vars, "Error");
 	} else {
 		tmpl = "{comment_saved}";

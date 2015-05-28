@@ -5,7 +5,7 @@
 #include <errno.h>
 
 #include "post.h"
-#include "main.h"
+#include "req.h"
 #include "render.h"
 #include "sidebar.h"
 #include "error.h"
@@ -13,19 +13,17 @@
 
 static int __load_post(struct req *req, int p, bool preview)
 {
-	struct val *posts;
-	struct val *post;
+	nvlist_t *post;
 
 	post = load_post(req, p, "title", preview);
 	if (!post) {
 		LOG("failed to load post #%d: %s (%d)%s", p, "XXX",
 		    -1, preview ? " preview" : "");
 
-		VAR_SET_STR(&req->vars, "title", xstrdup("not found"));
+		vars_set_str(&req->vars, "title", "not found");
 	} else {
-		posts = VAR_LOOKUP_VAL(&req->vars, "posts");
-
-		VAL_SET_LIST(posts, 0, post);
+		vars_set_nvl_array(&req->vars, "posts", &post, 1);
+		nvlist_free(post);
 	}
 
 	return post ? 0 : ENOENT;
@@ -37,8 +35,6 @@ int blahg_story(struct req *req, int p, bool preview)
 		fprintf(stderr, "Invalid post #\n");
 		return 0;
 	}
-
-	req_head(req, "Content-Type", "text/html");
 
 	sidebar(req);
 
