@@ -272,8 +272,6 @@ static char *__function(struct parser_output *data, struct req *req,
 	ia1 = __function_get_arg(req, sa1);
 	ia2 = __function_get_arg(req, sa2);
 
-	fprintf(stderr, "%s: %"PRIu64" %"PRIu64"\n", __func__, ia1, ia2);
-
 	switch (fxn) {
 		case IFFXN_GT:
 			result = ia1 > ia2;
@@ -294,9 +292,6 @@ static char *__function(struct parser_output *data, struct req *req,
 static char *function(struct parser_output *data, struct req *req,
                       const char *fxn, const char *sa1, const char *sa2)
 {
-	fprintf(stderr, "%s(%p, .., %s, %s, %s)\n", __func__, data, fxn,
-		sa1, sa2);
-
 	if (!strcmp(fxn, "ifgt")) {
 		return __function(data, req, IFFXN_GT, sa1, sa2);
 	} else if (!strcmp(fxn, "iflt")) {

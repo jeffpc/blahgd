@@ -43,7 +43,6 @@ static inline bool cond_value(struct parser_output *data)
 
 static inline void cond_if(struct parser_output *data, bool val)
 {
-	fprintf(stderr, "%s: %p (%d)\n", __func__, data, data->cond_stack_use);
 	ASSERT3S(data->cond_stack_use, <, COND_STACK_DEPTH);
 
 	data->cond_stack[++data->cond_stack_use] = val;
@@ -51,7 +50,6 @@ static inline void cond_if(struct parser_output *data, bool val)
 
 static inline void cond_else(struct parser_output *data)
 {
-	fprintf(stderr, "%s: %p (%d)\n", __func__, data, data->cond_stack_use);
 	ASSERT3S(data->cond_stack_use, >=, 0);
 
 	data->cond_stack[data->cond_stack_use] = !data->cond_stack[data->cond_stack_use];
@@ -59,7 +57,6 @@ static inline void cond_else(struct parser_output *data)
 
 static inline void cond_endif(struct parser_output *data)
 {
-	fprintf(stderr, "%s: %p (%d)\n", __func__, data, data->cond_stack_use);
 	ASSERT3S(data->cond_stack_use, >=, 0);
 
 	data->cond_stack_use--;
