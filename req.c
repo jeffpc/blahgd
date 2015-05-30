@@ -399,7 +399,7 @@ int R301(struct req *req, const char *url)
 
 	vars_scope_push(&req->vars);
 
-	vars_set_str(&req->vars, "redirect", xstrdup(url));
+	vars_set_str(&req->vars, "redirect", url);
 
 	req->body = render_page(req, "{301}");
 
