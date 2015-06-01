@@ -1,8 +1,18 @@
 #include <stdlib.h>
+#include <umem.h>
 
 #include "str.h"
 #include "val.h"
 #include "utils.h"
+
+static umem_cache_t *str_cache;
+
+void init_str_subsys(void)
+{
+	str_cache = umem_cache_create("str-cache", sizeof(struct str),
+				      0, NULL, NULL, NULL, NULL, NULL, 0);
+	ASSERT(str_cache);
+}
 
 struct str *str_dup(const char *s)
 {
@@ -13,7 +23,7 @@ struct str *str_alloc(char *s)
 {
 	struct str *str;
 
-	str = malloc(sizeof(struct str));
+	str = umem_cache_alloc(str_cache, 0);
 	if (!str)
 		return NULL;
 
@@ -80,7 +90,7 @@ void str_free(struct str *str)
 	ASSERT3U(atomic_read(&str->refcnt), ==, 0);
 
 	free(str->str);
-	free(str);
+	umem_cache_free(str_cache, str);
 }
 
 struct str *str_getref(struct str *str)

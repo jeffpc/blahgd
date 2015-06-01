@@ -51,6 +51,7 @@ int main(int argc, char **argv)
 	ASSERT0(putenv("BLAHG_DISABLE_SYSLOG=1"));
 
 	init_math(false);
+	init_str_subsys();
 	init_val_subsys();
 
 	for (i = 1; i < argc; i++) {

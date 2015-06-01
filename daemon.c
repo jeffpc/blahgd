@@ -21,6 +21,7 @@
 #include "pipeline.h"
 #include "template_cache.h"
 #include "math.h"
+#include "str.h"
 
 #define HOST		NULL
 #define PORT		2014
@@ -254,6 +255,7 @@ int main(int argc, char **argv)
 		goto err;
 
 	init_math(true);
+	init_str_subsys();
 	init_val_subsys();
 	init_pipe_subsys();
 	init_template_cache();

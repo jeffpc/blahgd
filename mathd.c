@@ -82,6 +82,7 @@ int main(int argc, char **argv)
 	openlog("mathd", LOG_NDELAY | LOG_PID, LOG_LOCAL0);
 
 	init_math(false);
+	init_str_subsys();
 	init_val_subsys();
 
 	MXINIT(&lock);

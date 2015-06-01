@@ -11,6 +11,7 @@ struct str {
 	atomic_t refcnt;
 };
 
+extern void init_str_subsys(void);
 extern struct str *str_alloc(char *s);
 extern size_t str_len(const struct str *str);
 extern struct str *str_dup(const char *s);
