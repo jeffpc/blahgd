@@ -23,6 +23,11 @@ struct str *str_alloc(char *s)
 	return str;
 }
 
+size_t str_len(const struct str *s)
+{
+	return strlen(s->str);
+}
+
 struct str *str_cat5(struct str *a, struct str *b, struct str *c,
 		     struct str *d, struct str *e)
 {
