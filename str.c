@@ -78,6 +78,11 @@ size_t str_len(const struct str *s)
 	return strlen(s->str);
 }
 
+int str_cmp(const struct str *a, const struct str *b)
+{
+	return strcmp(a->str, b->str);
+}
+
 struct str *str_cat5(struct str *a, struct str *b, struct str *c,
 		     struct str *d, struct str *e)
 {

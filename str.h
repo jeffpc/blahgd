@@ -40,6 +40,7 @@ struct str {
 extern void init_str_subsys(void);
 extern struct str *str_alloc(char *s);
 extern size_t str_len(const struct str *str);
+extern int str_cmp(const struct str *a, const struct str *b);
 extern struct str *str_dup(const char *s);
 extern struct str *str_cat5(struct str *a, struct str *b, struct str *c,
 			    struct str *d, struct str *e);
