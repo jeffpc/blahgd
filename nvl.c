@@ -13,6 +13,22 @@ nvlist_t *nvl_alloc(void)
 	return out;
 }
 
+#define DECL_NVL_SET(name, nvfxn, argtype)				\
+void name(nvlist_t *nvl, const char *name, argtype val)			\
+{									\
+	int ret;							\
+									\
+	ret = nvfxn(nvl, name, val);					\
+									\
+	ASSERT0(ret);							\
+}
+
+DECL_NVL_SET(nvl_set_int,  nvlist_add_uint64,        uint64_t)
+DECL_NVL_SET(nvl_set_bool, nvlist_add_boolean_value, bool)
+DECL_NVL_SET(nvl_set_char, nvlist_add_uint8,         char)
+DECL_NVL_SET(nvl_set_nvl,  nvlist_add_nvlist,        nvlist_t *)
+
+/* nvl_set_str is special, it's a no-op if the value is NULL */
 void nvl_set_str(nvlist_t *nvl, const char *name, const char *val)
 {
 	int ret;
@@ -25,61 +41,18 @@ void nvl_set_str(nvlist_t *nvl, const char *name, const char *val)
 	ASSERT0(ret);
 }
 
-void nvl_set_int(nvlist_t *nvl, const char *name, uint64_t val)
-{
-	int ret;
-
-	ret = nvlist_add_uint64(nvl, name, val);
-
-	ASSERT0(ret);
+#define DECL_NVL_SET_ARR(name, nvfxn, argtype)				\
+void name(nvlist_t *nvl, const char *name, argtype *val, uint_t nval)	\
+{									\
+	int ret;							\
+									\
+	ret = nvfxn(nvl, name, val, nval);				\
+									\
+	ASSERT0(ret);							\
 }
 
-void nvl_set_bool(nvlist_t *nvl, const char *name, bool val)
-{
-	int ret;
-
-	ret = nvlist_add_boolean_value(nvl, name, val);
-
-	ASSERT0(ret);
-}
-
-void nvl_set_char(nvlist_t *nvl, const char *name, char val)
-{
-	int ret;
-
-	ret = nvlist_add_uint8(nvl, name, (uint8_t) val);
-
-	ASSERT0(ret);
-}
-
-void nvl_set_nvl(nvlist_t *nvl, const char *name, nvlist_t *val)
-{
-	int ret;
-
-	ret = nvlist_add_nvlist(nvl, name, val);
-
-	ASSERT0(ret);
-}
-
-void nvl_set_str_array(nvlist_t *nvl, const char *name, char **val,
-		       uint_t nval)
-{
-	int ret;
-
-	ret = nvlist_add_string_array(nvl, name, val, nval);
-
-	ASSERT0(ret);
-}
-
-void nvl_set_nvl_array(nvlist_t *nvl, const char *name, nvlist_t **val,
-		       uint_t nval)
-{
-	int ret;
-
-	ret = nvlist_add_nvlist_array(nvl, name, val, nval);
-
-	ASSERT0(ret);
-}
+DECL_NVL_SET_ARR(nvl_set_str_array, nvlist_add_string_array, char *)
+DECL_NVL_SET_ARR(nvl_set_nvl_array, nvlist_add_nvlist_array, nvlist_t *)
 
 nvpair_t *nvl_lookup(nvlist_t *nvl, const char *name)
 {
