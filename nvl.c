@@ -118,57 +118,20 @@ uint64_t nvl_lookup_int(nvlist_t *nvl, const char *name)
 	return pair2int(pair);
 }
 
-char *pair2str(nvpair_t *pair)
-{
-	char *out;
-	int ret;
-
-	ret = nvpair_value_string(pair, &out);
-	ASSERT0(ret);
-
-	return out;
+#define DECL_PAIR2(name, nvfxn, rettype, localtype)			\
+rettype name(nvpair_t *pair)						\
+{									\
+	localtype out;							\
+	int ret;							\
+									\
+	ret = nvfxn(pair, &out);					\
+	ASSERT0(ret);							\
+									\
+	return out;							\
 }
 
-bool pair2bool(nvpair_t *pair)
-{
-	boolean_t out;
-	int ret;
-
-	ret = nvpair_value_boolean_value(pair, &out);
-	ASSERT0(ret);
-
-	return out;
-}
-
-char pair2char(nvpair_t *pair)
-{
-	uint8_t out;
-	int ret;
-
-	ret = nvpair_value_uint8(pair, &out);
-	ASSERT0(ret);
-
-	return (char) out;
-}
-
-uint64_t pair2int(nvpair_t *pair)
-{
-	uint64_t out;
-	int ret;
-
-	ret = nvpair_value_uint64(pair, &out);
-	ASSERT0(ret);
-
-	return out;
-}
-
-nvlist_t *pair2nvl(nvpair_t *pair)
-{
-	nvlist_t *out;
-	int ret;
-
-	ret = nvpair_value_nvlist(pair, &out);
-	ASSERT0(ret);
-
-	return out;
-}
+DECL_PAIR2(pair2str,  nvpair_value_string,        char *,     char *)
+DECL_PAIR2(pair2bool, nvpair_value_boolean_value, bool,       boolean_t)
+DECL_PAIR2(pair2char, nvpair_value_uint8,         char,       uint8_t)
+DECL_PAIR2(pair2int,  nvpair_value_uint64,        uint64_t,   uint64_t)
+DECL_PAIR2(pair2nvl,  nvpair_value_nvlist,        nvlist_t *, nvlist_t *)
