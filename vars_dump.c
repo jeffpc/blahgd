@@ -5,61 +5,6 @@
 
 #define INDENT	4
 
-char *pair2str(nvpair_t *pair)
-{
-	char *out;
-	int ret;
-
-	ret = nvpair_value_string(pair, &out);
-	ASSERT0(ret);
-
-	return out;
-}
-
-bool pair2bool(nvpair_t *pair)
-{
-	boolean_t out;
-	int ret;
-
-	ret = nvpair_value_boolean_value(pair, &out);
-	ASSERT0(ret);
-
-	return out;
-}
-
-char pair2char(nvpair_t *pair)
-{
-	uint8_t out;
-	int ret;
-
-	ret = nvpair_value_uint8(pair, &out);
-	ASSERT0(ret);
-
-	return (char) out;
-}
-
-uint64_t pair2int(nvpair_t *pair)
-{
-	uint64_t out;
-	int ret;
-
-	ret = nvpair_value_uint64(pair, &out);
-	ASSERT0(ret);
-
-	return out;
-}
-
-nvlist_t *pair2nvl(nvpair_t *pair)
-{
-	nvlist_t *out;
-	int ret;
-
-	ret = nvpair_value_nvlist(pair, &out);
-	ASSERT0(ret);
-
-	return out;
-}
-
 static void __dump(nvlist_t *list, int indent);
 
 static void __dump_string_array(nvpair_t *pair, int indent)

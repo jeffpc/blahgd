@@ -59,6 +59,7 @@ add_executable(blahgd
 	decode.c fsm.c
 	vars.c vars_dump.c
 	val.c
+	nvl.c
 
 	# request processing
 	req.c
@@ -128,7 +129,7 @@ add_executable(test_qstring
 	test_qstring.c
 	error.c
 	utils.c
-	vars.c vars_dump.c
+	vars.c vars_dump.c nvl.c
 	qstring.c
 	decode.c fsm.c
 )
