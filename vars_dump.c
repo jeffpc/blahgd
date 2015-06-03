@@ -16,6 +16,28 @@ char *pair2str(nvpair_t *pair)
 	return out;
 }
 
+bool pair2bool(nvpair_t *pair)
+{
+	boolean_t out;
+	int ret;
+
+	ret = nvpair_value_boolean_value(pair, &out);
+	ASSERT0(ret);
+
+	return out;
+}
+
+char pair2char(nvpair_t *pair)
+{
+	uint8_t out;
+	int ret;
+
+	ret = nvpair_value_uint8(pair, &out);
+	ASSERT0(ret);
+
+	return (char) out;
+}
+
 uint64_t pair2int(nvpair_t *pair)
 {
 	uint64_t out;
@@ -93,6 +115,15 @@ static void __dump(nvlist_t *list, int indent)
 				break;
 			case DATA_TYPE_STRING_ARRAY:
 				__dump_string_array(pair, indent + INDENT);
+				break;
+			case DATA_TYPE_BOOLEAN:
+				fprintf(stderr, "\n%*svalue=%s\n",
+					indent + INDENT, "",
+					pair2bool(pair) ? "true" : "false");
+				break;
+			case DATA_TYPE_UINT8:
+				fprintf(stderr, "\n%*svalue='%c'\n",
+					indent + INDENT, "", pair2char(pair));
 				break;
 			case DATA_TYPE_UINT64:
 				fprintf(stderr, "\n%*svalue=%"PRIu64"\n",

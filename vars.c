@@ -156,6 +156,33 @@ void nvl_set_int(nvlist_t *nvl, const char *name, uint64_t val)
 	ASSERT0(ret);
 }
 
+void nvl_set_bool(nvlist_t *nvl, const char *name, bool val)
+{
+	int ret;
+
+	ret = nvlist_add_boolean_value(nvl, name, val);
+
+	ASSERT0(ret);
+}
+
+void nvl_set_char(nvlist_t *nvl, const char *name, char val)
+{
+	int ret;
+
+	ret = nvlist_add_uint8(nvl, name, (uint8_t) val);
+
+	ASSERT0(ret);
+}
+
+void nvl_set_nvl(nvlist_t *nvl, const char *name, nvlist_t *val)
+{
+	int ret;
+
+	ret = nvlist_add_nvlist(nvl, name, val);
+
+	ASSERT0(ret);
+}
+
 void nvl_set_str_array(nvlist_t *nvl, const char *name, char **val,
 		       uint_t nval)
 {
