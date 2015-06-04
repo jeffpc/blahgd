@@ -253,14 +253,14 @@ static void __tag_val(nvlist_t *post, list_t *list)
 
 	/* count the tags */
 	ntags = 0;
-	list_for_each(cur, list)
+	list_for_each(list, cur)
 		ntags++;
 
 	tags = malloc(sizeof(char *) * ntags);
 	ASSERT(tags);
 
 	i = 0;
-	list_for_each(cur, list)
+	list_for_each(list, cur)
 		tags[i++] = cur->tag;
 
 	nvl_set_str_array(post, "tags", tags, ntags);
@@ -277,14 +277,14 @@ static void __com_val(nvlist_t *post, list_t *list)
 
 	/* count the comments */
 	ncomments = 0;
-	list_for_each(cur, list)
+	list_for_each(list, cur)
 		ncomments++;
 
 	comments = malloc(sizeof(nvlist_t *) * ncomments);
 	ASSERT(comments);
 
 	i = 0;
-	list_for_each(cur, list) {
+	list_for_each(list, cur) {
 		comments[i] = nvl_alloc();
 
 		nvl_set_int(comments[i], "commid", cur->id);

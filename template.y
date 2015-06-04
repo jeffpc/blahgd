@@ -189,7 +189,7 @@ static char *pipeline(struct req *req, char *varname, struct pipeline *line)
 			break;
 	}
 
-	list_for_each(cur, &line->pipe)
+	list_for_each(&line->pipe, cur)
 		val = cur->stage->f(val);
 
 	pipeline_destroy(line);
