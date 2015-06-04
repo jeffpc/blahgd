@@ -1,7 +1,5 @@
 include(CheckFunctionExists)
 
-check_function_exists(flock HAVE_FLOCK)
-
 macro(set_default name default)
 	if(NOT DEFINED ${name})
 		message("-- Defaulting ${name} to ${default}")
