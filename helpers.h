@@ -5,6 +5,6 @@
 
 extern int start_helpers(void);
 extern void stop_helpers(void);
-extern int enqueue_fd(int fd);
+extern int enqueue_fd(int fd, uint64_t);
 
 #endif

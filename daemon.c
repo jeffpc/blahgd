@@ -173,6 +173,7 @@ static void accept_conns(void)
 	for (;;) {
 		union sockaddr_union addr;
 		unsigned len;
+		uint64_t ts;
 		int fd;
 
 		FD_ZERO(&set);
@@ -183,6 +184,8 @@ static void accept_conns(void)
 		}
 
 		ret = select(maxfd + 1, &set, NULL, NULL, NULL);
+
+		ts = gettime();
 
 		if (atomic_read(&server_shutdown))
 			break;
@@ -202,7 +205,7 @@ static void accept_conns(void)
 				continue;
 			}
 
-			if (enqueue_fd(fd))
+			if (enqueue_fd(fd, ts))
 				close(fd);
 
 			ret--;

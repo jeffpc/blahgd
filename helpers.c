@@ -12,6 +12,7 @@
 #include "scgi.h"
 #include "mx.h"
 #include "atomic.h"
+#include "utils.h"
 
 static int nhelpers;
 static pthread_t helpers[SCGI_NHELPERS];
@@ -43,6 +44,8 @@ static void *queue_processor(void *arg)
 		req = list_remove_head(&queue);
 		MXUNLOCK(&lock);
 
+		req->stats.dequeue = gettime();
+
 		scgi_read_request(req);
 
 		process_request(req);
@@ -55,7 +58,7 @@ static void *queue_processor(void *arg)
 	return NULL;
 }
 
-int enqueue_fd(int fd)
+int enqueue_fd(int fd, uint64_t ts)
 {
 	struct req *req;
 
@@ -63,9 +66,12 @@ int enqueue_fd(int fd)
 	if (!req)
 		return ENOMEM;
 
+	req->stats.fd_conn = ts;
+
 	req_init_scgi(req, fd);
 
 	MXLOCK(&lock);
+	req->stats.enqueue = gettime();
 	list_insert_tail(&queue, req);
 	CONDSIG(&enqueued);
 	MXUNLOCK(&lock);

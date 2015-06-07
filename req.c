@@ -10,9 +10,10 @@
 
 static void req_init(struct req *req, enum req_via via)
 {
+	req->stats.req_init = gettime();
+
 	/* state */
 	req->dump_latency = true;
-	req->start = gettime();
 
 	vars_init(&req->vars);
 	vars_set_str(&req->vars, "baseurl", BASE_URL);
@@ -54,6 +55,8 @@ void req_output(struct req *req)
 {
 	nvpair_t *header;
 
+	req->stats.req_output = gettime();
+
 	/* return status */
 	fprintf(req->out, "Status: %u\n", req->status);
 
@@ -77,16 +80,20 @@ void req_output(struct req *req)
 	if (req->dump_latency) {
 		uint64_t delta;
 
-		delta = gettime() - req->start;
+		delta = req->stats.req_output - req->stats.req_init;
 
 		fprintf(req->out, "\n<!-- time to render: %"PRIu64".%09"PRIu64" seconds -->\n",
 		       delta / 1000000000UL,
 		       delta % 1000000000UL);
 	}
+
+	req->stats.req_done = gettime();
 }
 
 void req_destroy(struct req *req)
 {
+	req->stats.destroy = gettime();
+
 	vars_destroy(&req->vars);
 
 	nvlist_free(req->headers);
