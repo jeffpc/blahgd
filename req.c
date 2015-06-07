@@ -1,5 +1,6 @@
 #include <unistd.h>
 #include <sys/inttypes.h>
+#include <umem.h>
 
 #include "req.h"
 #include "utils.h"
@@ -7,6 +8,28 @@
 #include "render.h"
 #include "qstring.h"
 #include "static.h"
+
+static umem_cache_t *req_cache;
+
+void init_req_subsys(void)
+{
+	req_cache = umem_cache_create("req-cache", sizeof(struct req),
+				      0, NULL, NULL, NULL, NULL, NULL, 0);
+	ASSERT(req_cache);
+}
+
+struct req *req_alloc(void)
+{
+	return umem_cache_alloc(req_cache, 0);
+}
+
+void req_free(struct req *req)
+{
+	if (!req)
+		return;
+
+	umem_cache_free(req_cache, req);
+}
 
 static void req_init(struct req *req, enum req_via via)
 {

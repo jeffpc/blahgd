@@ -110,6 +110,10 @@ struct req {
 	FILE *out;
 };
 
+extern void init_req_subsys(void);
+extern struct req *req_alloc(void);
+extern void req_free(struct req *req);
+
 extern void req_init_scgi(struct req *req, int fd);
 extern void req_destroy(struct req *req);
 extern void req_output(struct req *req);

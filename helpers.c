@@ -30,6 +30,7 @@ static void process_request(struct req *req)
 
 	req_output(req);
 	req_destroy(req);
+	req_free(req);
 }
 
 static void *queue_processor(void *arg)
@@ -50,8 +51,6 @@ static void *queue_processor(void *arg)
 
 		process_request(req);
 
-		free(req);
-
 		atomic_inc(&requests_processed);
 	}
 
@@ -62,7 +61,7 @@ int enqueue_fd(int fd, uint64_t ts)
 {
 	struct req *req;
 
-	req = malloc(sizeof(struct req));
+	req = req_alloc();
 	if (!req)
 		return ENOMEM;
 
