@@ -24,6 +24,7 @@
 #define __STR_H
 
 #include "vars.h"
+#include "error.h"
 #include "refcnt.h"
 
 /* ref-counted string */
