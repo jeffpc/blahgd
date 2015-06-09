@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdbool.h>
 #include <umem.h>
 
 #include "str.h"
@@ -14,12 +15,7 @@ void init_str_subsys(void)
 	ASSERT(str_cache);
 }
 
-struct str *str_dup(const char *s)
-{
-	return str_alloc(xstrdup(s));
-}
-
-struct str *str_alloc(char *s)
+static struct str *__alloc(char *s, bool copy)
 {
 	struct str *str;
 
@@ -28,9 +24,31 @@ struct str *str_alloc(char *s)
 		return NULL;
 
 	atomic_set(&str->refcnt, 1);
-	str->str = s;
+
+	if (copy) {
+		strcpy(str->inline_str, s);
+		str->str = str->inline_str;
+	} else {
+		str->str = s;
+	}
 
 	return str;
+}
+
+struct str *str_dup(const char *s)
+{
+	if (!s)
+		return __alloc("", true);
+
+	if (strlen(s) <= STR_INLINE_LEN)
+		return __alloc((char *) s, true);
+
+	return str_alloc(strdup(s));
+}
+
+struct str *str_alloc(char *s)
+{
+	return __alloc(s, false);
 }
 
 size_t str_len(const struct str *s)
@@ -89,7 +107,8 @@ void str_free(struct str *str)
 
 	ASSERT3U(atomic_read(&str->refcnt), ==, 0);
 
-	free(str->str);
+	if (str->str != str->inline_str)
+		free(str->str);
 	umem_cache_free(str_cache, str);
 }
 

@@ -6,9 +6,12 @@
 
 /* ref-counted string */
 
+#define STR_INLINE_LEN	15
+
 struct str {
 	char *str;
 	atomic_t refcnt;
+	char inline_str[STR_INLINE_LEN + 1];
 };
 
 extern void init_str_subsys(void);
