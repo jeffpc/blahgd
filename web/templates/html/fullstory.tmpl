@@ -1,9 +1,11 @@
 {story}
 <h2>{numcom} Comments <a href="#respond" title="Leave a comment">&raquo;</a></h2>
 
+{ifgt(numcom,0)}
 <ol id="commentlist">
 {comments%comment}
 </ol>
+{endif()}
 
 <p><a href='{baseurl}/?p={id}&amp;feed=atom'>Atom feed for comments on this post.</a></p>
 

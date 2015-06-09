@@ -431,7 +431,7 @@ void destroy_post(struct post *post)
  *     post id
  *     post time
  */
-void load_posts(struct req *req, sqlite3_stmt *stmt)
+void load_posts(struct req *req, sqlite3_stmt *stmt, int expected)
 {
 	nvlist_t **posts;
 	uint_t nposts;
@@ -466,6 +466,7 @@ void load_posts(struct req *req, sqlite3_stmt *stmt)
 
 	vars_set_nvl_array(&req->vars, "posts", posts, nposts);
 	vars_set_int(&req->vars, "lastupdate", maxtime);
+	vars_set_int(&req->vars, "moreposts", nposts == expected);
 
 	for (i = 0; i < nposts; i++)
 		nvlist_free(posts[i]);

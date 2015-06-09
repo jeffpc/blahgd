@@ -20,7 +20,7 @@ static void inc_lineno(yyscan_t scanner);
 %}
 
 %%
-[{}|%]			{ return *yytext; }
+[{}|%(),]		{ return *yytext; }
 [A-Za-z0-9_]+		{ yylval->ptr = xstrdup(yytext); return WORD; }
 [ \r\t]			{ yylval->c = *yytext; return CHAR; }
 \n			{

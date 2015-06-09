@@ -41,6 +41,16 @@ static char *tostr(char c)
 	return ret;
 }
 
+static char *condconcat(struct parser_output *data, char *a, char *b)
+{
+	if (!cond_value(data)) {
+		free(b);
+		return a;
+	}
+
+	return concat(a, b);
+}
+
 static char *__foreach_nv(struct req *req, nvpair_t *var, char *tmpl)
 {
 	nvlist_t **items;
@@ -93,10 +103,14 @@ static char *__foreach_str(struct req *req, nvpair_t *var, char *tmpl)
 	return out;
 }
 
-char *foreach(struct req *req, char *varname, char *tmpl)
+static char *foreach(struct parser_output *data, struct req *req, char *varname,
+                     char *tmpl)
 {
 	nvpair_t *var;
 	char *ret;
+
+	if (!cond_value(data))
+		return xstrdup("");
 
 	var = vars_lookup(&req->vars, varname);
 	if (!var)
@@ -161,12 +175,18 @@ static char *print_var(nvpair_t *var)
 	return xstrdup(tmp);
 }
 
-static char *pipeline(struct req *req, char *varname, struct pipeline *line)
+static char *pipeline(struct parser_output *data, struct req *req,
+		      char *varname, struct pipeline *line)
 {
 	struct pipestage *cur;
 	struct val *val;
 	nvpair_t *var;
 	char *out;
+
+	if (!cond_value(data)) {
+		pipeline_destroy(line);
+		return xstrdup("");
+	}
 
 	var = vars_lookup(&req->vars, varname);
 	if (!var) {
@@ -200,6 +220,95 @@ static char *pipeline(struct req *req, char *varname, struct pipeline *line)
 
 	return out;
 }
+
+static char *variable(struct parser_output *data, struct req *req, char *name)
+{
+	nvpair_t *var;
+
+	if (!cond_value(data))
+		return xstrdup("");
+
+	var = vars_lookup(&req->vars, name);
+
+	if (!var)
+		return render_template(req, name);
+	else
+		return print_var(var);
+}
+
+enum if_fxns {
+	IFFXN_GT,
+	IFFXN_LT,
+	IFFXN_EQ,
+};
+
+static uint64_t __function_get_arg(struct req *req, const char *arg)
+{
+	nvpair_t *var;
+	uint64_t val;
+
+	if (!str2u64(arg, &val))
+		return val;
+
+	var = vars_lookup(&req->vars, arg);
+	if (!var)
+		return 0;
+
+	switch (nvpair_type(var)) {
+		case DATA_TYPE_UINT64:
+			return pair2int(var);
+		default:
+			ASSERT(0);
+	}
+}
+
+static char *__function(struct parser_output *data, struct req *req,
+			enum if_fxns fxn, const char *sa1,
+			const char *sa2)
+{
+	uint64_t ia1, ia2;		/* int value of saX */
+	bool result = true;
+
+	ia1 = __function_get_arg(req, sa1);
+	ia2 = __function_get_arg(req, sa2);
+
+	switch (fxn) {
+		case IFFXN_GT:
+			result = ia1 > ia2;
+			break;
+		case IFFXN_LT:
+			result = ia1 < ia2;
+			break;
+		case IFFXN_EQ:
+			result = ia1 == ia2;
+			break;
+	}
+
+	cond_if(data, result);
+
+	return xstrdup(NULL);
+}
+
+static char *function(struct parser_output *data, struct req *req,
+                      const char *fxn, const char *sa1, const char *sa2)
+{
+	if (!strcmp(fxn, "ifgt")) {
+		return __function(data, req, IFFXN_GT, sa1, sa2);
+	} else if (!strcmp(fxn, "iflt")) {
+		return __function(data, req, IFFXN_LT, sa1, sa2);
+	} else if (!strcmp(fxn, "ifeq")) {
+		return __function(data, req, IFFXN_EQ, sa1, sa2);
+	} else if (!strcmp(fxn, "endif")) {
+		cond_endif(data);
+	} else if (!strcmp(fxn, "else")) {
+		cond_else(data);
+	} else {
+		LOG("unknown template function '%s'", fxn);
+		ASSERT(0);
+	}
+
+	return xstrdup(NULL);
+}
 %}
 
 %union {
@@ -221,33 +330,40 @@ static char *pipeline(struct req *req, char *varname, struct pipeline *line)
 page : words					{ data->output = $1; }
      ;
 
-words : words CHAR				{ $$ = concat($1, tostr($2)); }
-      | words WORD				{ $$ = concat($1, $2); }
-      | words '|'				{ $$ = concat($1, xstrdup("|")); }
-      | words '%'				{ $$ = concat($1, xstrdup("%")); }
+words : words CHAR				{ $$ = condconcat(data, $1, tostr($2)); }
+      | words WORD				{ $$ = condconcat(data, $1, $2); }
+      | words '|'				{ $$ = condconcat(data, $1, xstrdup("|")); }
+      | words '%'				{ $$ = condconcat(data, $1, xstrdup("%")); }
+      | words '('				{ $$ = condconcat(data, $1, xstrdup("(")); }
+      | words ')'				{ $$ = condconcat(data, $1, xstrdup(")")); }
+      | words ','				{ $$ = condconcat(data, $1, xstrdup(",")); }
       | words cmd				{ $$ = concat($1, $2); }
       |						{ $$ = xstrdup(""); }
       ;
 
 cmd : '{' WORD pipeline '}'		{
-						$$ = pipeline(data->req, $2, $3);
+						$$ = pipeline(data, data->req, $2, $3);
 						free($2);
 					}
     | '{' WORD '%' WORD '}'		{
-						$$ = foreach(data->req, $2, $4);
+						$$ = foreach(data, data->req, $2, $4);
 						free($2);
 						free($4);
 					}
+    | '{' WORD '(' WORD ',' WORD ')' '}'{
+						$$ = function(data, data->req, $2, $4, $6);
+						free($2);
+					}
+    | '{' WORD '(' WORD ')' '}'		{
+						$$ = function(data, data->req, $2, $4, NULL);
+						free($2);
+					}
+    | '{' WORD '(' ')' '}'		{
+						$$ = function(data, data->req, $2, NULL, NULL);
+						free($2);
+					}
     | '{' WORD '}'			{
-						nvpair_t *var;
-
-						var = vars_lookup(&data->req->vars, $2);
-
-						if (!var)
-							$$ = render_template(data->req, $2);
-						else
-							$$ = print_var(var);
-
+						$$ = variable(data, data->req, $2);
 						free($2);
 					}
     ;

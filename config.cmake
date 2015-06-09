@@ -34,6 +34,8 @@ set_default(VAR_MAX_VARS_SIZE		10)
 set_default(VAR_VAL_KEY_MAXLEN		32)
 set_default(VAR_NAME_MAXLEN		32)
 
+set_default(COND_STACK_DEPTH		10)
+
 set_default(TAGCLOUD_MIN_SIZE		6)
 set_default(TAGCLOUD_MAX_SIZE		18)
 
