@@ -109,6 +109,19 @@ target_link_libraries(mathd
 	umem
 )
 
+add_executable(nvdump
+	nvdump.c
+	utils.c
+	nvl.c
+	vars_dump.c
+	error.c
+)
+
+target_link_libraries(nvdump
+	umem
+	nvpair
+)
+
 add_executable(test_fmt3
 	test_fmt3.c
 	val.c
