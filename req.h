@@ -65,6 +65,8 @@ struct qs {
 };
 
 struct req {
+	uint32_t id;
+
 	union {
 		struct {
 			list_node_t queue;

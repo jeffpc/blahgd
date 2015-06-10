@@ -2,6 +2,7 @@
 #include <sys/inttypes.h>
 #include <umem.h>
 
+#include "atomic.h"
 #include "req.h"
 #include "utils.h"
 #include "sidebar.h"
@@ -10,6 +11,7 @@
 #include "static.h"
 
 static umem_cache_t *req_cache;
+static atomic_t reqids;
 
 void init_req_subsys(void)
 {
@@ -20,7 +22,14 @@ void init_req_subsys(void)
 
 struct req *req_alloc(void)
 {
-	return umem_cache_alloc(req_cache, 0);
+	struct req *req;
+
+	req = umem_cache_alloc(req_cache, 0);
+
+	if (req)
+		req->id = atomic_inc(&reqids);
+
+	return req;
 }
 
 void req_free(struct req *req)
