@@ -1,5 +1,7 @@
 #include <unistd.h>
+#include <sys/systeminfo.h>
 #include <sys/inttypes.h>
+#include <pthread.h>
 #include <umem.h>
 
 #include "atomic.h"
@@ -122,9 +124,115 @@ void req_output(struct req *req)
 	req->stats.req_done = gettime();
 }
 
+static void log_request(struct req *req)
+{
+	char fname[FILENAME_MAX];
+	char hostname[128];
+	nvlist_t *logentry;
+	nvlist_t *tmp;
+	uint64_t now;
+	size_t len;
+	char *buf;
+	int ret;
+
+	now = gettime();
+
+	sysinfo(SI_HOSTNAME, hostname, sizeof(hostname));
+
+	snprintf(fname, sizeof(fname), DATA_DIR "/requests/%"PRIu64".%09"PRIu64"-%011u",
+		 now / 1000000000llu, now % 1000000000llu, req->id);
+
+	/*
+	 * allocate a log entry & store some misc info
+	 */
+	logentry = nvl_alloc();
+	if (!logentry)
+		goto err;
+	nvl_set_int(logentry, "time-stamp", now);
+	nvl_set_int(logentry, "pid", getpid());
+	nvl_set_str(logentry, "hostname", hostname);
+
+	/*
+	 * store the request
+	 */
+	tmp = nvl_alloc();
+	if (!tmp)
+		goto err_free;
+	nvl_set_int(tmp, "id", req->id);
+	nvl_set_nvl(tmp, "headers", req->request_headers);
+	nvl_set_nvl(tmp, "query-string", req->request_qs);
+	nvl_set_str(tmp, "body", req->request_body);
+	nvl_set_str(tmp, "fmt", req->fmt);
+	nvl_set_int(tmp, "file-descriptor", req->scgi.fd);
+	nvl_set_int(tmp, "thread-id", (uint64_t) pthread_self());
+	nvl_set_nvl(logentry, "request", tmp);
+	nvlist_free(tmp);
+
+	/*
+	 * store the response
+	 */
+	tmp = nvl_alloc();
+	if (!tmp)
+		goto err_free;
+	nvl_set_int(tmp, "status", req->status);
+	nvl_set_nvl(tmp, "headers", req->headers);
+	nvl_set_int(tmp, "body-length", req->bodylen);
+	nvl_set_bool(tmp, "dump-latency", req->dump_latency);
+	nvl_set_nvl(logentry, "response", tmp);
+	nvlist_free(tmp);
+
+	/*
+	 * store the stats
+	 */
+	tmp = nvl_alloc();
+	if (!tmp)
+		goto err_free;
+	nvl_set_int(tmp, "fd-conn", req->stats.fd_conn);
+	nvl_set_int(tmp, "req-init", req->stats.req_init);
+	nvl_set_int(tmp, "enqueue", req->stats.enqueue);
+	nvl_set_int(tmp, "dequeue", req->stats.dequeue);
+	nvl_set_int(tmp, "req-output", req->stats.req_output);
+	nvl_set_int(tmp, "req-done", req->stats.req_done);
+	nvl_set_int(tmp, "destroy", req->stats.destroy);
+	nvl_set_nvl(logentry, "stats", tmp);
+	nvlist_free(tmp);
+
+	/*
+	 * store the options
+	 */
+	tmp = nvl_alloc();
+	if (!tmp)
+		goto err_free;
+	nvl_set_int(tmp, "index-stories", req->opts.index_stories);
+	nvl_set_nvl(logentry, "options", tmp);
+	nvlist_free(tmp);
+
+	/* serialize */
+	buf = NULL;
+	ret = nvlist_pack(logentry, &buf, &len, NV_ENCODE_XDR, 0);
+	if (ret)
+		goto err_free;
+
+	ret = write_file(fname, buf, len);
+	if (ret)
+		goto err_free;
+
+	nvlist_free(logentry);
+
+	return;
+
+err_free:
+	nvlist_free(logentry);
+
+err:
+	LOG("Failed to log request");
+}
+
 void req_destroy(struct req *req)
 {
 	req->stats.destroy = gettime();
+
+	log_request(req);
 
 	vars_destroy(&req->vars);
 
