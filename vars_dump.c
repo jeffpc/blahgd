@@ -61,7 +61,7 @@ static void __dump(nvlist_t *list, int indent)
 			case DATA_TYPE_STRING_ARRAY:
 				__dump_string_array(pair, indent + INDENT);
 				break;
-			case DATA_TYPE_BOOLEAN:
+			case DATA_TYPE_BOOLEAN_VALUE:
 				fprintf(stderr, "\n%*svalue=%s\n",
 					indent + INDENT, "",
 					pair2bool(pair) ? "true" : "false");
