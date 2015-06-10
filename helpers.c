@@ -11,7 +11,6 @@
 #include "helpers.h"
 #include "scgi.h"
 #include "mx.h"
-#include "atomic.h"
 #include "utils.h"
 
 static int nhelpers;
@@ -20,9 +19,6 @@ static pthread_t helpers[SCGI_NHELPERS];
 static pthread_mutex_t lock;
 static pthread_cond_t enqueued;
 static list_t queue;
-
-/* number of requests processed since daemon started */
-static atomic_t requests_processed;
 
 static void process_request(struct req *req)
 {
@@ -50,8 +46,6 @@ static void *queue_processor(void *arg)
 		scgi_read_request(req);
 
 		process_request(req);
-
-		atomic_inc(&requests_processed);
 	}
 
 	return NULL;
