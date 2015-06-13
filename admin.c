@@ -21,6 +21,7 @@
  */
 
 #include "req.h"
+#include "utils.h"
 
 int blahg_admin(struct req *req)
 {
@@ -34,6 +35,8 @@ int blahg_admin(struct req *req)
 	 *  - dump the meta sql
 	 *  - dump the post body
 	 */
+
+	req->body = xstrdup("Nothing here to see...move along");
 
 	return 0;
 }
