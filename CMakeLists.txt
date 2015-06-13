@@ -63,6 +63,7 @@ add_executable(blahgd
 
 	# request processing
 	req.c
+	stats.c
 
 	# pages
 	admin.c

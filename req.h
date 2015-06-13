@@ -28,6 +28,7 @@
 #include <sys/list.h>
 
 #include "vars.h"
+#include "stats.h"
 
 /*
  * Defines to make it easier to keep track of required headers in
@@ -113,15 +114,7 @@ struct req {
 	bool dump_latency;	/* request latency calculation */
 
 	/* stats */
-	struct {
-		uint64_t fd_conn;	/* select(2) returned */
-		uint64_t req_init;	/* request init */
-		uint64_t enqueue;	/* enqueue */
-		uint64_t dequeue;	/* dequeue */
-		uint64_t req_output;	/* request output start */
-		uint64_t req_done;	/* request output done */
-		uint64_t destroy;	/* request destroy start */
-	} stats;
+	struct stats stats;
 
 	struct vars vars;
 

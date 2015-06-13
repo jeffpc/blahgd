@@ -107,6 +107,56 @@ void req_init_scgi(struct req *req, int fd)
 	ASSERT(req->out);
 }
 
+static void __req_stats(struct req *req)
+{
+	enum statpage pg = STATPAGE_HTTP_XXX;
+
+	switch (req->status) {
+		case 301:
+			pg = STATPAGE_HTTP_301;
+			break;
+		case 404:
+			pg = STATPAGE_HTTP_404;
+			break;
+		case 200:
+			switch (req->args.page) {
+				case PAGE_ARCHIVE:
+					pg = STATPAGE_ARCHIVE;
+					break;
+				case PAGE_CATEGORY:
+					pg = STATPAGE_CAT;
+					break;
+				case PAGE_TAG:
+					pg = STATPAGE_TAG;
+					break;
+				case PAGE_COMMENT:
+					pg = STATPAGE_COMMENT;
+					break;
+				case PAGE_INDEX:
+					pg = STATPAGE_INDEX;
+					break;
+				case PAGE_STORY:
+					pg = STATPAGE_STORY;
+					break;
+				case PAGE_XMLRPC:
+					pg = STATPAGE_XMLRPC;
+					break;
+				case PAGE_ADMIN:
+					pg = STATPAGE_ADMIN;
+					break;
+				case PAGE_STATIC:
+					pg = STATPAGE_STATIC;
+					break;
+			}
+			break;
+		default:
+			pg = STATPAGE_HTTP_XXX;
+			break;
+	}
+
+	stats_update_request(pg, &req->stats);
+}
+
 void req_output(struct req *req)
 {
 	nvpair_t *header;
@@ -144,6 +194,8 @@ void req_output(struct req *req)
 	}
 
 	req->stats.req_done = gettime();
+
+	__req_stats(req);
 }
 
 static void log_request(struct req *req)
