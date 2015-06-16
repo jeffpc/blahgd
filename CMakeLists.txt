@@ -40,6 +40,7 @@ add_executable(blahgd
 
 	# post - all formats
 	post.c
+	post_nv.c
 
 	# post - format 3
 	${FLEX_fmt3_OUTPUTS} ${BISON_fmt3_OUTPUTS}
