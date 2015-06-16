@@ -384,12 +384,12 @@ nvlist_t *load_post(struct req *req, int postid, const char *titlevar, bool prev
 			post.fmt   = SQL_COL_INT(stmt, 2);
 		}
 
+		SQL_END(stmt);
+
 		if (!post.title) {
 			err = ENOENT;
 			goto err;
 		}
-
-		SQL_END(stmt);
 
 		SQL(stmt, "SELECT tag FROM post_tags WHERE post=? ORDER BY tag");
 		SQL_BIND_INT(stmt, 1, postid);
