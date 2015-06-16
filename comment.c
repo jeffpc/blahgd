@@ -120,7 +120,7 @@ const char *write_out_comment(struct req *req, int id, char *author,
 		return MISSING_CONTENT;
 	}
 
-	post = load_post(req, id, NULL, false);
+	post = get_post(req, id, NULL, false);
 	if (!post) {
 		LOG("Gah! %d (postid=%d)", -1, id);
 		return GENERIC_ERR_STR;

@@ -87,10 +87,12 @@ struct post_old {
 
 struct req;
 
-extern nvlist_t *load_post(struct req *req, int postid, const char *titlevar, bool preview);
+extern struct post *load_post(int postid, bool preview);
 extern void dump_post(struct post_old *post);
 extern void destroy_post(struct post *post);
 extern void load_posts(struct req *req, sqlite3_stmt *stmt, int expected);
+extern nvlist_t *get_post(struct req *req, int postid, const char *titlevar,
+		bool preview);
 
 #define max(a,b)	((a)<(b)? (b) : (a))
 

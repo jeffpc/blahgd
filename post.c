@@ -349,44 +349,50 @@ static nvlist_t *__store_vars(struct req *req, struct post *post, const char *ti
 	return out;
 }
 
-nvlist_t *load_post(struct req *req, int postid, const char *titlevar, bool preview)
+struct post *load_post(int postid, bool preview)
 {
 	char path[FILENAME_MAX];
-	struct post post;
 	int ret;
 	int err;
+	struct post *post;
 	sqlite3_stmt *stmt;
-	nvlist_t *out;
+
+	/* XXX: use a umem cache */
+	post = malloc(sizeof(struct post));
+	if (!post)
+		return NULL;
+
+	memset(post, 0, sizeof(struct post));
 
 	snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%d", postid);
 
-	post.id = postid;
-	post.title = NULL;
-	post.body = NULL;
-	post.numcom = 0;
-	list_create(&post.tags, sizeof(struct post_tag),
+	post->id = postid;
+	post->title = NULL;
+	post->body = NULL;
+	post->numcom = 0;
+	list_create(&post->tags, sizeof(struct post_tag),
 		    offsetof(struct post_tag, list));
-	list_create(&post.comments, sizeof(struct comment),
+	list_create(&post->comments, sizeof(struct comment),
 		    offsetof(struct comment, list));
 
 	if (preview) {
-		post.title = xstrdup("PREVIEW");
-		post.time  = time(NULL);
-		post.fmt   = 3;
+		post->title = xstrdup("PREVIEW");
+		post->time  = time(NULL);
+		post->fmt   = 3;
 
 		err = 0;
 	} else {
 		SQL(stmt, "SELECT title, strftime(\"%s\", time), fmt FROM posts WHERE id=?");
 		SQL_BIND_INT(stmt, 1, postid);
 		SQL_FOR_EACH(stmt) {
-			post.title = xstrdup(SQL_COL_STR(stmt, 0));
-			post.time  = SQL_COL_INT(stmt, 1);
-			post.fmt   = SQL_COL_INT(stmt, 2);
+			post->title = xstrdup(SQL_COL_STR(stmt, 0));
+			post->time  = SQL_COL_INT(stmt, 1);
+			post->fmt   = SQL_COL_INT(stmt, 2);
 		}
 
 		SQL_END(stmt);
 
-		if (!post.title) {
+		if (!post->title) {
 			err = ENOENT;
 			goto err;
 		}
@@ -402,24 +408,39 @@ nvlist_t *load_post(struct req *req, int postid, const char *titlevar, bool prev
 			tag->tag = xstrdup(SQL_COL_STR(stmt, 0));
 			ASSERT(tag->tag);
 
-			list_insert_tail(&post.tags, tag);
+			list_insert_tail(&post->tags, tag);
 		}
 
 		SQL_END(stmt);
 
-		err = __load_post_comments(&post);
+		if ((err = __load_post_comments(post)))
+			goto err;
 	}
 
-	if (!err)
-		err = __load_post_body(&post);
+	if ((err = __load_post_body(post)))
+		goto err;
+
+	return post;
 
 err:
-	if (!err)
-		out = __store_vars(req, &post, titlevar);
+	destroy_post(post);
+	return NULL;
+}
 
-	destroy_post(&post);
+nvlist_t *get_post(struct req *req, int postid, const char *titlevar, bool preview)
+{
+	struct post *post;
+	nvlist_t *out;
 
-	return err ? NULL : out;
+	post = load_post(postid, preview);
+	if (!post)
+		return NULL;
+
+	out = __store_vars(req, post, titlevar);
+
+	destroy_post(post);
+
+	return out;
 }
 
 void destroy_post(struct post *post)
@@ -476,7 +497,7 @@ void load_posts(struct req *req, sqlite3_stmt *stmt, int expected)
 		posts = realloc(posts, sizeof(nvlist_t *) * (nposts + 1));
 		ASSERT(posts);
 
-		posts[nposts] = load_post(req, postid, NULL, false);
+		posts[nposts] = get_post(req, postid, NULL, false);
 		if (!posts[nposts])
 			continue;
 

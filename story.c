@@ -37,7 +37,7 @@ static int __load_post(struct req *req, int p, bool preview)
 {
 	nvlist_t *post;
 
-	post = load_post(req, p, "title", preview);
+	post = get_post(req, p, "title", preview);
 	if (!post) {
 		LOG("failed to load post #%d: %s (%d)%s", p, "XXX",
 		    -1, preview ? " preview" : "");
