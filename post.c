@@ -47,6 +47,21 @@
 static umem_cache_t *post_cache;
 static umem_cache_t *comment_cache;
 
+static avl_tree_t posts;
+static pthread_mutex_t posts_lock;
+
+static int post_cmp(const void *va, const void *vb)
+{
+	const struct post *a = va;
+	const struct post *b = vb;
+
+	if (a->id < b->id)
+		return -1;
+	if (a->id > b->id)
+		return 1;
+	return 0;
+}
+
 void init_post_subsys(void)
 {
 	post_cache = umem_cache_create("post-cache", sizeof(struct post),
@@ -57,6 +72,45 @@ void init_post_subsys(void)
 					  sizeof(struct comment), 0, NULL,
 					  NULL, NULL, NULL, NULL, 0);
 	ASSERT(comment_cache);
+
+	MXINIT(&posts_lock);
+
+	avl_create(&posts, post_cmp, sizeof(struct post),
+		   offsetof(struct post, cache));
+}
+
+static struct post *lookup_post(int postid)
+{
+	struct post *post;
+	struct post key = {
+		.id = postid,
+	};
+
+	MXLOCK(&posts_lock);
+	post = avl_find(&posts, &key, NULL);
+	if (post)
+		post_getref(post);
+	MXUNLOCK(&posts_lock);
+
+	return post;
+}
+
+static void insert_post(struct post *post)
+{
+	struct post *tmp;
+	avl_index_t where;
+
+	post_getref(post);
+
+	MXLOCK(&posts_lock);
+	tmp = avl_find(&posts, post, &where);
+	if (!tmp)
+		avl_insert(&posts, post, where);
+	MXUNLOCK(&posts_lock);
+
+	/* someone beat us to inserting the post, just release what we got */
+	if (tmp)
+		post_putref(post);
 }
 
 static char *load_comment(struct post *post, int commid)
@@ -290,6 +344,15 @@ struct post *load_post(int postid, bool preview)
 	struct post *post;
 	sqlite3_stmt *stmt;
 
+	/*
+	 * If it is *not* a preview, try to get it from the cache.
+	 */
+	if (!preview) {
+		post = lookup_post(postid);
+		if (post)
+			return post;
+	}
+
 	post = umem_cache_alloc(post_cache, 0);
 	if (!post)
 		return NULL;
@@ -352,6 +415,9 @@ struct post *load_post(int postid, bool preview)
 
 	if ((err = __load_post_body(post)))
 		goto err;
+
+	if (!preview)
+		insert_post(post);
 
 	return post;
 

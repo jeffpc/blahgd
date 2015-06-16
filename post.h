@@ -26,6 +26,7 @@
 #include <time.h>
 #include <stdbool.h>
 #include <sys/list.h>
+#include <sys/avl.h>
 
 #include "db.h"
 #include "vars.h"
@@ -49,6 +50,7 @@ struct comment {
 };
 
 struct post {
+	avl_node_t cache;
 	atomic_t refcnt;
 
 	/* from 'posts' table */
