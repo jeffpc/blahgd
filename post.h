@@ -87,6 +87,7 @@ struct post_old {
 
 struct req;
 
+extern void init_post_subsys(void);
 extern struct post *load_post(int postid, bool preview);
 extern void dump_post(struct post_old *post);
 extern void destroy_post(struct post *post);

@@ -33,6 +33,7 @@
 #include <fcntl.h>
 #include <time.h>
 #include <dirent.h>
+#include <umem.h>
 
 #include "iter.h"
 #include "post.h"
@@ -42,6 +43,21 @@
 #include "parse.h"
 #include "error.h"
 #include "utils.h"
+
+static umem_cache_t *post_cache;
+static umem_cache_t *comment_cache;
+
+void init_post_subsys(void)
+{
+	post_cache = umem_cache_create("post-cache", sizeof(struct post),
+				       0, NULL, NULL, NULL, NULL, NULL, 0);
+	ASSERT(post_cache);
+
+	comment_cache = umem_cache_create("comment-cache",
+					  sizeof(struct comment), 0, NULL,
+					  NULL, NULL, NULL, NULL, 0);
+	ASSERT(comment_cache);
+}
 
 static char *load_comment(struct post *post, int commid)
 {
@@ -245,7 +261,7 @@ static int __load_post_comments(struct post *post)
 	SQL_FOR_EACH(stmt) {
 		struct comment *comm;
 
-		comm = malloc(sizeof(struct comment));
+		comm = umem_cache_alloc(comment_cache, 0);
 		ASSERT(comm);
 
 		list_insert_tail(&post->comments, comm);
@@ -357,8 +373,7 @@ struct post *load_post(int postid, bool preview)
 	struct post *post;
 	sqlite3_stmt *stmt;
 
-	/* XXX: use a umem cache */
-	post = malloc(sizeof(struct post));
+	post = umem_cache_alloc(post_cache, 0);
 	if (!post)
 		return NULL;
 
@@ -459,11 +474,13 @@ void destroy_post(struct post *post)
 		free(com->ip);
 		free(com->url);
 		free(com->body);
-		free(com);
+		umem_cache_free(comment_cache, com);
 	}
 
 	free(post->title);
 	str_putref(post->body);
+
+	umem_cache_free(post_cache, post);
 }
 
 /*

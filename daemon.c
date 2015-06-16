@@ -45,6 +45,7 @@
 #include "math.h"
 #include "str.h"
 #include "req.h"
+#include "post.h"
 
 #define HOST		NULL
 #define PORT		2014
@@ -285,6 +286,7 @@ int main(int argc, char **argv)
 	init_val_subsys();
 	init_pipe_subsys();
 	init_req_subsys();
+	init_post_subsys();
 	init_template_cache();
 
 	init_db();
