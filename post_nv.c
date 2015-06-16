@@ -119,7 +119,7 @@ nvlist_t *get_post(struct req *req, int postid, const char *titlevar, bool previ
 
 	out = __store_vars(req, post, titlevar);
 
-	destroy_post(post);
+	post_putref(post);
 
 	return out;
 }

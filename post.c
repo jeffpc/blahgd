@@ -295,6 +295,7 @@ struct post *load_post(int postid, bool preview)
 		return NULL;
 
 	memset(post, 0, sizeof(struct post));
+	atomic_set(&post->refcnt, 1);
 
 	snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%d", postid);
 
@@ -355,11 +356,11 @@ struct post *load_post(int postid, bool preview)
 	return post;
 
 err:
-	destroy_post(post);
+	post_destroy(post);
 	return NULL;
 }
 
-void destroy_post(struct post *post)
+void post_destroy(struct post *post)
 {
 	struct post_tag *pt;
 	struct comment *com;

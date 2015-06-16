@@ -29,6 +29,7 @@
 
 #include "db.h"
 #include "vars.h"
+#include "atomic.h"
 
 struct post_tag {
 	list_node_t list;
@@ -48,6 +49,8 @@ struct comment {
 };
 
 struct post {
+	atomic_t refcnt;
+
 	/* from 'posts' table */
 	unsigned int id;
 	unsigned int time;
@@ -90,10 +93,33 @@ struct req;
 extern void init_post_subsys(void);
 extern struct post *load_post(int postid, bool preview);
 extern void dump_post(struct post_old *post);
-extern void destroy_post(struct post *post);
+extern void post_destroy(struct post *post);
 extern void load_posts(struct req *req, sqlite3_stmt *stmt, int expected);
 extern nvlist_t *get_post(struct req *req, int postid, const char *titlevar,
 		bool preview);
+
+static inline struct post *post_getref(struct post *post)
+{
+	if (!post)
+		return NULL;
+
+	ASSERT3U(atomic_read(&post->refcnt), >=, 1);
+
+	atomic_inc(&post->refcnt);
+
+	return post;
+}
+
+static inline void post_putref(struct post *post)
+{
+	if (!post)
+		return;
+
+	ASSERT3S(atomic_read(&post->refcnt), >=, 1);
+
+	if (!atomic_dec(&post->refcnt))
+		post_destroy(post);
+}
 
 #define max(a,b)	((a)<(b)? (b) : (a))
 
