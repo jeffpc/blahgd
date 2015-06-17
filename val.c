@@ -73,7 +73,7 @@ struct val *val_alloc(enum val_type type)
 	if (!val)
 		return val;
 
-	atomic_set(&val->refcnt, 1);
+	refcnt_init(&val->refcnt, 1);
 
 	__val_init(val, type);
 
@@ -83,7 +83,7 @@ struct val *val_alloc(enum val_type type)
 void val_free(struct val *val)
 {
 	ASSERT(val);
-	ASSERT3U(atomic_read(&val->refcnt), ==, 0);
+	ASSERT3U(refcnt_read(&val->refcnt), ==, 0);
 
 	__val_cleanup(val);
 
