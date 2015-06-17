@@ -30,7 +30,7 @@
 
 #include "db.h"
 #include "vars.h"
-#include "atomic.h"
+#include "refcnt.h"
 
 struct post_tag {
 	list_node_t list;
@@ -51,7 +51,7 @@ struct comment {
 
 struct post {
 	avl_node_t cache;
-	atomic_t refcnt;
+	refcnt_t refcnt;
 
 	/* from 'posts' table */
 	unsigned int id;
@@ -100,28 +100,7 @@ extern void load_posts(struct req *req, sqlite3_stmt *stmt, int expected);
 extern nvlist_t *get_post(struct req *req, int postid, const char *titlevar,
 		bool preview);
 
-static inline struct post *post_getref(struct post *post)
-{
-	if (!post)
-		return NULL;
-
-	ASSERT3U(atomic_read(&post->refcnt), >=, 1);
-
-	atomic_inc(&post->refcnt);
-
-	return post;
-}
-
-static inline void post_putref(struct post *post)
-{
-	if (!post)
-		return;
-
-	ASSERT3S(atomic_read(&post->refcnt), >=, 1);
-
-	if (!atomic_dec(&post->refcnt))
-		post_destroy(post);
-}
+REFCNT_INLINE_FXNS(struct post, post, refcnt, post_destroy)
 
 #define max(a,b)	((a)<(b)? (b) : (a))
 

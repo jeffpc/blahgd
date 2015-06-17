@@ -358,7 +358,7 @@ struct post *load_post(int postid, bool preview)
 		return NULL;
 
 	memset(post, 0, sizeof(struct post));
-	atomic_set(&post->refcnt, 1);
+	refcnt_init(&post->refcnt, 1);
 
 	snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%d", postid);
 
