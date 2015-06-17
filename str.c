@@ -45,7 +45,7 @@ static struct str *__alloc(char *s, bool copy)
 	if (!str)
 		return NULL;
 
-	atomic_set(&str->refcnt, 1);
+	refcnt_init(&str->refcnt, 1);
 
 	if (copy) {
 		strcpy(str->inline_str, s);
@@ -127,32 +127,11 @@ void str_free(struct str *str)
 	if (!str)
 		return;
 
-	ASSERT3U(atomic_read(&str->refcnt), ==, 0);
+	ASSERT3U(refcnt_read(&str->refcnt), ==, 0);
 
 	if (str->str != str->inline_str)
 		free(str->str);
 	umem_cache_free(str_cache, str);
 }
 
-struct str *str_getref(struct str *str)
-{
-	if (!str)
-		return NULL;
-
-	ASSERT3U(atomic_read(&str->refcnt), >=, 1);
-
-	atomic_inc(&str->refcnt);
-
-	return str;
-}
-
-void str_putref(struct str *str)
-{
-	if (!str)
-		return;
-
-	ASSERT3S(atomic_read(&str->refcnt), >=, 1);
-
-	if (!atomic_dec(&str->refcnt))
-		str_free(str);
-}
+REFCNT_FXNS(struct str, str, refcnt, str_free)
