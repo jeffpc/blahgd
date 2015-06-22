@@ -289,11 +289,16 @@ static void log_request(struct req *req)
 
 	ret = write_file(fname, buf, len);
 	if (ret)
-		goto err_free;
+		goto err_free_buf;
+
+	free(buf);
 
 	nvlist_free(logentry);
 
 	return;
+
+err_free_buf:
+	free(buf);
 
 err_free:
 	nvlist_free(logentry);
