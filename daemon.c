@@ -41,7 +41,7 @@
 #include "db.h"
 #include "val.h"
 #include "pipeline.h"
-#include "template_cache.h"
+#include "file_cache.h"
 #include "math.h"
 #include "str.h"
 #include "req.h"
@@ -281,15 +281,15 @@ int main(int argc, char **argv)
 	if (ret)
 		goto err;
 
+	init_db();
+
 	init_math(true);
 	init_str_subsys();
 	init_val_subsys();
 	init_pipe_subsys();
 	init_req_subsys();
 	init_post_subsys();
-	init_template_cache();
-
-	init_db();
+	init_file_cache();
 
 	handle_signals();
 

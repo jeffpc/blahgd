@@ -33,7 +33,7 @@
 #include "render.h"
 #include "parse.h"
 #include "error.h"
-#include "template_cache.h"
+#include "file_cache.h"
 
 char *render_page(struct req *req, char *str)
 {
@@ -65,7 +65,7 @@ char *render_template(struct req *req, const char *tmpl)
 
 	snprintf(path, sizeof(path), "templates/%s/%s.tmpl", req->fmt, tmpl);
 
-	raw = template_cache_get(path);
+	raw = file_cache_get_cb(path, revalidate_all_posts, NULL);
 	if (!raw)
 		return NULL;
 

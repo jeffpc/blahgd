@@ -27,21 +27,24 @@
 #include "listing.h"
 #include "utils.h"
 #include "mangle.h"
+#include "file_cache.h"
+#include "post.h"
 
 #define PAGE 4096
 
 struct str *listing(struct post *post, char *fname)
 {
 	char path[FILENAME_MAX];
-	char *in;
+	struct str *in;
 
 	snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%d/%s", post->id, fname);
 
-	in = read_file(path);
+	in = file_cache_get_cb(path, post->preview ? NULL : revalidate_post,
+			       post);
 	if (!in)
 		goto err;
 
-	return listing_str(str_alloc(in));
+	return listing_str(in);
 
 err:
 	snprintf(path, FILENAME_MAX, "Failed to read in listing '%d/%s'",

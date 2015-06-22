@@ -43,6 +43,7 @@
 #include "parse.h"
 #include "error.h"
 #include "utils.h"
+#include "file_cache.h"
 
 static umem_cache_t *post_cache;
 static umem_cache_t *comment_cache;
@@ -88,8 +89,7 @@ static struct post *lookup_post(int postid)
 
 	MXLOCK(&posts_lock);
 	post = avl_find(&posts, &key, NULL);
-	if (post)
-		post_getref(post);
+	post_getref(post);
 	MXUNLOCK(&posts_lock);
 
 	return post;
@@ -113,22 +113,49 @@ static void insert_post(struct post *post)
 		post_putref(post);
 }
 
-static char *load_comment(struct post *post, int commid)
+void revalidate_post(void *arg)
 {
-	char *err_msg;
-	char path[FILENAME_MAX];
-	char *out;
+	struct post *post = arg;
 
-	err_msg = xstrdup("Error: could not load comment text.");
+	printf("%s: marking post #%u for refresh\n", __func__, post->id);
+
+	post_lock(post, false);
+	post->needs_refresh = true;
+	post_unlock(post);
+}
+
+void revalidate_all_posts(void *arg)
+{
+	struct post *post;
+
+	printf("%s: marking all posts for refresh\n", __func__);
+
+	MXLOCK(&posts_lock);
+	avl_for_each(&posts, post) {
+		post_lock(post, false);
+		post->needs_refresh = true;
+		post_unlock(post);
+	}
+	MXUNLOCK(&posts_lock);
+}
+
+static struct str *load_comment(struct post *post, int commid)
+{
+	char path[FILENAME_MAX];
+	struct str *err_msg;
+	struct str *out;
+
+	err_msg = STR_DUP("Error: could not load comment text.");
 
 	snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%d/comments/%d/text.txt",
 		 post->id, commid);
 
-	out = read_file(path);
+	out = file_cache_get_cb(path, post->preview ? NULL : revalidate_post,
+				post);
 	if (!out)
 		out = err_msg;
 	else
-		free(err_msg);
+		str_putref(err_msg);
 
 	return out;
 }
@@ -159,6 +186,7 @@ static int __do_load_post_body_fmt3(struct post *post, char *ibuf, size_t len)
 
 	fmt3_lex_destroy(x.scanner);
 
+	str_putref(post->body); /* free the previous */
 	post->body = x.stroutput;
 	ASSERT(post->body);
 
@@ -250,6 +278,7 @@ static int __do_load_post_body(struct post *post, char *ibuf, size_t len)
 			ret = cc(ret, "</p>", 4);
 	}
 
+	str_putref(post->body); /* free the previous */
 	post->body = str_alloc(ret);
 	ASSERT(post->body);
 
@@ -265,10 +294,8 @@ static int __load_post_body(struct post *post)
 	};
 
 	char path[FILENAME_MAX];
-	struct stat statbuf;
-	char *ibuf;
+	struct str *raw;
 	int ret;
-	int fd;
 
 	ASSERT3U(post->fmt, >=, 1);
 	ASSERT3U(post->fmt, <=, 3);
@@ -276,37 +303,37 @@ static int __load_post_body(struct post *post)
 	snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%d/post.%s", post->id,
 		 exts[post->fmt]);
 
-	fd = open(path, O_RDONLY);
-	if (fd == -1)
-		return errno;
-
-	ret = fstat(fd, &statbuf);
-	if (ret == -1)
-		goto err_close;
-
-	ibuf = mmap(NULL, statbuf.st_size, PROT_READ, MAP_SHARED, fd, 0);
-	if (ibuf == MAP_FAILED) {
-		ret = errno;
-		goto err_close;
-	}
+	raw = file_cache_get_cb(path, post->preview ? NULL : revalidate_post,
+				post);
+	if (!raw)
+		return ENOENT;
 
 	if (post->fmt == 3)
-		ret = __do_load_post_body_fmt3(post, ibuf, statbuf.st_size);
+		ret = __do_load_post_body_fmt3(post, raw->str, str_len(raw));
 	else
-		ret = __do_load_post_body(post, ibuf, statbuf.st_size);
+		ret = __do_load_post_body(post, raw->str, str_len(raw));
 
-	munmap(ibuf, statbuf.st_size);
-
-err_close:
-	close(fd);
+	str_putref(raw);
 
 	return ret;
 }
 
 static int __load_post_comments(struct post *post)
 {
+	struct comment *com;
 	sqlite3_stmt *stmt;
 	int ret;
+
+	while ((com = list_remove_head(&post->comments))) {
+		free(com->author);
+		free(com->email);
+		free(com->ip);
+		free(com->url);
+		str_putref(com->body);
+		umem_cache_free(comment_cache, com);
+	}
+
+	post->numcom = 0;
 
 	SQL(stmt, "SELECT id, author, email, strftime(\"%s\", time), "
 	    "remote_addr, url FROM comments WHERE post=? AND moderated=1 "
@@ -336,13 +363,93 @@ static int __load_post_comments(struct post *post)
 	return 0;
 }
 
-struct post *load_post(int postid, bool preview)
+static int __load_post_tags(struct post *post)
+{
+	sqlite3_stmt *stmt;
+	struct post_tag *tag;
+	int ret;
+
+	while ((tag = list_remove_head(&post->tags))) {
+		free(tag->tag);
+		free(tag);
+	}
+
+	SQL(stmt, "SELECT tag FROM post_tags WHERE post=? ORDER BY tag");
+	SQL_BIND_INT(stmt, 1, post->id);
+	SQL_FOR_EACH(stmt) {
+		tag = malloc(sizeof(struct post_tag));
+		ASSERT(tag);
+
+		tag->tag = xstrdup(SQL_COL_STR(stmt, 0));
+		ASSERT(tag->tag);
+
+		list_insert_tail(&post->tags, tag);
+	}
+
+	SQL_END(stmt);
+
+	return 0;
+}
+
+int __refresh(struct post *post)
 {
 	char path[FILENAME_MAX];
-	int ret;
-	int err;
-	struct post *post;
 	sqlite3_stmt *stmt;
+	int err;
+	int ret;
+
+	printf("refreshing post...\n");
+
+	snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%d", post->id);
+
+	free(post->title);
+	post->title = NULL;
+
+	if (post->preview) {
+		post->title = xstrdup("PREVIEW");
+		post->time  = time(NULL);
+		post->fmt   = 3;
+
+		err = 0;
+	} else {
+		SQL(stmt, "SELECT title, strftime(\"%s\", time), fmt FROM posts WHERE id=?");
+		SQL_BIND_INT(stmt, 1, post->id);
+		SQL_FOR_EACH(stmt) {
+			post->title = xstrdup(SQL_COL_STR(stmt, 0));
+			post->time  = SQL_COL_INT(stmt, 1);
+			post->fmt   = SQL_COL_INT(stmt, 2);
+		}
+
+		SQL_END(stmt);
+
+		if (!post->title)
+			return ENOENT;
+
+		if ((err = __load_post_tags(post)))
+			return err;
+
+		if ((err = __load_post_comments(post)))
+			return err;
+	}
+
+	if ((err = __load_post_body(post)))
+		return err;
+
+	post->needs_refresh = false;
+
+	return 0;
+}
+
+void post_refresh(struct post *post)
+{
+	ASSERT0(post->preview);
+	ASSERT0(__refresh(post));
+}
+
+struct post *load_post(int postid, bool preview)
+{
+	struct post *post;
+	int err;
 
 	/*
 	 * If it is *not* a preview, try to get it from the cache.
@@ -358,65 +465,25 @@ struct post *load_post(int postid, bool preview)
 		return NULL;
 
 	memset(post, 0, sizeof(struct post));
-	refcnt_init(&post->refcnt, 1);
-
-	snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%d", postid);
 
 	post->id = postid;
 	post->title = NULL;
 	post->body = NULL;
 	post->numcom = 0;
+	post->preview = preview;
+	post->needs_refresh = false;
+
 	list_create(&post->tags, sizeof(struct post_tag),
 		    offsetof(struct post_tag, list));
 	list_create(&post->comments, sizeof(struct comment),
 		    offsetof(struct comment, list));
+	refcnt_init(&post->refcnt, 1);
+	MXINIT(&post->lock);
 
-	if (preview) {
-		post->title = xstrdup("PREVIEW");
-		post->time  = time(NULL);
-		post->fmt   = 3;
-
-		err = 0;
-	} else {
-		SQL(stmt, "SELECT title, strftime(\"%s\", time), fmt FROM posts WHERE id=?");
-		SQL_BIND_INT(stmt, 1, postid);
-		SQL_FOR_EACH(stmt) {
-			post->title = xstrdup(SQL_COL_STR(stmt, 0));
-			post->time  = SQL_COL_INT(stmt, 1);
-			post->fmt   = SQL_COL_INT(stmt, 2);
-		}
-
-		SQL_END(stmt);
-
-		if (!post->title) {
-			err = ENOENT;
-			goto err;
-		}
-
-		SQL(stmt, "SELECT tag FROM post_tags WHERE post=? ORDER BY tag");
-		SQL_BIND_INT(stmt, 1, postid);
-		SQL_FOR_EACH(stmt) {
-			struct post_tag *tag;
-
-			tag = malloc(sizeof(struct post_tag));
-			ASSERT(tag);
-
-			tag->tag = xstrdup(SQL_COL_STR(stmt, 0));
-			ASSERT(tag->tag);
-
-			list_insert_tail(&post->tags, tag);
-		}
-
-		SQL_END(stmt);
-
-		if ((err = __load_post_comments(post)))
-			goto err;
-	}
-
-	if ((err = __load_post_body(post)))
+	if ((err = __refresh(post)))
 		goto err;
 
-	if (!preview)
+	if (!post->preview)
 		insert_post(post);
 
 	return post;
@@ -441,12 +508,14 @@ void post_destroy(struct post *post)
 		free(com->email);
 		free(com->ip);
 		free(com->url);
-		free(com->body);
+		str_putref(com->body);
 		umem_cache_free(comment_cache, com);
 	}
 
 	free(post->title);
 	str_putref(post->body);
+
+	MXDESTROY(&post->lock);
 
 	umem_cache_free(post_cache, post);
 }

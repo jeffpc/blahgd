@@ -20,10 +20,16 @@
  * SOFTWARE.
  */
 
-#ifndef __TEMPLATE_CACHE_H
-#define __TEMPLATE_CACHE_H
+#ifndef __FILE_CACHE_H
+#define __FILE_CACHE_H
 
-extern void init_template_cache(void);
-extern struct str *template_cache_get(const char *name);
+extern void init_file_cache(void);
+extern struct str *file_cache_get_cb(const char *name, void (*cb)(void *),
+				     void *arg);
+
+static inline struct str *file_cache_get(const char *name)
+{
+	return file_cache_get_cb(name, NULL, NULL);
+}
 
 #endif

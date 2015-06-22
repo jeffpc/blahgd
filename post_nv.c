@@ -74,7 +74,7 @@ static void __com_val(nvlist_t *post, list_t *list)
 		nvl_set_str(comments[i], "commemail", cur->email);
 		nvl_set_str(comments[i], "commip", cur->ip);
 		nvl_set_str(comments[i], "commurl", cur->url);
-		nvl_set_str(comments[i], "commbody", cur->body);
+		nvl_set_str(comments[i], "commbody", cur->body->str);
 
 		i++;
 	}
@@ -117,8 +117,11 @@ nvlist_t *get_post(struct req *req, int postid, const char *titlevar, bool previ
 	if (!post)
 		return NULL;
 
+	post_lock(post, true);
+
 	out = __store_vars(req, post, titlevar);
 
+	post_unlock(post);
 	post_putref(post);
 
 	return out;

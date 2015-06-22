@@ -46,12 +46,17 @@ struct comment {
 	char *ip;
 	char *url;
 
-	char *body;
+	struct str *body;
 };
 
 struct post {
 	avl_node_t cache;
 	refcnt_t refcnt;
+
+	pthread_mutex_t lock;
+
+	bool needs_refresh;
+	bool preview;
 
 	/* from 'posts' table */
 	unsigned int id;
@@ -94,13 +99,29 @@ struct req;
 
 extern void init_post_subsys(void);
 extern struct post *load_post(int postid, bool preview);
+extern void post_refresh(struct post *post);
 extern void dump_post(struct post_old *post);
 extern void post_destroy(struct post *post);
+extern void revalidate_post(void *arg);
+extern void revalidate_all_posts(void *arg);
 extern void load_posts(struct req *req, sqlite3_stmt *stmt, int expected);
 extern nvlist_t *get_post(struct req *req, int postid, const char *titlevar,
 		bool preview);
 
 REFCNT_INLINE_FXNS(struct post, post, refcnt, post_destroy)
+
+static inline void post_lock(struct post *post, bool allow_refresh)
+{
+	MXLOCK(&post->lock);
+
+	if (allow_refresh && post->needs_refresh)
+		post_refresh(post);
+}
+
+static inline void post_unlock(struct post *post)
+{
+	MXUNLOCK(&post->lock);
+}
 
 #define max(a,b)	((a)<(b)? (b) : (a))
 

@@ -28,6 +28,7 @@
 #include "str.h"
 #include "val.h"
 #include "math.h"
+#include "file_cache.h"
 
 static int onefile(struct post *post, char *ibuf, size_t len)
 {
@@ -75,6 +76,7 @@ int main(int argc, char **argv)
 	init_math(false);
 	init_str_subsys();
 	init_val_subsys();
+	init_file_cache();
 
 	for (i = 1; i < argc; i++) {
 		in = read_file(argv[i]);

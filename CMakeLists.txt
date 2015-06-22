@@ -38,6 +38,9 @@ add_executable(blahgd
 	daemon.c helpers.c
 	scgi.c
 
+	# file caching & change monitoring
+	file_cache.c
+
 	# post - all formats
 	post.c
 	post_nv.c
@@ -51,7 +54,6 @@ add_executable(blahgd
 
 	# templates
 	${FLEX_tmpl_OUTPUTS} ${BISON_tmpl_OUTPUTS}
-	template_cache.c
 	render.c
 	pipeline.c
 
@@ -127,17 +129,23 @@ target_link_libraries(nvdump
 add_executable(test_fmt3
 	test_fmt3.c
 	val.c
+	post.c
 	${FLEX_fmt3_OUTPUTS} ${BISON_fmt3_OUTPUTS}
 	post_fmt3_cmds.c
+	file_cache.c
 	math.c
 	listing.c
 	mangle.c utils.c error.c
 	str.c
+	db.c
 )
 
 target_link_libraries(test_fmt3
 	${OPENSSL_CRYPTO_LIBRARY}
+	${SQLITE_LIB}
 	umem
+	/usr/lib/libavl.so.1
+	/usr/lib/libcmdutils.so.1
 )
 
 add_executable(test_qstring

@@ -24,6 +24,7 @@
 #define __UTILS_H
 
 #include <sys/sysmacros.h>
+#include <sys/stat.h>
 #include <string.h>
 #include <errno.h>
 
@@ -34,7 +35,7 @@
 extern int hasdotdot(const char *path);
 extern int xread(int fd, void *buf, size_t nbyte);
 extern int xwrite(int fd, const void *buf, size_t nbyte);
-extern char *read_file_len(const char *fname, size_t *len);
+extern char *read_file_common(const char *fname, struct stat *sb);
 extern int write_file(const char *fname, const char *data, size_t len);
 extern char *concat5(char *a, char *b, char *c, char *d, char *e);
 
@@ -108,7 +109,19 @@ static inline uint64_t gettime(void)
 
 static inline char *read_file(const char *fname)
 {
-	return read_file_len(fname, NULL);
+	return read_file_common(fname, NULL);
+}
+
+static inline char *read_file_len(const char *fname, size_t *len)
+{
+	struct stat sb;
+	char *ret;
+
+	ret = read_file_common(fname, &sb);
+	if (ret)
+		*len = sb.st_size;
+
+	return ret;
 }
 
 #endif

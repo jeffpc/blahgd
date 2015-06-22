@@ -122,7 +122,7 @@ int xwrite(int fd, const void *buf, size_t nbyte)
 	return total;
 }
 
-char *read_file_len(const char *fname, size_t *len)
+char *read_file_common(const char *fname, struct stat *sb)
 {
 	struct stat statbuf;
 	char *out;
@@ -150,8 +150,8 @@ char *read_file_len(const char *fname, size_t *len)
 	} else {
 		out[statbuf.st_size] = '\0';
 
-		if (len)
-			*len = statbuf.st_size;
+		if (sb)
+			*sb = statbuf;
 	}
 
 err_close:
