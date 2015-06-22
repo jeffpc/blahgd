@@ -193,6 +193,13 @@ void req_output(struct req *req)
 		       delta % 1000000000UL);
 	}
 
+	/*
+	 * At this point, we're done as far as the client is concerned.  We
+	 * have nothing else to send, so we make sure that we actually push
+	 * all the bytes along now.
+	 */
+	fflush(req->out);
+
 	req->stats.req_done = gettime();
 
 	__req_stats(req);
@@ -323,7 +330,6 @@ void req_destroy(struct req *req)
 
 	switch (req->via) {
 		case REQ_SCGI:
-			fflush(req->out);
 			fclose(req->out);
 			/*
 			 * NOTE: do *not* close the fd itself since fclose
