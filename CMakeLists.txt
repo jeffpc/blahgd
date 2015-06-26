@@ -63,6 +63,7 @@ add_executable(blahgd
 	vars.c vars_dump.c
 	val.c
 	nvl.c
+	nvl_convert.c
 
 	# request processing
 	req.c
@@ -138,12 +139,15 @@ add_executable(test_fmt3
 	mangle.c utils.c error.c
 	str.c
 	db.c
+	nvl.c
+	nvl_convert.c
 )
 
 target_link_libraries(test_fmt3
 	${OPENSSL_CRYPTO_LIBRARY}
 	${SQLITE_LIB}
 	umem
+	nvpair
 	/usr/lib/libavl.so.1
 	/usr/lib/libcmdutils.so.1
 )

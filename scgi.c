@@ -113,12 +113,12 @@ static int read_netstring_string(struct req *req, size_t len)
 
 static void cvt_headers(struct req *req)
 {
-	static const struct convert_header_info table[] = {
+	static const struct convert_info table[] = {
 		{ .name = "SCGI",		.type = DATA_TYPE_UINT64, },
 		{ .name = NULL, },
 	};
 
-	convert_headers(req->request_headers, table);
+	nvl_convert(req->request_headers, table);
 }
 
 static int read_netstring(struct req *req)

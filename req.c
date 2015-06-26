@@ -487,59 +487,17 @@ static bool switch_content_type(struct req *req)
 	return true;
 }
 
-void convert_headers(nvlist_t *headers, const struct convert_header_info *table)
+void convert_headers(nvlist_t *headers, const struct convert_info *table)
 {
-	static const struct convert_header_info generic_table[] = {
+	static const struct convert_info generic_table[] = {
 		{ .name = CONTENT_LENGTH,	.type = DATA_TYPE_UINT64, },
 		{ .name = REMOTE_PORT,		.type = DATA_TYPE_UINT64, },
 		{ .name = SERVER_PORT,		.type = DATA_TYPE_UINT64, },
 		{ .name = NULL, },
 	};
 
-	uint64_t intval;
-	char *str;
-	int ret;
-	int i;
-
-	/*
-	 * If the table we're not processing is the generic table, recurse
-	 * once to get those conversions out of the way.
-	 */
-	if (table != generic_table)
-		convert_headers(headers, generic_table);
-
-	/*
-	 * If we weren't given a table, we have nothing to do other than the
-	 * generic conversion (see above)
-	 */
-	if (!table)
-		return;
-
-	for (i = 0; table[i].name; i++) {
-		nvpair_t *pair;
-
-		ret = nvlist_lookup_nvpair(headers, table[i].name, &pair);
-		if (ret)
-			continue;
-
-		if (nvpair_type(pair) != DATA_TYPE_STRING)
-			continue;
-
-		ret = nvpair_value_string(pair, &str);
-		if (ret)
-			continue;
-
-		switch (table[i].type) {
-			case DATA_TYPE_UINT64:
-				ret = str2u64(str, &intval);
-				if (!ret)
-					nvl_set_int(headers, table[i].name,
-						    intval);
-				break;
-			default:
-				ASSERT(0);
-		}
-	}
+	nvl_convert(headers, generic_table);
+	nvl_convert(headers, table);
 }
 
 int req_dispatch(struct req *req)
