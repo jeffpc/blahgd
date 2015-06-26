@@ -276,6 +276,8 @@ int main(int argc, char **argv)
 {
 	int ret;
 
+	ASSERT0(putenv("TZ=UTC"));
+
 	/* drop unneeded privs */
 	ret = drop_privs();
 	if (ret)
