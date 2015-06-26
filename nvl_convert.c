@@ -24,10 +24,33 @@
 #include "utils.h"
 #include "error.h"
 
-void nvl_convert(nvlist_t *nvl, const struct convert_info *table)
+static void cvt_string(nvlist_t *nvl, nvpair_t *pair, data_type_t tgt)
 {
+	const char *name = nvpair_name(pair);
 	uint64_t intval;
 	char *str;
+	int ret;
+
+	ASSERT3U(nvpair_type(pair), ==, DATA_TYPE_STRING);
+
+	ret = nvpair_value_string(pair, &str);
+	if (ret)
+		return;
+
+	switch (tgt) {
+		case DATA_TYPE_UINT64:
+			ret = str2u64(str, &intval);
+			if (!ret)
+				nvl_set_int(nvl, name, intval);
+			break;
+		default:
+			ASSERT(0);
+	}
+}
+
+
+void nvl_convert(nvlist_t *nvl, const struct convert_info *table)
+{
 	int ret;
 	int i;
 
@@ -45,21 +68,12 @@ void nvl_convert(nvlist_t *nvl, const struct convert_info *table)
 		if (ret)
 			continue;
 
-		if (nvpair_type(pair) != DATA_TYPE_STRING)
-			continue;
-
-		ret = nvpair_value_string(pair, &str);
-		if (ret)
-			continue;
-
-		switch (table[i].type) {
-			case DATA_TYPE_UINT64:
-				ret = str2u64(str, &intval);
-				if (!ret)
-					nvl_set_int(nvl, table[i].name, intval);
+		switch (nvpair_type(pair)) {
+			case DATA_TYPE_STRING:
+				cvt_string(nvl, pair, table[i].type);
 				break;
 			default:
-				ASSERT(0);
+				break;
 		}
 	}
 }
