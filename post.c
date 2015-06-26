@@ -162,6 +162,22 @@ static void post_add_tag(struct post *post, const char *name)
 	list_insert_tail(&post->tags, tag);
 }
 
+static void post_remove_all_comments(struct post *post)
+{
+	struct comment *com;
+
+	while ((com = list_remove_head(&post->comments))) {
+		free(com->author);
+		free(com->email);
+		free(com->ip);
+		free(com->url);
+		str_putref(com->body);
+		umem_cache_free(comment_cache, com);
+	}
+
+	post->numcom = 0;
+}
+
 static struct str *load_comment(struct post *post, int commid)
 {
 	char path[FILENAME_MAX];
@@ -343,20 +359,10 @@ static int __load_post_body(struct post *post)
 
 static int __load_post_comments(struct post *post)
 {
-	struct comment *com;
 	sqlite3_stmt *stmt;
 	int ret;
 
-	while ((com = list_remove_head(&post->comments))) {
-		free(com->author);
-		free(com->email);
-		free(com->ip);
-		free(com->url);
-		str_putref(com->body);
-		umem_cache_free(comment_cache, com);
-	}
-
-	post->numcom = 0;
+	post_remove_all_comments(post);
 
 	SQL(stmt, "SELECT id, author, email, strftime(\"%s\", time), "
 	    "remote_addr, url FROM comments WHERE post=? AND moderated=1 "
@@ -507,16 +513,7 @@ err:
 void post_destroy(struct post *post)
 {
 	post_remove_all_tags(post);
-	struct comment *com;
-
-	while ((com = list_remove_head(&post->comments))) {
-		free(com->author);
-		free(com->email);
-		free(com->ip);
-		free(com->url);
-		str_putref(com->body);
-		umem_cache_free(comment_cache, com);
-	}
+	post_remove_all_comments(post);
 
 	free(post->title);
 	str_putref(post->body);
