@@ -139,6 +139,29 @@ void revalidate_all_posts(void *arg)
 	MXUNLOCK(&posts_lock);
 }
 
+static void post_remove_all_tags(struct post *post)
+{
+	struct post_tag *tag;
+
+	while ((tag = list_remove_head(&post->tags))) {
+		free(tag->tag);
+		free(tag);
+	}
+}
+
+static void post_add_tag(struct post *post, const char *name)
+{
+	struct post_tag *tag;
+
+	tag = malloc(sizeof(struct post_tag));
+	ASSERT(tag);
+
+	tag->tag = xstrdup(name);
+	ASSERT(tag->tag);
+
+	list_insert_tail(&post->tags, tag);
+}
+
 static struct str *load_comment(struct post *post, int commid)
 {
 	char path[FILENAME_MAX];
@@ -366,26 +389,14 @@ static int __load_post_comments(struct post *post)
 static int __load_post_tags(struct post *post)
 {
 	sqlite3_stmt *stmt;
-	struct post_tag *tag;
 	int ret;
 
-	while ((tag = list_remove_head(&post->tags))) {
-		free(tag->tag);
-		free(tag);
-	}
+	post_remove_all_tags(post);
 
 	SQL(stmt, "SELECT tag FROM post_tags WHERE post=? ORDER BY tag");
 	SQL_BIND_INT(stmt, 1, post->id);
-	SQL_FOR_EACH(stmt) {
-		tag = malloc(sizeof(struct post_tag));
-		ASSERT(tag);
-
-		tag->tag = xstrdup(SQL_COL_STR(stmt, 0));
-		ASSERT(tag->tag);
-
-		list_insert_tail(&post->tags, tag);
-	}
-
+	SQL_FOR_EACH(stmt)
+		post_add_tag(post, SQL_COL_STR(stmt, 0));
 	SQL_END(stmt);
 
 	return 0;
@@ -495,13 +506,8 @@ err:
 
 void post_destroy(struct post *post)
 {
-	struct post_tag *pt;
+	post_remove_all_tags(post);
 	struct comment *com;
-
-	while ((pt = list_remove_head(&post->tags))) {
-		free(pt->tag);
-		free(pt);
-	}
 
 	while ((com = list_remove_head(&post->comments))) {
 		free(com->author);
