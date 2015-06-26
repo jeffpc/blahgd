@@ -23,7 +23,9 @@
 #ifndef __FSM_H
 #define __FSM_H
 
-typedef int(*fsm_table_entry_t)();
+struct fsm;
+
+typedef int(*fsm_table_entry_t)(struct fsm *, int);
 
 struct fsm_state {
 	fsm_table_entry_t *action_table;
