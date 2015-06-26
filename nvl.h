@@ -47,6 +47,7 @@ extern void nvl_set_nvl_array(nvlist_t *nvl, const char *name,
 extern nvpair_t *nvl_lookup(nvlist_t *nvl, const char *name);
 extern char *nvl_lookup_str(nvlist_t *nvl, const char *name);
 extern uint64_t nvl_lookup_int(nvlist_t *nvl, const char *name);
+extern bool nvl_lookup_bool(nvlist_t *nvl, const char *name);
 extern void nvl_convert(nvlist_t *nvl, const struct convert_info *table);
 extern void nvl_dump(nvlist_t *nvl);
 

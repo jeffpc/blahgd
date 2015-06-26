@@ -113,6 +113,18 @@ uint64_t nvl_lookup_int(nvlist_t *nvl, const char *name)
 	return pair2int(pair);
 }
 
+bool nvl_lookup_bool(nvlist_t *nvl, const char *name)
+{
+	nvpair_t *pair;
+
+	pair = nvl_lookup(nvl, name);
+	ASSERT(pair);
+
+	ASSERT3U(nvpair_type(pair), ==, DATA_TYPE_BOOLEAN_VALUE);
+
+	return pair2bool(pair);
+}
+
 #define DECL_PAIR2(name, nvfxn, rettype, localtype)			\
 rettype name(nvpair_t *pair)						\
 {									\
