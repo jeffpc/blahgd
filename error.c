@@ -20,9 +20,28 @@
  * SOFTWARE.
  */
 
+#include <sys/debug.h>
+
+/*
+ * clean up the pulled in defines since we want to do our own thing
+ */
+#undef ASSERT
+#undef VERIFY
+#undef ASSERT64
+#undef ASSERT32
+#undef IMPLY
+#undef EQUIV
+#undef VERIFY3S
+#undef VERIFY3U
+#undef VERIFY3P
+#undef VERIFY0
+#undef ASSERT3S
+#undef ASSERT3U
+#undef ASSERT3P
+#undef ASSERT0
+
 #include "error.h"
 
-#include <sys/debug.h>
 #include <sys/inttypes.h>
 #include <syslog.h>
 #include <stdarg.h>
