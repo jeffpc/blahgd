@@ -35,6 +35,7 @@ struct convert_info {
 };
 
 extern nvlist_t *nvl_alloc(void);
+extern nvlist_t *nvl_from_yaml(const char *yamlstr, size_t len);
 extern void nvl_set_str(nvlist_t *nvl, const char *name, const char *val);
 extern void nvl_set_int(nvlist_t *nvl, const char *name, uint64_t val);
 extern void nvl_set_bool(nvlist_t *nvl, const char *name, bool val);

@@ -64,6 +64,7 @@ add_executable(blahgd
 	val.c
 	nvl.c
 	nvl_convert.c
+	nvl_yaml.c
 
 	# request processing
 	req.c
@@ -91,6 +92,7 @@ add_executable(blahgd
 target_link_libraries(blahgd
 	${OPENSSL_CRYPTO_LIBRARY}
 	${SQLITE_LIB}
+	yaml
 	pthread
 	socket
 	nsl
@@ -141,11 +143,13 @@ add_executable(test_fmt3
 	db.c
 	nvl.c
 	nvl_convert.c
+	nvl_yaml.c
 )
 
 target_link_libraries(test_fmt3
 	${OPENSSL_CRYPTO_LIBRARY}
 	${SQLITE_LIB}
+	yaml
 	umem
 	nvpair
 	/usr/lib/libavl.so.1
