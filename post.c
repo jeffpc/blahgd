@@ -39,7 +39,6 @@
 #include "post.h"
 #include "vars.h"
 #include "req.h"
-#include "db.h"
 #include "parse.h"
 #include "error.h"
 #include "utils.h"
@@ -197,6 +196,63 @@ static struct str *load_comment(struct post *post, int commid)
 		str_putref(err_msg);
 
 	return out;
+}
+
+static void post_add_comment(struct post *post, int commid)
+{
+	static const struct convert_info table[] = {
+		{ .name = "moderated",	.type = DATA_TYPE_BOOLEAN_VALUE, },
+		{ .name = NULL, },
+	};
+
+	char path[FILENAME_MAX];
+	struct comment *comm;
+	size_t metalen;
+	char *meta;
+	nvlist_t *nvl;
+
+	snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%d/comments/%d/meta.yml",
+		 post->id, commid);
+
+	meta = read_file_len(path, &metalen);
+	ASSERT(meta);
+
+	nvl = nvl_from_yaml(meta, metalen);
+	fprintf(stderr, "yaml comm nvl = %p\n", nvl);
+	nvl_convert(nvl, table);
+
+	if (!nvl_lookup_bool(nvl, "moderated"))
+		goto done;
+
+	comm = umem_cache_alloc(comment_cache, 0);
+	ASSERT(comm);
+
+	comm->id     = commid;
+	comm->author = xstrdup(nvl_lookup_str(nvl, "author")); // XXX: default: "[unknown]"
+	comm->email  = xstrdup(nvl_lookup_str(nvl, "email"));
+	comm->time   = parse_time(nvl_lookup_str(nvl, "time"));
+	comm->ip     = xstrdup(nvl_lookup_str(nvl, "remoteaddr"));
+	comm->url    = xstrdup(nvl_lookup_str(nvl, "url"));
+	comm->body   = load_comment(post, comm->id);
+
+	list_insert_tail(&post->comments, comm);
+
+	post->numcom++;
+
+done:
+	nvlist_free(nvl);
+	free(meta);
+}
+
+static void post_add_comment_str(struct post *post, const char *idstr)
+{
+	uint32_t i;
+	int ret;
+
+	ret = str2u32(idstr, &i);
+	ASSERT0(ret);
+
+	post_add_comment(post, i);
 }
 
 static int __do_load_post_body_fmt3(struct post *post, char *ibuf, size_t len)
@@ -357,84 +413,54 @@ static int __load_post_body(struct post *post)
 	return ret;
 }
 
-static int __load_post_comments(struct post *post)
+static void __refresh_published_prop(struct post *post, nvlist_t *nvl)
 {
-	sqlite3_stmt *stmt;
-	int ret;
+	const char *sval;
+	uint64_t ival;
 
-	post_remove_all_comments(post);
+	/* update the time */
+	sval = nvl_lookup_str(nvl, "time");
+	post->time = parse_time(sval);
 
-	SQL(stmt, "SELECT id, author, email, strftime(\"%s\", time), "
-	    "remote_addr, url FROM comments WHERE post=? AND moderated=1 "
-	    "ORDER BY id");
-	SQL_BIND_INT(stmt, 1, post->id);
-	SQL_FOR_EACH(stmt) {
-		struct comment *comm;
+	/* update the title */
+	sval = nvl_lookup_str(nvl, "title");
+	post->title = xstrdup(sval);
 
-		comm = umem_cache_alloc(comment_cache, 0);
-		ASSERT(comm);
-
-		list_insert_tail(&post->comments, comm);
-
-		comm->id     = SQL_COL_INT(stmt, 0);
-		comm->author = xstrdup_def(SQL_COL_STR(stmt, 1), "[unknown]");
-		comm->email  = xstrdup(SQL_COL_STR(stmt, 2));
-		comm->time   = SQL_COL_INT(stmt, 3);
-		comm->ip     = xstrdup(SQL_COL_STR(stmt, 4));
-		comm->url    = xstrdup(SQL_COL_STR(stmt, 5));
-		comm->body   = load_comment(post, comm->id);
-
-		post->numcom++;
-	}
-
-	SQL_END(stmt);
-
-	return 0;
+	/* update the format */
+	ival = nvl_lookup_int(nvl, "fmt");
+	post->fmt = ival;
 }
 
-static int __load_post_tags(struct post *post)
+static int __refresh_published(struct post *post)
 {
-	sqlite3_stmt *stmt;
-	int ret;
+	static const struct convert_info table[] = {
+		{ .name = "fmt",	.type = DATA_TYPE_UINT64, },
+		{ .name = NULL, },
+	};
 
-	post_remove_all_tags(post);
-
-	SQL(stmt, "SELECT tag FROM post_tags WHERE post=? ORDER BY tag");
-	SQL_BIND_INT(stmt, 1, post->id);
-	SQL_FOR_EACH(stmt)
-		post_add_tag(post, SQL_COL_STR(stmt, 0));
-	SQL_END(stmt);
-
-	return 0;
-}
-
-int __refresh_published(struct post *post)
-{
 	char path[FILENAME_MAX];
-	sqlite3_stmt *stmt;
-	int err;
-	int ret;
+	size_t metalen;
+	char *meta;
+	nvlist_t *nvl;
 
-	snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%d", post->id);
+	snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%d/post.yml", post->id);
 
-	SQL(stmt, "SELECT title, strftime(\"%s\", time), fmt FROM posts WHERE id=?");
-	SQL_BIND_INT(stmt, 1, post->id);
-	SQL_FOR_EACH(stmt) {
-		post->title = xstrdup(SQL_COL_STR(stmt, 0));
-		post->time  = SQL_COL_INT(stmt, 1);
-		post->fmt   = SQL_COL_INT(stmt, 2);
-	}
-
-	SQL_END(stmt);
-
-	if (!post->title)
+	meta = read_file_len(path, &metalen);
+	if (!meta)
 		return ENOENT;
 
-	if ((err = __load_post_tags(post)))
-		return err;
+	nvl = nvl_from_yaml(meta, metalen);
+	fprintf(stderr, "yaml nvl = %p\n", nvl);
+	nvl_convert(nvl, table);
 
-	if ((err = __load_post_comments(post)))
-		return err;
+	__refresh_published_prop(post, nvl);
+
+	// XXX: post_add_tag(post, X);
+	// XXX: post_add_cat(post, X);
+	// XXX: post_add_comment_str(post, X);
+
+	nvlist_free(nvl);
+	free(meta);
 
 	return 0;
 }
