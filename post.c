@@ -408,16 +408,42 @@ static int __load_post_tags(struct post *post)
 	return 0;
 }
 
-int __refresh(struct post *post)
+int __refresh_published(struct post *post)
 {
 	char path[FILENAME_MAX];
 	sqlite3_stmt *stmt;
 	int err;
 	int ret;
 
-	printf("refreshing post...\n");
-
 	snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%d", post->id);
+
+	SQL(stmt, "SELECT title, strftime(\"%s\", time), fmt FROM posts WHERE id=?");
+	SQL_BIND_INT(stmt, 1, post->id);
+	SQL_FOR_EACH(stmt) {
+		post->title = xstrdup(SQL_COL_STR(stmt, 0));
+		post->time  = SQL_COL_INT(stmt, 1);
+		post->fmt   = SQL_COL_INT(stmt, 2);
+	}
+
+	SQL_END(stmt);
+
+	if (!post->title)
+		return ENOENT;
+
+	if ((err = __load_post_tags(post)))
+		return err;
+
+	if ((err = __load_post_comments(post)))
+		return err;
+
+	return 0;
+}
+
+int __refresh(struct post *post)
+{
+	int ret;
+
+	printf("refreshing post...\n");
 
 	free(post->title);
 	post->title = NULL;
@@ -427,30 +453,15 @@ int __refresh(struct post *post)
 		post->time  = time(NULL);
 		post->fmt   = 3;
 
-		err = 0;
+		ret = 0;
 	} else {
-		SQL(stmt, "SELECT title, strftime(\"%s\", time), fmt FROM posts WHERE id=?");
-		SQL_BIND_INT(stmt, 1, post->id);
-		SQL_FOR_EACH(stmt) {
-			post->title = xstrdup(SQL_COL_STR(stmt, 0));
-			post->time  = SQL_COL_INT(stmt, 1);
-			post->fmt   = SQL_COL_INT(stmt, 2);
-		}
-
-		SQL_END(stmt);
-
-		if (!post->title)
-			return ENOENT;
-
-		if ((err = __load_post_tags(post)))
-			return err;
-
-		if ((err = __load_post_comments(post)))
-			return err;
+		ret = __refresh_published(post);
+		if (ret)
+			return ret;
 	}
 
-	if ((err = __load_post_body(post)))
-		return err;
+	if ((ret = __load_post_body(post)))
+		return ret;
 
 	post->needs_refresh = false;
 
