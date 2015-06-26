@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include "fsm.h"
+#include "decode.h"
 
 #define UD_NORMAL	0
 #define UD_DECODE1	1
