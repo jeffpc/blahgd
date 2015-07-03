@@ -129,6 +129,8 @@ extern void req_output(struct req *req);
 extern void req_head(struct req *req, const char *name, const char *val);
 extern int req_dispatch(struct req *req);
 
+extern void convert_headers(nvlist_t *headers, const struct convert_info *table);
+
 extern int R404(struct req *req, char *tmpl);
 extern int R301(struct req *req, const char *url);
 

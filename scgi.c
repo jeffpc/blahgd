@@ -118,7 +118,7 @@ static void cvt_headers(struct req *req)
 		{ .name = NULL, },
 	};
 
-	nvl_convert(req->request_headers, table);
+	convert_headers(req->request_headers, table);
 }
 
 static int read_netstring(struct req *req)
