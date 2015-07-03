@@ -280,8 +280,10 @@ static const char *save_comment(struct req *req)
 	url_buf[0] = '\0'; /* better be paranoid */
 	comment_buf[0] = '\0'; /* better be paranoid */
 
-	if (!req->request_body)
+	if (!req->request_body) {
+		LOG("missing req. body");
 		return INTERNAL_ERR;
+	}
 
 	in = req->request_body;
 
