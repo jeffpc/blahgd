@@ -65,7 +65,7 @@ static void *queue_processor(void *arg)
 
 		req->stats.dequeue = gettime();
 
-		scgi_read_request(req);
+		ASSERT0(scgi_read_request(req));
 
 		process_request(req);
 	}
