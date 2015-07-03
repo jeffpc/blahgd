@@ -145,7 +145,7 @@ static int read_body(struct req *req)
 	ssize_t ret;
 	char *buf;
 
-	ret = nvlist_lookup_uint64(req->request_headers, "CONTENT_LENGTH",
+	ret = nvlist_lookup_uint64(req->request_headers, CONTENT_LENGTH,
 				   &content_len);
 	if (ret)
 		return ret;
