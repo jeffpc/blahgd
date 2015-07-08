@@ -439,17 +439,17 @@ static int __refresh_published(struct post *post)
 	};
 
 	char path[FILENAME_MAX];
-	size_t metalen;
-	char *meta;
+	struct str *meta;
 	nvlist_t *nvl;
 
 	snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%d/post.yml", post->id);
 
-	meta = read_file_len(path, &metalen);
+	meta = file_cache_get_cb(path, post->preview ? NULL : revalidate_post,
+				 post);
 	if (!meta)
 		return ENOENT;
 
-	nvl = nvl_from_yaml(meta, metalen);
+	nvl = nvl_from_yaml(meta->str, str_len(meta));
 	fprintf(stderr, "yaml nvl = %p\n", nvl);
 	nvl_convert(nvl, table);
 
@@ -460,7 +460,7 @@ static int __refresh_published(struct post *post)
 	// XXX: post_add_comment_str(post, X);
 
 	nvlist_free(nvl);
-	free(meta);
+	str_putref(meta);
 
 	return 0;
 }
