@@ -525,7 +525,7 @@ struct post *load_post(int postid, bool preview)
 	post->body = NULL;
 	post->numcom = 0;
 	post->preview = preview;
-	post->needs_refresh = false;
+	post->needs_refresh = true;
 
 	list_create(&post->tags, sizeof(struct post_tag),
 		    offsetof(struct post_tag, list));
