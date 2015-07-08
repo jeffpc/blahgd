@@ -207,17 +207,17 @@ static void post_add_comment(struct post *post, int commid)
 
 	char path[FILENAME_MAX];
 	struct comment *comm;
-	size_t metalen;
-	char *meta;
+	struct str *meta;
 	nvlist_t *nvl;
 
 	snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%d/comments/%d/meta.yml",
 		 post->id, commid);
 
-	meta = read_file_len(path, &metalen);
+	meta = file_cache_get_cb(path, post->preview ? NULL : revalidate_post,
+				 post);
 	ASSERT(meta);
 
-	nvl = nvl_from_yaml(meta, metalen);
+	nvl = nvl_from_yaml(meta->str, str_len(meta));
 	fprintf(stderr, "yaml comm nvl = %p\n", nvl);
 	nvl_convert(nvl, table);
 
@@ -241,7 +241,7 @@ static void post_add_comment(struct post *post, int commid)
 
 done:
 	nvlist_free(nvl);
-	free(meta);
+	str_putref(meta);
 }
 
 static void post_add_comment_str(struct post *post, const char *idstr)
