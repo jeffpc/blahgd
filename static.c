@@ -96,7 +96,7 @@ int blahg_static(struct req *req)
 	 */
 	req->body = read_file_len(uri, &req->bodylen);
 
-	if (!req->body)
+	if (IS_ERR(req->body))
 		return R404(req, NULL);
 
 	req_head(req, "Content-Type", info->content_type);

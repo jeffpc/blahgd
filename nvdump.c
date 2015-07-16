@@ -34,8 +34,9 @@ static void dump_file(char *fname)
 	int ret;
 
 	buf = read_file_len(fname, &len);
-	if (!buf) {
-		fprintf(stderr, "Error: could not read file: %s\n", fname);
+	if (IS_ERR(buf)) {
+		fprintf(stderr, "Error: could not read file: %s: %s\n", fname,
+			strerror(PTR_ERR(buf)));
 		return;
 	}
 

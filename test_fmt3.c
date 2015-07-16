@@ -80,7 +80,7 @@ int main(int argc, char **argv)
 
 	for (i = 1; i < argc; i++) {
 		in = read_file(argv[i]);
-		ASSERT(in);
+		ASSERT(!IS_ERR(in));
 
 		if (onefile(&post, in, strlen(in)))
 			result = 1;

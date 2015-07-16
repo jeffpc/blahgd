@@ -26,7 +26,6 @@
 #include <sys/sysmacros.h>
 #include <sys/stat.h>
 #include <string.h>
-#include <errno.h>
 
 #include "error.h"
 
@@ -119,7 +118,7 @@ static inline char *read_file_len(const char *fname, size_t *len)
 	char *ret;
 
 	ret = read_file_common(fname, &sb);
-	if (ret)
+	if (!IS_ERR(ret))
 		*len = sb.st_size;
 
 	return ret;

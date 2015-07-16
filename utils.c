@@ -129,24 +129,28 @@ char *read_file_common(const char *fname, struct stat *sb)
 	int ret;
 	int fd;
 
-	out = NULL;
-
 	fd = open(fname, O_RDONLY);
-	if (fd == -1)
+	if (fd == -1) {
+		out = ERR_PTR(errno);
 		goto err;
+	}
 
 	ret = fstat(fd, &statbuf);
-	if (ret == -1)
+	if (ret == -1) {
+		out = ERR_PTR(errno);
 		goto err_close;
+	}
 
 	out = malloc(statbuf.st_size + 1);
-	if (!out)
+	if (!out) {
+		out = ERR_PTR(ENOMEM);
 		goto err_close;
+	}
 
 	ret = xread(fd, out, statbuf.st_size);
 	if (ret != statbuf.st_size) {
 		free(out);
-		out = NULL;
+		out = ERR_PTR(EAGAIN); /* is there a better error? */
 	} else {
 		out[statbuf.st_size] = '\0';
 

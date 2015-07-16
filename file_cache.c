@@ -257,7 +257,7 @@ static int __reload(struct file_node *node)
 
 	/* read the current */
 	tmp = read_file_common(node->name, &node->stat);
-	if (!tmp) {
+	if (IS_ERR(tmp)) {
 		LOG("file (%s) read error", node->name);
 		return 0;
 	}
