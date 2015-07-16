@@ -25,6 +25,31 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
+
+#define MAX_ERRNO	1023
+
+static inline int PTR_ERR(void *ptr)
+{
+	return -(intptr_t) ptr;
+}
+
+static inline void *ERR_PTR(int err)
+{
+	return (void *)(intptr_t) -err;
+}
+
+static inline int IS_ERR(void *ptr)
+{
+	intptr_t err = (intptr_t) ptr;
+
+	return (err < 0) && (err >= -MAX_ERRNO);
+}
+
+static inline void *ERR_CAST(void *ptr)
+{
+	return ptr;
+}
 
 #define NORETURN __attribute__((__noreturn__))
 
