@@ -258,15 +258,16 @@ static int __reload(struct file_node *node)
 	/* read the current */
 	tmp = read_file_common(node->name, &node->stat);
 	if (IS_ERR(tmp)) {
-		LOG("file (%s) read error", node->name);
-		return 0;
+		LOG("file (%s) read error: %s", node->name,
+		    strerror(PTR_ERR(tmp)));
+		return PTR_ERR(tmp);
 	}
 
 	node->contents = str_alloc(tmp);
 	if (!node->contents) {
 		LOG("file (%s) str_alloc error", node->name);
 		free(tmp);
-		return 0;
+		return ENOMEM;
 	}
 
 	return 0;
@@ -275,18 +276,17 @@ static int __reload(struct file_node *node)
 static struct file_node *load_file(const char *name)
 {
 	struct file_node *node;
+	int ret;
 
 	fprintf(stderr, "%s: %s\n", __func__, name);
 
 	node = fn_alloc(name);
-	if (!node) {
-		LOG("file (%s) malloc error", name);
-		return NULL;
-	}
+	if (!node)
+		return ERR_PTR(ENOMEM);
 
-	if (__reload(node)) {
+	if ((ret = __reload(node))) {
 		fn_free(node);
-		return NULL;
+		return ERR_PTR(ret);
 	}
 
 	return node;
@@ -298,6 +298,7 @@ struct str *file_cache_get_cb(const char *name, void (*cb)(void *), void *arg)
 	struct file_node key;
 	struct str *str;
 	avl_index_t where;
+	int ret;
 
 	key.name = (char *) name;
 
@@ -313,17 +314,17 @@ struct str *file_cache_get_cb(const char *name, void (*cb)(void *), void *arg)
 
 	/* have to load it from disk...*/
 	out = load_file(name);
-	if (!out)
-		return NULL;
+	if (IS_ERR(out))
+		return ERR_CAST(out);
 
 	MXLOCK(&out->lock);
 
 	/* register the callback */
-	if (add_cb(out, cb, arg)) {
+	if ((ret = add_cb(out, cb, arg))) {
 		/* Dang! An error... time to undo everything */
 		MXUNLOCK(&out->lock);
 		fn_putref(out);
-		return NULL;
+		return ERR_PTR(ret);
 	}
 
 	/* ...and insert it into the cache */

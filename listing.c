@@ -41,13 +41,13 @@ struct str *listing(struct post *post, char *fname)
 
 	in = file_cache_get_cb(path, post->preview ? NULL : revalidate_post,
 			       post);
-	if (!in)
+	if (IS_ERR(in))
 		goto err;
 
 	return listing_str(in);
 
 err:
-	snprintf(path, FILENAME_MAX, "Failed to read in listing '%d/%s'",
-		 post->id, fname);
+	snprintf(path, FILENAME_MAX, "Failed to read in listing '%d/%s': %s",
+		 post->id, fname, strerror(PTR_ERR(in)));
 	return STR_DUP(path);
 }

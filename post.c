@@ -190,7 +190,7 @@ static struct str *load_comment(struct post *post, int commid)
 
 	out = file_cache_get_cb(path, post->preview ? NULL : revalidate_post,
 				post);
-	if (!out)
+	if (IS_ERR(out))
 		out = err_msg;
 	else
 		str_putref(err_msg);
@@ -215,7 +215,7 @@ static void post_add_comment(struct post *post, int commid)
 
 	meta = file_cache_get_cb(path, post->preview ? NULL : revalidate_post,
 				 post);
-	ASSERT(meta);
+	ASSERT(!IS_ERR(meta));
 
 	nvl = nvl_from_yaml(meta->str, str_len(meta));
 	fprintf(stderr, "yaml comm nvl = %p\n", nvl);
@@ -400,8 +400,8 @@ static int __load_post_body(struct post *post)
 
 	raw = file_cache_get_cb(path, post->preview ? NULL : revalidate_post,
 				post);
-	if (!raw)
-		return ENOENT;
+	if (IS_ERR(raw))
+		return PTR_ERR(raw);
 
 	if (post->fmt == 3)
 		ret = __do_load_post_body_fmt3(post, raw->str, str_len(raw));
@@ -446,8 +446,8 @@ static int __refresh_published(struct post *post)
 
 	meta = file_cache_get_cb(path, post->preview ? NULL : revalidate_post,
 				 post);
-	if (!meta)
-		return ENOENT;
+	if (IS_ERR(meta))
+		return PTR_ERR(meta);
 
 	nvl = nvl_from_yaml(meta->str, str_len(meta));
 	fprintf(stderr, "yaml nvl = %p\n", nvl);
