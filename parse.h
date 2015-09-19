@@ -36,7 +36,7 @@ struct parser_output {
 	char *output;
 	struct str *stroutput;
 
-	char *input;
+	const char *input;
 	size_t len;
 	size_t pos;
 	int lineno;
