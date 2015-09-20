@@ -127,7 +127,13 @@ static inline char *read_file_len(const char *fname, size_t *len)
 
 static inline time_t parse_time_str(struct str *str)
 {
-	return parse_time_cstr(str_cstr(str));
+	time_t ret;
+
+	ret = parse_time_cstr(str_cstr(str));
+
+	str_putref(str);
+
+	return ret;
 }
 
 #endif
