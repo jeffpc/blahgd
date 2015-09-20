@@ -53,6 +53,10 @@ BISON_TARGET(tmpl template.y template.tab.c COMPILE_FLAGS "-p tmpl_")
 FLEX_TARGET(tmpl template.l template.lex.c COMPILE_FLAGS "-P tmpl_")
 ADD_FLEX_BISON_DEPENDENCY(tmpl tmpl)
 
+BISON_TARGET(lisp lisp.y lisp.tab.c COMPILE_FLAGS "-p lisp_reader_")
+FLEX_TARGET(lisp lisp.l lisp.lex.c COMPILE_FLAGS "-P lisp_reader_")
+ADD_FLEX_BISON_DEPENDENCY(lisp lisp)
+
 if(USE_XMLRPC)
 	set(PINGBACK_SRC pingback.c)
 	find_package(XMLRPC COMPONENTS cgi-server REQUIRED)
@@ -98,6 +102,10 @@ add_executable(blahgd
 	nvl.c
 	nvl_convert.c
 	nvl_yaml.c
+
+	# lisp parsing related things
+	${FLEX_lisp_OUTPUTS} ${BISON_lisp_OUTPUTS}
+	lisp.c
 
 	# request processing
 	req.c
@@ -201,6 +209,20 @@ add_executable(test_qstring
 target_link_libraries(test_qstring
 	umem
 	nvpair
+)
+
+add_executable(test_lisp_parser
+	test_lisp_parser.c
+	${FLEX_lisp_OUTPUTS} ${BISON_lisp_OUTPUTS}
+	lisp.c
+	error.c
+	utils.c
+	str.c
+	val.c
+)
+
+target_link_libraries(test_lisp_parser
+	umem
 )
 
 function(simple_c_test type section data)

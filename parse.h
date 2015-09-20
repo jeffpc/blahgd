@@ -27,6 +27,7 @@
 #include "post.h"
 #include "error.h"
 #include "str.h"
+#include "lisp.h"
 
 struct parser_output {
 	struct req *req;
@@ -35,6 +36,7 @@ struct parser_output {
 	void *scanner;
 	char *output;
 	struct str *stroutput;
+	struct val *valoutput;
 
 	const char *input;
 	size_t len;
@@ -50,12 +52,16 @@ typedef void* yyscan_t;
 
 extern int fmt3_lex_destroy(yyscan_t yyscanner);
 extern int tmpl_lex_destroy(yyscan_t yyscanner);
+extern int lisp_reader_lex_destroy(yyscan_t yyscanner);
 extern int fmt3_parse(struct parser_output *data);
 extern int tmpl_parse(struct parser_output *data);
+extern int lisp_reader_parse(struct parser_output *data);
 extern void fmt3_set_extra(void * user_defined, yyscan_t yyscanner);
 extern void tmpl_set_extra(void * user_defined, yyscan_t yyscanner);
+extern void lisp_reader_set_extra(void * user_defined, yyscan_t yyscanner);
 extern int fmt3_lex_init(yyscan_t* scanner);
 extern int tmpl_lex_init(yyscan_t* scanner);
+extern int lisp_reader_lex_init(yyscan_t* scanner);
 
 static inline bool cond_value(struct parser_output *data)
 {
