@@ -142,10 +142,10 @@ struct val *lisp_cdr(struct val *lv)
 	if (!lv)
 		return NULL;
 
-	if (lv->type != VT_CONS)
-		return NULL;
-
-	ret = val_getref(lv->cons.tail);
+	if (lv->type == VT_CONS)
+		ret = val_getref(lv->cons.tail);
+	else
+		ret =  NULL;
 
 	val_putref(lv);
 
