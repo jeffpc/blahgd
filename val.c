@@ -52,6 +52,10 @@ static void __val_init(struct val *val, enum val_type type)
 		case VT_SYM:
 			val->str = NULL;
 			break;
+		case VT_CONS:
+			val->cons.head = NULL;
+			val->cons.tail = NULL;
+			break;
 	}
 }
 
@@ -63,6 +67,10 @@ static void __val_cleanup(struct val *val)
 		case VT_STR:
 		case VT_SYM:
 			free(val->str);
+			break;
+		case VT_CONS:
+			val_putref(val->cons.head);
+			val_putref(val->cons.tail);
 			break;
 	}
 }
@@ -107,8 +115,22 @@ DEF_VAL_SET(int, VT_INT, i, uint64_t)
 DEF_VAL_SET(str, VT_STR, str, char *)
 DEF_VAL_SET(sym, VT_SYM, str, char *)
 
+int val_set_cons(struct val *val, struct val *head, struct val *tail)
+{
+	__val_cleanup(val);
+
+	val->type = VT_CONS;
+	val->cons.head = head;
+	val->cons.tail = tail;
+
+	return 0;
+}
+
 void val_dump(struct val *val, int indent)
 {
+	if (!val)
+		return;
+
 	switch (val->type) {
 		case VT_STR:
 		case VT_SYM:
@@ -116,6 +138,12 @@ void val_dump(struct val *val, int indent)
 			break;
 		case VT_INT:
 			fprintf(stderr, "%*s%"PRIu64"\n", indent, "", val->i);
+			break;
+		case VT_CONS:
+			fprintf(stderr, "%*scons head:\n", indent, "");
+			val_dump(val->cons.head, indent + 2);
+			fprintf(stderr, "%*scons tail:\n", indent, "");
+			val_dump(val->cons.tail, indent + 2);
 			break;
 		default:
 			fprintf(stderr, "Unknown type %d\n", val->type);
