@@ -167,7 +167,7 @@ struct val *lisp_assoc(struct val *lv, const char *name)
 	    head->cons.head &&
 	    ((head->cons.head->type == VT_STR) ||
 	     (head->cons.head->type == VT_SYM)) &&
-	    !strcmp(head->cons.head->str, name))
+	    !strcmp(head->cons.head->str->str, name))
 		return head;
 
 	return lisp_assoc(tail, name);
