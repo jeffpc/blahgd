@@ -80,7 +80,7 @@ struct str *lisp_dump(struct val *lv, bool raw)
 
 	switch (lv->type) {
 		case VT_SYM:
-			return STR_DUP(lv->cstr);
+			return str_getref(lv->str);
 		case VT_CSTR:
 			return str_cat3(STR_DUP("\""),
 					STR_DUP(lv->cstr),
