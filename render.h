@@ -26,6 +26,6 @@
 #include "req.h"
 
 extern char *render_template(struct req *req, const char *tmpl);
-extern char *render_page(struct req *req, char *str);
+extern char *render_page(struct req *req, const char *str);
 
 #endif

@@ -58,13 +58,13 @@ static char *str_of_int(uint64_t v)
 	return NULL;
 }
 
-static char *__urlescape_str(char *in)
+static char *__urlescape_str(const char *in)
 {
 	static const char hd[16] = "0123456789ABCDEF";
 
 	char *out, *tmp;
 	int outlen;
-	char *s;
+	const char *s;
 
 	outlen = strlen(in);
 
@@ -123,7 +123,7 @@ static char *__urlescape_str(char *in)
 	return out;
 }
 
-static struct val *__escape(struct val *val, char *(*cvt)(char*))
+static struct val *__escape(struct val *val, char *(*cvt)(const char*))
 {
 	char *out;
 

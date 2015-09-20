@@ -29,7 +29,7 @@
 #include "mangle.h"
 #include "str.h"
 
-extern struct str *listing(struct post *post, char *fname);
+extern struct str *listing(struct post *post, const char *fname);
 
 static inline struct str *listing_str(struct str *str)
 {

@@ -25,11 +25,11 @@
 
 #include "mangle.h"
 
-char *mangle_htmlescape(char *in)
+char *mangle_htmlescape(const char *in)
 {
 	char *out, *tmp;
 	int outlen;
-	char *s;
+	const char *s;
 
 	outlen = strlen(in);
 

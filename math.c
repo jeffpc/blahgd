@@ -55,8 +55,8 @@ static void hexdump(char *a, unsigned char *b, int len)
 }
 
 #define TEX_TMP_DIR "/tmp"
-static int __render_math(char *tex, char *md, char *dstpath, char *texpath,
-			 char *dvipath, char *pngpath)
+static int __render_math(const char *tex, char *md, char *dstpath,
+			 char *texpath, char *dvipath, char *pngpath)
 {
 	char cmd[3*FILENAME_MAX];
 	char *pwd;
@@ -127,7 +127,7 @@ static struct str *do_render_math(struct str *val)
 	char dvipath[FILENAME_MAX];
 	char pngpath[FILENAME_MAX];
 
-	char *tex = val->str;
+	const char *tex = val->str;
 	struct stat statbuf;
 	unsigned char md[20];
 	char amd[41];

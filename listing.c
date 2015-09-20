@@ -32,7 +32,7 @@
 
 #define PAGE 4096
 
-struct str *listing(struct post *post, char *fname)
+struct str *listing(struct post *post, const char *fname)
 {
 	char path[FILENAME_MAX];
 	struct str *in;

@@ -255,7 +255,7 @@ static void post_add_comment_str(struct post *post, const char *idstr)
 	post_add_comment(post, i);
 }
 
-static int __do_load_post_body_fmt3(struct post *post, char *ibuf, size_t len)
+static int __do_load_post_body_fmt3(struct post *post, const char *ibuf, size_t len)
 {
 	struct parser_output x;
 	int ret;

@@ -35,7 +35,7 @@
 #include "error.h"
 #include "file_cache.h"
 
-char *render_page(struct req *req, char *str)
+char *render_page(struct req *req, const char *str)
 {
 	struct parser_output x;
 
