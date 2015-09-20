@@ -127,7 +127,7 @@ static struct str *do_render_math(struct str *val)
 	char dvipath[FILENAME_MAX];
 	char pngpath[FILENAME_MAX];
 
-	const char *tex = val->str;
+	const char *tex = str_cstr(val);
 	struct stat statbuf;
 	unsigned char md[20];
 	char amd[41];
@@ -180,8 +180,8 @@ out:
 static struct str *door_call_render_math(struct str *val)
 {
 	door_arg_t params = {
-		.data_ptr = val->str,
-		.data_size = strlen(val->str) + 1,
+		.data_ptr = (void *) str_cstr(val),
+		.data_size = str_len(val) + 1,
 		.desc_ptr = NULL,
 		.desc_num = 0,
 	};

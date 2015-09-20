@@ -35,7 +35,7 @@ static inline struct str *listing_str(struct str *str)
 {
 	char *tmp;
 
-	tmp = mangle_htmlescape(str->str);
+	tmp = mangle_htmlescape(str_cstr(str));
 
 	str_putref(str);
 

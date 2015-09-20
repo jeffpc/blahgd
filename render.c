@@ -69,7 +69,7 @@ char *render_template(struct req *req, const char *tmpl)
 	if (!raw)
 		return NULL;
 
-	out = render_page(req, raw->str);
+	out = render_page(req, str_cstr(raw));
 
 	str_putref(raw);
 

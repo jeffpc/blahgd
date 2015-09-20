@@ -55,9 +55,9 @@ static void process(void *cookie, char *argp, size_t argsz, door_desc_t *dp,
 
 	out = render_math(in);
 
-	str = alloca(strlen(out->str) + 1);
+	str = alloca(str_len(out) + 1);
 
-	strcpy(str, out->str);
+	strcpy(str, str_cstr(out));
 
 	str_putref(out);
 

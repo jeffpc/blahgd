@@ -41,7 +41,7 @@ static struct str *__process_listing(struct post *post, struct str *txt, struct 
 {
 	struct str *str;
 
-	str = listing(post, txt->str);
+	str = listing(post, str_cstr(txt));
 
 	str_putref(txt);
 	str_putref(opt);
@@ -101,33 +101,33 @@ static struct str *__process_textit(struct post *post, struct str *txt, struct s
 
 static struct str *__process_begin(struct post *post, struct str *txt, struct str *opt)
 {
-	if (!strcmp(txt->str, "texttt")) {
+	if (!strcmp(str_cstr(txt), "texttt")) {
 		post->texttt_nesting++;
 		str_putref(txt);
 		return STR_DUP("</p><pre>");
 	}
 
-	if (!strcmp(txt->str, "enumerate")) {
+	if (!strcmp(str_cstr(txt), "enumerate")) {
 		str_putref(txt);
 		return STR_DUP("</p><ol>");
 	}
 
-	if (!strcmp(txt->str, "itemize")) {
+	if (!strcmp(str_cstr(txt), "itemize")) {
 		str_putref(txt);
 		return STR_DUP("</p><ul>");
 	}
 
-	if (!strcmp(txt->str, "description")) {
+	if (!strcmp(str_cstr(txt), "description")) {
 		str_putref(txt);
 		return STR_DUP("</p><dl>");
 	}
 
-	if (!strcmp(txt->str, "quote")) {
+	if (!strcmp(str_cstr(txt), "quote")) {
 		str_putref(txt);
 		return STR_DUP("</p><blockquote><p>");
 	}
 
-	if (!strcmp(txt->str, "tabular")) {
+	if (!strcmp(str_cstr(txt), "tabular")) {
 		str_putref(txt);
 
 		if (post->table_nesting++)
@@ -135,40 +135,40 @@ static struct str *__process_begin(struct post *post, struct str *txt, struct st
 		return STR_DUP("</p><table>");
 	}
 
-	LOG("post_fmt3: invalid environment '%s' (post #%u)", txt->str, post->id);
+	LOG("post_fmt3: invalid environment '%s' (post #%u)", str_cstr(txt), post->id);
 
 	return str_cat3(STR_DUP("[INVAL ENVIRON '"), txt, STR_DUP("']"));
 }
 
 static struct str *__process_end(struct post *post, struct str *txt, struct str *opt)
 {
-	if (!strcmp(txt->str, "texttt")) {
+	if (!strcmp(str_cstr(txt), "texttt")) {
 		post->texttt_nesting--;
 		str_putref(txt);
 		return STR_DUP("</pre><p>");
 	}
 
-	if (!strcmp(txt->str, "enumerate")) {
+	if (!strcmp(str_cstr(txt), "enumerate")) {
 		str_putref(txt);
 		return STR_DUP("</ol><p>");
 	}
 
-	if (!strcmp(txt->str, "itemize")) {
+	if (!strcmp(str_cstr(txt), "itemize")) {
 		str_putref(txt);
 		return STR_DUP("</ul><p>");
 	}
 
-	if (!strcmp(txt->str, "description")) {
+	if (!strcmp(str_cstr(txt), "description")) {
 		str_putref(txt);
 		return STR_DUP("</dl><p>");
 	}
 
-	if (!strcmp(txt->str, "quote")) {
+	if (!strcmp(str_cstr(txt), "quote")) {
 		str_putref(txt);
 		return STR_DUP("</p></blockquote><p>");
 	}
 
-	if (!strcmp(txt->str, "tabular")) {
+	if (!strcmp(str_cstr(txt), "tabular")) {
 		str_putref(txt);
 
 		if (--post->table_nesting)
@@ -176,7 +176,7 @@ static struct str *__process_end(struct post *post, struct str *txt, struct str 
 		return STR_DUP("</table><p>");
 	}
 
-	LOG("post_fmt3: invalid environment '%s' (post #%u)", txt->str, post->id);
+	LOG("post_fmt3: invalid environment '%s' (post #%u)", str_cstr(txt), post->id);
 
 	return str_cat3(STR_DUP("[INVAL ENVIRON '"), txt, STR_DUP("']"));
 }
@@ -240,7 +240,7 @@ static struct str *__process_post(struct post *post, struct str *txt, struct str
 	char buf[1024];
 
 	snprintf(buf, sizeof(buf), "<a href=\"" BASE_URL "/?p=%s\">%s</a>",
-		 txt->str, opt ? opt->str : txt->str);
+		 str_cstr(txt), opt ? str_cstr(opt) : str_cstr(txt));
 
 	str_putref(txt);
 	str_putref(opt);
@@ -253,7 +253,7 @@ static struct str *__process_taglink(struct post *post, struct str *txt, struct 
 	char buf[1024];
 
 	snprintf(buf, sizeof(buf), "<a href=\"" BASE_URL "/?tag=%s\">%s</a>",
-		 txt->str, opt ? opt->str : txt->str);
+		 str_cstr(txt), opt ? str_cstr(opt) : str_cstr(txt));
 
 	str_putref(txt);
 	str_putref(opt);

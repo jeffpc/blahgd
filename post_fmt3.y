@@ -82,7 +82,7 @@ static struct str *__char_cvt(struct str *val, const char **outstr, size_t nouts
 {
 	size_t len;
 
-	len = strlen(val->str);
+	len = str_len(val);
 
 	ASSERT3U(len, <=, nouts);
 
@@ -99,9 +99,9 @@ static struct str *special_char(struct str *val)
 {
 	char *ret;
 
-	ASSERT3U(strlen(val->str), ==, 1);
+	ASSERT3U(str_len(val), ==, 1);
 
-	switch (val->str[0]) {
+	switch (str_cstr(val)[0]) {
 		case '"': ret = "&quot;"; break;
 		case '<': ret = "&lt;"; break;
 		case '>': ret = "&gt;"; break;

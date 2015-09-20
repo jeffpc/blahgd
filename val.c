@@ -149,7 +149,7 @@ void val_dump(struct val *val, int indent)
 			break;
 		case VT_SYM:
 		case VT_STR:
-			fprintf(stderr, "%*s'%s'\n", indent, "", val->str->str);
+			fprintf(stderr, "%*s'%s'\n", indent, "", str_cstr(val->str));
 			break;
 		case VT_INT:
 			fprintf(stderr, "%*s%"PRIu64"\n", indent, "", val->i);

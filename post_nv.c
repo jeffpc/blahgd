@@ -74,7 +74,7 @@ static void __com_val(nvlist_t *post, list_t *list)
 		nvl_set_str(comments[i], "commemail", cur->email);
 		nvl_set_str(comments[i], "commip", cur->ip);
 		nvl_set_str(comments[i], "commurl", cur->url);
-		nvl_set_str(comments[i], "commbody", cur->body->str);
+		nvl_set_str(comments[i], "commbody", str_cstr(cur->body));
 
 		i++;
 	}
@@ -100,7 +100,7 @@ static nvlist_t *__store_vars(struct req *req, struct post *post, const char *ti
 	nvl_set_int(out, "time", post->time);
 	nvl_set_str(out, "title", post->title);
 	nvl_set_int(out, "numcom", post->numcom);
-	nvl_set_str(out, "body", post->body->str);
+	nvl_set_str(out, "body", str_cstr(post->body));
 
 	__tag_val(out, &post->tags);
 	__com_val(out, &post->comments);

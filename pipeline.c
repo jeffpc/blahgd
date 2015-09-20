@@ -137,7 +137,7 @@ static struct val *__escape(struct val *val, char *(*cvt)(const char*))
 			out = cvt(val->cstr);
 			break;
 		case VT_STR:
-			out = cvt(val->str->str);
+			out = cvt(str_cstr(val->str));
 			break;
 		case VT_SYM:
 		case VT_CONS:

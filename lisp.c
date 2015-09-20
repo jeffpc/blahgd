@@ -113,7 +113,7 @@ void lisp_dump_file(FILE *out, struct val *lv, bool raw)
 
 	tmp = lisp_dump(lv, raw);
 
-	fprintf(out, "%s", tmp->str);
+	fprintf(out, "%s", str_cstr(tmp));
 
 	str_putref(tmp);
 }
@@ -167,7 +167,7 @@ struct val *lisp_assoc(struct val *lv, const char *name)
 	    head->cons.head &&
 	    ((head->cons.head->type == VT_STR) ||
 	     (head->cons.head->type == VT_SYM)) &&
-	    !strcmp(head->cons.head->str->str, name))
+	    !strcmp(str_cstr(head->cons.head->str), name))
 		return head;
 
 	return lisp_assoc(tail, name);
