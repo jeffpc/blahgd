@@ -28,6 +28,7 @@
 #include <string.h>
 
 #include "error.h"
+#include "str.h"
 
 #define ARRAY_LEN(a)		(sizeof(a) / sizeof(a[0]))
 
@@ -122,6 +123,11 @@ static inline char *read_file_len(const char *fname, size_t *len)
 		*len = sb.st_size;
 
 	return ret;
+}
+
+static inline time_t parse_time_str(struct str *str)
+{
+	return parse_time_cstr(str_cstr(str));
 }
 
 #endif
