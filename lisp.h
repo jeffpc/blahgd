@@ -26,9 +26,18 @@
 #include <stdbool.h>
 
 #include "val.h"
+#include "str.h"
 
 extern struct val *parse_lisp(const char *str, size_t len);
 extern struct str *lisp_dump(struct val *lv, bool raw);
 extern void lisp_dump_file(FILE *out, struct val *lv, bool raw);
+
+static inline struct val *parse_lisp_str(struct str *str)
+{
+	if (!str)
+		return NULL;
+
+	return parse_lisp(str->str, str_len(str));
+}
 
 #endif
