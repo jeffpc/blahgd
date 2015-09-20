@@ -169,6 +169,7 @@ static char *print_val(struct val *val)
 			break;
 		case VT_SYM:
 		case VT_CONS:
+		case VT_BOOL:
 			LOG("%s called with value of type %d", __func__,
 			    val->type);
 			ASSERT(0);

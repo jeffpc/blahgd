@@ -23,6 +23,8 @@
 #ifndef __VAL_H
 #define __VAL_H
 
+#include <stdbool.h>
+
 #include "config.h"
 #include "utils.h"
 #include "refcnt.h"
@@ -32,6 +34,7 @@ enum val_type {
 	VT_STR,		/* null-terminated string */
 	VT_SYM,		/* symbol */
 	VT_CONS,	/* cons cell */
+	VT_BOOL,	/* boolean */
 };
 
 struct val {
@@ -39,6 +42,7 @@ struct val {
 	refcnt_t refcnt;
 	union {
 		uint64_t i;
+		bool b;
 		char *str;
 		struct {
 			struct val *head;
@@ -51,6 +55,7 @@ extern void init_val_subsys(void);
 
 extern struct val *val_alloc(enum val_type type);
 extern void val_free(struct val *v);
+extern int val_set_bool(struct val *val, bool v);
 extern int val_set_int(struct val *val, uint64_t v);
 extern int val_set_str(struct val *val, char *v);
 extern int val_set_sym(struct val *val, char *v);
@@ -91,6 +96,14 @@ REFCNT_INLINE_FXNS(struct val, val, refcnt, val_free)
 		_x;				\
 	})
 
+#define VAL_ALLOC_BOOL(v)			\
+	({					\
+		struct val *_x;			\
+		_x = VAL_ALLOC(VT_BOOL);	\
+		VAL_SET_BOOL(_x, (v));		\
+		_x;				\
+	})
+
 #define VAL_ALLOC_CONS(head, tail)		\
 	({					\
 		struct val *_x;			\
@@ -100,6 +113,7 @@ REFCNT_INLINE_FXNS(struct val, val, refcnt, val_free)
 	})
 
 #define VAL_SET_INT(val, v)		ASSERT0(val_set_int((val), (v)))
+#define VAL_SET_BOOL(val, v)		ASSERT0(val_set_bool((val), (v)))
 #define VAL_SET_STR(val, v)		ASSERT0(val_set_str((val), (v)))
 #define VAL_SET_SYM(val, v)		ASSERT0(val_set_sym((val), (v)))
 #define VAL_SET_CONS(val, head, tail)	ASSERT0(val_set_cons((val), (head), (tail)))

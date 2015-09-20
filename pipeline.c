@@ -138,6 +138,7 @@ static struct val *__escape(struct val *val, char *(*cvt)(char*))
 			break;
 		case VT_SYM:
 		case VT_CONS:
+		case VT_BOOL:
 			LOG("%s called with value type %d", __func__,
 			    val->type);
 			ASSERT(0);
