@@ -47,7 +47,7 @@ void yyerror(void *scan, char *e)
 %}
 
 %union {
-	char *s;
+	struct str *s;
 	uint64_t i;
 	bool b;
 	struct val *lv;
@@ -63,8 +63,8 @@ void yyerror(void *scan, char *e)
 document : '\'' tok		{ data->valoutput = $2; }
 	 ;
 
-tok : SYMBOL			{ $$ = VAL_ALLOC_SYM(STR_DUP($1)); }
-    | STRING			{ $$ = VAL_ALLOC_CSTR($1); }
+tok : SYMBOL			{ $$ = VAL_ALLOC_SYM($1); }
+    | STRING			{ $$ = VAL_ALLOC_STR($1); }
     | NUMBER			{ $$ = VAL_ALLOC_INT($1); }
     | BOOL			{ $$ = VAL_ALLOC_BOOL($1); }
     | list			{ $$ = $1; }

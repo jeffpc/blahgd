@@ -53,7 +53,7 @@ static void inc_lineno(yyscan_t scanner);
 			}
 <string>\"		{
 				*string_ptr = '\0';
-				yylval->s = xstrdup(string_buf);
+				yylval->s = STR_DUP(string_buf);
 				BEGIN(INITIAL);
 				return STRING;
 			}
@@ -75,7 +75,7 @@ static void inc_lineno(yyscan_t scanner);
 ['().]			{ return *yytext; }
 #[tf]			{ yylval->b = (yytext[1] == 't'); return BOOL; }
 [1-9][0-9]*		{ ASSERT0(str2u64(yytext, &yylval->i)); return NUMBER; }
-[a-zA-Z+_-]+		{ yylval->s = xstrdup(yytext); return SYMBOL; }
+[a-zA-Z+_-]+		{ yylval->s = STR_DUP(yytext); return SYMBOL; }
 [ \r\t]			{ /* ignore */ }
 \n			{ inc_lineno(yyscanner); /* ignore */}
 %%
