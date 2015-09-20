@@ -31,7 +31,6 @@
 #include <sys/file.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <yaml.h>
 
 #include "req.h"
 #include "sidebar.h"
@@ -43,6 +42,8 @@
 #include "error.h"
 #include "post.h"
 #include "atomic.h"
+#include "lisp.h"
+#include "str.h"
 
 #define INTERNAL_ERR		"Ouch!  Encountered an internal error.  " \
 				"Please contact me to resolve this issue."
@@ -84,59 +85,42 @@
 #define SC_EMPTY_EQ		19
 #define SC_ERROR		99
 
-static void prep_meta_yaml_pair(yaml_document_t *doc, int where,
-				const char *name, const char *val)
+static struct str *prep_meta_lisp(const char *author, const char *email,
+				  const char *curdate, const char *ip,
+				  const char *url)
 {
-	int k, v;
+	struct val *lv;
+	struct str *str;
 
-	k = yaml_document_add_scalar(doc, NULL, (unsigned char *) name,
-				     strlen(name), YAML_PLAIN_SCALAR_STYLE);
-	v = yaml_document_add_scalar(doc, NULL, (unsigned char *) val,
-				     strlen(val), YAML_PLAIN_SCALAR_STYLE);
+	/*
+	 * We're looking for a list looking something like:
+	 *
+	 * '((author . "<author>")
+	 *   (email . "<email>")
+	 *   (time . "<time>")
+	 *   (ip . "<ip>")
+	 *   (url . "<url>"))
+	 */
 
-	yaml_document_append_mapping_pair(doc, where, k, v);
-}
+	/* FIXME: this is *really* ugly... there has to be a better way */
+	lv = VAL_ALLOC_CONS(
+	       VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("author"), VAL_ALLOC_CSTR((char *) author)),
+	       VAL_ALLOC_CONS(
+	         VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("email"), VAL_ALLOC_CSTR((char *) email)),
+	         VAL_ALLOC_CONS(
+	           VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("time"), VAL_ALLOC_CSTR((char *) curdate)),
+	           VAL_ALLOC_CONS(
+	             VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("ip"), VAL_ALLOC_CSTR((char *) ip)),
+	               VAL_ALLOC_CONS(
+	                 VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("url"), VAL_ALLOC_CSTR((char *) url)),
+	                 NULL)))));
 
-static char *prep_meta_yaml(const char *author, const char *email,
-			    const char *curdate, const char *ip,
-			    const char *url)
-{
-	const size_t outlen = 1024;
-	unsigned char output[outlen + 1];
-	size_t writtenlen;
-	yaml_emitter_t y;
-	yaml_document_t d;
-	int map;
+	str = lisp_dump(lv, false);
+	if (!str)
+		return NULL;
 
-	memset(&y, 0, sizeof(y));
+	val_putref(lv);
 
-	if (!yaml_emitter_initialize(&y))
-		goto err_emit;
-
-	yaml_emitter_set_output_string(&y, output, outlen, &writtenlen);
-	yaml_emitter_set_unicode(&y, YAML_UTF8_ENCODING);
-
-	yaml_document_initialize(&d, NULL, NULL, NULL, 0, 0);
-	map = yaml_document_add_mapping(&d, NULL, YAML_ANY_MAPPING_STYLE);
-
-	prep_meta_yaml_pair(&d, map, "author", author);
-	prep_meta_yaml_pair(&d, map, "email", email);
-	prep_meta_yaml_pair(&d, map, "time", curdate);
-	prep_meta_yaml_pair(&d, map, "ip", ip);
-	prep_meta_yaml_pair(&d, map, "url", url);
-
-	yaml_emitter_open(&y);
-	yaml_emitter_dump(&y, &d);
-	yaml_emitter_flush(&y);
-	yaml_emitter_close(&y);
-	yaml_emitter_delete(&y);
-	yaml_document_delete(&d);
-
-	output[writtenlen] = '\0';
-
-	return xstrdup((char *) output);
-
-err_emit:
 	return NULL;
 }
 
@@ -148,12 +132,12 @@ const char *write_out_comment(struct req *req, int id, char *author,
 	char basepath[FILENAME_MAX];
 	char dirpath[FILENAME_MAX];
 	char textpath[FILENAME_MAX];
-	char ymlpath[FILENAME_MAX];
+	char lisppath[FILENAME_MAX];
 
 	char curdate[32];
 	char *remote_addr; /* yes, this is a pointer */
 	int ret;
-	char *yml;
+	struct str *meta;
 
 	uint64_t now, now_nsec;
 	time_t now_sec;
@@ -198,11 +182,11 @@ const char *write_out_comment(struct req *req, int id, char *author,
 
 	snprintf(dirpath,  FILENAME_MAX, "%sW", basepath);
 	snprintf(textpath, FILENAME_MAX, "%s/text.txt", dirpath);
-	snprintf(ymlpath,  FILENAME_MAX, "%s/meta.yml", dirpath);
+	snprintf(lisppath, FILENAME_MAX, "%s/meta.lisp", dirpath);
 
 	ASSERT3U(strlen(dirpath),  <, FILENAME_MAX - 1);
 	ASSERT3U(strlen(textpath), <, FILENAME_MAX - 1);
-	ASSERT3U(strlen(ymlpath),  <, FILENAME_MAX - 1);
+	ASSERT3U(strlen(lisppath), <, FILENAME_MAX - 1);
 
 	if (mkdir(dirpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == -1) {
 		LOG("Ow, could not create directory: %d (%s) '%s'", errno, strerror(errno), dirpath);
@@ -218,19 +202,19 @@ const char *write_out_comment(struct req *req, int id, char *author,
 
 	remote_addr = nvl_lookup_str(req->request_headers, REMOTE_ADDR);
 
-	yml = prep_meta_yaml(author, email, curdate, remote_addr, url);
-	if (!yml) {
-		LOG("failed to prep yaml data");
+	meta = prep_meta_lisp(author, email, curdate, remote_addr, url);
+	if (!meta) {
+		LOG("failed to prep lisp meta data");
 		return INTERNAL_ERR;
 	}
 
-	ret = write_file(ymlpath, yml, strlen(yml));
+	ret = write_file(lisppath, meta->str, str_len(meta));
 
-	free(yml);
+	str_putref(meta);
 
 	if (ret) {
 		LOG("Couldn't write file ... :( %d (%s) '%s'",
-		    errno, strerror(errno), ymlpath);
+		    errno, strerror(errno), lisppath);
 		return INTERNAL_ERR;
 	}
 

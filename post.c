@@ -198,41 +198,75 @@ static struct str *load_comment(struct post *post, int commid)
 	return out;
 }
 
+static struct str *lisp_lookup_str(struct val *lv, const char *name)
+{
+	struct str *ret;
+	struct val *v;
+
+	if (!lv || !name)
+		return NULL;
+
+	v = lisp_cdr(lisp_assoc(lv, name));
+	if (!v || (v->type != VT_STR))
+		ret = NULL;
+	else
+		ret = str_getref(v->str);
+
+	val_putref(v);
+
+	return ret;
+}
+
+static uint64_t lisp_lookup_int(struct val *lv, const char *name)
+{
+	struct val *v;
+	uint64_t ret;
+
+	if (!lv || !name)
+		return 0;
+
+	v = lisp_cdr(lisp_assoc(lv, name));
+	if (!v || (v->type != VT_INT))
+		ret = 0;
+	else
+		ret = v->i;
+
+	val_putref(v);
+
+	return ret;
+}
+
 static void post_add_comment(struct post *post, int commid)
 {
-	static const struct convert_info table[] = {
-		{ .name = "moderated",	.type = DATA_TYPE_BOOLEAN_VALUE, },
-		{ .name = NULL, },
-	};
-
 	char path[FILENAME_MAX];
 	struct comment *comm;
 	struct str *meta;
-	nvlist_t *nvl;
+	struct val *lv;
+	struct val *v;
 
-	snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%d/comments/%d/meta.yml",
+	snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%d/comments/%d/meta.lisp",
 		 post->id, commid);
 
 	meta = file_cache_get_cb(path, post->preview ? NULL : revalidate_post,
 				 post);
 	ASSERT(!IS_ERR(meta));
 
-	nvl = nvl_from_yaml(str_cstr(meta), str_len(meta));
-	fprintf(stderr, "yaml comm nvl = %p\n", nvl);
-	nvl_convert(nvl, table);
+	lv = parse_lisp_str(meta);
+	fprintf(stderr, "lisp comm val = %p\n", lv);
 
-	if (!nvl_lookup_bool(nvl, "moderated"))
+	v = lisp_cdr(lisp_assoc(lv, "moderated"));
+	if (!v || (v->type != VT_BOOL) || !v->b)
 		goto done;
 
 	comm = umem_cache_alloc(comment_cache, 0);
 	ASSERT(comm);
 
 	comm->id     = commid;
-	comm->author = STR_DUP(nvl_lookup_str(nvl, "author")); // XXX: default: "[unknown]"
-	comm->email  = STR_DUP(nvl_lookup_str(nvl, "email"));
-	comm->time   = parse_time_cstr(nvl_lookup_str(nvl, "time"));
-	comm->ip     = STR_DUP(nvl_lookup_str(nvl, "remoteaddr"));
-	comm->url    = STR_DUP(nvl_lookup_str(nvl, "url"));
+	comm->author = lisp_lookup_str(lv, "author"); // XXX: default: "[unknown]"
+	comm->email  = lisp_lookup_str(lv, "email");
+	comm->time   = parse_time_str(lisp_lookup_str(lv, "time"));
+	comm->ip     = lisp_lookup_str(lv, "ip");
+	comm->url    = lisp_lookup_str(lv, "url");
 	comm->body   = load_comment(post, comm->id);
 
 	list_insert_tail(&post->comments, comm);
@@ -240,7 +274,7 @@ static void post_add_comment(struct post *post, int commid)
 	post->numcom++;
 
 done:
-	nvlist_free(nvl);
+	val_putref(lv);
 	str_putref(meta);
 }
 
@@ -413,53 +447,41 @@ static int __load_post_body(struct post *post)
 	return ret;
 }
 
-static void __refresh_published_prop(struct post *post, nvlist_t *nvl)
+static void __refresh_published_prop(struct post *post, struct val *lv)
 {
-	const char *sval;
-	uint64_t ival;
-
 	/* update the time */
-	sval = nvl_lookup_str(nvl, "time");
-	post->time = parse_time_cstr(sval);
+	post->time = parse_time_str(lisp_lookup_str(lv, "time"));
 
 	/* update the title */
-	sval = nvl_lookup_str(nvl, "title");
-	post->title = STR_DUP(sval);
+	post->title = lisp_lookup_str(lv, "title");
 
 	/* update the format */
-	ival = nvl_lookup_int(nvl, "fmt");
-	post->fmt = ival;
+	post->fmt = lisp_lookup_int(lv, "fmt");
 }
 
 static int __refresh_published(struct post *post)
 {
-	static const struct convert_info table[] = {
-		{ .name = "fmt",	.type = DATA_TYPE_UINT64, },
-		{ .name = NULL, },
-	};
-
 	char path[FILENAME_MAX];
 	struct str *meta;
-	nvlist_t *nvl;
+	struct val *lv;
 
-	snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%d/post.yml", post->id);
+	snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%d/post.lisp", post->id);
 
 	meta = file_cache_get_cb(path, post->preview ? NULL : revalidate_post,
 				 post);
 	if (IS_ERR(meta))
 		return PTR_ERR(meta);
 
-	nvl = nvl_from_yaml(str_cstr(meta), str_len(meta));
-	fprintf(stderr, "yaml nvl = %p\n", nvl);
-	nvl_convert(nvl, table);
+	lv = parse_lisp_str(meta);
+	fprintf(stderr, "lisp val = %p\n", lv);
 
-	__refresh_published_prop(post, nvl);
+	__refresh_published_prop(post, lv);
 
 	// XXX: post_add_tag(post, X);
 	// XXX: post_add_cat(post, X);
 	// XXX: post_add_comment_str(post, X);
 
-	nvlist_free(nvl);
+	val_putref(lv);
 	str_putref(meta);
 
 	return 0;
