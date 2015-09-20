@@ -118,6 +118,23 @@ void lisp_dump_file(FILE *out, struct val *lv, bool raw)
 	str_putref(tmp);
 }
 
+struct val *lisp_car(struct val *lv)
+{
+	struct val *ret;
+
+	if (!lv)
+		return NULL;
+
+	if (lv->type == VT_CONS)
+		ret = val_getref(lv->cons.head);
+	else
+		ret = NULL;
+
+	val_putref(lv);
+
+	return ret;
+}
+
 struct val *lisp_cdr(struct val *lv)
 {
 	struct val *ret;

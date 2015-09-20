@@ -40,6 +40,7 @@ static inline struct val *parse_lisp_str(struct str *str)
 	return parse_lisp(str->str, str_len(str));
 }
 
+extern struct val *lisp_car(struct val *val);
 extern struct val *lisp_cdr(struct val *val);
 extern struct val *lisp_assoc(struct val *val, const char *name);
 
