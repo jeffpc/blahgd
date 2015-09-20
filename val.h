@@ -33,8 +33,8 @@
 enum val_type {
 	VT_INT = 0,	/* 64-bit uint */
 	VT_STR,		/* a struct str string */
-	VT_CSTR,	/* null-terminated string */
 	VT_SYM,		/* symbol */
+	VT_CSTR,	/* null-terminated string */
 	VT_CONS,	/* cons cell */
 	VT_BOOL,	/* boolean */
 };
@@ -62,7 +62,7 @@ extern int val_set_bool(struct val *val, bool v);
 extern int val_set_int(struct val *val, uint64_t v);
 extern int val_set_cstr(struct val *val, char *v);
 extern int val_set_str(struct val *val, struct str *v);
-extern int val_set_sym(struct val *val, char *v);
+extern int val_set_sym(struct val *val, struct str *v);
 extern int val_set_cons(struct val *val, struct val *head, struct val *tail);
 extern void val_dump(struct val *v, int indent);
 

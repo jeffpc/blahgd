@@ -123,9 +123,9 @@ int val_set_##fxn(struct val *val, ctype v)			\
 
 DEF_VAL_SET(int, VT_INT, i, uint64_t)
 DEF_VAL_SET(cstr, VT_CSTR, cstr, char *)
-DEF_VAL_SET(sym, VT_SYM, cstr, char *)
-DEF_VAL_SET(bool, VT_BOOL, b, bool)
 DEF_VAL_SET(str, VT_STR, str, struct str *)
+DEF_VAL_SET(sym, VT_SYM, str, struct str *)
+DEF_VAL_SET(bool, VT_BOOL, b, bool)
 
 int val_set_cons(struct val *val, struct val *head, struct val *tail)
 {
@@ -145,9 +145,9 @@ void val_dump(struct val *val, int indent)
 
 	switch (val->type) {
 		case VT_CSTR:
-		case VT_SYM:
 			fprintf(stderr, "%*s'%s'\n", indent, "", val->cstr);
 			break;
+		case VT_SYM:
 		case VT_STR:
 			fprintf(stderr, "%*s'%s'\n", indent, "", val->str->str);
 			break;

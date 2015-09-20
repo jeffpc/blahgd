@@ -63,7 +63,7 @@ void yyerror(void *scan, char *e)
 document : '\'' tok		{ data->valoutput = $2; }
 	 ;
 
-tok : SYMBOL			{ $$ = VAL_ALLOC_SYM($1); }
+tok : SYMBOL			{ $$ = VAL_ALLOC_SYM(STR_DUP($1)); }
     | STRING			{ $$ = VAL_ALLOC_CSTR($1); }
     | NUMBER			{ $$ = VAL_ALLOC_INT($1); }
     | BOOL			{ $$ = VAL_ALLOC_BOOL($1); }
