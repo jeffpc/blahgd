@@ -143,7 +143,7 @@ static void post_remove_all_tags(struct post *post)
 	struct post_tag *tag;
 
 	while ((tag = list_remove_head(&post->tags))) {
-		free(tag->tag);
+		str_putref(tag->tag);
 		free(tag);
 	}
 }
@@ -186,10 +186,10 @@ static void post_remove_all_comments(struct post *post)
 	struct comment *com;
 
 	while ((com = list_remove_head(&post->comments))) {
-		free(com->author);
-		free(com->email);
-		free(com->ip);
-		free(com->url);
+		str_putref(com->author);
+		str_putref(com->email);
+		str_putref(com->ip);
+		str_putref(com->url);
 		str_putref(com->body);
 		umem_cache_free(comment_cache, com);
 	}
@@ -532,7 +532,7 @@ int __refresh(struct post *post)
 
 	printf("refreshing post...\n");
 
-	free(post->title);
+	str_putref(post->title);
 	post->title = NULL;
 
 	if (post->preview) {
@@ -613,7 +613,7 @@ void post_destroy(struct post *post)
 	post_remove_all_tags(post);
 	post_remove_all_comments(post);
 
-	free(post->title);
+	str_putref(post->title);
 	str_putref(post->body);
 
 	MXDESTROY(&post->lock);
