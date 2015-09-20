@@ -92,6 +92,9 @@ REFCNT_INLINE_FXNS(struct val, val, refcnt, val_free)
 		_x;				\
 	})
 
+#define VAL_ALLOC_SYM_CSTR(v)			\
+	VAL_ALLOC_SYM(STR_DUP(v))
+
 #define VAL_ALLOC_STR(v)			\
 	({					\
 		struct val *_x;			\
