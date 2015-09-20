@@ -120,13 +120,19 @@ void lisp_dump_file(FILE *out, struct val *lv, bool raw)
 
 struct val *lisp_cdr(struct val *lv)
 {
+	struct val *ret;
+
 	if (!lv)
 		return NULL;
 
 	if (lv->type != VT_CONS)
 		return NULL;
 
-	return lv->cons.tail;
+	ret = val_getref(lv->cons.tail);
+
+	val_putref(lv);
+
+	return ret;
 }
 
 /*
@@ -168,7 +174,7 @@ struct val *lisp_assoc(struct val *lv, const char *name)
 	    ((head->cons.head->type == VT_STR) ||
 	     (head->cons.head->type == VT_SYM)) &&
 	    !strcmp(str_cstr(head->cons.head->str), name))
-		return head;
+		return val_getref(head);
 
 	return lisp_assoc(tail, name);
 }
