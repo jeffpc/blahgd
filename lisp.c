@@ -117,3 +117,58 @@ void lisp_dump_file(FILE *out, struct val *lv, bool raw)
 
 	str_putref(tmp);
 }
+
+struct val *lisp_cdr(struct val *lv)
+{
+	if (!lv)
+		return NULL;
+
+	if (lv->type != VT_CONS)
+		return NULL;
+
+	return lv->cons.tail;
+}
+
+/*
+ * Given a list, lookup a certain name.
+ *
+ * The input list looks like:
+ *   '((a . b) (c . d))
+ * which really is:
+ *   '((a . b) . ((c . d) . ()))
+ *
+ * So, to check it, we examite the car of the list, if that's not the right
+ * key, we recurse on cdr of the list.
+ */
+struct val *lisp_assoc(struct val *lv, const char *name)
+{
+	struct val *head;
+	struct val *tail;
+
+	/* empty list */
+	if (!lv)
+		return NULL;
+
+	/* not a list */
+	if (lv->type != VT_CONS)
+		return NULL;
+
+	head = lv->cons.head;
+	tail = lv->cons.tail;
+
+	/*
+	 * check the head of current cons cell: '(head . tail)
+	 *   (1) must be non-null
+	 *   (2) must be a cons cell, i.e.,  head == '(a . b)
+	 *   (3) (car head) must be a string or symbol
+	 *   (4) (car head) must be equal to the value passed in
+	 */
+	if (head && (head->type == VT_CONS) &&
+	    head->cons.head &&
+	    ((head->cons.head->type == VT_STR) ||
+	     (head->cons.head->type == VT_SYM)) &&
+	    !strcmp(head->cons.head->str, name))
+		return head;
+
+	return lisp_assoc(tail, name);
+}
