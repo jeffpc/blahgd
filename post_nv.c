@@ -92,13 +92,13 @@ static nvlist_t *__store_vars(struct req *req, struct post *post, const char *ti
 	nvlist_t *out;
 
 	if (titlevar)
-		vars_set_str(&req->vars, titlevar, post->title);
+		vars_set_str(&req->vars, titlevar, str_cstr(post->title));
 
 	out = nvl_alloc();
 
 	nvl_set_int(out, "id", post->id);
 	nvl_set_int(out, "time", post->time);
-	nvl_set_str(out, "title", post->title);
+	nvl_set_str(out, "title", str_cstr(post->title));
 	nvl_set_int(out, "numcom", post->numcom);
 	nvl_set_str(out, "body", str_cstr(post->body));
 

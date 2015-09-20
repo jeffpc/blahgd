@@ -61,7 +61,7 @@ struct post {
 	/* from 'posts' table */
 	unsigned int id;
 	unsigned int time;
-	char *title;
+	struct str *title;
 	unsigned int fmt;
 
 	/* from 'post_tags' table */

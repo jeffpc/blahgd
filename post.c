@@ -424,7 +424,7 @@ static void __refresh_published_prop(struct post *post, nvlist_t *nvl)
 
 	/* update the title */
 	sval = nvl_lookup_str(nvl, "title");
-	post->title = xstrdup(sval);
+	post->title = STR_DUP(sval);
 
 	/* update the format */
 	ival = nvl_lookup_int(nvl, "fmt");
@@ -475,7 +475,7 @@ int __refresh(struct post *post)
 	post->title = NULL;
 
 	if (post->preview) {
-		post->title = xstrdup("PREVIEW");
+		post->title = STR_DUP("PREVIEW");
 		post->time  = time(NULL);
 		post->fmt   = 3;
 
