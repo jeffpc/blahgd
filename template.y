@@ -163,6 +163,9 @@ static char *print_val(struct val *val)
 		case VT_CSTR:
 			tmp = val->cstr;
 			break;
+		case VT_STR:
+			tmp = val->str->str;
+			break;
 		case VT_INT:
 			snprintf(buf, sizeof(buf), "%"PRIu64, val->i);
 			tmp = buf;

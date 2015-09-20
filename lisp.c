@@ -85,6 +85,10 @@ struct str *lisp_dump(struct val *lv, bool raw)
 			return str_cat3(STR_DUP("\""),
 					STR_DUP(lv->cstr),
 					STR_DUP("\""));
+		case VT_STR:
+			return str_cat3(STR_DUP("\""),
+					str_getref(lv->str),
+					STR_DUP("\""));
 		case VT_BOOL:
 			return lv->b ? STR_DUP("#t") : STR_DUP("#f");
 		case VT_INT: {

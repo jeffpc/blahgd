@@ -55,6 +55,9 @@ static void __val_init(struct val *val, enum val_type type)
 		case VT_SYM:
 			val->cstr = NULL;
 			break;
+		case VT_STR:
+			val->str = NULL;
+			break;
 		case VT_CONS:
 			val->cons.head = NULL;
 			val->cons.tail = NULL;
@@ -71,6 +74,9 @@ static void __val_cleanup(struct val *val)
 		case VT_CSTR:
 		case VT_SYM:
 			free(val->cstr);
+			break;
+		case VT_STR:
+			str_putref(val->str);
 			break;
 		case VT_CONS:
 			val_putref(val->cons.head);
@@ -119,6 +125,7 @@ DEF_VAL_SET(int, VT_INT, i, uint64_t)
 DEF_VAL_SET(cstr, VT_CSTR, cstr, char *)
 DEF_VAL_SET(sym, VT_SYM, cstr, char *)
 DEF_VAL_SET(bool, VT_BOOL, b, bool)
+DEF_VAL_SET(str, VT_STR, str, struct str *)
 
 int val_set_cons(struct val *val, struct val *head, struct val *tail)
 {
@@ -140,6 +147,9 @@ void val_dump(struct val *val, int indent)
 		case VT_CSTR:
 		case VT_SYM:
 			fprintf(stderr, "%*s'%s'\n", indent, "", val->cstr);
+			break;
+		case VT_STR:
+			fprintf(stderr, "%*s'%s'\n", indent, "", val->str->str);
 			break;
 		case VT_INT:
 			fprintf(stderr, "%*s%"PRIu64"\n", indent, "", val->i);
