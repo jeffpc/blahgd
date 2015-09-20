@@ -136,6 +136,10 @@ static struct val *__escape(struct val *val, char *(*cvt)(char*))
 		case VT_STR:
 			out = cvt(val->str);
 			break;
+		case VT_SYM:
+			LOG("%s called with value type %d", __func__,
+			    val->type);
+			ASSERT(0);
 	}
 
 	val_putref(val);

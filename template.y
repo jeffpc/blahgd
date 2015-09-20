@@ -167,6 +167,10 @@ static char *print_val(struct val *val)
 			snprintf(buf, sizeof(buf), "%"PRIu64, val->i);
 			tmp = buf;
 			break;
+		case VT_SYM:
+			LOG("%s called with value of type %d", __func__,
+			    val->type);
+			ASSERT(0);
 	}
 
 	return xstrdup(tmp);

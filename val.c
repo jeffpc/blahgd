@@ -49,6 +49,7 @@ static void __val_init(struct val *val, enum val_type type)
 			val->i = 0;
 			break;
 		case VT_STR:
+		case VT_SYM:
 			val->str = NULL;
 			break;
 	}
@@ -60,6 +61,7 @@ static void __val_cleanup(struct val *val)
 		case VT_INT:
 			break;
 		case VT_STR:
+		case VT_SYM:
 			free(val->str);
 			break;
 	}
@@ -103,11 +105,13 @@ int val_set_##fxn(struct val *val, ctype v)			\
 
 DEF_VAL_SET(int, VT_INT, i, uint64_t)
 DEF_VAL_SET(str, VT_STR, str, char *)
+DEF_VAL_SET(sym, VT_SYM, str, char *)
 
 void val_dump(struct val *val, int indent)
 {
 	switch (val->type) {
 		case VT_STR:
+		case VT_SYM:
 			fprintf(stderr, "%*s'%s'\n", indent, "", val->str);
 			break;
 		case VT_INT:
