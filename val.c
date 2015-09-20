@@ -72,9 +72,9 @@ static void __val_cleanup(struct val *val)
 		case VT_BOOL:
 			break;
 		case VT_CSTR:
-		case VT_SYM:
 			free(val->cstr);
 			break;
+		case VT_SYM:
 		case VT_STR:
 			str_putref(val->str);
 			break;
