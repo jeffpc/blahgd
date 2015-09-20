@@ -259,7 +259,7 @@ char *concat5(char *a, char *b, char *c, char *d, char *e)
 	return ret;
 }
 
-time_t parse_time(const char *str)
+time_t parse_time_cstr(const char *str)
 {
 	struct tm tm;
 

@@ -37,7 +37,7 @@ extern int xwrite(int fd, const void *buf, size_t nbyte);
 extern char *read_file_common(const char *fname, struct stat *sb);
 extern int write_file(const char *fname, const char *data, size_t len);
 extern char *concat5(char *a, char *b, char *c, char *d, char *e);
-extern time_t parse_time(const char *str);
+extern time_t parse_time_cstr(const char *str);
 
 #define concat4(a, b, c, d)	concat5((a), (b), (c), (d), NULL)
 #define concat3(a, b, c)	concat5((a), (b), (c), NULL, NULL)
