@@ -80,10 +80,10 @@ struct str *lisp_dump(struct val *lv, bool raw)
 
 	switch (lv->type) {
 		case VT_SYM:
-			return STR_DUP(lv->str);
-		case VT_STR:
+			return STR_DUP(lv->cstr);
+		case VT_CSTR:
 			return str_cat3(STR_DUP("\""),
-					STR_DUP(lv->str),
+					STR_DUP(lv->cstr),
 					STR_DUP("\""));
 		case VT_BOOL:
 			return lv->b ? STR_DUP("#t") : STR_DUP("#f");
