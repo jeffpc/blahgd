@@ -228,11 +228,11 @@ static void post_add_comment(struct post *post, int commid)
 	ASSERT(comm);
 
 	comm->id     = commid;
-	comm->author = xstrdup(nvl_lookup_str(nvl, "author")); // XXX: default: "[unknown]"
-	comm->email  = xstrdup(nvl_lookup_str(nvl, "email"));
+	comm->author = STR_DUP(nvl_lookup_str(nvl, "author")); // XXX: default: "[unknown]"
+	comm->email  = STR_DUP(nvl_lookup_str(nvl, "email"));
 	comm->time   = parse_time(nvl_lookup_str(nvl, "time"));
-	comm->ip     = xstrdup(nvl_lookup_str(nvl, "remoteaddr"));
-	comm->url    = xstrdup(nvl_lookup_str(nvl, "url"));
+	comm->ip     = STR_DUP(nvl_lookup_str(nvl, "remoteaddr"));
+	comm->url    = STR_DUP(nvl_lookup_str(nvl, "url"));
 	comm->body   = load_comment(post, comm->id);
 
 	list_insert_tail(&post->comments, comm);

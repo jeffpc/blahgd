@@ -70,10 +70,10 @@ static void __com_val(nvlist_t *post, list_t *list)
 
 		nvl_set_int(comments[i], "commid", cur->id);
 		nvl_set_int(comments[i], "commtime", cur->time);
-		nvl_set_str(comments[i], "commauthor", cur->author);
-		nvl_set_str(comments[i], "commemail", cur->email);
-		nvl_set_str(comments[i], "commip", cur->ip);
-		nvl_set_str(comments[i], "commurl", cur->url);
+		nvl_set_str(comments[i], "commauthor", str_cstr(cur->author));
+		nvl_set_str(comments[i], "commemail", str_cstr(cur->email));
+		nvl_set_str(comments[i], "commip", str_cstr(cur->ip));
+		nvl_set_str(comments[i], "commurl", str_cstr(cur->url));
 		nvl_set_str(comments[i], "commbody", str_cstr(cur->body));
 
 		i++;

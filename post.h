@@ -40,11 +40,11 @@ struct post_tag {
 struct comment {
 	list_node_t list;
 	unsigned int id;
-	char *author;
-	char *email;
+	struct str *author;
+	struct str *email;
 	unsigned int time;
-	char *ip;
-	char *url;
+	struct str *ip;
+	struct str *url;
 
 	struct str *body;
 };
