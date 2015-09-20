@@ -28,7 +28,7 @@
 static void __tag_val(nvlist_t *post, list_t *list)
 {
 	struct post_tag *cur;
-	char **tags;
+	const char **tags;
 	int ntags;
 	int i;
 
@@ -42,9 +42,9 @@ static void __tag_val(nvlist_t *post, list_t *list)
 
 	i = 0;
 	list_for_each(list, cur)
-		tags[i++] = cur->tag;
+		tags[i++] = str_cstr(cur->tag);
 
-	nvl_set_str_array(post, "tags", tags, ntags);
+	nvl_set_str_array(post, "tags", (char **) tags, ntags);
 
 	free(tags);
 }

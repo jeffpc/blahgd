@@ -34,7 +34,7 @@
 
 struct post_tag {
 	list_node_t list;
-	char *tag;
+	struct str *tag;
 };
 
 struct comment {

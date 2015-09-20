@@ -148,17 +148,37 @@ static void post_remove_all_tags(struct post *post)
 	}
 }
 
-static void post_add_tag(struct post *post, const char *name)
+static void post_add_tags(struct post *post, struct val *list)
 {
 	struct post_tag *tag;
 
-	tag = malloc(sizeof(struct post_tag));
-	ASSERT(tag);
+	/* tags list not present in metadata */
+	if (!list)
+		return;
 
-	tag->tag = xstrdup(name);
-	ASSERT(tag->tag);
+	while ((list = lisp_cdr(list))) {
+		struct val *tagval;
+		struct str *tagname;
 
-	list_insert_tail(&post->tags, tag);
+		tagval = lisp_car(val_getref(list));
+
+		/* sanity check */
+		ASSERT3U(tagval->type, ==, VT_STR);
+
+		/* get the tag name */
+		tagname = str_getref(tagval->str);
+
+		/* release the tag value */
+		val_putref(tagval);
+
+		tag = malloc(sizeof(struct post_tag));
+		ASSERT(tag);
+
+		tag->tag = tagname;
+		ASSERT(tag->tag);
+
+		list_insert_tail(&post->tags, tag);
+	}
 }
 
 static void post_remove_all_comments(struct post *post)
@@ -230,6 +250,25 @@ static uint64_t lisp_lookup_int(struct val *lv, const char *name)
 		ret = 0;
 	else
 		ret = v->i;
+
+	val_putref(v);
+
+	return ret;
+}
+
+static struct val *lisp_lookup_list(struct val *lv, const char *name)
+{
+	struct val *ret;
+	struct val *v;
+
+	if (!lv || !name)
+		return NULL;
+
+	v = lisp_cdr(lisp_assoc(lv, name));
+	if (!v || (v->type != VT_CONS))
+		ret = NULL;
+	else
+		ret = val_getref(v);
 
 	val_putref(v);
 
@@ -477,8 +516,8 @@ static int __refresh_published(struct post *post)
 
 	__refresh_published_prop(post, lv);
 
-	// XXX: post_add_tag(post, X);
-	// XXX: post_add_cat(post, X);
+	post_add_tags(post, lisp_lookup_list(lv, "tags"));
+	// XXX: post_add_cats(post, lisp_lookup_list(lv, "cats"));
 	// XXX: post_add_comment_str(post, X);
 
 	val_putref(lv);
