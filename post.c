@@ -617,3 +617,63 @@ void post_destroy(struct post *post)
 
 	umem_cache_free(post_cache, post);
 }
+
+int load_all_posts(void)
+{
+	char path[FILENAME_MAX];
+	struct stat statbuf;
+	struct dirent *de;
+	uint32_t postid;
+	uint64_t start_ts, end_ts;
+	DIR *dir;
+	int ret;
+
+	dir = opendir(DATA_DIR "/posts");
+	if (!dir)
+		return errno;
+
+	start_ts = gettime();
+
+	while ((de = readdir(dir))) {
+		if (!strcmp(de->d_name, ".") ||
+		    !strcmp(de->d_name, ".."))
+			continue;
+
+		ret = str2u32(de->d_name, &postid);
+		if (ret) {
+			fprintf(stderr, "skipping '%s' - not a number\n",
+				de->d_name);
+			continue;
+		}
+
+		snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%u", postid);
+
+		/* check that it is a directory */
+		ret = lstat(path, &statbuf);
+		if (ret) {
+			fprintf(stderr, "skipping '%s' - failed to lstat: %s\n",
+				path, strerror(errno));
+			continue;
+		}
+
+		if (!S_ISDIR(statbuf.st_mode)) {
+			fprintf(stderr, "skipping '%s' - not a directory; "
+				"mode = %o\n", path,
+				(unsigned int) statbuf.st_mode);
+			continue;
+		}
+
+		/* load the post, but then free it since we don't need it */
+		post_putref(load_post(postid, false));
+	}
+
+	end_ts = gettime();
+
+	fprintf(stderr, "Posts loaded in %"PRIu64".%09"PRIu64" seconds\n",
+		(end_ts - start_ts) / 1000000000UL,
+		(end_ts - start_ts) % 1000000000UL);
+
+	closedir(dir);
+
+	return 0;
+}
