@@ -293,6 +293,10 @@ int main(int argc, char **argv)
 	init_post_subsys();
 	init_file_cache();
 
+	ret = load_all_posts();
+	if (ret)
+		goto err;
+
 	handle_signals();
 
 	ret = start_helpers();
