@@ -512,7 +512,6 @@ static int __refresh_published(struct post *post)
 		return PTR_ERR(meta);
 
 	lv = parse_lisp_str(meta);
-	fprintf(stderr, "lisp val = %p\n", lv);
 
 	__refresh_published_prop(post, lv);
 
@@ -529,8 +528,6 @@ static int __refresh_published(struct post *post)
 int __refresh(struct post *post)
 {
 	int ret;
-
-	printf("refreshing post...\n");
 
 	str_putref(post->title);
 	post->title = NULL;

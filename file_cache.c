@@ -278,8 +278,6 @@ static struct file_node *load_file(const char *name)
 	struct file_node *node;
 	int ret;
 
-	fprintf(stderr, "%s: %s\n", __func__, name);
-
 	node = fn_alloc(name);
 	if (!node)
 		return ERR_PTR(ENOMEM);
