@@ -60,6 +60,7 @@ struct file_node {
 	struct str *contents;		/* cache file contents if allowed */
 	list_t callbacks;		/* list of callbacks to invoke */
 	struct stat stat;		/* the stat info of the cached file */
+	bool needs_reload;		/* caching stale data */
 	struct file_obj fobj;		/* FEN port object */
 };
 
@@ -96,6 +97,8 @@ static void process_file(struct file_node *node, int events)
 	struct file_callback *fcb;
 	struct stat statbuf;
 
+	MXLOCK(&node->lock);
+
 	if (!(events & FILE_EXCEPTION) && stat(fobj->fo_name, &statbuf) == -1) {
 		fprintf(stderr, "failed to stat '%s' errno %d\n",
 			fobj->fo_name, errno);
@@ -103,15 +106,20 @@ static void process_file(struct file_node *node, int events)
 	}
 
 	if (events) {
-		print_event(fobj->fo_name, events);
+		/* something changed, we need to reload */
+		node->needs_reload = true;
 
-		MXLOCK(&node->lock);
-		ASSERT0(__reload(node));
+		print_event(fobj->fo_name, events);
 
 		list_for_each(&node->callbacks, fcb)
 			fcb->cb(fcb->arg);
-		MXUNLOCK(&node->lock);
 
+		/*
+		 * If the file went away, we could rely on reloading to deal
+		 * with it.  Or we can just remove the node and have the
+		 * next caller read it from disk.  We take the later
+		 * approach.
+		 */
 		if (events & FILE_EXCEPTION)
 			goto free;
 	}
@@ -128,10 +136,22 @@ static void process_file(struct file_node *node, int events)
 		goto free;
 	}
 
+	MXUNLOCK(&node->lock);
+
 	return;
 
 free:
-	fn_free(node);
+	/*
+	 * If there was an error, remove the node from the cache.  The next
+	 * time someone tries to get this file, they'll pull it in from
+	 * disk.
+	 */
+	MXLOCK(&file_lock);
+	avl_remove(&file_cache, node);
+	MXUNLOCK(&file_lock);
+
+	MXUNLOCK(&node->lock);
+	fn_putref(node); /* put the cache's reference */
 }
 
 static int add_cb(struct file_node *node, void (*cb)(void *), void *arg)
@@ -225,6 +245,7 @@ static struct file_node *fn_alloc(const char *name)
 
 	node->fobj.fo_name = node->name;
 	node->contents = NULL;
+	node->needs_reload = true;
 
 	MXINIT(&node->lock);
 	refcnt_init(&node->refcnt, 1);
@@ -251,6 +272,9 @@ static int __reload(struct file_node *node)
 {
 	char *tmp;
 
+	if (!node->needs_reload)
+		return 0;
+
 	/* free the previous */
 	str_putref(node->contents);
 	node->contents = NULL;
@@ -269,6 +293,8 @@ static int __reload(struct file_node *node)
 		free(tmp);
 		return ENOMEM;
 	}
+
+	node->needs_reload = false;
 
 	return 0;
 }
@@ -363,6 +389,14 @@ struct str *file_cache_get_cb(const char *name, void (*cb)(void *), void *arg)
 output:
 	/* get a reference for the string */
 	MXLOCK(&out->lock);
+	ret = __reload(out);
+	if (ret) {
+		/* there was an error reloading - bail */
+		MXUNLOCK(&out->lock);
+		fn_putref(out);
+		return ERR_PTR(ret);
+	}
+
 	str = str_getref(out->contents);
 	MXUNLOCK(&out->lock);
 
