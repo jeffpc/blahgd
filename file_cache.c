@@ -161,18 +161,13 @@ static int add_cb(struct file_node *node, void (*cb)(void *), void *arg)
 	if (!cb)
 		return 0;
 
-	list_for_each(&node->callbacks, fcb) {
-		if ((fcb->cb == cb) && (fcb->arg == arg)) {
-			MXUNLOCK(&node->lock);
+	list_for_each(&node->callbacks, fcb)
+		if ((fcb->cb == cb) && (fcb->arg == arg))
 			return 0;
-		}
-	}
 
 	fcb = malloc(sizeof(struct file_callback));
-	if (!fcb) {
-		MXUNLOCK(&node->lock);
+	if (!fcb)
 		return ENOMEM;
-	}
 
 	fcb->cb = cb;
 	fcb->arg = arg;
