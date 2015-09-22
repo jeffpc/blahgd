@@ -264,6 +264,7 @@ static void fn_free(struct file_node *node)
 	if (!node)
 		return;
 
+	str_putref(node->contents);
 	free(node->name);
 	free(node);
 }
