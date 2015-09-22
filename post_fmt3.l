@@ -79,6 +79,7 @@ static void inc_lineno(yyscan_t scanner);
 <MATH>"}"		{ return CCURLY; }
 <MATH>"("		{ return OPAREN; }
 <MATH>")"		{ return CPAREN; }
+<MATH>"~"		{ return TILDE; }
 <MATH>[=<>]		{ yylval->ptr = STR_DUP(yytext); return EQLTGT; }
 <MATH>[A-Za-z0-9]+	{ yylval->ptr = STR_DUP(yytext); return WORD; }
 <MATH>[".,=<>!:;?@*#]	{ yylval->ptr = STR_DUP(yytext); return SCHAR; }
