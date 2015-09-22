@@ -256,8 +256,14 @@ err:
 
 static void fn_free(struct file_node *node)
 {
+	struct file_callback *fcb;
+
 	if (!node)
 		return;
+
+	/* free all the callbacks */
+	while ((fcb = list_remove_head(&node->callbacks)))
+		free(fcb);
 
 	str_putref(node->contents);
 	free(node->name);
