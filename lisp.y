@@ -44,6 +44,12 @@ void yyerror(void *scan, char *e)
 {
 	LOG("Error: %s", e);
 }
+
+void lisp_error2(char *e, char *yytext)
+{
+	LOG("Error: %s (%s)", e, yytext);
+}
+
 %}
 
 %union {

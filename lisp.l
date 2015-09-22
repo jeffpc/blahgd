@@ -34,6 +34,8 @@
 
 #include "lisp.tab.h"
 
+extern void lisp_error2(char *, char *);
+
 #define YY_INPUT(buf, result, max_size)	\
 	result = lisp_reader_input_proc(buf, max_size, yyscanner)
 int lisp_reader_input_proc(char *buf, int size, yyscan_t scanner);
@@ -79,6 +81,7 @@ static void inc_lineno(yyscan_t scanner);
 [a-zA-Z+_-]+		{ yylval->s = STR_DUP(yytext); return SYMBOL; }
 [ \r\t]			{ /* ignore */ }
 \n			{ inc_lineno(yyscanner); /* ignore */}
+.			{ lisp_error2("lisp text contains invalid characters", yytext); yyterminate(); }
 %%
 
 static void inc_lineno(yyscan_t scanner)
