@@ -38,6 +38,8 @@ void __my_log(const char *fmt, ...)
 
 	if (!getenv("BLAHG_DISABLE_SYSLOG"))
 		syslog(LOG_LOCAL0 | LOG_CRIT, "%s", msg);
+	else
+		fprintf(stderr, "%s\n", msg);
 
 	va_end(ap);
 }
