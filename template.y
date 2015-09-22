@@ -375,10 +375,13 @@ cmd : '{' WORD pipeline '}'		{
     | '{' WORD '(' WORD ',' WORD ')' '}'{
 						$$ = function(data, data->req, $2, $4, $6);
 						free($2);
+						free($4);
+						free($6);
 					}
     | '{' WORD '(' WORD ')' '}'		{
 						$$ = function(data, data->req, $2, $4, NULL);
 						free($2);
+						free($4);
 					}
     | '{' WORD '(' ')' '}'		{
 						$$ = function(data, data->req, $2, NULL, NULL);
