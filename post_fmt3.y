@@ -145,6 +145,7 @@ static struct str *special_char(struct str *val)
 %type <ptr> verb
 
 %left USCORE CARRET
+%left TILDE
 %left EQLTGT
 %left PLUS MINUS
 %left ASTERISK SLASH
