@@ -1,0 +1,24 @@
+Comment Spam Fighting Techniques
+================================
+
+There are a couple of ways we try to avoid comment spam.  Currently (as of
+September 2015), they work rather well.
+
+1) Empty form field - a hidden field that should never get filled in by
+   anything.  Any bot that blindly fills in all the fields will immediately
+   cause the comment to be ignored.
+
+   Idea from: http://utcc.utoronto.ca/~cks/space/blog/web/CommentSpamPrecautions
+
+2) Time stamp field - a hidden field with page load Unix timestamp in
+   nanoseconds.  When submitted, the delta between submission time and page
+   load time must be at least COMMENT_MIN_DELAY and at most COMMENT_MAX_DELAY.
+
+   Idea from: cdlu (late 2008/early 2009)
+
+3) Math captcha - a simple math problem.  User must set it to the sum of
+   COMMENT_CAPTCHA_A and COMMENT_CAPTCHA_B.
+
+4) User agent - the user agent header (HTTP_USER_AGENT) must be present.
+
+   Idea from: http://utcc.utoronto.ca/~cks/space/blog/web/CommentSpamPrecautions

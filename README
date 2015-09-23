@@ -1,29 +1,115 @@
-Environments
+CMake variables
+===============
+
+	CMAKE_INSTALL_PREFIX
+
+In addition to standard CMake variables, the following can be set to tweak
+blahgd's behavior:
+
+	SCGI_NHELPERS		- number of SCGI helper threads
+
+	HTML_INDEX_STORIES	- number of posts per page (index, archive)
+	FEED_INDEX_STORIES	- number of posts per page (Atom/RSS feeds)
+
+	COMMENT_MAX_DELAY	- max think time before a comment submission
+				  is considered spam
+	COMMENT_MIN_DELAY	- min think time before a comment submission
+				  is considered spam
+	COMMENT_CAPTCHA_A	- math CAPTCHA first number
+	COMMENT_CAPTCHA_B	- math CAPTCHA second number
+
+	DATA_DIR		- path to data directory
+	DB_FILE			- sqlite3 file path
+
+	MATHD_DOOR_PATH		- path for the door used to talk to mathd
+
+	BASE_URL		- main page of the blahg
+	BUGS_BASE_URL		- bug tracker base URL
+	WIKI_BASE_URL		- wikipedia base URL
+	PHOTO_BASE_URL		- photos web space URL
+
+	VAR_MAX_SCOPES		- maximum number of internal scopes
+	VAR_NAME_MAXLEN		- maximum length of a variable name
+
+	COND_STACK_DEPTH	- template engine function stack size
+
+	TAGCLOUD_MIN_SIZE	- min font size of tag cloud entries
+	TAGCLOUD_MAX_SIZE	- max font size of tag cloud entries
+
+	LATEX_BIN		- path to latex binary
+	DVIPNG_BIN		- path to dvipng binary
+
+	PREVIEW_SECRET		- key used to previewing unpublished posts
+
+
+Dependencies
 ============
 
-  verbatim  - output raw html
-  texttt    - merely monospace
-  listing   - similar to the listing command
+At present time, blahgd depends on a number of interfaces and features
+provided by illumos-based distros (e.g., OmniOS or OpenIndiana hipster).
+Specifically, blahgd requires:
 
+  - doors (for communicating with mathd)
+  - libavl.so.1 (for AVL trees)
+  - libcmdutils.so.1 (for linked lists)
+  - libumem.so
+  - libnvpair.so
 
-Comment Spam Techniques
+Other dependencies include:
+
+  - flex & bison
+  - sqlite3
+
+Building and Installing
 =======================
 
-1) Empty form field - a hidden field that should never get filled in by
-   anything.  Any bot that blindly fills in all the fields will immediately
-   cause the comment to be ignored.
+$ cmake . -DCMAKE_INSTALL_PREFIX=/prefix
+$ make
+$ make install
 
-   Idea from: http://utcc.utoronto.ca/~cks/space/blog/web/CommentSpamPrecautions
+This will install the binaries under the specified prefix.
 
-2) Time stamp field - a hidden field with page load Unix timestamp in
-   nanoseconds.  When submitted, the delta between submission time and page
-   load time must be at least COMMENT_MIN_DELAY and at most COMMENT_MAX_DELAY.
 
-   Idea from: cdlu (late 2008/early 2009)
+Running
+=======
 
-3) Math captcha - a simple math problem.  User must set it to the sum of
-   COMMENT_CAPTCHA_A and COMMENT_CAPTCHA_B.
+First, you need to start the math daemon (mathd):
 
-4) User agent - the user agent header (HTTP_USER_AGENT) must be present.
+$ ./mathd
 
-   Idea from: http://utcc.utoronto.ca/~cks/space/blog/web/CommentSpamPrecautions
+Once that is running, you can start the blahg daemon (blahgd) itself:
+
+$ ./blahgd
+
+At this point, blahgd is listening on port 2014 for SCGI connections.  At
+this point you need to configure your webserver to pass requests to blahgd.
+For example, for nginx, use a config stanza similar to:
+
+
+        server {
+                listen       80;
+                server_name  blahg.example.com;
+
+                location / {
+                        include scgi_params;
+                        scgi_pass localhost:2014;
+                }
+        }
+
+The scgi_params file should include:
+
+scgi_param  REQUEST_METHOD     $request_method;
+scgi_param  REQUEST_URI        $request_uri;
+scgi_param  QUERY_STRING       $query_string;
+scgi_param  CONTENT_TYPE       $content_type;
+
+scgi_param  DOCUMENT_URI       $document_uri;
+scgi_param  DOCUMENT_ROOT      $document_root;
+scgi_param  SCGI               1;
+scgi_param  SERVER_PROTOCOL    $server_protocol;
+scgi_param  HTTPS              $https if_not_empty;
+
+scgi_param  REMOTE_ADDR        $remote_addr;
+scgi_param  REMOTE_PORT        $remote_port;
+scgi_param  SERVER_PORT        $server_port;
+scgi_param  SERVER_NAME        $server_name;
