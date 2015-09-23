@@ -328,15 +328,15 @@ static void post_add_comment_str(struct post *post, const char *idstr)
 	post_add_comment(post, i);
 }
 
-static int __do_load_post_body_fmt3(struct post *post, const char *ibuf, size_t len)
+static int __do_load_post_body_fmt3(struct post *post, const struct str *input)
 {
 	struct parser_output x;
 	int ret;
 
 	x.req    = NULL;
 	x.post   = post;
-	x.input  = ibuf;
-	x.len    = strlen(ibuf);
+	x.input  = str_cstr(input);
+	x.len    = str_len(input);
 	x.pos    = 0;
 	x.lineno = 0;
 
@@ -389,8 +389,10 @@ static char *cc(char *a, char *b, int blen)
 #define CATP_ECHO	1
 #define CATP_PAR	2
 
-static int __do_load_post_body(struct post *post, char *ibuf, size_t len)
+static int __do_load_post_body(struct post *post, const struct str *input)
 {
+	char *ibuf = (char *) str_cstr(input);
+	size_t len = str_len(input);
 	int sidx, eidx;
 	int state = CATP_SKIP;
 	char *ret;
@@ -477,9 +479,9 @@ static int __load_post_body(struct post *post)
 		return PTR_ERR(raw);
 
 	if (post->fmt == 3)
-		ret = __do_load_post_body_fmt3(post, str_cstr(raw), str_len(raw));
+		ret = __do_load_post_body_fmt3(post, raw);
 	else
-		ret = __do_load_post_body(post, (char *) str_cstr(raw), str_len(raw));
+		ret = __do_load_post_body(post, raw);
 
 	str_putref(raw);
 
