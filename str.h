@@ -57,7 +57,7 @@ REFCNT_PROTOTYPES(struct str, str)
 		_s;			\
 	})
 
-static inline const char *str_cstr(struct str *str)
+static inline const char *str_cstr(const struct str *str)
 {
 	return str ? str->str : NULL;
 }
