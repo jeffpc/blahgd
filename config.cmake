@@ -30,8 +30,6 @@ set_default(WIKI_BASE_URL		"http://en.wikipedia.org/wiki")
 set_default(PHOTO_BASE_URL		"http://www.josefsipek.net/photos")
 
 set_default(VAR_MAX_SCOPES		10)
-set_default(VAR_MAX_VARS_SIZE		10)
-set_default(VAR_VAL_KEY_MAXLEN		32)
 set_default(VAR_NAME_MAXLEN		32)
 
 set_default(COND_STACK_DEPTH		10)

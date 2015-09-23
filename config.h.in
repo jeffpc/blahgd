@@ -27,8 +27,6 @@
 #cmakedefine PHOTO_BASE_URL		"${PHOTO_BASE_URL}"
 
 #cmakedefine VAR_MAX_SCOPES		${VAR_MAX_SCOPES}
-#cmakedefine VAR_MAX_VARS_SIZE		${VAR_MAX_VARS_SIZE}
-#cmakedefine VAR_VAL_KEY_MAXLEN		${VAR_VAL_KEY_MAXLEN}
 #cmakedefine VAR_NAME_MAXLEN		${VAR_NAME_MAXLEN}
 
 #cmakedefine COND_STACK_DEPTH		${COND_STACK_DEPTH}
