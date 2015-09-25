@@ -23,13 +23,19 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <sys/sysmacros.h>
 
 #include "req.h"
 #include "vars.h"
-#include "db.h"
 #include "sidebar.h"
 #include "error.h"
 #include "utils.h"
+#include "post.h"
+
+struct tagcloud_state {
+	unsigned long ntags;
+	nvlist_t **cloud;
+};
 
 static int __tag_size(int count, int cmin, int cmax)
 {
@@ -44,67 +50,53 @@ static int __tag_size(int count, int cmin, int cmax)
 	return ceil(TAGCLOUD_MIN_SIZE + size);
 }
 
+static int __tagcloud_init(void *arg, unsigned long ntags)
+{
+	struct tagcloud_state *state = arg;
+
+	state->cloud = malloc(sizeof(nvlist_t *) * ntags);
+	state->ntags = 0;
+
+	return state->cloud ? 0 : ENOMEM;
+}
+
+static void __tagcloud_step(void *arg, const struct str *name,
+			    unsigned long count,
+			    unsigned long cmin,
+			    unsigned long cmax)
+{
+	struct tagcloud_state *state = arg;
+
+	/* skip the really boring tags */
+	if (count <= 1)
+		return;
+
+	state->cloud[state->ntags] = nvl_alloc();
+
+	nvl_set_str(state->cloud[state->ntags], "name", str_cstr(name));
+	nvl_set_int(state->cloud[state->ntags], "count", count);
+	nvl_set_int(state->cloud[state->ntags], "size",
+		    __tag_size(count, cmin, cmax));
+
+	state->ntags++;
+}
+
 static void tagcloud(struct req *req)
 {
-	sqlite3_stmt *stmt;
-	nvlist_t **cloud;
-	int cmin, cmax;
-	int nitems;
-	int ret;
-	int i;
+	struct tagcloud_state state;
+	unsigned int i;
 
-	i = 0;
+	/* gather up tag info */
+	index_for_each_tag(__tagcloud_init, __tagcloud_step, &state);
 
-	/* pacify gcc */
-	cmin = 0;
-	cmax = 0;
-	nitems = 0;
+	/* stash the info in request vars */
+	vars_set_nvl_array(&req->vars, "tagcloud", state.cloud, state.ntags);
 
-	SQL(stmt, "SELECT min(cnt), max(cnt), count(1) FROM tagcloud");
-	SQL_FOR_EACH(stmt) {
-		cmin   = SQL_COL_INT(stmt, 0);
-		cmax   = SQL_COL_INT(stmt, 1);
-		nitems = SQL_COL_INT(stmt, 2);
-	}
+	/* free everything */
+	for (i = 0; i < state.ntags; i++)
+		nvlist_free(state.cloud[i]);
 
-	SQL_END(stmt);
-
-	/*
-	 * allocate enough space for every tag, even if we don't care about
-	 * the ones with <2 count
-	 */
-	cloud = malloc(sizeof(nvlist_t *) * nitems);
-	ASSERT(cloud);
-
-	SQL(stmt, "SELECT tag, cnt FROM tagcloud WHERE cnt > 1 ORDER BY tag COLLATE NOCASE");
-	SQL_FOR_EACH(stmt) {
-		char *tag;
-		uint64_t count;
-		uint64_t size;
-
-		tag   = SQL_COL_STR(stmt, 0);
-		count = SQL_COL_INT(stmt, 1);
-		size  = __tag_size(count, cmin, cmax);
-
-		cloud[i] = nvl_alloc();
-
-		ASSERT3U(i, <, nitems);
-
-		nvl_set_str(cloud[i], "name", tag);
-		nvl_set_int(cloud[i], "size", size);
-		nvl_set_int(cloud[i], "count", count);
-
-		i++;
-	}
-
-	SQL_END(stmt);
-
-	vars_set_nvl_array(&req->vars, "tagcloud", cloud, i);
-
-	for (nitems = i, i = 0; i < nitems; i++)
-		nvlist_free(cloud[i]);
-
-	free(cloud);
+	free(state.cloud);
 }
 
 void sidebar(struct req *req)
