@@ -42,16 +42,14 @@
 
 static void __load_posts(struct req *req, int page)
 {
-	sqlite3_stmt *stmt;
-	int ret;
+	const unsigned int posts_per_page = req->opts.index_stories;
+	struct post *posts[posts_per_page];
+	int nposts;
 
-	SQL(stmt, "SELECT id, strftime(\"%s\", time) FROM posts ORDER BY time DESC LIMIT ? OFFSET ?");
-	SQL_BIND_INT(stmt, 1, req->opts.index_stories);
-	SQL_BIND_INT(stmt, 2, page * req->opts.index_stories);
+	nposts = index_get_posts(posts, NULL, false, NULL, NULL,
+				 page * posts_per_page, posts_per_page);
 
-	load_posts_sql(req, stmt, req->opts.index_stories);
-
-	SQL_END(stmt);
+	load_posts(req, posts, nposts, nposts == posts_per_page);
 }
 
 static void __load_posts_archive(struct req *req, int page, int archid)
