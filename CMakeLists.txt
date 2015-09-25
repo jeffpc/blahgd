@@ -80,6 +80,7 @@ add_executable(blahgd
 
 	# post - all formats
 	post.c
+	post_index.c
 	post_nv.c
 
 	# post - format 3
@@ -172,6 +173,7 @@ add_executable(test_fmt3
 	test_fmt3.c
 	val.c
 	post.c
+	post_index.c
 	${FLEX_fmt3_OUTPUTS} ${BISON_fmt3_OUTPUTS}
 	post_fmt3_cmds.c
 	file_cache.c

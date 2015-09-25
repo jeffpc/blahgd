@@ -77,6 +77,8 @@ void init_post_subsys(void)
 
 	avl_create(&posts, post_cmp, sizeof(struct post),
 		   offsetof(struct post, cache));
+
+	init_post_index();
 }
 
 static struct post *lookup_post(int postid)

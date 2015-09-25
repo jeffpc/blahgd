@@ -104,10 +104,19 @@ extern void dump_post(struct post_old *post);
 extern void post_destroy(struct post *post);
 extern void revalidate_post(void *arg);
 extern void revalidate_all_posts(void *arg);
+extern void load_posts(struct req *req, struct post **posts, int nposts,
+		       bool moreposts);
 extern void load_posts_sql(struct req *req, sqlite3_stmt *stmt, int expected);
 extern int load_all_posts(void);
 extern nvlist_t *get_post(struct req *req, int postid, const char *titlevar,
 		bool preview);
+
+extern void init_post_index(void);
+extern struct post *index_lookup_post(unsigned int postid);
+extern int index_get_posts(struct post **ret, const struct str *tagname,
+			   bool tag, bool (*pred)(struct post *, void *),
+			   void *private, int skip, int nposts);
+extern int index_insert_post(struct post *post);
 
 REFCNT_INLINE_FXNS(struct post, post, refcnt, post_destroy)
 
