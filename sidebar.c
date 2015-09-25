@@ -107,56 +107,7 @@ static void tagcloud(struct req *req)
 	free(cloud);
 }
 
-static void archive(struct req *req)
-{
-	static const char *months[12] = {
-		"January", "February", "March", "April", "May", "June",
-		"July", "August", "September", "October", "November",
-		"December",
-	};
-
-	sqlite3_stmt *stmt;
-	nvlist_t **archives;
-	uint_t narchives;
-	uint_t i;
-	int ret;
-
-	archives = NULL;
-	narchives = 0;
-
-	SQL(stmt, "SELECT DISTINCT STRFTIME(\"%Y%m\", time) AS t FROM posts ORDER BY t DESC");
-	SQL_FOR_EACH(stmt) {
-		char buf[32];
-		int archid;
-
-		archid = SQL_COL_INT(stmt, 0);
-
-		snprintf(buf, sizeof(buf), "%s %d", months[(archid % 100) - 1],
-			 archid / 100);
-
-		archives = realloc(archives, sizeof(nvlist_t *) * (narchives + 1));
-		ASSERT(archives);
-
-		archives[narchives] = nvl_alloc();
-
-		nvl_set_int(archives[narchives], "name", archid);
-		nvl_set_str(archives[narchives], "desc", buf);
-
-		narchives++;
-	}
-
-	SQL_END(stmt);
-
-	vars_set_nvl_array(&req->vars, "archives", archives, narchives);
-
-	for (i = 0; i < narchives; i++)
-		nvlist_free(archives[i]);
-
-	free(archives);
-}
-
 void sidebar(struct req *req)
 {
 	tagcloud(req);
-	archive(req);
 }
