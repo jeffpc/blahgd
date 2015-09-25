@@ -90,7 +90,7 @@ static void post_add_tags(struct post *post, struct val *list)
 	if (!list)
 		return;
 
-	while ((list = lisp_cdr(list))) {
+	for (; list; list = lisp_cdr(list)) {
 		struct val *tagval;
 		struct str *tagname;
 
