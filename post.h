@@ -115,6 +115,11 @@ extern struct post *index_lookup_post(unsigned int postid);
 extern int index_get_posts(struct post **ret, const struct str *tagname,
 			   bool tag, bool (*pred)(struct post *, void *),
 			   void *private, int skip, int nposts);
+extern void index_for_each_tag(int (*init)(void *, unsigned long),
+			       void (*step)(void *, const struct str *,
+					    unsigned long, unsigned long,
+					    unsigned long),
+			       void *private);
 extern int index_insert_post(struct post *post);
 
 REFCNT_INLINE_FXNS(struct post, post, refcnt, post_destroy)

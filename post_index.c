@@ -22,6 +22,7 @@
 
 #include <string.h>
 #include <stddef.h>
+#include <sys/sysmacros.h>
 
 #include "post.h"
 #include "str.h"
@@ -359,5 +360,49 @@ void revalidate_all_posts(void *arg)
 	MXLOCK(&index_lock);
 	avl_for_each(&index_global, cur)
 		revalidate_post(cur->post);
+	MXUNLOCK(&index_lock);
+}
+
+void index_for_each_tag(int (*init)(void *, unsigned long),
+			void (*step)(void *, const struct str *, unsigned long,
+				     unsigned long, unsigned long),
+			void *private)
+{
+	struct post_subindex *tag;
+	unsigned long cmin, cmax;
+	int ret;
+
+	if (!init && !step)
+		return;
+
+	MXLOCK(&index_lock);
+
+	if (init) {
+		ret = init(private, avl_numnodes(&index_by_tag));
+		if (ret)
+			goto err;
+	}
+
+	if (!step)
+		goto err;
+
+	/*
+	 * figure out the minimum and maximum counts of tags
+	 */
+	cmin = ~0;
+	cmax = 0;
+	avl_for_each(&index_by_tag, tag) {
+		cmin = MIN(cmin, avl_numnodes(&tag->subindex));
+		cmax = MAX(cmax, avl_numnodes(&tag->subindex));
+	}
+
+	/*
+	 * finally, invoke the step callback for each tag
+	 */
+	avl_for_each(&index_by_tag, tag)
+		step(private, tag->name, avl_numnodes(&tag->subindex),
+		     cmin, cmax);
+
+err:
 	MXUNLOCK(&index_lock);
 }
