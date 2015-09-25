@@ -27,7 +27,6 @@
 #include <stdbool.h>
 
 #include "config.h"
-#include "db.h"
 #include "render.h"
 #include "req.h"
 #include "utils.h"
@@ -95,35 +94,18 @@ static void __store_pages(struct vars *vars, int page)
 	vars_set_int(vars, "nextpage", page - 1);
 }
 
-static void __load_posts_tag(struct req *req, int page, const char *tag,
-			     bool istag)
-{
-	const char *tc = istag ? "tag" : "cat";
-	sqlite3_stmt *stmt;
-	char sql[256];
-	int ret;
-
-	snprintf(sql, sizeof(sql), "SELECT post_%ss.post, strftime(\"%%s\", time) "
-		 "FROM post_%ss,posts "
-		 "WHERE post_%ss.post=posts.id AND post_%ss.%s=? "
-		 "ORDER BY posts.time DESC LIMIT ? OFFSET ?", tc, tc, tc,
-		 tc, tc);
-
-	SQL(stmt, sql);
-	SQL_BIND_STR(stmt, 1, tag);
-	SQL_BIND_INT(stmt, 2, req->opts.index_stories);
-	SQL_BIND_INT(stmt, 3, page * req->opts.index_stories);
-
-	load_posts_sql(req, stmt, req->opts.index_stories);
-
-	SQL_END(stmt);
-}
-
 int __tagcat(struct req *req, const char *tagcat, int page, char *tmpl,
 	     bool istag)
 {
+	const unsigned int posts_per_page = req->opts.index_stories;
+	struct post *posts[posts_per_page];
+	struct str *tag;
+	int nposts;
+
 	if (!tagcat)
 		return R404(req, NULL);
+
+	tag = STR_DUP(tagcat);
 
 	req_head(req, "Content-Type", "text/html");
 
@@ -137,7 +119,12 @@ int __tagcat(struct req *req, const char *tagcat, int page, char *tmpl,
 
 	vars_scope_push(&req->vars);
 
-	__load_posts_tag(req, page, tagcat, istag);
+	nposts = index_get_posts(posts, tag, istag, NULL, NULL,
+				 page * posts_per_page, posts_per_page);
+
+	load_posts(req, posts, nposts, nposts == posts_per_page);
+
+	str_putref(tag);
 
 	req->body = render_page(req, tmpl);
 	return 0;
