@@ -50,7 +50,6 @@ struct comment {
 };
 
 struct post {
-	avl_node_t cache;
 	refcnt_t refcnt;
 
 	pthread_mutex_t lock;

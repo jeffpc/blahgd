@@ -47,21 +47,6 @@
 static umem_cache_t *post_cache;
 static umem_cache_t *comment_cache;
 
-static avl_tree_t posts;
-static pthread_mutex_t posts_lock;
-
-static int post_cmp(const void *va, const void *vb)
-{
-	const struct post *a = va;
-	const struct post *b = vb;
-
-	if (a->id < b->id)
-		return -1;
-	if (a->id > b->id)
-		return 1;
-	return 0;
-}
-
 void init_post_subsys(void)
 {
 	post_cache = umem_cache_create("post-cache", sizeof(struct post),
@@ -73,45 +58,7 @@ void init_post_subsys(void)
 					  NULL, NULL, NULL, NULL, 0);
 	ASSERT(comment_cache);
 
-	MXINIT(&posts_lock);
-
-	avl_create(&posts, post_cmp, sizeof(struct post),
-		   offsetof(struct post, cache));
-
 	init_post_index();
-}
-
-static struct post *lookup_post(int postid)
-{
-	struct post *post;
-	struct post key = {
-		.id = postid,
-	};
-
-	MXLOCK(&posts_lock);
-	post = avl_find(&posts, &key, NULL);
-	post_getref(post);
-	MXUNLOCK(&posts_lock);
-
-	return post;
-}
-
-static void insert_post(struct post *post)
-{
-	struct post *tmp;
-	avl_index_t where;
-
-	post_getref(post);
-
-	MXLOCK(&posts_lock);
-	tmp = avl_find(&posts, post, &where);
-	if (!tmp)
-		avl_insert(&posts, post, where);
-	MXUNLOCK(&posts_lock);
-
-	/* someone beat us to inserting the post, just release what we got */
-	if (tmp)
-		post_putref(post);
 }
 
 void revalidate_post(void *arg)
@@ -123,21 +70,6 @@ void revalidate_post(void *arg)
 	post_lock(post, false);
 	post->needs_refresh = true;
 	post_unlock(post);
-}
-
-void revalidate_all_posts(void *arg)
-{
-	struct post *post;
-
-	printf("%s: marking all posts for refresh\n", __func__);
-
-	MXLOCK(&posts_lock);
-	avl_for_each(&posts, post) {
-		post_lock(post, false);
-		post->needs_refresh = true;
-		post_unlock(post);
-	}
-	MXUNLOCK(&posts_lock);
 }
 
 static void post_remove_all_tags(struct post *post)
@@ -571,7 +503,7 @@ struct post *load_post(int postid, bool preview)
 	 * If it is *not* a preview, try to get it from the cache.
 	 */
 	if (!preview) {
-		post = lookup_post(postid);
+		post = index_lookup_post(postid);
 		if (post)
 			return post;
 	}
@@ -600,7 +532,7 @@ struct post *load_post(int postid, bool preview)
 		goto err;
 
 	if (!post->preview)
-		insert_post(post);
+		ASSERT0(index_insert_post(post));
 
 	return post;
 

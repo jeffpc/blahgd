@@ -351,3 +351,13 @@ err_free:
 err:
 	return ret;
 }
+
+void revalidate_all_posts(void *arg)
+{
+	struct post_index_entry *cur;
+
+	MXLOCK(&index_lock);
+	avl_for_each(&index_global, cur)
+		revalidate_post(cur->post);
+	MXUNLOCK(&index_lock);
+}
