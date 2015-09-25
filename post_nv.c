@@ -135,7 +135,7 @@ nvlist_t *get_post(struct req *req, int postid, const char *titlevar, bool previ
  *     post id
  *     post time
  */
-void load_posts(struct req *req, sqlite3_stmt *stmt, int expected)
+void load_posts_sql(struct req *req, sqlite3_stmt *stmt, int expected)
 {
 	nvlist_t **posts;
 	uint_t nposts;

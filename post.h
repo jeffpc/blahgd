@@ -104,7 +104,7 @@ extern void dump_post(struct post_old *post);
 extern void post_destroy(struct post *post);
 extern void revalidate_post(void *arg);
 extern void revalidate_all_posts(void *arg);
-extern void load_posts(struct req *req, sqlite3_stmt *stmt, int expected);
+extern void load_posts_sql(struct req *req, sqlite3_stmt *stmt, int expected);
 extern int load_all_posts(void);
 extern nvlist_t *get_post(struct req *req, int postid, const char *titlevar,
 		bool preview);
