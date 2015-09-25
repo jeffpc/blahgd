@@ -177,3 +177,50 @@ void load_posts_sql(struct req *req, sqlite3_stmt *stmt, int expected)
 
 	free(posts);
 }
+
+void load_posts(struct req *req, struct post **posts, int nposts,
+		bool moreposts)
+{
+	nvlist_t **nvposts;
+	uint_t nnvposts;
+	time_t maxtime;
+	int i;
+
+	maxtime = 0;
+
+	nvposts = NULL;
+	nnvposts = 0;
+
+	for (i = 0; i < nposts; i++) {
+		struct post *post = posts[i];
+
+		nvposts = realloc(nvposts, sizeof(nvlist_t *) * (nnvposts + 1));
+		ASSERT(nvposts);
+
+		post_lock(post, true);
+
+		nvposts[nnvposts] = __store_vars(req, post, NULL);
+		if (!nvposts[nnvposts]) {
+			post_unlock(post);
+			post_putref(post);
+			continue;
+		}
+
+		if (post->time > maxtime)
+			maxtime = post->time;
+
+		post_unlock(post);
+		post_putref(post);
+
+		nnvposts++;
+	}
+
+	vars_set_nvl_array(&req->vars, "posts", nvposts, nnvposts);
+	vars_set_int(&req->vars, "lastupdate", maxtime);
+	vars_set_int(&req->vars, "moreposts", moreposts);
+
+	for (i = 0; i < nnvposts; i++)
+		nvlist_free(nvposts[i]);
+
+	free(nvposts);
+}
