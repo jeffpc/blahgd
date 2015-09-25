@@ -1,0 +1,66 @@
+Lisp-formated Post and Comment Metadata
+=======================================
+
+We use a Lisp-type syntax to keep track of all the metadata.  This applies
+both to post as well as comment metadata.
+
+
+Post
+----
+
+Posts' metadata is stored alongside the post text in a file called
+"post.lisp".  The contents are a quoted Lisp alist.  For example:
+
+'((time . "2015-09-19 21:28")
+  (title . "abcdef")
+  (fmt . 3)
+  (tags "tag1" "tag2")
+  (cats "cat1" "cat2")
+  (comments 1 2 3)
+  (listed #t))
+
+
+Most entries are self explanatory.  With that said,
+
+ time: the time of publication (UTC)
+
+ title: the title of this post
+
+ fmt: format version for the post text itself
+
+ tags: list of tags associated with this post
+
+ cats: list of categories associated with this post
+
+ comments: entry enumerates all the comment IDs for this post
+
+ listed: list this post on the index/category/tag/archive pages?
+
+
+Comment
+-------
+
+Comments store their metadata alongside the comment text in a file called
+"meta.lisp".  The contents are a quoted Lisp alist.  For example:
+
+'((author . "bob")
+  (email . "bob@example.com")
+  (time . "2015-09-19 21:30")
+  (ip . "10.10.10.10")
+  (url . "http://example.com")
+  (moderated . #t))
+
+
+Again, the entries are self explanatory.
+
+ author: the author of the comment
+
+ email: the email address of the comment author
+
+ time: time of comment (UTC)
+
+ ip: the IP address used by the comment author to leave the comment
+
+ url: the comment author's website
+
+ moderated: has this post been moderated?
