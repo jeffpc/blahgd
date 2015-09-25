@@ -19,7 +19,6 @@ blahgd's behavior:
 	COMMENT_CAPTCHA_B	- math CAPTCHA second number
 
 	DATA_DIR		- path to data directory
-	DB_FILE			- sqlite3 file path
 
 	MATHD_DOOR_PATH		- path for the door used to talk to mathd
 

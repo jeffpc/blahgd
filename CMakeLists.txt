@@ -66,11 +66,6 @@ else()
 	set(XMLRPC_LIBRARIES )
 endif()
 
-find_library(SQLITE_LIB sqlite3)
-find_path(SQLITE_INC sqlite3.h)
-
-include_directories(${SQLITE_INC})
-
 add_executable(blahgd
 	daemon.c helpers.c
 	scgi.c
@@ -120,9 +115,6 @@ add_executable(blahgd
 	tag.c
 	static.c
 
-	# database
-	db.c
-
 	# misc
 	error.c
 	utils.c
@@ -132,7 +124,6 @@ add_executable(blahgd
 
 target_link_libraries(blahgd
 	${OPENSSL_CRYPTO_LIBRARY}
-	${SQLITE_LIB}
 	pthread
 	socket
 	nsl
@@ -181,7 +172,6 @@ add_executable(test_fmt3
 	listing.c
 	mangle.c utils.c error.c
 	str.c
-	db.c
 	nvl.c
 	nvl_convert.c
 	${FLEX_lisp_OUTPUTS} ${BISON_lisp_OUTPUTS}
@@ -190,7 +180,6 @@ add_executable(test_fmt3
 
 target_link_libraries(test_fmt3
 	${OPENSSL_CRYPTO_LIBRARY}
-	${SQLITE_LIB}
 	umem
 	nvpair
 	/usr/lib/libavl.so.1

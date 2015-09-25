@@ -28,7 +28,7 @@
 #include <sys/list.h>
 #include <sys/avl.h>
 
-#include "db.h"
+#include "mx.h"
 #include "vars.h"
 #include "refcnt.h"
 
@@ -105,7 +105,6 @@ extern void revalidate_post(void *arg);
 extern void revalidate_all_posts(void *arg);
 extern void load_posts(struct req *req, struct post **posts, int nposts,
 		       bool moreposts);
-extern void load_posts_sql(struct req *req, sqlite3_stmt *stmt, int expected);
 extern int load_all_posts(void);
 extern nvlist_t *get_post(struct req *req, int postid, const char *titlevar,
 		bool preview);

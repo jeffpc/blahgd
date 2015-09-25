@@ -135,49 +135,6 @@ nvlist_t *get_post(struct req *req, int postid, const char *titlevar, bool previ
  *     post id
  *     post time
  */
-void load_posts_sql(struct req *req, sqlite3_stmt *stmt, int expected)
-{
-	nvlist_t **posts;
-	uint_t nposts;
-	time_t maxtime;
-	int ret;
-	int i;
-
-	maxtime = 0;
-
-	posts = NULL;
-	nposts = 0;
-
-	SQL_FOR_EACH(stmt) {
-		time_t posttime;
-		int postid;
-
-		postid   = SQL_COL_INT(stmt, 0);
-		posttime = SQL_COL_INT(stmt, 1);
-
-		posts = realloc(posts, sizeof(nvlist_t *) * (nposts + 1));
-		ASSERT(posts);
-
-		posts[nposts] = get_post(req, postid, NULL, false);
-		if (!posts[nposts])
-			continue;
-
-		if (posttime > maxtime)
-			maxtime = posttime;
-
-		nposts++;
-	}
-
-	vars_set_nvl_array(&req->vars, "posts", posts, nposts);
-	vars_set_int(&req->vars, "lastupdate", maxtime);
-	vars_set_int(&req->vars, "moreposts", nposts == expected);
-
-	for (i = 0; i < nposts; i++)
-		nvlist_free(posts[i]);
-
-	free(posts);
-}
-
 void load_posts(struct req *req, struct post **posts, int nposts,
 		bool moreposts)
 {

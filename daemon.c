@@ -38,7 +38,6 @@
 #include "utils.h"
 #include "helpers.h"
 #include "atomic.h"
-#include "db.h"
 #include "val.h"
 #include "pipeline.h"
 #include "file_cache.h"
@@ -282,8 +281,6 @@ int main(int argc, char **argv)
 	ret = drop_privs();
 	if (ret)
 		goto err;
-
-	init_db();
 
 	init_math(true);
 	init_str_subsys();

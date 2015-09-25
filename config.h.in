@@ -17,7 +17,6 @@
 #cmakedefine COMMENT_CAPTCHA_B		${COMMENT_CAPTCHA_B}
 
 #cmakedefine DATA_DIR			"${DATA_DIR}"
-#cmakedefine DB_FILE			"${DB_FILE}"
 
 #cmakedefine MATHD_DOOR_PATH		"${MATHD_DOOR_PATH}"
 
