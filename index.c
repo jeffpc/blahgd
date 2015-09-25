@@ -36,51 +36,63 @@
 #include "sidebar.h"
 #include "parse.h"
 #include "render.h"
-#include "db.h"
 #include "error.h"
 #include "utils.h"
 
-static void __load_posts(struct req *req, int page)
+struct archive_filter_args {
+	unsigned int start;
+	unsigned int end;
+};
+
+/* return true iff post->time is in [start,end) */
+static bool archive_filter(struct post *post, void *private)
+{
+	struct archive_filter_args *args = private;
+
+	return (post->time >= args->start) && (post->time < args->end);
+}
+
+static void __load_posts(struct req *req, int page, int archid)
 {
 	const unsigned int posts_per_page = req->opts.index_stories;
 	struct post *posts[posts_per_page];
 	int nposts;
 
-	nposts = index_get_posts(posts, NULL, false, NULL, NULL,
-				 page * posts_per_page, posts_per_page);
+	if (!archid) {
+		/* regular index */
+		nposts = index_get_posts(posts, NULL, false, NULL, NULL,
+					 page * posts_per_page,
+					 posts_per_page);
+	} else {
+		/* archive index */
+		struct archive_filter_args filter_args;
+		struct tm start;
+		struct tm end;
 
-	load_posts(req, posts, nposts, nposts == posts_per_page);
-}
+		memset(&start, 0, sizeof(start));
 
-static void __load_posts_archive(struct req *req, int page, int archid)
-{
-	char fromtime[32];
-	char totime[32];
-	sqlite3_stmt *stmt;
-	int toyear, tomonth;
-	int ret;
+		start.tm_year = (archid / 100) - 1900;
+		start.tm_mon  = (archid % 100) - 1;
+		start.tm_mday = 1;
 
-	toyear = archid / 100;
-	tomonth = (archid % 100) + 1;
-	if (tomonth > 12) {
-		tomonth = 1;
-		toyear++;
+		end = start;
+		end.tm_mon++;
+		if (end.tm_mon >= 12) {
+			end.tm_mon = 1;
+			end.tm_year++;
+		}
+
+		filter_args.start = mktime(&start);
+		filter_args.end   = mktime(&end);
+
+		fprintf(stderr, "%s %u %u\n", __func__, filter_args.start, filter_args.end);
+
+		nposts = index_get_posts(posts, NULL, false, archive_filter,
+					 &filter_args, page * posts_per_page,
+					 posts_per_page);
 	}
 
-	snprintf(fromtime, sizeof(fromtime), "%04d-%02d-01 00:00",
-		 archid / 100, archid % 100);
-	snprintf(totime, sizeof(totime), "%04d-%02d-01 00:00",
-		 toyear, tomonth);
-
-	SQL(stmt, "SELECT id, strftime(\"%s\", time) FROM posts WHERE time>=? AND time<? ORDER BY time DESC LIMIT ? OFFSET ?");
-	SQL_BIND_STR(stmt, 1, fromtime);
-	SQL_BIND_STR(stmt, 2, totime);
-	SQL_BIND_INT(stmt, 3, req->opts.index_stories);
-	SQL_BIND_INT(stmt, 4, page * req->opts.index_stories);
-
-	load_posts_sql(req, stmt, req->opts.index_stories);
-
-	SQL_END(stmt);
+	load_posts(req, posts, nposts, nposts == posts_per_page);
 }
 
 static void __store_title(struct vars *vars, char *title)
@@ -111,7 +123,7 @@ int blahg_index(struct req *req, int page)
 
 	vars_scope_push(&req->vars);
 
-	__load_posts(req, page);
+	__load_posts(req, page, 0);
 
 	req->body = render_page(req, "{index}");
 	return 0;
@@ -153,7 +165,7 @@ int blahg_archive(struct req *req, int m, int page)
 
 	vars_scope_push(&req->vars);
 
-	__load_posts_archive(req, page, m);
+	__load_posts(req, page, m);
 
 	req->body = render_page(req, "{archive}");
 	return 0;
