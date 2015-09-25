@@ -406,3 +406,45 @@ void index_for_each_tag(int (*init)(void *, unsigned long),
 err:
 	MXUNLOCK(&index_lock);
 }
+
+static void __free_index(avl_tree_t *tree)
+{
+	struct post_index_entry *cur;
+	void *cookie;
+
+	cookie = NULL;
+	while ((cur = avl_destroy_nodes(tree, &cookie))) {
+		post_putref(cur->post);
+		free(cur);
+	}
+
+	avl_destroy(tree);
+}
+
+static void __free_tag_index(avl_tree_t *tree)
+{
+	struct post_subindex *cur;
+	void *cookie;
+
+	cookie = NULL;
+	while ((cur = avl_destroy_nodes(tree, &cookie))) {
+		__free_index(&cur->subindex);
+		str_putref((struct str *) cur->name);
+		free(cur);
+	}
+
+	avl_destroy(tree);
+}
+
+void free_all_posts(void)
+{
+	MXLOCK(&index_lock);
+
+	__free_index(&index_global);
+	__free_index(&index_by_time);
+
+	__free_tag_index(&index_by_tag);
+	__free_tag_index(&index_by_cat);
+
+	MXUNLOCK(&index_lock);
+}

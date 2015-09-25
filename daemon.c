@@ -310,6 +310,8 @@ int main(int argc, char **argv)
 
 	stop_helpers();
 
+	free_all_posts();
+
 	return 0;
 
 err_helpers:

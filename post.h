@@ -106,6 +106,7 @@ extern void revalidate_all_posts(void *arg);
 extern void load_posts(struct req *req, struct post **posts, int nposts,
 		       bool moreposts);
 extern int load_all_posts(void);
+extern void free_all_posts(void);
 extern nvlist_t *get_post(struct req *req, int postid, const char *titlevar,
 		bool preview);
 
