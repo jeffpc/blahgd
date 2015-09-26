@@ -28,6 +28,8 @@
 #include "parse.h"
 #include "lisp.h"
 
+static struct str *dump_expr(struct val *lv, bool raw);
+
 struct val *parse_lisp(const char *str, size_t len)
 {
 	struct parser_output x;
@@ -54,26 +56,24 @@ static struct str *dump_cons(struct val *lv, bool raw)
 	struct val *tail = lv->cons.tail;
 
 	if (raw)
-		return str_cat3(lisp_dump(head, raw),
+		return str_cat3(dump_expr(head, raw),
 				STR_DUP(" . "),
-				lisp_dump(tail, raw));
+				dump_expr(tail, raw));
 	else if (!head && !tail)
 		return NULL;
 	else if (head && !tail)
-		return lisp_dump(head, raw);
+		return dump_expr(head, raw);
 	else if (tail->type == VT_CONS)
-		return str_cat3(lisp_dump(head, raw),
+		return str_cat3(dump_expr(head, raw),
 				STR_DUP(" "),
 				dump_cons(tail, raw));
 	else
-		return str_cat5(STR_DUP("("),
-				lisp_dump(head, raw),
+		return str_cat3(dump_expr(head, raw),
 				STR_DUP(" . "),
-				lisp_dump(tail, raw),
-				STR_DUP(")"));
+				dump_expr(tail, raw));
 }
 
-struct str *lisp_dump(struct val *lv, bool raw)
+static struct str *dump_expr(struct val *lv, bool raw)
 {
 	if (!lv)
 		return STR_DUP("()");
@@ -105,6 +105,15 @@ struct str *lisp_dump(struct val *lv, bool raw)
 	}
 
 	return NULL;
+}
+
+struct str *lisp_dump(struct val *lv, bool raw)
+{
+	struct str *ret;
+
+	ret = dump_expr(lv, raw);
+
+	return ret ? str_cat(STR_DUP("'"), ret) : NULL;
 }
 
 void lisp_dump_file(FILE *out, struct val *lv, bool raw)
