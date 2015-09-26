@@ -195,7 +195,11 @@ int index_get_posts(struct post **ret, const struct str *tagname, bool tag,
 	else
 		tree = __get_subindex(&index_by_cat, tagname);
 
-	ASSERT3P(tree, !=, NULL);
+	/* if there is no tree, there are no posts */
+	if (!tree) {
+		MXUNLOCK(&index_lock);
+		return 0;
+	}
 
 	/* skip over the first entries as requested */
 	for (cur = avl_last(tree); cur && skip; cur = AVL_PREV(tree, cur))
