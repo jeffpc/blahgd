@@ -99,21 +99,24 @@ static struct str *prep_meta_lisp(const char *author, const char *email,
 	 *   (email . "<email>")
 	 *   (time . "<time>")
 	 *   (ip . "<ip>")
-	 *   (url . "<url>"))
+	 *   (url . "<url>")
+	 *   (moderated . #f))
 	 */
 
 	/* FIXME: this is *really* ugly... there has to be a better way */
 	lv = VAL_ALLOC_CONS(
-	       VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("author"), VAL_ALLOC_CSTR((char *) author)),
+	       VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("author"), VAL_DUP_CSTR((char *) author)),
 	       VAL_ALLOC_CONS(
-	         VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("email"), VAL_ALLOC_CSTR((char *) email)),
+	         VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("email"), VAL_DUP_CSTR((char *) email)),
 	         VAL_ALLOC_CONS(
-	           VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("time"), VAL_ALLOC_CSTR((char *) curdate)),
+	           VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("time"), VAL_DUP_CSTR((char *) curdate)),
 	           VAL_ALLOC_CONS(
-	             VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("ip"), VAL_ALLOC_CSTR((char *) ip)),
-	               VAL_ALLOC_CONS(
-	                 VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("url"), VAL_ALLOC_CSTR((char *) url)),
-	                 NULL)))));
+	             VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("ip"), VAL_DUP_CSTR((char *) ip)),
+		     VAL_ALLOC_CONS(
+	               VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("url"), VAL_DUP_CSTR((char *) url)),
+		       VAL_ALLOC_CONS(
+	                 VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("moderated"), VAL_ALLOC_BOOL(false)),
+	                 NULL))))));
 
 	str = lisp_dump(lv, false);
 	if (!str)
