@@ -65,6 +65,7 @@ struct post {
 
 	/* from 'post_tags' table */
 	list_t tags;
+	list_t cats;
 
 	/* from 'comments' table */
 	list_t comments;

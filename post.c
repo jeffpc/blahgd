@@ -72,17 +72,17 @@ void revalidate_post(void *arg)
 	post_unlock(post);
 }
 
-static void post_remove_all_tags(struct post *post)
+static void post_remove_all_tags(list_t *taglist)
 {
 	struct post_tag *tag;
 
-	while ((tag = list_remove_head(&post->tags))) {
+	while ((tag = list_remove_head(taglist))) {
 		str_putref(tag->tag);
 		free(tag);
 	}
 }
 
-static void post_add_tags(struct post *post, struct val *list)
+static void post_add_tags(list_t *taglist, struct val *list)
 {
 	struct post_tag *tag;
 
@@ -111,7 +111,7 @@ static void post_add_tags(struct post *post, struct val *list)
 		tag->tag = tagname;
 		ASSERT(tag->tag);
 
-		list_insert_tail(&post->tags, tag);
+		list_insert_tail(taglist, tag);
 	}
 }
 
@@ -451,8 +451,8 @@ static int __refresh_published(struct post *post)
 
 	__refresh_published_prop(post, lv);
 
-	post_add_tags(post, lisp_lookup_list(lv, "tags"));
-	// XXX: post_add_cats(post, lisp_lookup_list(lv, "cats"));
+	post_add_tags(&post->tags, lisp_lookup_list(lv, "tags"));
+	post_add_tags(&post->cats, lisp_lookup_list(lv, "cats"));
 	// XXX: post_add_comment_str(post, X);
 
 	val_putref(lv);
@@ -523,6 +523,8 @@ struct post *load_post(int postid, bool preview)
 
 	list_create(&post->tags, sizeof(struct post_tag),
 		    offsetof(struct post_tag, list));
+	list_create(&post->cats, sizeof(struct post_tag),
+		    offsetof(struct post_tag, list));
 	list_create(&post->comments, sizeof(struct comment),
 		    offsetof(struct comment, list));
 	refcnt_init(&post->refcnt, 1);
@@ -543,7 +545,8 @@ err:
 
 void post_destroy(struct post *post)
 {
-	post_remove_all_tags(post);
+	post_remove_all_tags(&post->tags);
+	post_remove_all_tags(&post->cats);
 	post_remove_all_comments(post);
 
 	str_putref(post->title);
