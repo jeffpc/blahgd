@@ -121,7 +121,7 @@ static struct str *prep_meta_lisp(const char *author, const char *email,
 
 	val_putref(lv);
 
-	return NULL;
+	return str;
 }
 
 const char *write_out_comment(struct req *req, int id, char *author,
