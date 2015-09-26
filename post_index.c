@@ -230,7 +230,8 @@ static void *safe_avl_add(avl_tree_t *tree, void *node)
 	return tmp;
 }
 
-static int __insert_post_tags(struct post *post, list_t *taglist)
+static int __insert_post_tags(avl_tree_t *index, struct post *post,
+			      list_t *taglist)
 {
 	struct post_index_entry *tag_entry;
 	struct post_subindex *sub;
@@ -243,7 +244,7 @@ static int __insert_post_tags(struct post *post, list_t *taglist)
 		};
 
 		/* find the right subindex, or... */
-		sub = avl_find(&index_by_tag, &key, &where);
+		sub = avl_find(index, &key, &where);
 		if (!sub) {
 			/* ...allocate one if it doesn't exist */
 			sub = malloc(sizeof(struct post_subindex));
@@ -253,7 +254,7 @@ static int __insert_post_tags(struct post *post, list_t *taglist)
 			sub->name = str_getref(tag->tag);
 			init_index_tree(&sub->subindex);
 
-			avl_insert(&index_by_tag, sub, where);
+			avl_insert(index, sub, where);
 		}
 
 		/* allocate & add a entry to the subindex */
@@ -315,27 +316,23 @@ int index_insert_post(struct post *post)
 	/* add the post to the by-time index */
 	ASSERT3P(safe_avl_add(&index_by_time, by_time), ==, NULL);
 
-	ret = __insert_post_tags(post, &post->tags);
+	ret = __insert_post_tags(&index_by_tag, post, &post->tags);
 	if (ret)
 		goto err_free_tags;
 
-#if 0
-	ret = __insert_post_cats(post, &post->cats);
+	ret = __insert_post_tags(&index_by_cat, post, &post->cats);
 	if (ret)
 		goto err_free_cats;
-#endif
 
 	MXUNLOCK(&index_lock);
 
 	return 0;
 
-#if 0
 err_free_cats:
-	__remove_post_cats(post, &post->cats);
-#endif
+	// XXX: __remove_post_tags(&index_by_cat, &post->cats);
 
 err_free_tags:
-	// XXX: __remove_post_tags(post, &post->tags);
+	// XXX: __remove_post_tags(&index_by_tag, &post->tags);
 
 	avl_remove(&index_by_time, by_time);
 
