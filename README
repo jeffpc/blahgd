@@ -57,7 +57,6 @@ Specifically, blahgd requires:
 Other dependencies include:
 
   - flex & bison
-  - sqlite3
 
 Building and Installing
 =======================
