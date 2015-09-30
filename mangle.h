@@ -24,5 +24,6 @@
 #define __MANGLE_H
 
 extern char *mangle_htmlescape(const char *in);
+extern char *mangle_lispescape(const char *in);
 
 #endif

@@ -79,3 +79,70 @@ char *mangle_htmlescape(const char *in)
 
 	return out;
 }
+
+char *mangle_lispescape(const char *in)
+{
+	char *out, *tmp;
+	const char *s;
+	size_t outlen;
+
+	outlen = strlen(in);
+
+	for (s = in; *s; s++) {
+		char c = *s;
+
+		switch (c) {
+			case '\n':
+			case '\t':
+			case '\r':
+			case '\b':
+			case '\f':
+			case '"':
+				/* "\n", "\t", ... */
+				outlen++;
+				break;
+		}
+	}
+
+	out = malloc(outlen + 1);
+	if (!out)
+		return NULL;
+
+	for (s = in, tmp = out; *s; s++, tmp++) {
+		unsigned char c = *s;
+
+		switch (c) {
+			case '\n':
+				strcpy(tmp, "\\n");
+				tmp++;
+				break;
+			case '\t':
+				strcpy(tmp, "\\t");
+				tmp++;
+				break;
+			case '\r':
+				strcpy(tmp, "\\r");
+				tmp++;
+				break;
+			case '\b':
+				strcpy(tmp, "\\b");
+				tmp++;
+				break;
+			case '\f':
+				strcpy(tmp, "\\f");
+				tmp++;
+				break;
+			case '"':
+				strcpy(tmp, "\\\"");
+				tmp++;
+				break;
+			default:
+				*tmp = c;
+				break;
+		}
+	}
+
+	*tmp = '\0';
+
+	return out;
+}
