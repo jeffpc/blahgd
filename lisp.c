@@ -26,6 +26,7 @@
 
 #include "str.h"
 #include "parse.h"
+#include "mangle.h"
 #include "lisp.h"
 
 static struct str *dump_expr(struct val *lv, bool raw);
@@ -75,6 +76,8 @@ static struct str *dump_cons(struct val *lv, bool raw)
 
 static struct str *dump_expr(struct val *lv, bool raw)
 {
+	char *tmpstr;
+
 	if (!lv)
 		return STR_DUP("()");
 
@@ -82,12 +85,18 @@ static struct str *dump_expr(struct val *lv, bool raw)
 		case VT_SYM:
 			return str_getref(lv->str);
 		case VT_CSTR:
+			tmpstr = mangle_lispescape(lv->cstr);
+			/* TODO: we leak tmpstr */
+
 			return str_cat3(STR_DUP("\""),
-					STR_DUP(lv->cstr),
+					STR_DUP(tmpstr),
 					STR_DUP("\""));
 		case VT_STR:
+			tmpstr = mangle_lispescape(str_cstr(lv->str));
+			/* TODO: we leak tmpstr */
+
 			return str_cat3(STR_DUP("\""),
-					str_getref(lv->str),
+					STR_DUP(tmpstr),
 					STR_DUP("\""));
 		case VT_BOOL:
 			return lv->b ? STR_DUP("#t") : STR_DUP("#f");

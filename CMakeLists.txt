@@ -208,6 +208,7 @@ add_executable(test_lisp_parser
 	utils.c
 	str.c
 	val.c
+	mangle.c
 )
 
 target_link_libraries(test_lisp_parser
