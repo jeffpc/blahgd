@@ -225,7 +225,6 @@ static void post_add_comment(struct post *post, int commid)
 	ASSERT(!IS_ERR(meta));
 
 	lv = parse_lisp_str(meta);
-	fprintf(stderr, "lisp comm val = %p\n", lv);
 
 	v = lisp_cdr(lisp_assoc(lv, "moderated"));
 	if (!v || (v->type != VT_BOOL) || !v->b)
@@ -242,6 +241,9 @@ static void post_add_comment(struct post *post, int commid)
 	comm->url    = lisp_lookup_str(lv, "url");
 	comm->body   = load_comment(post, comm->id);
 
+	if (!comm->author)
+		comm->author = STR_DUP("[unknown]");
+
 	list_insert_tail(&post->comments, comm);
 
 	post->numcom++;
@@ -251,15 +253,25 @@ done:
 	str_putref(meta);
 }
 
-static void post_add_comment_str(struct post *post, const char *idstr)
+static void post_add_comments(struct post *post, struct val *list)
 {
-	uint32_t i;
-	int ret;
+	if (!list)
+		return;
 
-	ret = str2u32(idstr, &i);
-	ASSERT0(ret);
+	for (; list; list = lisp_cdr(list)) {
+		struct val *val;
 
-	post_add_comment(post, i);
+		val = lisp_car(val_getref(list));
+
+		/* sanity check */
+		ASSERT3U(val->type, ==, VT_INT);
+
+		/* add the comment */
+		post_add_comment(post, val->i);
+
+		/* release the value */
+		val_putref(val);
+	}
 }
 
 static int __do_load_post_body_fmt3(struct post *post, const struct str *input)
@@ -453,7 +465,7 @@ static int __refresh_published(struct post *post)
 
 	post_add_tags(&post->tags, lisp_lookup_list(lv, "tags"));
 	post_add_tags(&post->cats, lisp_lookup_list(lv, "cats"));
-	// XXX: post_add_comment_str(post, X);
+	post_add_comments(post, lisp_lookup_list(lv, "comments"));
 
 	val_putref(lv);
 	str_putref(meta);
