@@ -234,7 +234,7 @@ static void post_add_comment(struct post *post, int commid)
 	ASSERT(comm);
 
 	comm->id     = commid;
-	comm->author = lisp_lookup_str(lv, "author"); // XXX: default: "[unknown]"
+	comm->author = lisp_lookup_str(lv, "author");
 	comm->email  = lisp_lookup_str(lv, "email");
 	comm->time   = parse_time_str(lisp_lookup_str(lv, "time"));
 	comm->ip     = lisp_lookup_str(lv, "ip");
