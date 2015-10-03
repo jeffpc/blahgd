@@ -57,6 +57,20 @@ BISON_TARGET(lisp lisp.y lisp.tab.c COMPILE_FLAGS "-p lisp_reader_")
 FLEX_TARGET(lisp lisp.l lisp.lex.c COMPILE_FLAGS "-P lisp_reader_")
 ADD_FLEX_BISON_DEPENDENCY(lisp lisp)
 
+add_custom_target(revisiontag ALL)
+
+add_custom_command(TARGET revisiontag
+	COMMAND ${CMAKE_COMMAND}
+		-DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+		-DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
+		-P ${CMAKE_CURRENT_SOURCE_DIR}/git.cmake
+)
+
+add_library(version
+	version.c
+)
+add_dependencies(version revisiontag)
+
 if(USE_XMLRPC)
 	set(PINGBACK_SRC pingback.c)
 	find_package(XMLRPC COMPONENTS cgi-server REQUIRED)
@@ -123,6 +137,7 @@ add_executable(blahgd
 )
 
 target_link_libraries(blahgd
+	version
 	${OPENSSL_CRYPTO_LIBRARY}
 	pthread
 	socket
@@ -143,6 +158,7 @@ add_executable(mathd
 )
 
 target_link_libraries(mathd
+	version
 	${OPENSSL_CRYPTO_LIBRARY}
 	umem
 )
