@@ -33,6 +33,7 @@
 #include "render.h"
 #include "qstring.h"
 #include "static.h"
+#include "version.h"
 
 static umem_cache_t *req_cache;
 static atomic_t reqids;
@@ -72,6 +73,7 @@ static void req_init(struct req *req, enum req_via via)
 	req->dump_latency = true;
 
 	vars_init(&req->vars);
+	vars_set_str(&req->vars, "generatorversion", version_string);
 	vars_set_str(&req->vars, "baseurl", BASE_URL);
 	vars_set_int(&req->vars, "now", gettime());
 	vars_set_int(&req->vars, "captcha_a", COMMENT_CAPTCHA_A);
