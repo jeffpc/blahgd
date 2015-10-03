@@ -37,6 +37,7 @@
 #include "str.h"
 #include "mx.h"
 #include "config.h"
+#include "version.h"
 
 static pthread_mutex_t lock;
 
@@ -102,6 +103,8 @@ int main(int argc, char **argv)
 	int ret;
 
 	openlog("mathd", LOG_NDELAY | LOG_PID, LOG_LOCAL0);
+
+	fprintf(stderr, "mathd version %s\n", version_string);
 
 	init_math(false);
 	init_str_subsys();
