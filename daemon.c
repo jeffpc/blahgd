@@ -45,6 +45,7 @@
 #include "str.h"
 #include "req.h"
 #include "post.h"
+#include "version.h"
 
 #define HOST		NULL
 #define PORT		2014
@@ -276,6 +277,8 @@ int main(int argc, char **argv)
 	int ret;
 
 	ASSERT0(putenv("TZ=UTC"));
+
+	fprintf(stderr, "blahgd version %s\n", version_string);
 
 	/* drop unneeded privs */
 	ret = drop_privs();
