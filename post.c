@@ -249,6 +249,7 @@ static void post_add_comment(struct post *post, int commid)
 	post->numcom++;
 
 done:
+	val_putref(v);
 	val_putref(lv);
 	str_putref(meta);
 }
