@@ -24,6 +24,7 @@
 #define __FILE_CACHE_H
 
 extern void init_file_cache(void);
+extern void uncache_all_files(void);
 extern struct str *file_cache_get_cb(const char *name, void (*cb)(void *),
 				     void *arg);
 

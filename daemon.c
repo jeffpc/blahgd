@@ -314,6 +314,7 @@ int main(int argc, char **argv)
 	stop_helpers();
 
 	free_all_posts();
+	uncache_all_files();
 
 	return 0;
 

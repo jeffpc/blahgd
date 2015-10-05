@@ -276,6 +276,22 @@ static void fn_free(struct file_node *node)
 	if (!node)
 		return;
 
+#if 0
+	/*
+	 * FIXME: This will always fail
+	 *
+	 * When a post is loaded, it registers a number of callbacks with
+	 * the file cache subsystem.  When the post structures get freed in
+	 * post_destroy(), the callbacks linger on the callbacks list.  If
+	 * we are unlucky, a file change could actually invoke the callback
+	 * with a freed pointer.
+	 *
+	 * We need the post destruction to free all its callbacks but there
+	 * is currently no easy way to do that.
+	 */
+	ASSERT(list_is_empty(&node->callbacks));
+#endif
+
 	/* free all the callbacks */
 	while ((fcb = list_remove_head(&node->callbacks)))
 		umem_cache_free(file_callback_cache, fcb);
@@ -421,4 +437,16 @@ output:
 	fn_putref(out);
 
 	return str;
+}
+
+void uncache_all_files(void)
+{
+	struct file_node *cur;
+	void *cookie;
+
+	MXLOCK(&file_lock);
+	cookie = NULL;
+	while ((cur = avl_destroy_nodes(&file_cache, &cookie)))
+		fn_putref(cur);
+	MXUNLOCK(&file_lock);
 }
