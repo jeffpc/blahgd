@@ -29,15 +29,132 @@
 #include "error.h"
 #include "iter.h"
 
-struct post_index_entry {
+/*
+ * Having a post structure is nice but we need to be able to find it to
+ * benefit from caching.  To make matters worse, there are several different
+ * ways we can be trying to look up a post.  To make this reasonably fast,
+ * we want to keep a number of indices.  The most boring and most
+ * straightforward index is the posts-by-post-id (aka. index_global).  The
+ * remaining indices (index_*) order their contents by publication time
+ * (resolving ties by post id).
+ *
+ * In addition to the global index, there are three other indices:
+ *
+ *   - by time (used for index & archive listing)
+ *   - by tag (used for tag listing)
+ *   - by category (used for category listing)
+ *
+ * To maximize code reuse, the by-tag and by-category trees contain struct
+ * post_subindex nodes for each (unique) tag/category.  Those nodes contain
+ * AVL trees of their own with struct post_index_entry elements mapping
+ * <timestamp, post id> (much like the by time index) to a post.
+ *
+ * Because this isn't complex enough, we also keep a linked list of all the
+ * tag entries rooted in the global index tree node.
+ *
+ *      +--------------------------------+
+ *      | index_global AVL tree          |
+ *      |+-------------------------+     |   +------+
+ *      || post global index entry | ... |   | post |
+ *  +--->|   by_tag  by_cat  post  |     |   +------+
+ *  |   |+-----|-------|------|----+     |      ^
+ *  |   +------|-------|------|----------+      |
+ *  |          |       |      |                 |
+ *  |          |       |      +-----------------+
+ *  |          |       |
+ *  | +--------+       +--------------------------+
+ *  | |                                           |
+ *  | | +-------------------------------------+   |
+ *  | | |  index_by_tag AVL tree              |   |
+ *  | | | +-----------------------------+     |   |
+ *  | | | |  post subindex              |     |   |
+ *  | | | | +-------------------------+ |     |   |
+ *  | | | | |  subindex AVL tree      | |     |   |
+ *  | | | | | +-----------------+     | |     |   |
+ *  | +-----> |post index entry | ... | |     |   |
+ *  |   | | | |  global  xref   |     | | ... |   |
+ *  |   | | | +----|------|-----+     | |     |   |
+ *  |   | | |      |      |           | |     |   |
+ *  ^<-------------+      +---> ...   | |     |   |
+ *  |   | | |                         | |     |   |
+ *  |   | | +-------------------------+ |     |   |
+ *  |   | +-----------------------------+     |   |
+ *  |   +-------------------------------------+   |
+ *  |                                             |
+ *  | +-------------------------------------------+
+ *  | |
+ *  | | +-------------------------------------+
+ *  | | |  index_by_cat AVL tree              |
+ *  | | | +-----------------------------+     |
+ *  | | | |  post subindex              |     |
+ *  | | | | +-------------------------+ |     |
+ *  | | | | |  subindex AVL tree      | |     |
+ *  | | | | | +-----------------+     | |     |
+ *  | +-----> |post index entry | ... | |     |
+ *  |   | | | |  global  xref   |     | | ... |
+ *  |   | | | +----|------|-----+     | |     |
+ *  |   | | |      |      |           | |     |
+ *  ^<-------------+      +---> ...   | |     |
+ *  |   | | |                         | |     |
+ *  |   | | +-------------------------+ |     |
+ *  |   | +-----------------------------+     |
+ *  |   +-------------------------------------+
+ *  |
+ *  |   +-------------------------+
+ *  |   | index_by_time AVL tree  |
+ *  |   |+------------------+     |
+ *  |   || post index entry | ... |
+ *  |   ||   global         |     |
+ *  |   |+-----|------------+     |
+ *  |   +------|------------------+
+ *  |          |
+ *  +----------+
+ *
+ */
+
+enum entry_type {
+	ET_TAG = 1,	/* global's by_tag list */
+	ET_CAT,		/* global's by_cat list */
+	ET_TIME,	/* index_by_time */
+};
+
+struct post_global_index_entry {
 	avl_node_t node;
 
 	/* key */
-	unsigned int time;
 	unsigned int id;
 
 	/* value */
 	struct post *post;
+
+	/* other useful cached data from struct post */
+	unsigned int time;
+
+	/* list of tags & cats associated with this post */
+	list_t by_tag;
+	list_t by_cat;
+};
+
+struct post_index_entry {
+	avl_node_t node;
+
+	struct post_global_index_entry *global;
+
+	/*
+	 * key:
+	 *   ->global->time
+	 *   ->global->id
+	 */
+
+	/*
+	 * value:
+	 *   ->global->post
+	 */
+	struct str *name;
+	enum entry_type type;
+
+	/* list node for global index tag/cat list */
+	list_node_t xref;
 };
 
 struct post_subindex {
@@ -50,30 +167,6 @@ struct post_subindex {
 	avl_tree_t subindex;
 };
 
-/*
- * We need a number of different indices.  In all cases, the nodes in these
- * indices should be ordered by the publication time and ties are resolved
- * by comparing the post ids.
- *
- * The indices are:
- *
- *   - global
- *   - by time (used for index & archive listing)
- *   - by tag (used for tag listing)
- *   - by category (used for category listing)
- *
- * The global index maps a post id to a struct post pointer using struct
- * post_index_entry with the time part of the key set to zero.
- *
- * The by-time index uses struct post_index_entry to map <time, post id> to
- * a struct post.
- *
- * To maximize code reuse, the by-tag and by-category trees contain struct
- * post_subindex nodes for each (unique) tag/category.  Those nodes contain
- * AVL trees of their own with struct post_index_entry elements mapping
- * <timestamp, post id> to a struct post pointer.
- */
-
 static avl_tree_t index_global;
 static avl_tree_t index_by_time;
 static avl_tree_t index_by_tag;
@@ -85,6 +178,19 @@ static pthread_mutex_t index_lock;
  * Assorted comparators
  */
 
+/* compare two post global index entries by id */
+static int post_global_index_cmp(const void *va, const void *vb)
+{
+	const struct post_global_index_entry *a = va;
+	const struct post_global_index_entry *b = vb;
+
+	if (a->id < b->id)
+		return -1;
+	if (a->id > b->id)
+		return 1;
+	return 0;
+}
+
 /* compare two post index entries by the timestamp */
 static int post_index_cmp(const void *va, const void *vb)
 {
@@ -92,15 +198,15 @@ static int post_index_cmp(const void *va, const void *vb)
 	const struct post_index_entry *b = vb;
 
 	/* first, compare by time */
-	if (a->time < b->time)
+	if (a->global->time < b->global->time)
 		return -1;
-	if (a->time > b->time)
+	if (a->global->time > b->global->time)
 		return 1;
 
 	/* resolve ties by comparing post id */
-	if (a->id < b->id)
+	if (a->global->id < b->global->id)
 		return -1;
-	if (a->id > b->id)
+	if (a->global->id > b->global->id)
 		return 1;
 
 	return 0;
@@ -130,7 +236,10 @@ static void init_index_tree(avl_tree_t *tree)
 
 void init_post_index(void)
 {
-	init_index_tree(&index_global);
+	avl_create(&index_global, post_global_index_cmp,
+		   sizeof(struct post_global_index_entry),
+		   offsetof(struct post_global_index_entry, node));
+
 	init_index_tree(&index_by_time);
 
 	/* set up the by-tag/category indexes */
@@ -159,9 +268,8 @@ static avl_tree_t *__get_subindex(avl_tree_t *index, const struct str *tagname)
 /* lookup a post based on id */
 struct post *index_lookup_post(unsigned int postid)
 {
-	struct post_index_entry *ret;
-	struct post_index_entry key = {
-		.time = 0,
+	struct post_global_index_entry *ret;
+	struct post_global_index_entry key = {
 		.id = postid,
 	};
 	struct post *post;
@@ -207,10 +315,10 @@ int index_get_posts(struct post **ret, const struct str *tagname, bool tag,
 
 	/* get a reference for every post we're returning */
 	for (i = 0; cur && nposts; cur = AVL_PREV(tree, cur)) {
-		if (pred && !pred(cur->post, private))
+		if (pred && !pred(cur->global->post, private))
 			continue;
 
-		ret[i] = post_getref(cur->post);
+		ret[i] = post_getref(cur->global->post);
 
 		nposts--;
 		i++;
@@ -234,8 +342,10 @@ static void *safe_avl_add(avl_tree_t *tree, void *node)
 	return tmp;
 }
 
-static int __insert_post_tags(avl_tree_t *index, struct post *post,
-			      list_t *taglist)
+static int __insert_post_tags(avl_tree_t *index,
+			      struct post_global_index_entry *global,
+			      list_t *taglist, list_t *xreflist,
+			      enum entry_type type)
 {
 	struct post_index_entry *tag_entry;
 	struct post_subindex *sub;
@@ -266,11 +376,12 @@ static int __insert_post_tags(avl_tree_t *index, struct post *post,
 		if (!tag_entry)
 			return ENOMEM;
 
-		tag_entry->time = post->time;
-		tag_entry->id   = post->id;
-		tag_entry->post = post_getref(post);
+		tag_entry->global = global;
+		tag_entry->name   = str_getref(tag->tag);
+		tag_entry->type   = type;
 
 		ASSERT3P(safe_avl_add(&sub->subindex, tag_entry), ==, NULL);
+		list_insert_tail(xreflist, tag_entry);
 	}
 
 	return 0;
@@ -278,20 +389,24 @@ static int __insert_post_tags(avl_tree_t *index, struct post *post,
 
 int index_insert_post(struct post *post)
 {
-	struct post_index_entry *global;
+	struct post_global_index_entry *global;
 	struct post_index_entry *by_time;
 	int ret;
 
 	/* allocate an entry for the global index */
-	global = malloc(sizeof(struct post_index_entry));
+	global = malloc(sizeof(struct post_global_index_entry));
 	if (!global) {
 		ret = ENOMEM;
 		goto err;
 	}
 
-	global->time = 0;
 	global->id   = post->id;
 	global->post = post_getref(post);
+	global->time = post->time;
+	list_create(&global->by_tag, sizeof(struct post_index_entry),
+		    offsetof(struct post_index_entry, xref));
+	list_create(&global->by_cat, sizeof(struct post_index_entry),
+		    offsetof(struct post_index_entry, xref));
 
 	/* allocate an entry for the by-time index */
 	by_time = malloc(sizeof(struct post_index_entry));
@@ -300,9 +415,9 @@ int index_insert_post(struct post *post)
 		goto err_free;
 	}
 
-	by_time->time = post->time;
-	by_time->id   = post->id;
-	by_time->post = post_getref(post);
+	by_time->global = global;
+	by_time->name   = NULL;
+	by_time->type   = ET_TIME;
 
 	/*
 	 * Now the fun begins.
@@ -320,11 +435,13 @@ int index_insert_post(struct post *post)
 	/* add the post to the by-time index */
 	ASSERT3P(safe_avl_add(&index_by_time, by_time), ==, NULL);
 
-	ret = __insert_post_tags(&index_by_tag, post, &post->tags);
+	ret = __insert_post_tags(&index_by_tag, global, &post->tags,
+				 &global->by_tag, ET_TAG);
 	if (ret)
 		goto err_free_tags;
 
-	ret = __insert_post_tags(&index_by_cat, post, &post->cats);
+	ret = __insert_post_tags(&index_by_cat, global, &post->cats,
+				 &global->by_cat, ET_CAT);
 	if (ret)
 		goto err_free_cats;
 
@@ -343,7 +460,6 @@ err_free_tags:
 	MXUNLOCK(&index_lock);
 
 err_free_by_time:
-	post_putref(by_time->post);
 	free(by_time);
 
 err_free:
@@ -356,7 +472,7 @@ err:
 
 void revalidate_all_posts(void *arg)
 {
-	struct post_index_entry *cur;
+	struct post_global_index_entry *cur;
 
 	MXLOCK(&index_lock);
 	avl_for_each(&index_global, cur)
@@ -408,6 +524,22 @@ err:
 	MXUNLOCK(&index_lock);
 }
 
+static void __free_global_index(avl_tree_t *tree)
+{
+	struct post_global_index_entry *cur;
+	void *cookie;
+
+	cookie = NULL;
+	while ((cur = avl_destroy_nodes(tree, &cookie))) {
+		post_putref(cur->post);
+		list_destroy(&cur->by_tag);
+		list_destroy(&cur->by_cat);
+		free(cur);
+	}
+
+	avl_destroy(tree);
+}
+
 static void __free_index(avl_tree_t *tree)
 {
 	struct post_index_entry *cur;
@@ -415,7 +547,24 @@ static void __free_index(avl_tree_t *tree)
 
 	cookie = NULL;
 	while ((cur = avl_destroy_nodes(tree, &cookie))) {
-		post_putref(cur->post);
+		list_t *xreflist = NULL;
+
+		switch (cur->type) {
+			case ET_TAG:
+				xreflist = &cur->global->by_tag;
+				break;
+			case ET_CAT:
+				xreflist = &cur->global->by_cat;
+				break;
+			case ET_TIME:
+				xreflist = NULL;
+				break;
+		}
+
+		if (xreflist)
+			list_remove(xreflist, cur);
+
+		str_putref(cur->name);
 		free(cur);
 	}
 
@@ -441,11 +590,12 @@ void free_all_posts(void)
 {
 	MXLOCK(&index_lock);
 
-	__free_index(&index_global);
-	__free_index(&index_by_time);
-
 	__free_tag_index(&index_by_tag);
 	__free_tag_index(&index_by_cat);
+
+	__free_index(&index_by_time);
+
+	__free_global_index(&index_global);
 
 	MXUNLOCK(&index_lock);
 }
