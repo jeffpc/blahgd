@@ -27,6 +27,7 @@
 #include <sys/stat.h>
 #include <stddef.h>
 #include <port.h>
+#include <umem.h>
 
 #include "file_cache.h"
 #include "utils.h"
@@ -42,6 +43,9 @@ static pthread_mutex_t file_lock;
 
 static pthread_t filemon_thread;
 static int filemon_port;
+
+static umem_cache_t *file_node_cache;
+static umem_cache_t *file_callback_cache;
 
 struct file_callback {
 	list_node_t list;
@@ -165,7 +169,7 @@ static int add_cb(struct file_node *node, void (*cb)(void *), void *arg)
 		if ((fcb->cb == cb) && (fcb->arg == arg))
 			return 0;
 
-	fcb = malloc(sizeof(struct file_callback));
+	fcb = umem_cache_alloc(file_callback_cache, 0);
 	if (!fcb)
 		return ENOMEM;
 
@@ -218,6 +222,17 @@ void init_file_cache(void)
 	avl_create(&file_cache, filename_cmp, sizeof(struct file_node),
 		   offsetof(struct file_node, node));
 
+	file_node_cache = umem_cache_create("file-node-cache",
+					    sizeof(struct file_node),
+					    0, NULL, NULL, NULL, NULL, NULL, 0);
+	ASSERT(file_node_cache);
+
+	file_callback_cache = umem_cache_create("file-callback-cache",
+						sizeof(struct file_callback),
+						0, NULL, NULL, NULL, NULL, NULL,
+						0);
+	ASSERT(file_callback_cache);
+
 	/* start the file event monitor */
 	filemon_port = port_create();
 	ASSERT(filemon_port != -1);
@@ -230,7 +245,7 @@ static struct file_node *fn_alloc(const char *name)
 {
 	struct file_node *node;
 
-	node = malloc(sizeof(struct file_node));
+	node = umem_cache_alloc(file_node_cache, 0);
 	if (!node)
 		return NULL;
 
@@ -250,7 +265,7 @@ static struct file_node *fn_alloc(const char *name)
 	return node;
 
 err:
-	free(node);
+	umem_cache_free(file_node_cache, node);
 	return NULL;
 }
 
@@ -263,11 +278,11 @@ static void fn_free(struct file_node *node)
 
 	/* free all the callbacks */
 	while ((fcb = list_remove_head(&node->callbacks)))
-		free(fcb);
+		umem_cache_free(file_callback_cache, fcb);
 
 	str_putref(node->contents);
 	free(node->name);
-	free(node);
+	umem_cache_free(file_node_cache, node);
 }
 
 static int __reload(struct file_node *node)
