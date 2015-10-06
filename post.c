@@ -47,6 +47,21 @@
 static umem_cache_t *post_cache;
 static umem_cache_t *comment_cache;
 
+static int tag_cmp(const void *va, const void *vb)
+{
+	const struct post_tag *a = va;
+	const struct post_tag *b = vb;
+	int ret;
+
+	ret = strcasecmp(str_cstr(a->tag), str_cstr(b->tag));
+
+	if (ret < 0)
+		return -1;
+	if (ret > 0)
+		return 1;
+	return 0;
+}
+
 void init_post_subsys(void)
 {
 	post_cache = umem_cache_create("post-cache", sizeof(struct post),
@@ -72,17 +87,7 @@ void revalidate_post(void *arg)
 	post_unlock(post);
 }
 
-static void post_remove_all_tags(list_t *taglist)
-{
-	struct post_tag *tag;
-
-	while ((tag = list_remove_head(taglist))) {
-		str_putref(tag->tag);
-		free(tag);
-	}
-}
-
-static void post_add_tags(list_t *taglist, struct val *list)
+static void post_add_tags(avl_tree_t *taglist, struct val *list)
 {
 	struct post_tag *tag;
 
@@ -111,7 +116,11 @@ static void post_add_tags(list_t *taglist, struct val *list)
 		tag->tag = tagname;
 		ASSERT(tag->tag);
 
-		list_insert_tail(taglist, tag);
+		if (safe_avl_add(taglist, tag)) {
+			/* found a duplicate */
+			str_putref(tag->tag);
+			free(tag);
+		}
 	}
 }
 
@@ -534,10 +543,10 @@ struct post *load_post(int postid, bool preview)
 	post->preview = preview;
 	post->needs_refresh = true;
 
-	list_create(&post->tags, sizeof(struct post_tag),
-		    offsetof(struct post_tag, list));
-	list_create(&post->cats, sizeof(struct post_tag),
-		    offsetof(struct post_tag, list));
+	avl_create(&post->tags, tag_cmp, sizeof(struct post_tag),
+		    offsetof(struct post_tag, node));
+	avl_create(&post->cats, tag_cmp, sizeof(struct post_tag),
+		    offsetof(struct post_tag, node));
 	list_create(&post->comments, sizeof(struct comment),
 		    offsetof(struct comment, list));
 	refcnt_init(&post->refcnt, 1);
@@ -554,6 +563,21 @@ struct post *load_post(int postid, bool preview)
 err:
 	post_destroy(post);
 	return NULL;
+}
+
+static void post_remove_all_tags(avl_tree_t *taglist)
+{
+	struct post_tag *tag;
+	void *cookie;
+
+	cookie = NULL;
+	while ((tag = avl_destroy_nodes(taglist, &cookie))) {
+		str_putref(tag->tag);
+		free(tag);
+	}
+
+	avl_create(taglist, tag_cmp, sizeof(struct post_tag),
+		    offsetof(struct post_tag, node));
 }
 
 void post_destroy(struct post *post)

@@ -354,7 +354,7 @@ int index_get_posts(struct post **ret, const struct str *tagname, bool tag,
 
 static int __insert_post_tags(avl_tree_t *index,
 			      struct post_global_index_entry *global,
-			      list_t *taglist, list_t *xreflist,
+			      avl_tree_t *taglist, list_t *xreflist,
 			      enum entry_type type)
 {
 	struct post_index_entry *tag_entry;
@@ -362,7 +362,7 @@ static int __insert_post_tags(avl_tree_t *index,
 	struct post_tag *tag;
 	avl_index_t where;
 
-	list_for_each(taglist, tag) {
+	avl_for_each(taglist, tag) {
 		struct post_subindex key = {
 			.name = tag->tag,
 		};

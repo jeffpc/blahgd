@@ -33,7 +33,7 @@
 #include "refcnt.h"
 
 struct post_tag {
-	list_node_t list;
+	avl_node_t node;
 	struct str *tag;
 };
 
@@ -64,8 +64,8 @@ struct post {
 	unsigned int fmt;
 
 	/* from 'post_tags' table */
-	list_t tags;
-	list_t cats;
+	avl_tree_t tags;
+	avl_tree_t cats;
 
 	/* from 'comments' table */
 	list_t comments;

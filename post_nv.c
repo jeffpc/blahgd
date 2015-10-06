@@ -25,23 +25,20 @@
 #include "req.h"
 #include "str.h"
 
-static void __tag_val(nvlist_t *post, list_t *list)
+static void __tag_val(nvlist_t *post, avl_tree_t *list)
 {
 	struct post_tag *cur;
 	const char **tags;
 	int ntags;
 	int i;
 
-	/* count the tags */
-	ntags = 0;
-	list_for_each(list, cur)
-		ntags++;
+	ntags = avl_numnodes(list);
 
 	tags = malloc(sizeof(char *) * ntags);
 	ASSERT(tags);
 
 	i = 0;
-	list_for_each(list, cur)
+	avl_for_each(list, cur)
 		tags[i++] = str_cstr(cur->tag);
 
 	nvl_set_str_array(post, "tags", (char **) tags, ntags);
