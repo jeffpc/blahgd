@@ -174,6 +174,7 @@ add_executable(nvdump
 target_link_libraries(nvdump
 	umem
 	nvpair
+	/usr/lib/libavl.so.1
 )
 
 add_executable(test_fmt3
@@ -214,6 +215,7 @@ add_executable(test_qstring
 target_link_libraries(test_qstring
 	umem
 	nvpair
+	/usr/lib/libavl.so.1
 )
 
 add_executable(test_lisp_parser
@@ -229,6 +231,7 @@ add_executable(test_lisp_parser
 
 target_link_libraries(test_lisp_parser
 	umem
+	/usr/lib/libavl.so.1
 )
 
 function(simple_c_test type section data)

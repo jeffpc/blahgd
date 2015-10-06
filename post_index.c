@@ -29,6 +29,7 @@
 #include "str.h"
 #include "error.h"
 #include "iter.h"
+#include "utils.h"
 
 /*
  * Having a post structure is nice but we need to be able to find it to
@@ -349,19 +350,6 @@ int index_get_posts(struct post **ret, const struct str *tagname, bool tag,
 	MXUNLOCK(&index_lock);
 
 	return i;
-}
-
-/* like avl_add, but returns the existing node */
-static void *safe_avl_add(avl_tree_t *tree, void *node)
-{
-	avl_index_t where;
-	void *tmp;
-
-	tmp = avl_find(tree, node, &where);
-	if (!tmp)
-		avl_insert(tree, node, where);
-
-	return tmp;
 }
 
 static int __insert_post_tags(avl_tree_t *index,

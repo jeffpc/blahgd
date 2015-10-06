@@ -267,3 +267,20 @@ time_t parse_time_cstr(const char *str)
 
 	return mktime(&tm);
 }
+
+/*
+ * libavl extensions
+ */
+
+/* like avl_add, but returns the existing node */
+void *safe_avl_add(avl_tree_t *tree, void *node)
+{
+	avl_index_t where;
+	void *tmp;
+
+	tmp = avl_find(tree, node, &where);
+	if (!tmp)
+		avl_insert(tree, node, where);
+
+	return tmp;
+}

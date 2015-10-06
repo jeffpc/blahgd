@@ -26,6 +26,7 @@
 #include <sys/sysmacros.h>
 #include <sys/stat.h>
 #include <string.h>
+#include <sys/avl.h>
 
 #include "error.h"
 #include "str.h"
@@ -135,5 +136,11 @@ static inline time_t parse_time_str(struct str *str)
 
 	return ret;
 }
+
+/*
+ * libavl extensions
+ */
+
+extern void *safe_avl_add(avl_tree_t *tree, void *node);
 
 #endif
