@@ -17,7 +17,7 @@
 			<service_fmri value="svc:/poc/math"/>
 		</dependency>
 
-		<method_context working_directory="/blahg/web">
+		<method_context working_directory="/blahg">
 			<method_credential user="jeffpc" group="webservd"/>
 			<method_environment>
 				<envvar name="UMEM_DEBUG" value="default" />
