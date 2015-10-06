@@ -55,7 +55,6 @@ enum {
 	PAGE_COMMENT,
 	PAGE_INDEX,
 	PAGE_STORY,
-	PAGE_XMLRPC,
 	PAGE_ADMIN,
 	PAGE_STATIC,
 };
@@ -71,7 +70,6 @@ struct qs {
 	int paged;
 	int m;
 	int preview;
-	int xmlrpc;
 	int admin;
 	int comment;
 	char *cat;
@@ -141,8 +139,5 @@ extern int blahg_comment(struct req *req);
 extern int blahg_index(struct req *req, int paged);
 extern int blahg_story(struct req *req, int p, bool preview);
 extern int blahg_admin(struct req *req);
-#ifdef USE_XMLRPC
-extern int blahg_pingback();
-#endif
 
 #endif

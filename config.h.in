@@ -1,10 +1,6 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-#cmakedefine HAVE_XMLRPC 1
-
-#cmakedefine USE_XMLRPC 1
-
 /* settings */
 #cmakedefine SCGI_NHELPERS		${SCGI_NHELPERS}
 

@@ -93,10 +93,6 @@ static void req_init(struct req *req, enum req_via via)
 	req->headers = nvl_alloc();
 	req->body    = NULL;
 	req->bodylen = 0;
-
-#ifdef USE_XMLRPC
-	req_head(req, "X-Pingback", BASE_URL "/?xmlrpc=1");
-#endif
 }
 
 void req_init_scgi(struct req *req, int fd)
@@ -139,9 +135,6 @@ static void __req_stats(struct req *req)
 					break;
 				case PAGE_STORY:
 					pg = STATPAGE_STORY;
-					break;
-				case PAGE_XMLRPC:
-					pg = STATPAGE_XMLRPC;
 					break;
 				case PAGE_ADMIN:
 					pg = STATPAGE_ADMIN;
@@ -359,7 +352,6 @@ static bool select_page(struct req *req)
 	args->paged = -1;
 	args->m = -1;
 	args->admin = 0;
-	args->xmlrpc = 0;
 	args->comment = 0;
 	args->cat = NULL;
 	args->tag = NULL;
@@ -410,8 +402,6 @@ static bool select_page(struct req *req)
 			iptr = &args->comment;
 		} else if (!strcmp(name, "preview")) {
 			iptr = &args->preview;
-		} else if (!strcmp(name, "xmlrpc")) {
-			iptr = &args->xmlrpc;
 		} else if (!strcmp(name, "admin")) {
 			iptr = &args->admin;
 		} else {
@@ -424,9 +414,7 @@ static bool select_page(struct req *req)
 			*cptr = val;
 	}
 
-	if (args->xmlrpc)
-		args->page = PAGE_XMLRPC;
-	else if (args->comment)
+	if (args->comment)
 		args->page = PAGE_COMMENT;
 	else if (args->tag)
 		args->page = PAGE_TAG;
@@ -547,10 +535,6 @@ int req_dispatch(struct req *req)
 		case PAGE_STORY:
 			return blahg_story(req, req->args.p,
 					   req->args.preview == PREVIEW_SECRET);
-#ifdef USE_XMLRPC
-		case PAGE_XMLRPC:
-			return blahg_pingback();
-#endif
 		case PAGE_ADMIN:
 			return blahg_admin(req);
 		default:

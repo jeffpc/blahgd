@@ -71,15 +71,6 @@ add_library(version
 )
 add_dependencies(version revisiontag)
 
-if(USE_XMLRPC)
-	set(PINGBACK_SRC pingback.c)
-	find_package(XMLRPC COMPONENTS cgi-server REQUIRED)
-	include_directories(${XMLRPC_INCLUDE_DIRS})
-else()
-	set(PINGBACK_SRC )
-	set(XMLRPC_LIBRARIES )
-endif()
-
 add_executable(blahgd
 	daemon.c helpers.c
 	scgi.c
@@ -132,8 +123,6 @@ add_executable(blahgd
 	# misc
 	error.c
 	utils.c
-
-	${PINGBACK_SRC}
 )
 
 target_link_libraries(blahgd
