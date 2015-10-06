@@ -79,28 +79,11 @@ struct post {
 	int texttt_nesting;
 };
 
-struct post_old {
-	int id;
-	int fmt;
-	char *title;
-	char *cats, *tags;
-	struct tm time;
-	int page;
-
-	char *path;
-	int preview;
-
-	char *pagetype; /* date for archive pages, category name for
-			   category lists, undefined otherwise */
-	struct tm lasttime; /* date/time of the last update */
-};
-
 struct req;
 
 extern void init_post_subsys(void);
 extern struct post *load_post(int postid, bool preview);
 extern void post_refresh(struct post *post);
-extern void dump_post(struct post_old *post);
 extern void post_destroy(struct post *post);
 extern void revalidate_post(void *arg);
 extern void revalidate_all_posts(void *arg);
