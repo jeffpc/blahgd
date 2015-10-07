@@ -28,7 +28,7 @@
 #include <stdbool.h>
 #include <door.h>
 
-#include <openssl/sha.h>
+#include <sha1.h>
 
 #include "utils.h"
 #include "math.h"
@@ -128,13 +128,17 @@ static struct str *do_render_math(struct str *val)
 	char pngpath[FILENAME_MAX];
 
 	char *tex = val->str;
+	SHA1_CTX digest;
 	struct stat statbuf;
 	unsigned char md[20];
 	char amd[41];
 	uint32_t id;
 	int ret;
 
-	SHA1((const unsigned char*) tex, strlen(tex), md);
+	SHA1Init(&digest);
+	SHA1Update(&digest, tex, strlen(tex));
+	SHA1Final(md, &digest);
+
 	hexdump(amd, md, 20);
 
 	id = atomic_inc(&nonce);
