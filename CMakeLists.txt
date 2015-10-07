@@ -43,7 +43,6 @@ add_compile_options(
 
 find_package(BISON)
 find_package(FLEX)
-find_package(OpenSSL)
 
 BISON_TARGET(fmt3 post_fmt3.y post_fmt3.tab.c COMPILE_FLAGS "-p fmt3_")
 FLEX_TARGET(fmt3 post_fmt3.l post_fmt3.lex.c COMPILE_FLAGS "-P fmt3_")
@@ -127,12 +126,12 @@ add_executable(blahgd
 
 target_link_libraries(blahgd
 	version
-	${OPENSSL_CRYPTO_LIBRARY}
 	pthread
 	socket
 	nsl
 	umem
 	nvpair
+	md
 	/usr/lib/libavl.so.1
 	/usr/lib/libcmdutils.so.1
 	m
@@ -148,8 +147,8 @@ add_executable(mathd
 
 target_link_libraries(mathd
 	version
-	${OPENSSL_CRYPTO_LIBRARY}
 	umem
+	md
 )
 
 add_executable(nvdump
@@ -185,9 +184,9 @@ add_executable(test_fmt3
 )
 
 target_link_libraries(test_fmt3
-	${OPENSSL_CRYPTO_LIBRARY}
 	umem
 	nvpair
+	md
 	/usr/lib/libavl.so.1
 	/usr/lib/libcmdutils.so.1
 )
