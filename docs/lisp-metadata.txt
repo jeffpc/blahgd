@@ -1,8 +1,8 @@
 Lisp-formated Post and Comment Metadata
 =======================================
 
-We use a Lisp-type syntax to keep track of all the metadata.  This applies
-both to post as well as comment metadata.
+We use a Lisp-type syntax to keep track of all the metadata.  For more
+information about the exact syntax, look at lisp.txt in the docs directory.
 
 
 Post

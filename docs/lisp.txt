@@ -1,0 +1,111 @@
+Lisp Syntax
+===========
+
+We use an s-expression format to store certain data (e.g., post metadata).
+Given that there are different flavors of Lisp, many with slightly different
+syntax, this document tries to document the exact flavor we use.  Our Lisp
+dialect is most closely related to R5RS Scheme.
+
+The remainder of this document describes the supported data types and their
+syntax assuming the reader has no experience with Scheme.
+
+One can divide all values into atoms and non-atoms.  Atoms include:
+booleans, integers, strings, and symbols.  Non-atoms are lists and pairs.
+
+Atoms
+-----
+
+booleans
+
+	Either a true (#t) or a false (#f) value.
+
+integers
+
+	Integers are expressed in decimal form with no leading zeros.  In
+	other words, an integer can be:
+
+		0
+		1-9
+		1-9 followed by any number of digits 0-9
+
+	Negative integers are *not* supported.
+
+	Note: Integers are stored as an unsigned 64-bit quantity, and
+	therefore only numbers with 19 or fewer digits are guaranteed to be
+	parsed properly.
+
+strings
+
+	C-style strings are supported.  The following escapes are supported:
+		\n \t \r \b \f \"
+
+	For example:
+
+		"hello"
+		"how are you?"
+		"how about a nice\nnewline"
+
+symbols
+
+	Symbols are essentially unquoted strings.  Since we use
+	s-expressions for only data, symbols are not looked up in a symbol
+	table and therefore one can think of them as unquoted strings.  The
+	only valid characters for symbols are:
+		uppercase: A-Z
+		lowercase: a-z
+		symbols:   + - _
+
+Pairs
+-----
+
+	A pair (aka. cons cell) is a tuple.  It is denoted by surrounding
+	parenthesis and a period separating the two values.  The two values
+	can be of any type (i.e., atoms, pairs, or lists) and the types do
+	not have to match.
+
+	For example:
+
+		(a . b)		two symbols
+		(a . #t)	symbol & boolean
+		(a . "abc")	symbol & string
+		(5 . "def")	integer & string
+		((a . b) . c)	a pair (made up of two symbols) & symbol
+
+Lists
+-----
+
+	A list is sequence of zero or more elements.  The sequence of
+	elements is enclosed in parenthesis and whitespace is used to
+	separate the elements.
+
+	For example:
+
+		()
+		(a)
+		(a "b")
+		(a "b" #t)
+
+	Lists are implemented as nested pairs with the first element of the
+	list being the left pair value and the remainder of the list being
+	the right pair value.  If the right pair value is not an empty list,
+	the rule is applied to it recursively.  For example, suppose we have
+	the following list:
+
+		(a b c d)
+
+	Using the description above, we would store it as:
+
+		(a . (b c d))
+
+	Since the right value is not the empty list, we must recurse until
+	we get an empty list:
+
+		(a . (b . (c d)))
+
+		(a . (b . (c . (d))))
+
+		(a . (b . (c . (d . ()))))
+
+	This is equivalent to the list (a b c d) and either form will create
+	an identical in-memory structure.  However, since (a b c d) is much
+	easier to read, the list form is preferred.
