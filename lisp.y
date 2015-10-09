@@ -76,6 +76,10 @@ tok : SYMBOL			{ $$ = VAL_ALLOC_SYM($1); }
     | list			{ $$ = $1; }
     ;
 
+/*
+ * We are not left-recursive because we want to make cons cells right
+ * recursively.
+ */
 toklist : tok toklist		{ $$ = VAL_ALLOC_CONS($1, $2); }
 	| tok			{ $$ = VAL_ALLOC_CONS($1, NULL); }
 	;
