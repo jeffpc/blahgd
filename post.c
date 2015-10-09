@@ -47,6 +47,9 @@
 static umem_cache_t *post_cache;
 static umem_cache_t *comment_cache;
 
+static void post_remove_all_tags(avl_tree_t *taglist);
+static void post_remove_all_comments(struct post *post);
+
 static int tag_cmp(const void *va, const void *vb)
 {
 	const struct post_tag *a = va;
@@ -473,6 +476,12 @@ static int __refresh_published(struct post *post)
 
 	__refresh_published_prop(post, lv);
 
+	/* empty out the tags/cats/comments lists */
+	post_remove_all_tags(&post->tags);
+	post_remove_all_tags(&post->cats);
+	post_remove_all_comments(post);
+
+	/* populate the tags/cats/comments lists */
 	post_add_tags(&post->tags, lisp_lookup_list(lv, "tags"));
 	post_add_tags(&post->cats, lisp_lookup_list(lv, "cats"));
 	post_add_comments(post, lisp_lookup_list(lv, "comments"));
