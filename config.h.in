@@ -3,7 +3,7 @@
 
 /* settings */
 #cmakedefine DEFAULT_SCGI_PORT		${DEFAULT_SCGI_PORT}
-#cmakedefine SCGI_NHELPERS		${SCGI_NHELPERS}
+#cmakedefine DEFAULT_SCGI_THREADS	${DEFAULT_SCGI_THREADS}
 
 #cmakedefine HTML_INDEX_STORIES		${HTML_INDEX_STORIES}
 #cmakedefine FEED_INDEX_STORIES		${FEED_INDEX_STORIES}
@@ -40,6 +40,7 @@
  */
 
 #define CONFIG_SCGI_PORT	"scgi-port"
+#define CONFIG_SCGI_THREADS	"scgi-threads"
 
 /*
  * prototypes, etc. for config.c
@@ -49,6 +50,7 @@
 
 struct config {
 	uint16_t scgi_port;
+	uint64_t scgi_threads;
 };
 
 extern struct config config;

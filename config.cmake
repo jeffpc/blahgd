@@ -10,7 +10,7 @@ macro(set_default name default)
 endmacro()
 
 set_default(DEFAULT_SCGI_PORT		2014)
-set_default(SCGI_NHELPERS		32)
+set_default(DEFAULT_SCGI_THREADS	32)
 
 set_default(HTML_INDEX_STORIES		10)
 set_default(FEED_INDEX_STORIES		15)

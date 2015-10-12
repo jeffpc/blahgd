@@ -42,6 +42,19 @@ static void config_load_scgi_port(struct val *lv)
 		config.scgi_port = DEFAULT_SCGI_PORT;
 }
 
+static void config_load_scgi_threads(struct val *lv)
+{
+	uint64_t tmp;
+	bool found;
+
+	tmp = lisp_alist_lookup_int(lv, CONFIG_SCGI_THREADS, &found);
+
+	if (found)
+		config.scgi_threads = tmp;
+	else
+		config.scgi_threads = DEFAULT_SCGI_THREADS;
+}
+
 int config_load(const char *fname)
 {
 	struct val *lv;
@@ -56,10 +69,12 @@ int config_load(const char *fname)
 		goto err;
 
 	config_load_scgi_port(lv);
+	config_load_scgi_threads(lv);
 
 	val_putref(lv);
 
 	printf("config.scgi_port = %u\n", config.scgi_port);
+	printf("config.scgi_threads = %"PRIu64"\n", config.scgi_threads);
 
 	return 0;
 

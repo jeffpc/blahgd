@@ -36,7 +36,7 @@
 #include "utils.h"
 
 static int nhelpers;
-static pthread_t helpers[SCGI_NHELPERS];
+static pthread_t *helpers;
 
 static pthread_mutex_t lock;
 static pthread_cond_t enqueued;
@@ -104,7 +104,11 @@ int start_helpers(void)
 	list_create(&queue, sizeof(struct req), offsetof(struct req,
 							 scgi.queue));
 
-	for (i = 0; i < SCGI_NHELPERS; i++) {
+	helpers = calloc(config.scgi_threads, sizeof(pthread_t));
+	if (!helpers)
+		return ENOMEM;
+
+	for (i = 0; i < config.scgi_threads; i++) {
 		ret = pthread_create(&helpers[i], NULL, queue_processor, NULL);
 		if (ret) {
 			stop_helpers();
@@ -119,10 +123,12 @@ void stop_helpers(void)
 {
 	int i;
 
-	for (i = 0; i < nhelpers; i++)
+	for (i = 0; helpers && i < nhelpers; i++)
 		pthread_join(helpers[i], NULL);
 
 	nhelpers = 0;
+
+	free(helpers);
 
 	CONDDESTROY(&enqueued);
 	MXDESTROY(&lock);
