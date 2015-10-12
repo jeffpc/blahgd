@@ -88,12 +88,14 @@ int config_load(const char *fname)
 	config_load_scgi_port(lv);
 	config_load_scgi_threads(lv);
 	config_load_url(lv, CONFIG_BASE_URL, &config.base_url);
+	config_load_url(lv, CONFIG_WIKI_BASE_URL, &config.wiki_base_url);
 
 	val_putref(lv);
 
 	printf("config.scgi_port = %u\n", config.scgi_port);
 	printf("config.scgi_threads = %"PRIu64"\n", config.scgi_threads);
 	printf("config.base_url = %s\n", str_cstr(config.base_url));
+	printf("config.wiki_base_url = %s\n", str_cstr(config.wiki_base_url));
 
 	return 0;
 

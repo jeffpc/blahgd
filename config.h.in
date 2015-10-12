@@ -40,7 +40,6 @@
 #cmakedefine MATHD_DOOR_PATH		"${MATHD_DOOR_PATH}"
 
 #cmakedefine BUG_BASE_URL		"${BUG_BASE_URL}"
-#cmakedefine WIKI_BASE_URL		"${WIKI_BASE_URL}"
 #cmakedefine PHOTO_BASE_URL		"${PHOTO_BASE_URL}"
 
 #cmakedefine VAR_MAX_SCOPES		${VAR_MAX_SCOPES}
@@ -63,6 +62,7 @@
 #define CONFIG_SCGI_PORT	"scgi-port"
 #define CONFIG_SCGI_THREADS	"scgi-threads"
 #define CONFIG_BASE_URL		"base-url"
+#define CONFIG_WIKI_BASE_URL	"wiki-base-url"
 
 /*
  * prototypes, etc. for config.c
@@ -74,6 +74,7 @@ struct config {
 	uint16_t scgi_port;
 	uint64_t scgi_threads;
 	struct str *base_url;
+	struct str *wiki_base_url;
 };
 
 extern struct config config;
