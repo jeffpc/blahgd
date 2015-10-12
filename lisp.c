@@ -213,3 +213,69 @@ struct val *lisp_assoc(struct val *lv, const char *name)
 
 	return lisp_assoc(tail, name);
 }
+
+struct str *lisp_alist_lookup_str(struct val *lv, const char *name)
+{
+	struct str *ret;
+	struct val *v;
+
+	if (!lv || !name)
+		return NULL;
+
+	v = lisp_cdr(lisp_assoc(lv, name));
+	if (!v || (v->type != VT_STR))
+		ret = NULL;
+	else
+		ret = str_getref(v->str);
+
+	val_putref(v);
+
+	return ret;
+}
+
+uint64_t lisp_alist_lookup_int(struct val *lv, const char *name, bool *found)
+{
+	struct val *v;
+	uint64_t ret;
+	bool ok;
+
+	if (!lv || !name) {
+		if (found)
+			*found = false;
+		return 0;
+	}
+
+	v = lisp_cdr(lisp_assoc(lv, name));
+	ok = v && (v->type == VT_INT);
+
+	if (!ok)
+		ret = 0;
+	else
+		ret = v->i;
+
+	val_putref(v);
+
+	if (found)
+		*found = ok;
+
+	return ret;
+}
+
+struct val *lisp_alist_lookup_list(struct val *lv, const char *name)
+{
+	struct val *ret;
+	struct val *v;
+
+	if (!lv || !name)
+		return NULL;
+
+	v = lisp_cdr(lisp_assoc(lv, name));
+	if (!v || (v->type != VT_CONS))
+		ret = NULL;
+	else
+		ret = val_getref(v);
+
+	val_putref(v);
+
+	return ret;
+}

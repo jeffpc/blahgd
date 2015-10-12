@@ -164,63 +164,6 @@ static struct str *load_comment(struct post *post, int commid)
 	return out;
 }
 
-static struct str *lisp_lookup_str(struct val *lv, const char *name)
-{
-	struct str *ret;
-	struct val *v;
-
-	if (!lv || !name)
-		return NULL;
-
-	v = lisp_cdr(lisp_assoc(lv, name));
-	if (!v || (v->type != VT_STR))
-		ret = NULL;
-	else
-		ret = str_getref(v->str);
-
-	val_putref(v);
-
-	return ret;
-}
-
-static uint64_t lisp_lookup_int(struct val *lv, const char *name)
-{
-	struct val *v;
-	uint64_t ret;
-
-	if (!lv || !name)
-		return 0;
-
-	v = lisp_cdr(lisp_assoc(lv, name));
-	if (!v || (v->type != VT_INT))
-		ret = 0;
-	else
-		ret = v->i;
-
-	val_putref(v);
-
-	return ret;
-}
-
-static struct val *lisp_lookup_list(struct val *lv, const char *name)
-{
-	struct val *ret;
-	struct val *v;
-
-	if (!lv || !name)
-		return NULL;
-
-	v = lisp_cdr(lisp_assoc(lv, name));
-	if (!v || (v->type != VT_CONS))
-		ret = NULL;
-	else
-		ret = val_getref(v);
-
-	val_putref(v);
-
-	return ret;
-}
-
 static void post_add_comment(struct post *post, int commid)
 {
 	char path[FILENAME_MAX];
@@ -246,11 +189,11 @@ static void post_add_comment(struct post *post, int commid)
 	ASSERT(comm);
 
 	comm->id     = commid;
-	comm->author = lisp_lookup_str(lv, "author");
-	comm->email  = lisp_lookup_str(lv, "email");
-	comm->time   = parse_time_str(lisp_lookup_str(lv, "time"));
-	comm->ip     = lisp_lookup_str(lv, "ip");
-	comm->url    = lisp_lookup_str(lv, "url");
+	comm->author = lisp_alist_lookup_str(lv, "author");
+	comm->email  = lisp_alist_lookup_str(lv, "email");
+	comm->time   = parse_time_str(lisp_alist_lookup_str(lv, "time"));
+	comm->ip     = lisp_alist_lookup_str(lv, "ip");
+	comm->url    = lisp_alist_lookup_str(lv, "url");
 	comm->body   = load_comment(post, comm->id);
 
 	if (!comm->author)
@@ -450,13 +393,13 @@ static int __load_post_body(struct post *post)
 static void __refresh_published_prop(struct post *post, struct val *lv)
 {
 	/* update the time */
-	post->time = parse_time_str(lisp_lookup_str(lv, "time"));
+	post->time = parse_time_str(lisp_alist_lookup_str(lv, "time"));
 
 	/* update the title */
-	post->title = lisp_lookup_str(lv, "title");
+	post->title = lisp_alist_lookup_str(lv, "title");
 
 	/* update the format */
-	post->fmt = lisp_lookup_int(lv, "fmt");
+	post->fmt = lisp_alist_lookup_int(lv, "fmt", NULL);
 }
 
 static int __refresh_published(struct post *post)
@@ -482,9 +425,9 @@ static int __refresh_published(struct post *post)
 	post_remove_all_comments(post);
 
 	/* populate the tags/cats/comments lists */
-	post_add_tags(&post->tags, lisp_lookup_list(lv, "tags"));
-	post_add_tags(&post->cats, lisp_lookup_list(lv, "cats"));
-	post_add_comments(post, lisp_lookup_list(lv, "comments"));
+	post_add_tags(&post->tags, lisp_alist_lookup_list(lv, "tags"));
+	post_add_tags(&post->cats, lisp_alist_lookup_list(lv, "cats"));
+	post_add_comments(post, lisp_alist_lookup_list(lv, "comments"));
 
 	val_putref(lv);
 	str_putref(meta);
