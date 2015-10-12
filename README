@@ -23,8 +23,6 @@ blahgd's behavior:
 
 	MATHD_DOOR_PATH		- path for the door used to talk to mathd
 
-	PHOTO_BASE_URL		- photos web space URL
-
 	VAR_MAX_SCOPES		- maximum number of internal scopes
 	VAR_NAME_MAXLEN		- maximum length of a variable name
 

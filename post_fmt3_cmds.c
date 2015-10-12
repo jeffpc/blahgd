@@ -63,7 +63,10 @@ static struct str *__process_photolink(struct post *post, struct str *txt, struc
 	if (!opt)
 		str_getref(txt);
 
-	return str_cat5(STR_DUP("<a href=\"" PHOTO_BASE_URL "/"), txt,
+	return str_cat5(str_cat3(STR_DUP("<a href=\""),
+				 str_getref(config.photo_base_url),
+				 STR_DUP("/")),
+			txt,
 		        STR_DUP("\">"), opt ? opt : txt, STR_DUP("</a>"));
 }
 
@@ -75,7 +78,10 @@ static struct str *__process_img(struct post *post, struct str *txt, struct str 
 
 static struct str *__process_photo(struct post *post, struct str *txt, struct str *opt)
 {
-	return str_cat5(STR_DUP("<img src=\"" PHOTO_BASE_URL "/"), txt,
+	return str_cat5(str_cat3(STR_DUP("<img src=\""),
+				 str_getref(config.photo_base_url),
+				 STR_DUP("/")),
+			txt,
 		        STR_DUP("\" alt=\""), opt, STR_DUP("\" />"));
 }
 

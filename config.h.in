@@ -39,8 +39,6 @@
 
 #cmakedefine MATHD_DOOR_PATH		"${MATHD_DOOR_PATH}"
 
-#cmakedefine PHOTO_BASE_URL		"${PHOTO_BASE_URL}"
-
 #cmakedefine VAR_MAX_SCOPES		${VAR_MAX_SCOPES}
 #cmakedefine VAR_NAME_MAXLEN		${VAR_NAME_MAXLEN}
 
@@ -63,6 +61,7 @@
 #define CONFIG_BASE_URL		"base-url"
 #define CONFIG_BUG_BASE_URL	"bug-base-url"
 #define CONFIG_WIKI_BASE_URL	"wiki-base-url"
+#define CONFIG_PHOTO_BASE_URL	"photo-base-url"
 
 /*
  * prototypes, etc. for config.c
@@ -76,6 +75,7 @@ struct config {
 	struct str *base_url;
 	struct str *bug_base_url;
 	struct str *wiki_base_url;
+	struct str *photo_base_url;
 };
 
 extern struct config config;

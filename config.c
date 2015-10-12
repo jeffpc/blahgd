@@ -90,6 +90,7 @@ int config_load(const char *fname)
 	config_load_url(lv, CONFIG_BASE_URL, &config.base_url);
 	config_load_url(lv, CONFIG_BUG_BASE_URL, &config.bug_base_url);
 	config_load_url(lv, CONFIG_WIKI_BASE_URL, &config.wiki_base_url);
+	config_load_url(lv, CONFIG_PHOTO_BASE_URL, &config.photo_base_url);
 
 	val_putref(lv);
 
@@ -98,6 +99,7 @@ int config_load(const char *fname)
 	printf("config.base_url = %s\n", str_cstr(config.base_url));
 	printf("config.wiki_base_url = %s\n", str_cstr(config.wiki_base_url));
 	printf("config.bug_base_url = %s\n", str_cstr(config.bug_base_url));
+	printf("config.photo_base_url = %s\n", str_cstr(config.photo_base_url));
 
 	return 0;
 
