@@ -235,7 +235,10 @@ static struct str *__process_bug(struct post *post, struct str *txt, struct str 
 {
 	str_getref(txt);
 
-	return str_cat5(STR_DUP("<a href=\"" BUG_BASE_URL "/"), txt,
+	return str_cat5(str_cat3(STR_DUP("<a href=\""),
+				 str_getref(config.bug_base_url),
+				 STR_DUP("/")),
+			txt,
 			str_cat3(STR_DUP("\"><img src=\""),
 				 str_getref(config.base_url),
 				 STR_DUP("/bug.png\" alt=\"bug #\" />&nbsp;")),
