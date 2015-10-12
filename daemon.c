@@ -48,7 +48,6 @@
 #include "version.h"
 
 #define HOST		NULL
-#define PORT		2014
 #define CONN_BACKLOG	32
 
 union sockaddr_union {
@@ -134,7 +133,7 @@ static int start_listening(void)
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
 
-	snprintf(port, sizeof(port), "%d", PORT);
+	snprintf(port, sizeof(port), "%d", scgi_port);
 
 	if (getaddrinfo(HOST, port, &hints, &res))
 		return -1;
@@ -292,6 +291,10 @@ int main(int argc, char **argv)
 	init_req_subsys();
 	init_post_subsys();
 	init_file_cache();
+
+	ret = config_load("config.lisp");
+	if (ret)
+		goto err;
 
 	ret = load_all_posts();
 	if (ret)

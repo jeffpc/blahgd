@@ -73,6 +73,7 @@ add_dependencies(version revisiontag)
 add_executable(blahgd
 	daemon.c helpers.c
 	scgi.c
+	config.c
 
 	# file caching & change monitoring
 	file_cache.c

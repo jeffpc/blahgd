@@ -2,6 +2,7 @@
 #define __CONFIG_H
 
 /* settings */
+#cmakedefine DEFAULT_SCGI_PORT		${DEFAULT_SCGI_PORT}
 #cmakedefine SCGI_NHELPERS		${SCGI_NHELPERS}
 
 #cmakedefine HTML_INDEX_STORIES		${HTML_INDEX_STORIES}
@@ -33,5 +34,21 @@
 #cmakedefine DVIPNG_BIN			"${DVIPNG_BIN}"
 
 #cmakedefine PREVIEW_SECRET		${PREVIEW_SECRET}
+
+/*
+ * config alist symbol names
+ */
+
+#define CONFIG_SCGI_PORT	"scgi-port"
+
+/*
+ * prototypes, etc. for config.c
+ */
+
+#include <stdint.h>
+
+extern uint16_t scgi_port;
+
+extern int config_load(const char *fname);
 
 #endif

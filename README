@@ -6,6 +6,7 @@ CMake variables
 In addition to standard CMake variables, the following can be set to tweak
 blahgd's behavior:
 
+	DEFAULT_SCGI_PORT	- default port to listen on for SCGI requests
 	SCGI_NHELPERS		- number of SCGI helper threads
 
 	HTML_INDEX_STORIES	- number of posts per page (index, archive)
