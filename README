@@ -23,7 +23,6 @@ blahgd's behavior:
 
 	MATHD_DOOR_PATH		- path for the door used to talk to mathd
 
-	BASE_URL		- main page of the blahg
 	BUGS_BASE_URL		- bug tracker base URL
 	WIKI_BASE_URL		- wikipedia base URL
 	PHOTO_BASE_URL		- photos web space URL

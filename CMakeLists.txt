@@ -174,6 +174,7 @@ add_executable(test_fmt3
 	${FLEX_fmt3_OUTPUTS} ${BISON_fmt3_OUTPUTS}
 	post_fmt3_cmds.c
 	file_cache.c
+	config.c
 	math.c
 	listing.c
 	mangle.c utils.c error.c

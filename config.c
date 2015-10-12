@@ -29,6 +29,8 @@
  */
 struct config config;
 
+static struct str *exampledotcom;
+
 static void config_load_scgi_port(struct val *lv)
 {
 	uint64_t tmp;
@@ -55,10 +57,25 @@ static void config_load_scgi_threads(struct val *lv)
 		config.scgi_threads = DEFAULT_SCGI_THREADS;
 }
 
+static void config_load_url(struct val *lv, const char *vname,
+			    struct str **ret)
+{
+	struct str *s;
+
+	s = lisp_alist_lookup_str(lv, vname);
+
+	if (s)
+		*ret = s;
+	else
+		*ret = str_getref(exampledotcom);
+}
+
 int config_load(const char *fname)
 {
 	struct val *lv;
 	struct str *raw;
+
+	exampledotcom = STR_DUP("http://example.com");
 
 	raw = file_cache_get(fname);
 	if (IS_ERR(raw))
@@ -70,11 +87,13 @@ int config_load(const char *fname)
 
 	config_load_scgi_port(lv);
 	config_load_scgi_threads(lv);
+	config_load_url(lv, CONFIG_BASE_URL, &config.base_url);
 
 	val_putref(lv);
 
 	printf("config.scgi_port = %u\n", config.scgi_port);
 	printf("config.scgi_threads = %"PRIu64"\n", config.scgi_threads);
+	printf("config.base_url = %s\n", str_cstr(config.base_url));
 
 	return 0;
 

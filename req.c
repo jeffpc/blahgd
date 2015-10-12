@@ -74,7 +74,7 @@ static void req_init(struct req *req, enum req_via via)
 
 	vars_init(&req->vars);
 	vars_set_str(&req->vars, "generatorversion", version_string);
-	vars_set_str(&req->vars, "baseurl", BASE_URL);
+	vars_set_str(&req->vars, "baseurl", str_cstr(config.base_url));
 	vars_set_int(&req->vars, "now", gettime());
 	vars_set_int(&req->vars, "captcha_a", COMMENT_CAPTCHA_A);
 	vars_set_int(&req->vars, "captcha_b", COMMENT_CAPTCHA_B);

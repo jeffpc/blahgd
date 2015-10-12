@@ -222,8 +222,10 @@ static struct str *__process_wiki(struct post *post, struct str *txt, struct str
 		str_getref(txt);
 
 	return str_cat5(STR_DUP("<a href=\"" WIKI_BASE_URL "/"), txt,
-		STR_DUP("\"><img src=\"" BASE_URL "/wiki.png\" alt=\"Wikipedia article:\" />&nbsp;"),
-		opt ? opt : txt, STR_DUP("</a>"));
+			str_cat3(STR_DUP("\"><img src=\""),
+				 str_getref(config.base_url),
+				 STR_DUP("/wiki.png\" alt=\"Wikipedia article:\" />&nbsp;")),
+			opt ? opt : txt, STR_DUP("</a>"));
 }
 
 static struct str *__process_bug(struct post *post, struct str *txt, struct str *opt)
@@ -231,16 +233,19 @@ static struct str *__process_bug(struct post *post, struct str *txt, struct str 
 	str_getref(txt);
 
 	return str_cat5(STR_DUP("<a href=\"" BUG_BASE_URL "/"), txt,
-		STR_DUP("\"><img src=\"" BASE_URL "/bug.png\" alt=\"bug #\" />&nbsp;"),
-		txt, STR_DUP("</a>"));
+			str_cat3(STR_DUP("\"><img src=\""),
+				 str_getref(config.base_url),
+				 STR_DUP("/bug.png\" alt=\"bug #\" />&nbsp;")),
+			txt, STR_DUP("</a>"));
 }
 
 static struct str *__process_post(struct post *post, struct str *txt, struct str *opt)
 {
 	char buf[1024];
 
-	snprintf(buf, sizeof(buf), "<a href=\"" BASE_URL "/?p=%s\">%s</a>",
-		 str_cstr(txt), opt ? str_cstr(opt) : str_cstr(txt));
+	snprintf(buf, sizeof(buf), "<a href=\"%s/?p=%s\">%s</a>",
+		 str_cstr(config.base_url), str_cstr(txt),
+		 opt ? str_cstr(opt) : str_cstr(txt));
 
 	str_putref(txt);
 	str_putref(opt);
@@ -252,8 +257,9 @@ static struct str *__process_taglink(struct post *post, struct str *txt, struct 
 {
 	char buf[1024];
 
-	snprintf(buf, sizeof(buf), "<a href=\"" BASE_URL "/?tag=%s\">%s</a>",
-		 str_cstr(txt), opt ? str_cstr(opt) : str_cstr(txt));
+	snprintf(buf, sizeof(buf), "<a href=\"%s/?tag=%s\">%s</a>",
+		 str_cstr(config.base_url), str_cstr(txt),
+		 opt ? str_cstr(opt) : str_cstr(txt));
 
 	str_putref(txt);
 	str_putref(opt);

@@ -147,8 +147,8 @@ int blahg_category(struct req *req, char *cat, int page)
 	if (catn) {
 		char url[256];
 
-		snprintf(url, sizeof(url), "%s/?cat=%s", BASE_URL,
-			 wordpress_catn[catn]);
+		snprintf(url, sizeof(url), "%s/?cat=%s",
+			 str_cstr(config.base_url), wordpress_catn[catn]);
 
 		return R301(req, url);
 	}
