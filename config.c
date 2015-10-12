@@ -38,7 +38,7 @@ static void config_load_scgi_port(struct val *lv)
 
 	tmp = lisp_alist_lookup_int(lv, CONFIG_SCGI_PORT, &found);
 
-	if (found || (tmp < 65536))
+	if (found && (tmp < 65536))
 		config.scgi_port = tmp;
 	else
 		config.scgi_port = DEFAULT_SCGI_PORT;
