@@ -292,7 +292,7 @@ int main(int argc, char **argv)
 	init_post_subsys();
 	init_file_cache();
 
-	ret = config_load("config.lisp");
+	ret = config_load((argc >= 2) ? argv[1] : NULL);
 	if (ret)
 		goto err;
 

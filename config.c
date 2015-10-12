@@ -77,13 +77,21 @@ int config_load(const char *fname)
 
 	exampledotcom = STR_DUP("http://example.com");
 
-	raw = file_cache_get(fname);
-	if (IS_ERR(raw))
-		return PTR_ERR(raw);
+	if (fname) {
+		raw = file_cache_get(fname);
+		if (IS_ERR(raw))
+			return PTR_ERR(raw);
 
-	lv = parse_lisp_str(raw);
-	if (!lv)
-		goto err;
+		lv = parse_lisp_str(raw);
+		if (!lv) {
+			str_putref(raw);
+			return EINVAL;
+		}
+
+		str_putref(raw);
+	} else {
+		lv = NULL;
+	}
 
 	config_load_scgi_port(lv);
 	config_load_scgi_threads(lv);
@@ -102,7 +110,4 @@ int config_load(const char *fname)
 	printf("config.photo_base_url = %s\n", str_cstr(config.photo_base_url));
 
 	return 0;
-
-err:
-	return EINVAL;
 }
