@@ -133,7 +133,7 @@ static int start_listening(void)
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
 
-	snprintf(port, sizeof(port), "%d", scgi_port);
+	snprintf(port, sizeof(port), "%d", config.scgi_port);
 
 	if (getaddrinfo(HOST, port, &hints, &res))
 		return -1;

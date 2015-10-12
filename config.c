@@ -27,7 +27,7 @@
 /*
  * The actual config
  */
-uint16_t scgi_port;
+struct config config;
 
 static void config_load_scgi_port(struct val *lv)
 {
@@ -37,9 +37,9 @@ static void config_load_scgi_port(struct val *lv)
 	tmp = lisp_alist_lookup_int(lv, CONFIG_SCGI_PORT, &found);
 
 	if (found || (tmp < 65536))
-		scgi_port = tmp;
+		config.scgi_port = tmp;
 	else
-		scgi_port = DEFAULT_SCGI_PORT;
+		config.scgi_port = DEFAULT_SCGI_PORT;
 }
 
 int config_load(const char *fname)
@@ -59,7 +59,7 @@ int config_load(const char *fname)
 
 	val_putref(lv);
 
-	printf("%s: scgi_port = %u\n", __func__, scgi_port);
+	printf("config.scgi_port = %u\n", config.scgi_port);
 
 	return 0;
 
