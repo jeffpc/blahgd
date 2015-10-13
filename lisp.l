@@ -81,6 +81,7 @@ static void inc_lineno(yyscan_t scanner);
 [a-zA-Z+_-]+		{ yylval->s = STR_DUP(yytext); return SYMBOL; }
 [ \r\t]			{ /* ignore */ }
 \n			{ inc_lineno(yyscanner); /* ignore */}
+;[^\n]*			{ /* comment: ignore it */ }
 .			{ lisp_error2("lisp text contains invalid characters", yytext); yyterminate(); }
 %%
 
