@@ -81,18 +81,18 @@ int xread(int fd, void *buf, size_t nbyte)
 		if (ret < 0) {
 			LOG("%s: failed to read %u bytes from fd %d: %s",
 			    __func__, nbyte, fd, strerror(errno));
-			return -errno;
+			return errno;
 		}
 
 		if (ret == 0)
-			break;
+			return EPIPE;
 
 		nbyte -= ret;
 		total += ret;
 		ptr   += ret;
 	}
 
-	return total;
+	return 0;
 }
 
 int xwrite(int fd, const void *buf, size_t nbyte)
@@ -148,9 +148,9 @@ char *read_file_common(const char *fname, struct stat *sb)
 	}
 
 	ret = xread(fd, out, statbuf.st_size);
-	if (ret != statbuf.st_size) {
+	if (ret) {
 		free(out);
-		out = ERR_PTR(EAGAIN); /* is there a better error? */
+		out = ERR_PTR(ret);
 	} else {
 		out[statbuf.st_size] = '\0';
 
