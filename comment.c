@@ -445,9 +445,10 @@ static const char *save_comment(struct req *req)
 		return GENERIC_ERR_STR;
 	}
 
-	if (captcha != (COMMENT_CAPTCHA_A + COMMENT_CAPTCHA_B)) {
+	if (captcha != (config.comment_captcha_a + config.comment_captcha_b)) {
 		LOG("Math illiterate was here... got:%lu expected:%lu postid:%d",
-		    captcha, COMMENT_CAPTCHA_A + COMMENT_CAPTCHA_B, id);
+		    captcha, config.comment_captcha_a + config.comment_captcha_b,
+		    id);
 		return CAPTCHA_FAIL;
 	}
 

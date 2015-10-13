@@ -89,6 +89,8 @@ int config_load(const char *fname)
 	struct val *lv;
 	struct str *raw;
 
+	srand(time(NULL));
+
 	exampledotcom = STR_DUP("http://example.com");
 
 	if (fname) {
@@ -113,6 +115,10 @@ int config_load(const char *fname)
 			DEFAULT_COMMENT_MAX_THINK);
 	config_load_u64(lv, CONFIG_COMMENT_MIN_THINK, &config.comment_min_think,
 			DEFAULT_COMMENT_MIN_THINK);
+	config_load_u64(lv, CONFIG_COMMENT_CAPTCHA_A, &config.comment_captcha_a,
+			rand());
+	config_load_u64(lv, CONFIG_COMMENT_CAPTCHA_B, &config.comment_captcha_b,
+			rand());
 	config_load_url(lv, CONFIG_BASE_URL, &config.base_url);
 	config_load_url(lv, CONFIG_BUG_BASE_URL, &config.bug_base_url);
 	config_load_url(lv, CONFIG_WIKI_BASE_URL, &config.wiki_base_url);
@@ -124,6 +130,8 @@ int config_load(const char *fname)
 	printf("config.scgi_threads = %"PRIu64"\n", config.scgi_threads);
 	printf("config.comment_max_think = %"PRIu64"\n", config.comment_max_think);
 	printf("config.comment_min_think = %"PRIu64"\n", config.comment_min_think);
+	printf("config.comment_captcha_a = %"PRIu64"\n", config.comment_captcha_a);
+	printf("config.comment_captcha_b = %"PRIu64"\n", config.comment_captcha_b);
 	printf("config.base_url = %s\n", str_cstr(config.base_url));
 	printf("config.wiki_base_url = %s\n", str_cstr(config.wiki_base_url));
 	printf("config.bug_base_url = %s\n", str_cstr(config.bug_base_url));

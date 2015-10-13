@@ -33,9 +33,6 @@
 #cmakedefine DEFAULT_COMMENT_MAX_THINK	${DEFAULT_COMMENT_MAX_THINK}
 #cmakedefine DEFAULT_COMMENT_MIN_THINK	${DEFAULT_COMMENT_MIN_THINK}
 
-#cmakedefine COMMENT_CAPTCHA_A		${COMMENT_CAPTCHA_A}
-#cmakedefine COMMENT_CAPTCHA_B		${COMMENT_CAPTCHA_B}
-
 #cmakedefine DATA_DIR			"${DATA_DIR}"
 
 #cmakedefine MATHD_DOOR_PATH		"${MATHD_DOOR_PATH}"
@@ -61,6 +58,8 @@
 #define CONFIG_SCGI_THREADS		"scgi-threads"
 #define CONFIG_COMMENT_MAX_THINK	"comment-max-think"
 #define CONFIG_COMMENT_MIN_THINK	"comment-min-think"
+#define CONFIG_COMMENT_CAPTCHA_A	"comment-captcha-a"
+#define CONFIG_COMMENT_CAPTCHA_B	"comment-captcha-b"
 #define CONFIG_BASE_URL			"base-url"
 #define CONFIG_BUG_BASE_URL		"bug-base-url"
 #define CONFIG_WIKI_BASE_URL		"wiki-base-url"
@@ -77,6 +76,8 @@ struct config {
 	uint64_t scgi_threads;
 	uint64_t comment_max_think;
 	uint64_t comment_min_think;
+	uint64_t comment_captcha_a;
+	uint64_t comment_captcha_b;
 	struct str *base_url;
 	struct str *bug_base_url;
 	struct str *wiki_base_url;

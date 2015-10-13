@@ -21,9 +21,6 @@ blahgd's behavior:
 				  time before which a submission is
 				  considered a spam
 
-	COMMENT_CAPTCHA_A	- math CAPTCHA first number
-	COMMENT_CAPTCHA_B	- math CAPTCHA second number
-
 	DATA_DIR		- path to data directory
 
 	MATHD_DOOR_PATH		- path for the door used to talk to mathd
