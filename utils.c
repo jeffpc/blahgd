@@ -108,18 +108,18 @@ int xwrite(int fd, const void *buf, size_t nbyte)
 		if (ret < 0) {
 			LOG("%s: failed to write %u bytes to fd %d: %s",
 			    __func__, nbyte, fd, strerror(errno));
-			return -errno;
+			return errno;
 		}
 
 		if (ret == 0)
-			break;
+			return EPIPE;
 
 		nbyte -= ret;
 		total += ret;
 		ptr   += ret;
 	}
 
-	return total;
+	return 0;
 }
 
 char *read_file_common(const char *fname, struct stat *sb)
@@ -180,7 +180,7 @@ int write_file(const char *fname, const char *data, size_t len)
 
 	close(fd);
 
-	return ret != len;
+	return ret != 0;
 }
 
 #define NARGS	5
