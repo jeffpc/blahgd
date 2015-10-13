@@ -172,15 +172,14 @@ int write_file(const char *fname, const char *data, size_t len)
 
 	fd = open(fname, O_WRONLY | O_CREAT | O_EXCL,
 		  S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-
 	if (fd == -1)
-		return 1;
+		return errno;
 
 	ret = xwrite(fd, data, len);
 
 	close(fd);
 
-	return ret != 0;
+	return ret;
 }
 
 #define NARGS	5

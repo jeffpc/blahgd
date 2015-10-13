@@ -199,7 +199,7 @@ const char *write_out_comment(struct req *req, int id, char *author,
 	ret = write_file(textpath, comment, strlen(comment));
 	if (ret) {
 		LOG("Couldn't write file ... :( %d (%s) '%s'",
-		    errno, strerror(errno), textpath);
+		    ret, strerror(ret), textpath);
 		return INTERNAL_ERR;
 	}
 
@@ -217,7 +217,7 @@ const char *write_out_comment(struct req *req, int id, char *author,
 
 	if (ret) {
 		LOG("Couldn't write file ... :( %d (%s) '%s'",
-		    errno, strerror(errno), lisppath);
+		    ret, strerror(ret), lisppath);
 		return INTERNAL_ERR;
 	}
 
