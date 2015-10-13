@@ -64,6 +64,11 @@ static inline char *xstrdup(const char *s)
 	return xstrdup_def(s, "");
 }
 
+static inline int xwrite_str(int fd, const char *s)
+{
+	return xwrite(fd, s, strlen(s));
+}
+
 #define STR_TO_INT(size, imax)						\
 static inline int __str2u##size(const char *restrict s,			\
 				uint##size##_t *i,			\
