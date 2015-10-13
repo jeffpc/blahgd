@@ -438,7 +438,8 @@ static const char *save_comment(struct req *req)
 		return GENERIC_ERR_STR;
 	}
 
-	if ((deltat > COMMENT_MAX_DELAY) || (deltat < COMMENT_MIN_DELAY)) {
+	if ((deltat > 1000000000ull * config.comment_max_think) ||
+	    (deltat < 1000000000ull * config.comment_min_think)) {
 		LOG("Flash-gordon or geriatric was here... load:%lu comment:%lu delta:%lu postid:%d",
 		    date, now, deltat, id);
 		return GENERIC_ERR_STR;

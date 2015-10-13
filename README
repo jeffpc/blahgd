@@ -12,10 +12,15 @@ blahgd's behavior:
 	HTML_INDEX_STORIES	- number of posts per page (index, archive)
 	FEED_INDEX_STORIES	- number of posts per page (Atom/RSS feeds)
 
-	COMMENT_MAX_DELAY	- max think time before a comment submission
-				  is considered spam
-	COMMENT_MIN_DELAY	- min think time before a comment submission
-				  is considered spam
+	DEFAULT_COMMENT_MAX_THINK
+				- default maximum number of seconds of think
+				  time after which a submission is
+				  considered a spam
+	DEFAULT_COMMENT_MIN_THINK
+				- default minimum number of seconds of think
+				  time before which a submission is
+				  considered a spam
+
 	COMMENT_CAPTCHA_A	- math CAPTCHA first number
 	COMMENT_CAPTCHA_B	- math CAPTCHA second number
 

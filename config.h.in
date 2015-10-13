@@ -30,8 +30,9 @@
 #cmakedefine HTML_INDEX_STORIES		${HTML_INDEX_STORIES}
 #cmakedefine FEED_INDEX_STORIES		${FEED_INDEX_STORIES}
 
-#cmakedefine COMMENT_MAX_DELAY		(${COMMENT_MAX_DELAY} * 1000000000ULL)
-#cmakedefine COMMENT_MIN_DELAY		(${COMMENT_MIN_DELAY} * 1000000000ULL)
+#cmakedefine DEFAULT_COMMENT_MAX_THINK	${DEFAULT_COMMENT_MAX_THINK}
+#cmakedefine DEFAULT_COMMENT_MIN_THINK	${DEFAULT_COMMENT_MIN_THINK}
+
 #cmakedefine COMMENT_CAPTCHA_A		${COMMENT_CAPTCHA_A}
 #cmakedefine COMMENT_CAPTCHA_B		${COMMENT_CAPTCHA_B}
 
@@ -56,12 +57,14 @@
  * config alist symbol names
  */
 
-#define CONFIG_SCGI_PORT	"scgi-port"
-#define CONFIG_SCGI_THREADS	"scgi-threads"
-#define CONFIG_BASE_URL		"base-url"
-#define CONFIG_BUG_BASE_URL	"bug-base-url"
-#define CONFIG_WIKI_BASE_URL	"wiki-base-url"
-#define CONFIG_PHOTO_BASE_URL	"photo-base-url"
+#define CONFIG_SCGI_PORT		"scgi-port"
+#define CONFIG_SCGI_THREADS		"scgi-threads"
+#define CONFIG_COMMENT_MAX_THINK	"comment-max-think"
+#define CONFIG_COMMENT_MIN_THINK	"comment-min-think"
+#define CONFIG_BASE_URL			"base-url"
+#define CONFIG_BUG_BASE_URL		"bug-base-url"
+#define CONFIG_WIKI_BASE_URL		"wiki-base-url"
+#define CONFIG_PHOTO_BASE_URL		"photo-base-url"
 
 /*
  * prototypes, etc. for config.c
@@ -72,6 +75,8 @@
 struct config {
 	uint16_t scgi_port;
 	uint64_t scgi_threads;
+	uint64_t comment_max_think;
+	uint64_t comment_min_think;
 	struct str *base_url;
 	struct str *bug_base_url;
 	struct str *wiki_base_url;
