@@ -41,7 +41,7 @@ static int read_netstring_length(struct req *req, size_t *len)
 	for (;;) {
 		char c;
 
-		ret = recv(req->scgi.fd, &c, sizeof(c), 0);
+		ret = recv(req->fd, &c, sizeof(c), 0);
 		ASSERT3S(ret, !=, -1);
 		ASSERT3S(ret, ==, 1);
 
@@ -71,7 +71,7 @@ static int read_netstring_string(struct req *req, size_t len)
 	if (!buf)
 		return ENOMEM;
 
-	ret = recv(req->scgi.fd, buf, len + 1, MSG_WAITALL);
+	ret = recv(req->fd, buf, len + 1, MSG_WAITALL);
 	ASSERT3S(ret, !=, -1);
 
 	if (ret != (len + 1)) {
@@ -157,7 +157,7 @@ static int read_body(struct req *req)
 	if (!buf)
 		return ENOMEM;
 
-	ret = recv(req->scgi.fd, buf, content_len, MSG_WAITALL);
+	ret = recv(req->fd, buf, content_len, MSG_WAITALL);
 	ASSERT3S(ret, !=, -1);
 	ASSERT3S(ret, ==, content_len);
 

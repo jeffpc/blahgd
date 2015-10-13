@@ -99,10 +99,7 @@ void req_init_scgi(struct req *req, int fd)
 {
 	req_init(req, REQ_SCGI);
 
-	req->scgi.fd = fd;
-	req->out = fdopen(fd, "wb");
-
-	ASSERT(req->out);
+	req->fd = fd;
 }
 
 static void __req_stats(struct req *req)
@@ -154,28 +151,43 @@ static void __req_stats(struct req *req)
 
 void req_output(struct req *req)
 {
+	char tmp[256];
 	nvpair_t *header;
+	int ret;
 
 	req->stats.req_output = gettime();
 
 	/* return status */
-	fprintf(req->out, "Status: %u\n", req->status);
+	snprintf(tmp, sizeof(tmp), "Status: %u\n", req->status);
+	ret = xwrite_str(req->fd, tmp);
+	if (ret)
+		goto out;
 
 	/* write out the headers */
 	for (header = nvlist_next_nvpair(req->headers, NULL);
 	     header;
-	     header = nvlist_next_nvpair(req->headers, header))
-		fprintf(req->out, "%s: %s\n", nvpair_name(header), pair2str(header));
+	     header = nvlist_next_nvpair(req->headers, header)) {
+		snprintf(tmp, sizeof(tmp), "%s: %s\n", nvpair_name(header),
+			 pair2str(header));
+
+		ret = xwrite_str(req->fd, tmp);
+		if (ret)
+			goto out;
+	}
 
 	/* separate headers from body */
-	fprintf(req->out, "\n");
+	ret = xwrite_str(req->fd, "\n");
+	if (ret)
+		goto out;
 
 	/* if body length is 0, we automatically figure out the length */
 	if (!req->bodylen)
 		req->bodylen = strlen(req->body);
 
 	/* write out the body */
-	fwrite(req->body, 1, req->bodylen, req->out);
+	ret = xwrite(req->fd, req->body, req->bodylen);
+	if (ret)
+		goto out;
 
 	/* when requested, write out the latency for this operation */
 	if (req->dump_latency) {
@@ -183,17 +195,26 @@ void req_output(struct req *req)
 
 		delta = req->stats.req_output - req->stats.req_init;
 
-		fprintf(req->out, "\n<!-- time to render: %"PRIu64".%09"PRIu64" seconds -->\n",
+		snprintf(tmp, sizeof(tmp),
+			"\n<!-- time to render: %"PRIu64".%09"PRIu64" seconds -->\n",
 		       delta / 1000000000UL,
 		       delta % 1000000000UL);
+
+		ret = xwrite_str(req->fd, tmp);
 	}
 
+out:
 	/*
 	 * At this point, we're done as far as the client is concerned.  We
 	 * have nothing else to send, so we make sure that we actually push
 	 * all the bytes along now.
 	 */
-	fflush(req->out);
+	close(req->fd);
+
+	/*
+	 * Stash away the success/failure of the above writes
+	 */
+	req->write_errno = ret;
 
 	req->stats.req_done = gettime();
 
@@ -239,7 +260,7 @@ static void log_request(struct req *req)
 	nvl_set_nvl(tmp, "query-string", req->request_qs);
 	nvl_set_str(tmp, "body", req->request_body);
 	nvl_set_str(tmp, "fmt", req->fmt);
-	nvl_set_int(tmp, "file-descriptor", req->scgi.fd);
+	nvl_set_int(tmp, "file-descriptor", req->fd);
 	nvl_set_int(tmp, "thread-id", (uint64_t) pthread_self());
 	nvl_set_nvl(logentry, "request", tmp);
 	nvlist_free(tmp);
@@ -254,6 +275,7 @@ static void log_request(struct req *req)
 	nvl_set_nvl(tmp, "headers", req->headers);
 	nvl_set_int(tmp, "body-length", req->bodylen);
 	nvl_set_bool(tmp, "dump-latency", req->dump_latency);
+	nvl_set_int(tmp, "write-errno", req->write_errno);
 	nvl_set_nvl(logentry, "response", tmp);
 	nvlist_free(tmp);
 
@@ -325,11 +347,6 @@ void req_destroy(struct req *req)
 
 	switch (req->via) {
 		case REQ_SCGI:
-			fclose(req->out);
-			/*
-			 * NOTE: do *not* close the fd itself since fclose
-			 * already closed it for us
-			 */
 			break;
 	}
 

@@ -83,7 +83,6 @@ struct req {
 	union {
 		struct {
 			list_node_t queue;
-			int fd;
 		} scgi;
 	};
 
@@ -99,6 +98,7 @@ struct req {
 	nvlist_t *headers;
 	void *body;
 	size_t bodylen;
+	int write_errno;	/* xwrite() return in req_output() */
 
 	/* state */
 	bool dump_latency;	/* request latency calculation */
@@ -114,7 +114,7 @@ struct req {
 		int index_stories;
 	} opts;
 
-	FILE *out;
+	int fd;
 };
 
 extern void init_req_subsys(void);
