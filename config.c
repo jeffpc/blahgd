@@ -87,24 +87,23 @@ static void config_load_url(struct val *lv, const char *vname,
 int config_load(const char *fname)
 {
 	struct val *lv;
-	struct str *raw;
+	char *raw;
 
 	srand(time(NULL));
 
 	exampledotcom = STR_DUP("http://example.com");
 
 	if (fname) {
-		raw = file_cache_get(fname);
+		raw = read_file(fname);
 		if (IS_ERR(raw))
 			return PTR_ERR(raw);
 
-		lv = parse_lisp_str(raw);
-		if (!lv) {
-			str_putref(raw);
-			return EINVAL;
-		}
+		lv = parse_lisp_cstr(raw);
 
-		str_putref(raw);
+		free(raw);
+
+		if (!lv)
+			return EINVAL;
 	} else {
 		lv = NULL;
 	}
