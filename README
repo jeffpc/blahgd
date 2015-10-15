@@ -33,7 +33,7 @@ blahgd's behavior:
 	TAGCLOUD_MIN_SIZE	- min font size of tag cloud entries
 	TAGCLOUD_MAX_SIZE	- max font size of tag cloud entries
 
-	LATEX_BIN		- path to latex binary
+	DEFAULT_LATEX_BIN	- default path to latex binary
 	DVIPNG_BIN		- path to dvipng binary
 
 	PREVIEW_SECRET		- key used to previewing unpublished posts

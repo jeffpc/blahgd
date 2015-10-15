@@ -84,6 +84,19 @@ static void config_load_url(struct val *lv, const char *vname,
 		*ret = str_getref(exampledotcom);
 }
 
+static void config_load_str(struct val *lv, const char *vname,
+			    struct str **ret, const char *def)
+{
+	struct str *s;
+
+	s = lisp_alist_lookup_str(lv, vname);
+
+	if (s)
+		*ret = s;
+	else
+		*ret = STR_DUP(def);
+}
+
 int config_load(const char *fname)
 {
 	struct val *lv;
@@ -122,6 +135,8 @@ int config_load(const char *fname)
 	config_load_url(lv, CONFIG_BUG_BASE_URL, &config.bug_base_url);
 	config_load_url(lv, CONFIG_WIKI_BASE_URL, &config.wiki_base_url);
 	config_load_url(lv, CONFIG_PHOTO_BASE_URL, &config.photo_base_url);
+	config_load_str(lv, CONFIG_LATEX_BIN, &config.latex_bin,
+			DEFAULT_LATEX_BIN);
 
 	val_putref(lv);
 
@@ -135,6 +150,7 @@ int config_load(const char *fname)
 	printf("config.wiki_base_url = %s\n", str_cstr(config.wiki_base_url));
 	printf("config.bug_base_url = %s\n", str_cstr(config.bug_base_url));
 	printf("config.photo_base_url = %s\n", str_cstr(config.photo_base_url));
+	printf("config.latex_bin = %s\n", str_cstr(config.latex_bin));
 
 	return 0;
 }

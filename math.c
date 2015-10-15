@@ -85,7 +85,8 @@ static int __render_math(const char *tex, char *md, char *dstpath,
 	fprintf(f, "\\end{document}\n");
 	fclose(f);
 
-	snprintf(cmd, sizeof(cmd), LATEX_BIN " --interaction=nonstopmode %s > /dev/null", texpath);
+	snprintf(cmd, sizeof(cmd), "%s --interaction=nonstopmode %s > /dev/null",
+		 str_cstr(config.latex_bin), texpath);
 	LOG("math cmd: '%s'", cmd);
 	if (system(cmd))
 		goto err_chdir;

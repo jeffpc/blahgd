@@ -45,7 +45,7 @@
 #cmakedefine TAGCLOUD_MIN_SIZE		${TAGCLOUD_MIN_SIZE}
 #cmakedefine TAGCLOUD_MAX_SIZE		${TAGCLOUD_MAX_SIZE}
 
-#cmakedefine LATEX_BIN			"${LATEX_BIN}"
+#cmakedefine DEFAULT_LATEX_BIN		"${DEFAULT_LATEX_BIN}"
 #cmakedefine DVIPNG_BIN			"${DVIPNG_BIN}"
 
 #cmakedefine PREVIEW_SECRET		${PREVIEW_SECRET}
@@ -64,6 +64,7 @@
 #define CONFIG_BUG_BASE_URL		"bug-base-url"
 #define CONFIG_WIKI_BASE_URL		"wiki-base-url"
 #define CONFIG_PHOTO_BASE_URL		"photo-base-url"
+#define CONFIG_LATEX_BIN		"latex-bin"
 
 /*
  * prototypes, etc. for config.c
@@ -82,6 +83,7 @@ struct config {
 	struct str *bug_base_url;
 	struct str *wiki_base_url;
 	struct str *photo_base_url;
+	struct str *latex_bin;
 };
 
 extern struct config config;
