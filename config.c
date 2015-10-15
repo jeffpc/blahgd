@@ -31,19 +31,6 @@ struct config config;
 
 static struct str *exampledotcom;
 
-static void config_load_scgi_port(struct val *lv)
-{
-	uint64_t tmp;
-	bool found;
-
-	tmp = lisp_alist_lookup_int(lv, CONFIG_SCGI_PORT, &found);
-
-	if (found && (tmp < 65536))
-		config.scgi_port = tmp;
-	else
-		config.scgi_port = DEFAULT_SCGI_PORT;
-}
-
 static void config_load_u64(struct val *lv, const char *vname,
 			    uint64_t *ret, uint64_t def)
 {
@@ -82,6 +69,18 @@ static void config_load_str(struct val *lv, const char *vname,
 		*ret = s;
 	else
 		*ret = STR_DUP(def);
+}
+
+static void config_load_scgi_port(struct val *lv)
+{
+	uint64_t tmp;
+
+	config_load_u64(lv, CONFIG_SCGI_PORT, &tmp, DEFAULT_SCGI_PORT);
+
+	if (tmp < 65536)
+		config.scgi_port = tmp;
+	else
+		config.scgi_port = DEFAULT_SCGI_PORT;
 }
 
 static void config_load_scgi_threads(struct val *lv)
