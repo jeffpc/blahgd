@@ -135,6 +135,10 @@ int config_load(const char *fname)
 	config_load_url(lv, CONFIG_BUG_BASE_URL, &config.bug_base_url);
 	config_load_url(lv, CONFIG_WIKI_BASE_URL, &config.wiki_base_url);
 	config_load_url(lv, CONFIG_PHOTO_BASE_URL, &config.photo_base_url);
+	config_load_u64(lv, CONFIG_TAGCLOUD_MIN_SIZE, &config.tagcloud_min_size,
+			DEFAULT_TAGCLOUD_MIN_SIZE);
+	config_load_u64(lv, CONFIG_TAGCLOUD_MAX_SIZE, &config.tagcloud_max_size,
+			DEFAULT_TAGCLOUD_MAX_SIZE);
 	config_load_str(lv, CONFIG_LATEX_BIN, &config.latex_bin,
 			DEFAULT_LATEX_BIN);
 	config_load_str(lv, CONFIG_DVIPNG_BIN, &config.dvipng_bin,
@@ -152,6 +156,8 @@ int config_load(const char *fname)
 	printf("config.wiki_base_url = %s\n", str_cstr(config.wiki_base_url));
 	printf("config.bug_base_url = %s\n", str_cstr(config.bug_base_url));
 	printf("config.photo_base_url = %s\n", str_cstr(config.photo_base_url));
+	printf("config.tagcloud_min_size = %"PRIu64"\n", config.tagcloud_min_size);
+	printf("config.tagcloud_max_size = %"PRIu64"\n", config.tagcloud_max_size);
 	printf("config.latex_bin = %s\n", str_cstr(config.latex_bin));
 	printf("config.dvipng_bin = %s\n", str_cstr(config.dvipng_bin));
 

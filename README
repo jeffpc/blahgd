@@ -30,8 +30,10 @@ blahgd's behavior:
 
 	COND_STACK_DEPTH	- template engine function stack size
 
-	TAGCLOUD_MIN_SIZE	- min font size of tag cloud entries
-	TAGCLOUD_MAX_SIZE	- max font size of tag cloud entries
+	DEFAULT_TAGCLOUD_MIN_SIZE
+				- default min font size of tag cloud entries
+	DEFAULT_TAGCLOUD_MAX_SIZE
+				- default max font size of tag cloud entries
 
 	DEFAULT_LATEX_BIN	- default path to latex binary
 	DEFAULT_DVIPNG_BIN	- default path to dvipng binary

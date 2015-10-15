@@ -32,8 +32,8 @@ set_default(VAR_NAME_MAXLEN		32)
 
 set_default(COND_STACK_DEPTH		10)
 
-set_default(TAGCLOUD_MIN_SIZE		6)
-set_default(TAGCLOUD_MAX_SIZE		18)
+set_default(DEFAULT_TAGCLOUD_MIN_SIZE	6)
+set_default(DEFAULT_TAGCLOUD_MAX_SIZE	18)
 
 set_default(DEFAULT_LATEX_BIN		"/usr/bin/latex")
 set_default(DEFAULT_DVIPNG_BIN		"/usr/bin/dvipng")

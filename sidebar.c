@@ -42,12 +42,13 @@ static int __tag_size(int count, int cmin, int cmax)
 	float size;
 
 	if (count <= cmin)
-		return TAGCLOUD_MIN_SIZE;
+		return config.tagcloud_min_size;
 
-	size  = (TAGCLOUD_MAX_SIZE - TAGCLOUD_MIN_SIZE) * (count - cmin);
+	size  = (config.tagcloud_max_size - config.tagcloud_min_size) *
+		(count - cmin);
 	size /= (float) (cmax - cmin);
 
-	return ceil(TAGCLOUD_MIN_SIZE + size);
+	return ceil(config.tagcloud_min_size + size);
 }
 
 static int __tagcloud_init(void *arg, unsigned long ntags)

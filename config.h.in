@@ -42,8 +42,8 @@
 
 #cmakedefine COND_STACK_DEPTH		${COND_STACK_DEPTH}
 
-#cmakedefine TAGCLOUD_MIN_SIZE		${TAGCLOUD_MIN_SIZE}
-#cmakedefine TAGCLOUD_MAX_SIZE		${TAGCLOUD_MAX_SIZE}
+#cmakedefine DEFAULT_TAGCLOUD_MIN_SIZE	${DEFAULT_TAGCLOUD_MIN_SIZE}
+#cmakedefine DEFAULT_TAGCLOUD_MAX_SIZE	${DEFAULT_TAGCLOUD_MAX_SIZE}
 
 #cmakedefine DEFAULT_LATEX_BIN		"${DEFAULT_LATEX_BIN}"
 #cmakedefine DEFAULT_DVIPNG_BIN		"${DEFAULT_DVIPNG_BIN}"
@@ -64,6 +64,8 @@
 #define CONFIG_BUG_BASE_URL		"bug-base-url"
 #define CONFIG_WIKI_BASE_URL		"wiki-base-url"
 #define CONFIG_PHOTO_BASE_URL		"photo-base-url"
+#define CONFIG_TAGCLOUD_MIN_SIZE	"tagcloud-min-size"
+#define CONFIG_TAGCLOUD_MAX_SIZE	"tagcloud-max-size"
 #define CONFIG_LATEX_BIN		"latex-bin"
 #define CONFIG_DVIPNG_BIN		"dvipng-bin"
 
@@ -84,6 +86,8 @@ struct config {
 	struct str *bug_base_url;
 	struct str *wiki_base_url;
 	struct str *photo_base_url;
+	uint64_t tagcloud_min_size;
+	uint64_t tagcloud_max_size;
 	struct str *latex_bin;
 	struct str *dvipng_bin;
 };
