@@ -44,19 +44,6 @@ static void config_load_scgi_port(struct val *lv)
 		config.scgi_port = DEFAULT_SCGI_PORT;
 }
 
-static void config_load_scgi_threads(struct val *lv)
-{
-	uint64_t tmp;
-	bool found;
-
-	tmp = lisp_alist_lookup_int(lv, CONFIG_SCGI_THREADS, &found);
-
-	if (found)
-		config.scgi_threads = tmp;
-	else
-		config.scgi_threads = DEFAULT_SCGI_THREADS;
-}
-
 static void config_load_u64(struct val *lv, const char *vname,
 			    uint64_t *ret, uint64_t def)
 {
@@ -95,6 +82,16 @@ static void config_load_str(struct val *lv, const char *vname,
 		*ret = s;
 	else
 		*ret = STR_DUP(def);
+}
+
+static void config_load_scgi_threads(struct val *lv)
+{
+	config_load_u64(lv, CONFIG_SCGI_THREADS, &config.scgi_threads,
+			DEFAULT_SCGI_THREADS);
+
+	/* we need at least one thread */
+	if (!config.scgi_threads)
+		config.scgi_threads = DEFAULT_SCGI_THREADS;
 }
 
 int config_load(const char *fname)
