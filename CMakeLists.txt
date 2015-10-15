@@ -144,12 +144,18 @@ add_executable(mathd
 	error.c
 	val.c
 	str.c
+	config.c
+	lisp.c
+	${FLEX_lisp_OUTPUTS} ${BISON_lisp_OUTPUTS}
+	mangle.c
+	utils.c
 )
 
 target_link_libraries(mathd
 	version
 	umem
 	md
+	/usr/lib/libavl.so.1
 )
 
 add_executable(nvdump

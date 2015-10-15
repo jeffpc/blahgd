@@ -110,6 +110,10 @@ int main(int argc, char **argv)
 	init_str_subsys();
 	init_val_subsys();
 
+	ret = config_load((argc >= 2) ? argv[1] : NULL);
+	if (ret)
+		goto out;
+
 	MXINIT(&lock);
 
 	ret = setup_door();
