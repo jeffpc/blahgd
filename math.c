@@ -91,8 +91,9 @@ static int __render_math(const char *tex, char *md, char *dstpath,
 	if (system(cmd))
 		goto err_chdir;
 
-	snprintf(cmd, sizeof(cmd), DVIPNG_BIN " -T tight -x 1200 -z 9 "
-			"-bg Transparent -o %s %s > /dev/null", pngpath, dvipath);
+	snprintf(cmd, sizeof(cmd), "%s -T tight -x 1200 -z 9 "
+		 "-bg Transparent -o %s %s > /dev/null",
+		 str_cstr(config.dvipng_bin), pngpath, dvipath);
 	LOG("math cmd: '%s'", cmd);
 	if (system(cmd))
 		goto err_chdir;

@@ -46,7 +46,7 @@
 #cmakedefine TAGCLOUD_MAX_SIZE		${TAGCLOUD_MAX_SIZE}
 
 #cmakedefine DEFAULT_LATEX_BIN		"${DEFAULT_LATEX_BIN}"
-#cmakedefine DVIPNG_BIN			"${DVIPNG_BIN}"
+#cmakedefine DEFAULT_DVIPNG_BIN		"${DEFAULT_DVIPNG_BIN}"
 
 #cmakedefine PREVIEW_SECRET		${PREVIEW_SECRET}
 
@@ -65,6 +65,7 @@
 #define CONFIG_WIKI_BASE_URL		"wiki-base-url"
 #define CONFIG_PHOTO_BASE_URL		"photo-base-url"
 #define CONFIG_LATEX_BIN		"latex-bin"
+#define CONFIG_DVIPNG_BIN		"dvipng-bin"
 
 /*
  * prototypes, etc. for config.c
@@ -84,6 +85,7 @@ struct config {
 	struct str *wiki_base_url;
 	struct str *photo_base_url;
 	struct str *latex_bin;
+	struct str *dvipng_bin;
 };
 
 extern struct config config;

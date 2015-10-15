@@ -137,6 +137,8 @@ int config_load(const char *fname)
 	config_load_url(lv, CONFIG_PHOTO_BASE_URL, &config.photo_base_url);
 	config_load_str(lv, CONFIG_LATEX_BIN, &config.latex_bin,
 			DEFAULT_LATEX_BIN);
+	config_load_str(lv, CONFIG_DVIPNG_BIN, &config.dvipng_bin,
+			DEFAULT_DVIPNG_BIN);
 
 	val_putref(lv);
 
@@ -151,6 +153,7 @@ int config_load(const char *fname)
 	printf("config.bug_base_url = %s\n", str_cstr(config.bug_base_url));
 	printf("config.photo_base_url = %s\n", str_cstr(config.photo_base_url));
 	printf("config.latex_bin = %s\n", str_cstr(config.latex_bin));
+	printf("config.dvipng_bin = %s\n", str_cstr(config.dvipng_bin));
 
 	return 0;
 }

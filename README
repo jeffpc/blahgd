@@ -34,7 +34,7 @@ blahgd's behavior:
 	TAGCLOUD_MAX_SIZE	- max font size of tag cloud entries
 
 	DEFAULT_LATEX_BIN	- default path to latex binary
-	DVIPNG_BIN		- path to dvipng binary
+	DEFAULT_DVIPNG_BIN	- default path to dvipng binary
 
 	PREVIEW_SECRET		- key used to previewing unpublished posts
 
