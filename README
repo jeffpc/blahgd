@@ -9,8 +9,12 @@ blahgd's behavior:
 	DEFAULT_SCGI_PORT	- default port to listen on for SCGI requests
 	DEFAULT_SCGI_THREADS	- default number of SCGI helper threads
 
-	HTML_INDEX_STORIES	- number of posts per page (index, archive)
-	FEED_INDEX_STORIES	- number of posts per page (Atom/RSS feeds)
+	DEFAULT_HTML_INDEX_STORIES
+				- default number of posts per page (index,
+				  archive)
+	DEFAULT_FEED_INDEX_STORIES
+				- default number of posts per page (Atom/RSS
+				  feeds)
 
 	DEFAULT_COMMENT_MAX_THINK
 				- default maximum number of seconds of think

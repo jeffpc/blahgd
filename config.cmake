@@ -12,8 +12,8 @@ endmacro()
 set_default(DEFAULT_SCGI_PORT		2014)
 set_default(DEFAULT_SCGI_THREADS	32)
 
-set_default(HTML_INDEX_STORIES		10)
-set_default(FEED_INDEX_STORIES		15)
+set_default(DEFAULT_HTML_INDEX_STORIES	10)
+set_default(DEFAULT_FEED_INDEX_STORIES	15)
 
 set_default(DEFAULT_COMMENT_MAX_THINK	86400)	# 1 day max think time
 set_default(DEFAULT_COMMENT_MIN_THINK	10)	# 10 secs min think time

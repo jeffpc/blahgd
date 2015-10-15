@@ -469,13 +469,13 @@ static bool switch_content_type(struct req *req)
 		/* no feed => OK, use html */
 		fmt = "html";
 		content_type = "text/html";
-		index_stories = HTML_INDEX_STORIES;
+		index_stories = config.html_index_stories;
 	} else if (!strcmp(fmt, "atom")) {
 		content_type = "application/atom+xml";
-		index_stories = FEED_INDEX_STORIES;
+		index_stories = config.feed_index_stories;
 	} else if (!strcmp(fmt, "rss2")) {
 		content_type = "application/rss+xml";
-		index_stories = FEED_INDEX_STORIES;
+		index_stories = config.feed_index_stories;
 	} else {
 		/* unsupported feed type */
 		return false;

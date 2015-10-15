@@ -119,6 +119,10 @@ int config_load(const char *fname)
 
 	config_load_scgi_port(lv);
 	config_load_scgi_threads(lv);
+	config_load_u64(lv, CONFIG_HTML_INDEX_STORIES, &config.html_index_stories,
+			DEFAULT_HTML_INDEX_STORIES);
+	config_load_u64(lv, CONFIG_FEED_INDEX_STORIES, &config.feed_index_stories,
+			DEFAULT_FEED_INDEX_STORIES);
 	config_load_u64(lv, CONFIG_COMMENT_MAX_THINK, &config.comment_max_think,
 			DEFAULT_COMMENT_MAX_THINK);
 	config_load_u64(lv, CONFIG_COMMENT_MIN_THINK, &config.comment_min_think,
@@ -144,6 +148,8 @@ int config_load(const char *fname)
 
 	printf("config.scgi_port = %u\n", config.scgi_port);
 	printf("config.scgi_threads = %"PRIu64"\n", config.scgi_threads);
+	printf("config.html_index_stories = %"PRIu64"\n", config.html_index_stories);
+	printf("config.feed_index_stories = %"PRIu64"\n", config.feed_index_stories);
 	printf("config.comment_max_think = %"PRIu64"\n", config.comment_max_think);
 	printf("config.comment_min_think = %"PRIu64"\n", config.comment_min_think);
 	printf("config.comment_captcha_a = %"PRIu64"\n", config.comment_captcha_a);
