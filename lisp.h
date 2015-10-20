@@ -31,6 +31,7 @@
 extern struct val *parse_lisp(const char *str, size_t len);
 extern struct str *lisp_dump(struct val *lv, bool raw);
 extern void lisp_dump_file(FILE *out, struct val *lv, bool raw);
+extern struct val *lisp_array_to_list(struct val **vals, int nvals);
 
 static inline struct val *parse_lisp_str(struct str *str)
 {

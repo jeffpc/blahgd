@@ -129,6 +129,30 @@ void lisp_dump_file(FILE *out, struct val *lv, bool raw)
 	str_putref(tmp);
 }
 
+/*
+ * Convert a C array of vals into a lisp list.  E.g.,
+ *
+ *	vals = { A, B, C }, nvals = 3
+ *
+ * turns into:
+ *
+ *	'(A . (B . (C . ())))
+ *
+ * which is the same as:
+ *
+ *	'(A B C)
+ */
+struct val *lisp_array_to_list(struct val **vals, int nvals)
+{
+	struct val *last = NULL;
+	struct val *tmp;
+
+	for (nvals--; nvals >= 0; nvals--, last = tmp)
+		tmp = VAL_ALLOC_CONS(vals[nvals], last);
+
+	return last;
+}
+
 struct val *lisp_car(struct val *lv)
 {
 	struct val *ret;
