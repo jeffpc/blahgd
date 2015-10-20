@@ -25,7 +25,7 @@ blahgd's behavior:
 				  time before which a submission is
 				  considered a spam
 
-	DATA_DIR		- path to data directory
+	DEFAULT_DATA_DIR	- default path to the data directory
 
 	MATHD_DOOR_PATH		- path for the door used to talk to mathd
 

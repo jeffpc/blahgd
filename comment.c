@@ -180,8 +180,9 @@ const char *write_out_comment(struct req *req, int id, char *author,
 
 	strftime(curdate, 31, "%Y-%m-%d %H:%M", now_tm);
 
-	snprintf(basepath, FILENAME_MAX, DATA_DIR "/pending-comments/%d-%08lx.%08"PRIx64".%05x",
-		 id, now_sec, now_nsec, atomic_inc(&nonce));
+	snprintf(basepath, FILENAME_MAX, "%s/pending-comments/%d-%08lx.%08"PRIx64".%05x",
+		 str_cstr(config.data_dir), id, now_sec, now_nsec,
+		 atomic_inc(&nonce));
 
 	snprintf(dirpath,  FILENAME_MAX, "%sW", basepath);
 	snprintf(textpath, FILENAME_MAX, "%s/text.txt", dirpath);

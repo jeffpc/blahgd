@@ -151,8 +151,8 @@ static struct str *load_comment(struct post *post, int commid)
 
 	err_msg = STR_DUP("Error: could not load comment text.");
 
-	snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%d/comments/%d/text.txt",
-		 post->id, commid);
+	snprintf(path, FILENAME_MAX, "%s/posts/%d/comments/%d/text.txt",
+		 str_cstr(config.data_dir), post->id, commid);
 
 	out = file_cache_get_cb(path, post->preview ? NULL : revalidate_post,
 				post);
@@ -172,8 +172,8 @@ static void post_add_comment(struct post *post, int commid)
 	struct val *lv;
 	struct val *v;
 
-	snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%d/comments/%d/meta.lisp",
-		 post->id, commid);
+	snprintf(path, FILENAME_MAX, "%s/posts/%d/comments/%d/meta.lisp",
+		 str_cstr(config.data_dir), post->id, commid);
 
 	meta = file_cache_get_cb(path, post->preview ? NULL : revalidate_post,
 				 post);
@@ -372,8 +372,8 @@ static int __load_post_body(struct post *post)
 	ASSERT3U(post->fmt, >=, 1);
 	ASSERT3U(post->fmt, <=, 3);
 
-	snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%d/post.%s", post->id,
-		 exts[post->fmt]);
+	snprintf(path, FILENAME_MAX, "%s/posts/%d/post.%s",
+		 str_cstr(config.data_dir), post->id, exts[post->fmt]);
 
 	raw = file_cache_get_cb(path, post->preview ? NULL : revalidate_post,
 				post);
@@ -408,7 +408,8 @@ static int __refresh_published(struct post *post)
 	struct str *meta;
 	struct val *lv;
 
-	snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%d/post.lisp", post->id);
+	snprintf(path, FILENAME_MAX, "%s/posts/%d/post.lisp",
+		 str_cstr(config.data_dir), post->id);
 
 	meta = file_cache_get_cb(path, post->preview ? NULL : revalidate_post,
 				 post);
@@ -548,6 +549,7 @@ void post_destroy(struct post *post)
 
 int load_all_posts(void)
 {
+	const char *data_dir = str_cstr(config.data_dir);
 	char path[FILENAME_MAX];
 	struct stat statbuf;
 	struct dirent *de;
@@ -556,7 +558,8 @@ int load_all_posts(void)
 	DIR *dir;
 	int ret;
 
-	dir = opendir(DATA_DIR "/posts");
+	snprintf(path, sizeof(path), "%s/posts", data_dir);
+	dir = opendir(path);
 	if (!dir)
 		return errno;
 
@@ -574,7 +577,7 @@ int load_all_posts(void)
 			continue;
 		}
 
-		snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%u", postid);
+		snprintf(path, FILENAME_MAX, "%s/posts/%u", data_dir, postid);
 
 		/* check that it is a directory */
 		ret = lstat(path, &statbuf);

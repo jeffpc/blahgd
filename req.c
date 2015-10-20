@@ -236,8 +236,9 @@ static void log_request(struct req *req)
 
 	sysinfo(SI_HOSTNAME, hostname, sizeof(hostname));
 
-	snprintf(fname, sizeof(fname), DATA_DIR "/requests/%"PRIu64".%09"PRIu64"-%011u",
-		 now / 1000000000llu, now % 1000000000llu, req->id);
+	snprintf(fname, sizeof(fname), "%s/requests/%"PRIu64".%09"PRIu64"-%011u",
+		 str_cstr(config.data_dir), now / 1000000000llu,
+		 now % 1000000000llu, req->id);
 
 	/*
 	 * allocate a log entry & store some misc info

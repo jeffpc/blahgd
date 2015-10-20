@@ -37,7 +37,8 @@ struct str *listing(struct post *post, const char *fname)
 	char path[FILENAME_MAX];
 	struct str *in;
 
-	snprintf(path, FILENAME_MAX, DATA_DIR "/posts/%d/%s", post->id, fname);
+	snprintf(path, FILENAME_MAX, "%s/posts/%d/%s",
+		 str_cstr(config.data_dir), post->id, fname);
 
 	in = file_cache_get_cb(path, post->preview ? NULL : revalidate_post,
 			       post);
