@@ -34,6 +34,7 @@
 #cmakedefine DEFAULT_COMMENT_MIN_THINK	${DEFAULT_COMMENT_MIN_THINK}
 
 #cmakedefine DEFAULT_DATA_DIR		"${DEFAULT_DATA_DIR}"
+#cmakedefine DEFAULT_WEB_DIR		"${DEFAULT_WEB_DIR}"
 
 #cmakedefine MATHD_DOOR_PATH		"${MATHD_DOOR_PATH}"
 
@@ -63,6 +64,7 @@
 #define CONFIG_COMMENT_CAPTCHA_A	"comment-captcha-a"
 #define CONFIG_COMMENT_CAPTCHA_B	"comment-captcha-b"
 #define CONFIG_DATA_DIR			"data-dir"
+#define CONFIG_WEB_DIR			"web-dir"
 #define CONFIG_BASE_URL			"base-url"
 #define CONFIG_BUG_BASE_URL		"bug-base-url"
 #define CONFIG_WIKI_BASE_URL		"wiki-base-url"
@@ -88,6 +90,7 @@ struct config {
 	uint64_t comment_captcha_a;
 	uint64_t comment_captcha_b;
 	struct str *data_dir;
+	struct str *web_dir;
 	struct str *base_url;
 	struct str *bug_base_url;
 	struct str *wiki_base_url;

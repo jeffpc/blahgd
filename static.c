@@ -78,6 +78,7 @@ enum uri_type get_uri_type(const char *path)
 
 int blahg_static(struct req *req)
 {
+	char path[FILENAME_MAX];
 	const struct uri_info *info;
 	const char *uri;
 
@@ -90,11 +91,13 @@ int blahg_static(struct req *req)
 	/* DOCUMENT_URI comes with a leading /, remove it. */
 	uri++;
 
+	snprintf(path, sizeof(path), "%s/%s", str_cstr(config.web_dir), uri);
+
 	/*
 	 * We assume that the URI is relative to the web dir.  Since we
 	 * have a whitelist of allowed URIs, whe should be safe here.
 	 */
-	req->body = read_file_len(uri, &req->bodylen);
+	req->body = read_file_len(path, &req->bodylen);
 
 	if (IS_ERR(req->body))
 		return R404(req, NULL);

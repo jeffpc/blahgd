@@ -132,6 +132,7 @@ int config_load(const char *fname)
 	config_load_u64(lv, CONFIG_COMMENT_CAPTCHA_B, &config.comment_captcha_b,
 			rand());
 	config_load_str(lv, CONFIG_DATA_DIR, &config.data_dir, DEFAULT_DATA_DIR);
+	config_load_str(lv, CONFIG_WEB_DIR, &config.web_dir, DEFAULT_WEB_DIR);
 	config_load_url(lv, CONFIG_BASE_URL, &config.base_url);
 	config_load_url(lv, CONFIG_BUG_BASE_URL, &config.bug_base_url);
 	config_load_url(lv, CONFIG_WIKI_BASE_URL, &config.wiki_base_url);
@@ -156,6 +157,7 @@ int config_load(const char *fname)
 	printf("config.comment_captcha_a = %"PRIu64"\n", config.comment_captcha_a);
 	printf("config.comment_captcha_b = %"PRIu64"\n", config.comment_captcha_b);
 	printf("config.data_dir = %s\n", str_cstr(config.data_dir));
+	printf("config.web_dir = %s\n", str_cstr(config.web_dir));
 	printf("config.base_url = %s\n", str_cstr(config.base_url));
 	printf("config.wiki_base_url = %s\n", str_cstr(config.wiki_base_url));
 	printf("config.bug_base_url = %s\n", str_cstr(config.bug_base_url));

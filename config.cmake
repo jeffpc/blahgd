@@ -19,6 +19,7 @@ set_default(DEFAULT_COMMENT_MAX_THINK	86400)	# 1 day max think time
 set_default(DEFAULT_COMMENT_MIN_THINK	10)	# 10 secs min think time
 
 set_default(DEFAULT_DATA_DIR		"./data")
+set_default(DEFAULT_WEB_DIR		"./web")
 
 set_default(MATHD_DOOR_PATH		"/tmp/mathd_door")
 

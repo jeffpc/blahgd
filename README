@@ -26,6 +26,7 @@ blahgd's behavior:
 				  considered a spam
 
 	DEFAULT_DATA_DIR	- default path to the data directory
+	DEFAULT_WEB_DIR		- default path to the web directory
 
 	MATHD_DOOR_PATH		- path for the door used to talk to mathd
 
