@@ -262,6 +262,9 @@ time_t parse_time_cstr(const char *str)
 {
 	struct tm tm;
 
+	if (!str)
+		return 0;
+
 	strptime(str, "%Y-%m-%d %H:%M", &tm);
 
 	return mktime(&tm);
