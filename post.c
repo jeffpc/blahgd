@@ -572,8 +572,8 @@ int load_all_posts(void)
 
 		ret = str2u32(de->d_name, &postid);
 		if (ret) {
-			fprintf(stderr, "skipping '%s' - not a number\n",
-				de->d_name);
+			fprintf(stderr, "skipping '%s/%s' - not a number\n",
+				data_dir, de->d_name);
 			continue;
 		}
 
