@@ -55,6 +55,7 @@ extern struct val *lisp_assoc(struct val *val, const char *name);
 /*
  * Assorted helpers to make alists more pleasant to use.
  */
+extern struct val *lisp_alist_lookup_val(struct val *lv, const char *name);
 extern struct str *lisp_alist_lookup_str(struct val *lv, const char *name);
 extern uint64_t lisp_alist_lookup_int(struct val *lv, const char *name,
 				      bool *found);

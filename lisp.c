@@ -207,6 +207,14 @@ struct val *lisp_assoc(struct val *lv, const char *name)
 	return lisp_assoc(tail, name);
 }
 
+struct val *lisp_alist_lookup_val(struct val *lv, const char *name)
+{
+	if (!lv || !name)
+		return NULL;
+
+	return lisp_cdr(lisp_assoc(lv, name));
+}
+
 struct str *lisp_alist_lookup_str(struct val *lv, const char *name)
 {
 	struct str *ret;
