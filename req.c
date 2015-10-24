@@ -565,8 +565,6 @@ int R404(struct req *req, char *tmpl)
 {
 	tmpl = tmpl ? tmpl : "{404}";
 
-	LOG("status 404 (tmpl: '%s')", tmpl);
-
 	req_head(req, "Content-Type", "text/html");
 
 	req->status = 404;
