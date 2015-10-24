@@ -49,6 +49,14 @@ REFCNT_PROTOTYPES(struct str, str)
 #define str_cat3(a, b, c)		str_cat5((a), (b), (c), NULL, NULL)
 #define str_cat(a, b)			str_cat5((a), (b), NULL, NULL, NULL)
 
+#define STR_ALLOC(s)			\
+	({				\
+		struct str *_s;		\
+		_s = str_alloc(s);	\
+		ASSERT(_s);		\
+		_s;			\
+	})
+
 #define STR_DUP(s)			\
 	({				\
 		struct str *_s;		\
