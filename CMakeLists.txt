@@ -230,9 +230,9 @@ target_link_libraries(test_lisp_parser
 	/usr/lib/libavl.so.1
 )
 
-function(simple_c_test type section data)
+function(simple_c_test type section bin data)
 	add_test(NAME "${type}:${section}:${data}"
-		 COMMAND "${CMAKE_BINARY_DIR}/test_${type}"
+		 COMMAND "${CMAKE_BINARY_DIR}/test_${bin}"
 			 "${CMAKE_CURRENT_SOURCE_DIR}/${data}"
 	)
 endfunction()

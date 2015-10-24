@@ -22,5 +22,5 @@
 
 file(GLOB TESTS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.lisp)
 foreach(TEST ${TESTS})
-	simple_c_test(lisp_parser basic ${TEST})
+	simple_c_test(lisp parser lisp_parser ${TEST})
 endforeach()
