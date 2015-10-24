@@ -231,6 +231,59 @@ struct val *lisp_assoc(struct val *lv, const char *name)
 	return lisp_assoc(tail, name);
 }
 
+bool lisp_equal(struct val *lhs, struct val *rhs)
+{
+	bool ret;
+
+	/* if they are the same object, they are equal - even if NULL */
+	if (lhs == rhs) {
+		ret = true;
+		goto out;
+	}
+
+	/* if one is NUL, they are unequal */
+	if (!lhs || !rhs) {
+		ret = false;
+		goto out;
+	}
+
+	/*
+	 * At this point, we have two non-NULL values.
+	 */
+
+	/* different type -> unequal */
+	if (lhs->type != rhs->type) {
+		ret = false;
+		goto out;
+	}
+
+	ret = true; /* pacify gcc */
+
+	switch (lhs->type) {
+		case VT_INT:
+			ret = (lhs->i == rhs->i);
+			break;
+		case VT_STR:
+		case VT_SYM:
+			ret = str_cmp(lhs->str, rhs->str) == 0;
+			break;
+		case VT_BOOL:
+			ret = (lhs->b == rhs->b);
+			break;
+		case VT_CONS:
+			ret = lisp_equal(val_getref(lhs->cons.head),
+					 val_getref(rhs->cons.head)) &&
+			      lisp_equal(val_getref(lhs->cons.tail),
+					 val_getref(rhs->cons.tail));
+			break;
+	}
+
+out:
+	val_putref(lhs);
+	val_putref(rhs);
+	return ret;
+}
+
 struct val *lisp_alist_lookup_val(struct val *lv, const char *name)
 {
 	if (!lv || !name)

@@ -52,6 +52,7 @@ static inline struct val *parse_lisp_cstr(const char *str)
 extern struct val *lisp_car(struct val *val);
 extern struct val *lisp_cdr(struct val *val);
 extern struct val *lisp_assoc(struct val *val, const char *name);
+extern bool lisp_equal(struct val *lhs, struct val *rhs);
 
 /*
  * Assorted helpers to make alists more pleasant to use.
