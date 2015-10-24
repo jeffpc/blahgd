@@ -72,6 +72,7 @@ static void inc_lineno(yyscan_t scanner);
 <string>\\r		{ *string_ptr++ = '\r'; }
 <string>\\b		{ *string_ptr++ = '\b'; }
 <string>\\f		{ *string_ptr++ = '\f'; }
+<string>\\\\		{ *string_ptr++ = '\\'; }
 <string>\\\"		{ *string_ptr++ = '"'; }
 
 ['().]			{ return *yytext; }
