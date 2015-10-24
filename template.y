@@ -160,9 +160,6 @@ static char *print_val(struct val *val)
 	tmp = NULL;
 
 	switch (val->type) {
-		case VT_CSTR:
-			tmp = val->cstr;
-			break;
 		case VT_STR:
 			tmp = str_cstr(val->str);
 			break;

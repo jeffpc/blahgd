@@ -84,13 +84,6 @@ static struct str *dump_expr(struct val *lv, bool raw)
 	switch (lv->type) {
 		case VT_SYM:
 			return str_getref(lv->str);
-		case VT_CSTR:
-			tmpstr = mangle_lispescape(lv->cstr);
-			/* TODO: we leak tmpstr */
-
-			return str_cat3(STR_DUP("\""),
-					STR_DUP(tmpstr),
-					STR_DUP("\""));
 		case VT_STR:
 			tmpstr = mangle_lispescape(str_cstr(lv->str));
 			/* TODO: we leak tmpstr */

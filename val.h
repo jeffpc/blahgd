@@ -34,7 +34,6 @@ enum val_type {
 	VT_INT = 0,	/* 64-bit uint */
 	VT_STR,		/* a struct str string */
 	VT_SYM,		/* symbol */
-	VT_CSTR,	/* null-terminated string */
 	VT_CONS,	/* cons cell */
 	VT_BOOL,	/* boolean */
 };
@@ -45,7 +44,6 @@ struct val {
 	union {
 		uint64_t i;
 		bool b;
-		char *cstr;
 		struct str *str;
 		struct {
 			struct val *head;
@@ -60,7 +58,6 @@ extern struct val *val_alloc(enum val_type type);
 extern void val_free(struct val *v);
 extern int val_set_bool(struct val *val, bool v);
 extern int val_set_int(struct val *val, uint64_t v);
-extern int val_set_cstr(struct val *val, char *v);
 extern int val_set_str(struct val *val, struct str *v);
 extern int val_set_sym(struct val *val, struct str *v);
 extern int val_set_cons(struct val *val, struct val *head, struct val *tail);
@@ -73,14 +70,6 @@ REFCNT_INLINE_FXNS(struct val, val, refcnt, val_free)
 		struct val *_x;			\
 		_x = val_alloc(t);		\
 		ASSERT(_x);			\
-		_x;				\
-	})
-
-#define VAL_ALLOC_CSTR(v)			\
-	({					\
-		struct val *_x;			\
-		_x = VAL_ALLOC(VT_CSTR);	\
-		VAL_SET_CSTR(_x, (v));		\
 		_x;				\
 	})
 
@@ -102,6 +91,9 @@ REFCNT_INLINE_FXNS(struct val, val, refcnt, val_free)
 		VAL_SET_STR(_x, (v));		\
 		_x;				\
 	})
+
+#define VAL_ALLOC_CSTR(v)			\
+	VAL_ALLOC_STR(STR_ALLOC(v))
 
 #define VAL_ALLOC_INT(v)			\
 	({					\
@@ -130,7 +122,6 @@ REFCNT_INLINE_FXNS(struct val, val, refcnt, val_free)
 #define VAL_SET_INT(val, v)		ASSERT0(val_set_int((val), (v)))
 #define VAL_SET_BOOL(val, v)		ASSERT0(val_set_bool((val), (v)))
 #define VAL_SET_STR(val, v)		ASSERT0(val_set_str((val), (v)))
-#define VAL_SET_CSTR(val, v)		ASSERT0(val_set_cstr((val), (v)))
 #define VAL_SET_SYM(val, v)		ASSERT0(val_set_sym((val), (v)))
 #define VAL_SET_CONS(val, head, tail)	ASSERT0(val_set_cons((val), (head), (tail)))
 
