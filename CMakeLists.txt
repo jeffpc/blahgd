@@ -158,6 +158,26 @@ target_link_libraries(mathd
 	/usr/lib/libavl.so.1
 )
 
+add_executable(lisplint
+	lisplint.c
+	val.c
+	str.c
+	error.c
+	mangle.c
+	utils.c
+
+	nvl.c
+	nvl_convert.c
+	${FLEX_lisp_OUTPUTS} ${BISON_lisp_OUTPUTS}
+	lisp.c
+)
+
+target_link_libraries(lisplint
+	umem
+	nvpair
+	/usr/lib/libavl.so.1
+)
+
 add_executable(nvdump
 	nvdump.c
 	utils.c
