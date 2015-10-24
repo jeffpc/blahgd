@@ -134,6 +134,6 @@ REFCNT_INLINE_FXNS(struct val, val, refcnt, val_free)
 #define VAL_SET_SYM(val, v)		ASSERT0(val_set_sym((val), (v)))
 #define VAL_SET_CONS(val, head, tail)	ASSERT0(val_set_cons((val), (head), (tail)))
 
-#define VAL_DUP_CSTR(v)		VAL_ALLOC_CSTR(xstrdup(v))
+#define VAL_DUP_CSTR(v)			VAL_ALLOC_STR(STR_DUP(v))
 
 #endif
