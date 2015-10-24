@@ -178,7 +178,7 @@ static struct val *__datetime(struct val *val, const char *fmt)
 
 	val_putref(val);
 
-	return VAL_ALLOC_CSTR(xstrdup(buf));
+	return VAL_DUP_CSTR(buf);
 }
 
 static struct val *time_fxn(struct val *val)

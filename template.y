@@ -227,7 +227,7 @@ static char *pipeline(struct parser_output *data, struct req *req,
 
 	switch (nvpair_type(var)) {
 		case DATA_TYPE_STRING:
-			val = VAL_ALLOC_CSTR(xstrdup(pair2str(var)));
+			val = VAL_DUP_CSTR(pair2str(var));
 			break;
 		case DATA_TYPE_UINT64:
 			val = VAL_ALLOC_INT(pair2int(var));
