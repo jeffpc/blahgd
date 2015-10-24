@@ -74,12 +74,12 @@ static bool check_post(const char *fname, struct val *lv)
 	 */
 	fmtval = lisp_alist_lookup_val(lv, "fmt");
 	if (!fmtval) {
-		error(fname, "missing 'fmt'");
+		error(fname, "missing 'fmt'\n");
 		return false;
 	}
 
 	if (fmtval->type != VT_INT) {
-		error(fname, "fmt is not an int");
+		error(fname, "fmt is not an int\n");
 		val_putref(fmtval);
 		return false;
 	}
@@ -105,7 +105,7 @@ static bool check_post(const char *fname, struct val *lv)
 	case 4:
 		return true;
 	default:
-		error(fname, "invalid format version");
+		error(fname, "invalid format version\n");
 		return false;
 	}
 }
