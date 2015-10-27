@@ -1,0 +1,3 @@
+[submodule "suntaskq"]
+	path = suntaskq
+	url = https://github.com/jeffpc/suntaskq.git
