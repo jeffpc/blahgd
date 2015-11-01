@@ -139,6 +139,7 @@ target_link_libraries(blahgd
 	/usr/lib/libavl.so.1
 	/usr/lib/libcmdutils.so.1
 	m
+	suntaskq
 )
 
 add_executable(mathd

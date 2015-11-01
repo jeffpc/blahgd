@@ -82,7 +82,7 @@ struct req {
 
 	union {
 		struct {
-			list_node_t queue;
+			int dummy;
 		} scgi;
 	};
 
