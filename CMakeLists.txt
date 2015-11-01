@@ -56,6 +56,9 @@ BISON_TARGET(lisp lisp.y lisp.tab.c COMPILE_FLAGS "-p lisp_reader_")
 FLEX_TARGET(lisp lisp.l lisp.lex.c COMPILE_FLAGS "-P lisp_reader_")
 ADD_FLEX_BISON_DEPENDENCY(lisp lisp)
 
+include_directories(suntaskq/include)
+add_subdirectory(suntaskq)
+
 add_custom_target(revisiontag ALL)
 
 add_custom_command(TARGET revisiontag
