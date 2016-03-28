@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2009-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +34,8 @@
 #include <time.h>
 #include <dirent.h>
 #include <umem.h>
+
+#include <suntaskq.h>
 
 #include "iter.h"
 #include "post.h"
@@ -547,6 +549,14 @@ void post_destroy(struct post *post)
 	umem_cache_free(post_cache, post);
 }
 
+static void __tq_load_post(void *arg)
+{
+	int postid = (uintptr_t) arg;
+
+	/* load the post, but then free it since we don't need it */
+	post_putref(load_post(postid, false));
+}
+
 int load_all_posts(void)
 {
 	const char *data_dir = str_cstr(config.data_dir);
@@ -555,6 +565,7 @@ int load_all_posts(void)
 	struct dirent *de;
 	uint32_t postid;
 	uint64_t start_ts, end_ts;
+	taskq_t *tq;
 	DIR *dir;
 	int ret;
 
@@ -562,6 +573,13 @@ int load_all_posts(void)
 	dir = opendir(path);
 	if (!dir)
 		return errno;
+
+	tq = taskq_create("load-all-posts", 16, 1, INT_MAX,
+			  TASKQ_PREPOPULATE);
+	if (!tq) {
+		closedir(dir);
+		return ENOMEM;
+	}
 
 	start_ts = gettime();
 
@@ -594,9 +612,13 @@ int load_all_posts(void)
 			continue;
 		}
 
-		/* load the post, but then free it since we don't need it */
-		post_putref(load_post(postid, false));
+		/* load the post asynchronously */
+		if (!taskq_dispatch(tq, __tq_load_post, (void *)(uintptr_t) postid, 0))
+			__tq_load_post((void *)(uintptr_t) postid);
 	}
+
+	taskq_wait(tq);
+	taskq_destroy(tq);
 
 	end_ts = gettime();
 
