@@ -600,9 +600,9 @@ int load_all_posts(void)
 
 	end_ts = gettime();
 
-	fprintf(stderr, "Posts loaded in %"PRIu64".%09"PRIu64" seconds\n",
-		(end_ts - start_ts) / 1000000000UL,
-		(end_ts - start_ts) % 1000000000UL);
+	LOG("Posts loaded in %"PRIu64".%09"PRIu64" seconds",
+	    (end_ts - start_ts) / 1000000000UL,
+	    (end_ts - start_ts) % 1000000000UL);
 
 	closedir(dir);
 
