@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2013-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,11 +22,13 @@
 
 #include <stdbool.h>
 
+#include <jeffpc/str.h>
+
 #include "config.h"
 #include "post_fmt3_cmds.h"
 #include "listing.h"
 #include "utils.h"
-#include "str.h"
+#include "debug.h"
 
 /*
  * NOTE:
@@ -46,7 +48,7 @@ static struct str *__process_listing(struct post *post, struct str *txt, struct 
 	str_putref(txt);
 	str_putref(opt);
 
-	return str_cat3(STR_DUP("</p><pre>"), str, STR_DUP("</pre><p>"));
+	return str_cat(3, STR_DUP("</p><pre>"), str, STR_DUP("</pre><p>"));
 }
 
 static struct str *__process_link(struct post *post, struct str *txt, struct str *opt)
@@ -54,8 +56,8 @@ static struct str *__process_link(struct post *post, struct str *txt, struct str
 	if (!opt)
 		str_getref(txt);
 
-	return str_cat5(STR_DUP("<a href=\""), txt, STR_DUP("\">"),
-		        opt ? opt : txt, STR_DUP("</a>"));
+	return str_cat(5, STR_DUP("<a href=\""), txt, STR_DUP("\">"),
+		       opt ? opt : txt, STR_DUP("</a>"));
 }
 
 static struct str *__process_photolink(struct post *post, struct str *txt, struct str *opt)
@@ -63,46 +65,46 @@ static struct str *__process_photolink(struct post *post, struct str *txt, struc
 	if (!opt)
 		str_getref(txt);
 
-	return str_cat5(str_cat3(STR_DUP("<a href=\""),
-				 str_getref(config.photo_base_url),
-				 STR_DUP("/")),
-			txt,
-		        STR_DUP("\">"), opt ? opt : txt, STR_DUP("</a>"));
+	return str_cat(7, STR_DUP("<a href=\""),
+		       str_getref(config.photo_base_url),
+		       STR_DUP("/"),
+		       txt,
+		       STR_DUP("\">"), opt ? opt : txt, STR_DUP("</a>"));
 }
 
 static struct str *__process_img(struct post *post, struct str *txt, struct str *opt)
 {
-	return str_cat5(STR_DUP("<img src=\""), txt, STR_DUP("\" alt=\""),
-		        opt, STR_DUP("\" />"));
+	return str_cat(5, STR_DUP("<img src=\""), txt, STR_DUP("\" alt=\""),
+		       opt, STR_DUP("\" />"));
 }
 
 static struct str *__process_photo(struct post *post, struct str *txt, struct str *opt)
 {
-	return str_cat5(str_cat3(STR_DUP("<img src=\""),
-				 str_getref(config.photo_base_url),
-				 STR_DUP("/")),
-			txt,
-		        STR_DUP("\" alt=\""), opt, STR_DUP("\" />"));
+	return str_cat(7, STR_DUP("<img src=\""),
+		       str_getref(config.photo_base_url),
+		       STR_DUP("/"),
+		       txt,
+		       STR_DUP("\" alt=\""), opt, STR_DUP("\" />"));
 }
 
 static struct str *__process_emph(struct post *post, struct str *txt, struct str *opt)
 {
-	return str_cat3(STR_DUP("<em>"), txt, STR_DUP("</em>"));
+	return str_cat(3, STR_DUP("<em>"), txt, STR_DUP("</em>"));
 }
 
 static struct str *__process_texttt(struct post *post, struct str *txt, struct str *opt)
 {
-	return str_cat3(STR_DUP("<tt>"), txt, STR_DUP("</tt>"));
+	return str_cat(3, STR_DUP("<tt>"), txt, STR_DUP("</tt>"));
 }
 
 static struct str *__process_textbf(struct post *post, struct str *txt, struct str *opt)
 {
-	return str_cat3(STR_DUP("<strong>"), txt, STR_DUP("</strong>"));
+	return str_cat(3, STR_DUP("<strong>"), txt, STR_DUP("</strong>"));
 }
 
 static struct str *__process_textit(struct post *post, struct str *txt, struct str *opt)
 {
-	return str_cat3(STR_DUP("<i>"), txt, STR_DUP("</i>"));
+	return str_cat(3, STR_DUP("<i>"), txt, STR_DUP("</i>"));
 }
 
 static struct str *__process_begin(struct post *post, struct str *txt, struct str *opt)
@@ -141,9 +143,9 @@ static struct str *__process_begin(struct post *post, struct str *txt, struct st
 		return STR_DUP("</p><table>");
 	}
 
-	LOG("post_fmt3: invalid environment '%s' (post #%u)", str_cstr(txt), post->id);
+	DBG("post_fmt3: invalid environment '%s' (post #%u)", str_cstr(txt), post->id);
 
-	return str_cat3(STR_DUP("[INVAL ENVIRON '"), txt, STR_DUP("']"));
+	return str_cat(3, STR_DUP("[INVAL ENVIRON '"), txt, STR_DUP("']"));
 }
 
 static struct str *__process_end(struct post *post, struct str *txt, struct str *opt)
@@ -182,9 +184,9 @@ static struct str *__process_end(struct post *post, struct str *txt, struct str 
 		return STR_DUP("</table><p>");
 	}
 
-	LOG("post_fmt3: invalid environment '%s' (post #%u)", str_cstr(txt), post->id);
+	DBG("post_fmt3: invalid environment '%s' (post #%u)", str_cstr(txt), post->id);
 
-	return str_cat3(STR_DUP("[INVAL ENVIRON '"), txt, STR_DUP("']"));
+	return str_cat(3, STR_DUP("[INVAL ENVIRON '"), txt, STR_DUP("']"));
 }
 
 static struct str *__process_item(struct post *post, struct str *txt, struct str *opt)
@@ -193,9 +195,9 @@ static struct str *__process_item(struct post *post, struct str *txt, struct str
 	// encountered and then decide if <li> is the right tag to
 	// use
 	if (!opt)
-		return str_cat3(STR_DUP("<li>"), txt, STR_DUP("</li>"));
-	return str_cat5(STR_DUP("<dt>"), opt, STR_DUP("</dt><dd>"), txt,
-		        STR_DUP("</dd>"));
+		return str_cat(3, STR_DUP("<li>"), txt, STR_DUP("</li>"));
+	return str_cat(5, STR_DUP("<dt>"), opt, STR_DUP("</dt><dd>"), txt,
+		       STR_DUP("</dd>"));
 }
 
 static struct str *__process_abbrev(struct post *post, struct str *txt, struct str *opt)
@@ -203,23 +205,23 @@ static struct str *__process_abbrev(struct post *post, struct str *txt, struct s
 	if (!opt)
 		str_getref(txt);
 
-	return str_cat5(STR_DUP("<abbr title=\""), opt ? opt : txt,
-		        STR_DUP("\">"), txt, STR_DUP("</abbr>"));
+	return str_cat(5, STR_DUP("<abbr title=\""), opt ? opt : txt,
+		       STR_DUP("\">"), txt, STR_DUP("</abbr>"));
 }
 
 static struct str *__process_section(struct post *post, struct str *txt, struct str *opt)
 {
-	return str_cat3(STR_DUP("</p><h3>"), txt, STR_DUP("</h3><p>"));
+	return str_cat(3, STR_DUP("</p><h3>"), txt, STR_DUP("</h3><p>"));
 }
 
 static struct str *__process_subsection(struct post *post, struct str *txt, struct str *opt)
 {
-	return str_cat3(STR_DUP("</p><h4>"), txt, STR_DUP("</h4><p>"));
+	return str_cat(3, STR_DUP("</p><h4>"), txt, STR_DUP("</h4><p>"));
 }
 
 static struct str *__process_subsubsection(struct post *post, struct str *txt, struct str *opt)
 {
-	return str_cat3(STR_DUP("</p><h5>"), txt, STR_DUP("</h5><p>"));
+	return str_cat(3, STR_DUP("</p><h5>"), txt, STR_DUP("</h5><p>"));
 }
 
 static struct str *__process_wiki(struct post *post, struct str *txt, struct str *opt)
@@ -227,28 +229,28 @@ static struct str *__process_wiki(struct post *post, struct str *txt, struct str
 	if (!opt)
 		str_getref(txt);
 
-	return str_cat5(str_cat3(STR_DUP("<a href=\""),
-				 str_getref(config.wiki_base_url),
-				 STR_DUP("/")),
-			txt,
-			str_cat3(STR_DUP("\"><img src=\""),
-				 str_getref(config.base_url),
-				 STR_DUP("/wiki.png\" alt=\"Wikipedia article:\" />&nbsp;")),
-			opt ? opt : txt, STR_DUP("</a>"));
+	return str_cat(9, STR_DUP("<a href=\""),
+		       str_getref(config.wiki_base_url),
+		       STR_DUP("/"),
+		       txt,
+		       STR_DUP("\"><img src=\""),
+		       str_getref(config.base_url),
+		       STR_DUP("/wiki.png\" alt=\"Wikipedia article:\" />&nbsp;"),
+		       opt ? opt : txt, STR_DUP("</a>"));
 }
 
 static struct str *__process_bug(struct post *post, struct str *txt, struct str *opt)
 {
 	str_getref(txt);
 
-	return str_cat5(str_cat3(STR_DUP("<a href=\""),
-				 str_getref(config.bug_base_url),
-				 STR_DUP("/")),
-			txt,
-			str_cat3(STR_DUP("\"><img src=\""),
-				 str_getref(config.base_url),
-				 STR_DUP("/bug.png\" alt=\"bug #\" />&nbsp;")),
-			txt, STR_DUP("</a>"));
+	return str_cat(9, STR_DUP("<a href=\""),
+		       str_getref(config.bug_base_url),
+		       STR_DUP("/"),
+		       txt,
+		       STR_DUP("\"><img src=\""),
+		       str_getref(config.base_url),
+		       STR_DUP("/bug.png\" alt=\"bug #\" />&nbsp;"),
+		       txt, STR_DUP("</a>"));
 }
 
 static struct str *__process_post(struct post *post, struct str *txt, struct str *opt)
@@ -281,12 +283,12 @@ static struct str *__process_taglink(struct post *post, struct str *txt, struct 
 
 static struct str *__process_degree(struct post *post, struct str *txt, struct str *opt)
 {
-	return str_cat(STR_DUP("\xc2\xb0"), txt);
+	return str_cat(2, STR_DUP("\xc2\xb0"), txt);
 }
 
 static struct str *__process_trow(struct post *post, struct str *txt, struct str *opt)
 {
-	return str_cat3(STR_DUP("<tr><td>"), txt, STR_DUP("</td></tr>"));
+	return str_cat(3, STR_DUP("<tr><td>"), txt, STR_DUP("</td></tr>"));
 }
 
 static struct str *__process_leftarrow(struct post *post, struct str *txt, struct str *opt)
@@ -430,13 +432,13 @@ struct str *process_cmd(struct post *post, struct str *cmd, struct str *txt,
 
 	c = bsearch(&key, cmds, ARRAY_LEN(cmds), sizeof(cmds[0]), cmd_cmp);
 	if (!c) {
-		LOG("post_fmt3: invalid command '%s' (post #%u)", cmd->str, post->id);
+		DBG("post_fmt3: invalid command '%s' (post #%u)", cmd->str, post->id);
 
 		str_putref(txt);
 		str_putref(opt);
 
-		return str_cat3(STR_DUP("[INVAL CMD '"), cmd,
-			        STR_DUP("']"));
+		return str_cat(3, STR_DUP("[INVAL CMD '"), cmd,
+			       STR_DUP("']"));
 	}
 
 	__check_arg(c->square, opt);

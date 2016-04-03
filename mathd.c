@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2014-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,6 @@
  */
 
 #include <syslog.h>
-#include <errno.h>
 #include <string.h>
 #include <stdio.h>
 #include <door.h>
@@ -31,12 +30,15 @@
 #include <fcntl.h>
 #include <alloca.h>
 
-#include "error.h"
+#include <jeffpc/jeffpc.h>
+#include <jeffpc/error.h>
+#include <jeffpc/val.h>
+#include <jeffpc/str.h>
+#include <jeffpc/synch.h>
+
 #include "math.h"
-#include "val.h"
-#include "str.h"
-#include "mx.h"
 #include "config.h"
+#include "debug.h"
 #include "version.h"
 
 static pthread_mutex_t lock;
@@ -71,28 +73,32 @@ static void process(void *cookie, char *argp, size_t argsz, door_desc_t *dp,
 
 static int setup_door(void)
 {
+	int ret;
 	int tmp;
 	int fd;
 
 	fd = door_create(process, NULL, DOOR_NO_CANCEL);
 	if (fd < 0) {
-		LOG("door_create failed: %s (%d)", strerror(errno), errno);
-		return errno;
+		ret = -errno;
+		DBG("door_create failed: %s", xstrerror(ret));
+		return ret;
 	}
 
 	fdetach(MATHD_DOOR_PATH);
 
 	tmp = creat(MATHD_DOOR_PATH, S_IRUSR | S_IWUSR);
 	if (tmp < 0) {
-		LOG("creat failed: %s (%d)", strerror(errno), errno);
-		return errno;
+		ret = -errno;
+		DBG("creat failed: %s", xstrerror(ret));
+		return ret;
 	}
 
 	close(tmp);
 
 	if (fattach(fd, MATHD_DOOR_PATH) < 0) {
-		LOG("fattach failed: %s (%d)", strerror(errno), errno);
-		return errno;
+		ret = -errno;
+		DBG("fattach failed: %s", xstrerror(ret));
+		return ret;
 	}
 
 	return 0;
@@ -107,8 +113,7 @@ int main(int argc, char **argv)
 	fprintf(stderr, "mathd version %s\n", version_string);
 
 	init_math(false);
-	init_str_subsys();
-	init_val_subsys();
+	jeffpc_init(&init_ops);
 
 	ret = config_load((argc >= 2) ? argv[1] : NULL);
 	if (ret)

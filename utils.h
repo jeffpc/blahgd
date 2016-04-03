@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2011-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,16 +28,15 @@
 #include <string.h>
 #include <sys/avl.h>
 
-#include "error.h"
-#include "str.h"
+#include <jeffpc/error.h>
+#include <jeffpc/int.h>
+#include <jeffpc/str.h>
+#include <jeffpc/io.h>
+#include <jeffpc/time.h>
 
 #define ARRAY_LEN(a)		(sizeof(a) / sizeof(a[0]))
 
 extern int hasdotdot(const char *path);
-extern int xread(int fd, void *buf, size_t nbyte);
-extern int xwrite(int fd, const void *buf, size_t nbyte);
-extern char *read_file_common(const char *fname, struct stat *sb);
-extern int write_file(const char *fname, const char *data, size_t len);
 extern char *concat5(char *a, char *b, char *c, char *d, char *e);
 extern time_t parse_time_cstr(const char *str);
 
@@ -62,73 +61,6 @@ static inline char *xstrdup_def(const char *s, const char *def)
 static inline char *xstrdup(const char *s)
 {
 	return xstrdup_def(s, "");
-}
-
-static inline int xwrite_str(int fd, const char *s)
-{
-	return xwrite(fd, s, strlen(s));
-}
-
-#define STR_TO_INT(size, imax)						\
-static inline int __str2u##size(const char *restrict s,			\
-				uint##size##_t *i,			\
-				int base)				\
-{									\
-	char *endptr;							\
-	uint64_t tmp;							\
-									\
-	*i = 0;								\
-									\
-	errno = 0;							\
-	tmp = strtoull(s, &endptr, base);				\
-									\
-	if (errno)							\
-		return errno;						\
-									\
-	if (endptr == s)						\
-		return EINVAL;						\
-									\
-	if (tmp > imax)							\
-		return ERANGE;						\
-									\
-	*i = tmp;							\
-	return 0;							\
-}
-
-STR_TO_INT(16, 0x000000000000fffful)
-STR_TO_INT(32, 0x00000000fffffffful)
-STR_TO_INT(64, 0xffffffffffffffffull)
-
-#undef STR_TO_INT
-
-#define str2u64(s, i)	__str2u64((s), (i), 10)
-#define str2u32(s, i)	__str2u32((s), (i), 10)
-#define str2u16(s, i)	__str2u16((s), (i), 10)
-
-static inline uint64_t gettime(void)
-{
-	struct timespec ts;
-
-	clock_gettime(CLOCK_REALTIME, &ts);
-
-	return ts.tv_sec * 1000000000ULL + ts.tv_nsec;
-}
-
-static inline char *read_file(const char *fname)
-{
-	return read_file_common(fname, NULL);
-}
-
-static inline char *read_file_len(const char *fname, size_t *len)
-{
-	struct stat sb;
-	char *ret;
-
-	ret = read_file_common(fname, &sb);
-	if (!IS_ERR(ret))
-		*len = sb.st_size;
-
-	return ret;
 }
 
 static inline time_t parse_time_str(struct str *str)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2013-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,10 +25,11 @@
 #include <math.h>
 #include <sys/sysmacros.h>
 
+#include <jeffpc/error.h>
+
 #include "req.h"
 #include "vars.h"
 #include "sidebar.h"
-#include "error.h"
 #include "utils.h"
 #include "post.h"
 
@@ -58,7 +59,7 @@ static int __tagcloud_init(void *arg, unsigned long ntags)
 	state->cloud = malloc(sizeof(nvlist_t *) * ntags);
 	state->ntags = 0;
 
-	return state->cloud ? 0 : ENOMEM;
+	return state->cloud ? 0 : -ENOMEM;
 }
 
 static void __tagcloud_step(void *arg, const struct str *name,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2014-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,13 +26,15 @@
 #include <pthread.h>
 #include <umem.h>
 
-#include "atomic.h"
+#include <jeffpc/atomic.h>
+
 #include "req.h"
 #include "utils.h"
 #include "sidebar.h"
 #include "render.h"
 #include "qstring.h"
 #include "static.h"
+#include "debug.h"
 #include "version.h"
 
 static umem_cache_t *req_cache;
@@ -214,7 +216,7 @@ out:
 	/*
 	 * Stash away the success/failure of the above writes
 	 */
-	req->write_errno = ret;
+	req->write_errno = -ret;
 
 	req->stats.req_done = gettime();
 
@@ -329,7 +331,7 @@ err_free:
 	nvlist_free(logentry);
 
 err:
-	LOG("Failed to log request");
+	DBG("Failed to log request");
 }
 
 void req_destroy(struct req *req)
@@ -581,7 +583,7 @@ int R404(struct req *req, char *tmpl)
 
 int R301(struct req *req, const char *url)
 {
-	LOG("status 301 (url: '%s')", url);
+	DBG("status 301 (url: '%s')", url);
 
 	req_head(req, "Content-Type", "text/html");
 	req_head(req, "Location", url);

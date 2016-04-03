@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2014-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,8 @@
 #define __MATH_H
 
 #include <stdbool.h>
+
+#include <jeffpc/str.h>
 
 extern void init_math(bool daemonized);
 extern struct str *render_math(struct str *val);

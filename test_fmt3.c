@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2013-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,13 +22,16 @@
 
 #include <stdlib.h>
 
+#include <jeffpc/jeffpc.h>
+#include <jeffpc/error.h>
+#include <jeffpc/str.h>
+#include <jeffpc/val.h>
+
 #include "parse.h"
-#include "error.h"
 #include "utils.h"
-#include "str.h"
-#include "val.h"
 #include "math.h"
 #include "file_cache.h"
+#include "debug.h"
 
 static int onefile(struct post *post, char *ibuf, size_t len)
 {
@@ -74,8 +77,7 @@ int main(int argc, char **argv)
 	ASSERT0(putenv("BLAHG_DISABLE_SYSLOG=1"));
 
 	init_math(false);
-	init_str_subsys();
-	init_val_subsys();
+	jeffpc_init(&init_ops);
 	init_file_cache();
 
 	for (i = 1; i < argc; i++) {

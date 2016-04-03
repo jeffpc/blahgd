@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2009-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,14 +24,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <errno.h>
+
+#include <jeffpc/error.h>
 
 #include "post.h"
 #include "req.h"
 #include "render.h"
 #include "sidebar.h"
-#include "error.h"
 #include "utils.h"
+#include "debug.h"
 
 static int __load_post(struct req *req, int p, bool preview)
 {
@@ -39,7 +40,7 @@ static int __load_post(struct req *req, int p, bool preview)
 
 	post = get_post(req, p, "title", preview);
 	if (!post) {
-		LOG("failed to load post #%d: %s (%d)%s", p, "XXX",
+		DBG("failed to load post #%d: %s (%d)%s", p, "XXX",
 		    -1, preview ? " preview" : "");
 
 		vars_set_str(&req->vars, "title", "not found");
@@ -48,7 +49,7 @@ static int __load_post(struct req *req, int p, bool preview)
 		nvlist_free(post);
 	}
 
-	return post ? 0 : ENOENT;
+	return post ? 0 : -ENOENT;
 }
 
 int blahg_story(struct req *req, int p, bool preview)

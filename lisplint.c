@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2015-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,11 +22,15 @@
 
 #include <stdlib.h>
 
-#include "error.h"
+#include <jeffpc/jeffpc.h>
+#include <jeffpc/error.h>
+#include <jeffpc/sexpr.h>
+#include <jeffpc/str.h>
+#include <jeffpc/val.h>
+
 #include "utils.h"
-#include "lisp.h"
-#include "str.h"
-#include "val.h"
+#include "config.h"
+#include "debug.h"
 
 static char *prog;
 
@@ -45,7 +49,7 @@ static bool check_type(const char *fname, struct val *lv,
 {
 	struct val *v;
 
-	v = lisp_alist_lookup_val(lv, varname);
+	v = sexpr_alist_lookup_val(lv, varname);
 	if (!v) {
 		if (mandatory)
 			error(fname, "missing '%s'\n", varname);
@@ -72,7 +76,7 @@ static bool check_post(const char *fname, struct val *lv)
 	/*
 	 * check fmt presence & correctness
 	 */
-	fmtval = lisp_alist_lookup_val(lv, "fmt");
+	fmtval = sexpr_alist_lookup_val(lv, "fmt");
 	if (!fmtval) {
 		error(fname, "missing 'fmt'\n");
 		return false;
@@ -155,10 +159,10 @@ static bool onefile(const char *fname, char *ibuf, size_t len)
 	struct val *lv;
 	bool ret;
 
-	lv = parse_lisp(ibuf, len);
+	lv = sexpr_parse(ibuf, len);
 
 	if (verbose) {
-		lisp_dump_file(stderr, lv, false);
+		sexpr_dump_file(stderr, lv, false);
 		fprintf(stderr, "\n");
 	}
 
@@ -189,8 +193,7 @@ int main(int argc, char **argv)
 	ASSERT0(putenv("UMEM_DEBUG=default,verbose"));
 	ASSERT0(putenv("BLAHG_DISABLE_SYSLOG=1"));
 
-	init_str_subsys();
-	init_val_subsys();
+	jeffpc_init(&init_ops);
 
 	while ((opt = getopt(argc, argv, "pcCv")) != -1) {
 		switch (opt) {
@@ -225,7 +228,7 @@ int main(int argc, char **argv)
 		in = read_file(argv[i]);
 		if (IS_ERR(in)) {
 			fprintf(stderr, "%s: cannot read: %s\n",
-				argv[i], strerror(PTR_ERR(in)));
+				argv[i], xstrerror(PTR_ERR(in)));
 			result++;
 			continue;
 		}

@@ -52,10 +52,6 @@ BISON_TARGET(tmpl template.y template.tab.c COMPILE_FLAGS "-p tmpl_")
 FLEX_TARGET(tmpl template.l template.lex.c COMPILE_FLAGS "-P tmpl_")
 ADD_FLEX_BISON_DEPENDENCY(tmpl tmpl)
 
-BISON_TARGET(lisp lisp.y lisp.tab.c COMPILE_FLAGS "-p lisp_reader_")
-FLEX_TARGET(lisp lisp.l lisp.lex.c COMPILE_FLAGS "-P lisp_reader_")
-ADD_FLEX_BISON_DEPENDENCY(lisp lisp)
-
 include_directories(suntaskq/include)
 add_subdirectory(suntaskq)
 
@@ -89,7 +85,6 @@ add_executable(blahgd
 	# post - format 3
 	${FLEX_fmt3_OUTPUTS} ${BISON_fmt3_OUTPUTS}
 	post_fmt3_cmds.c
-	str.c
 	listing.c mangle.c
 	math.c
 
@@ -102,13 +97,8 @@ add_executable(blahgd
 	qstring.c
 	decode.c fsm.c
 	vars.c vars_dump.c
-	val.c
 	nvl.c
 	nvl_convert.c
-
-	# lisp parsing related things
-	${FLEX_lisp_OUTPUTS} ${BISON_lisp_OUTPUTS}
-	lisp.c
 
 	# request processing
 	req.c
@@ -140,17 +130,14 @@ target_link_libraries(blahgd
 	/usr/lib/libcmdutils.so.1
 	m
 	suntaskq
+	jeffpc
 )
 
 add_executable(mathd
 	mathd.c
 	math.c
 	error.c
-	val.c
-	str.c
 	config.c
-	lisp.c
-	${FLEX_lisp_OUTPUTS} ${BISON_lisp_OUTPUTS}
 	mangle.c
 	utils.c
 )
@@ -160,26 +147,24 @@ target_link_libraries(mathd
 	umem
 	md
 	/usr/lib/libavl.so.1
+	jeffpc
 )
 
 add_executable(lisplint
 	lisplint.c
-	val.c
-	str.c
 	error.c
 	mangle.c
 	utils.c
 
 	nvl.c
 	nvl_convert.c
-	${FLEX_lisp_OUTPUTS} ${BISON_lisp_OUTPUTS}
-	lisp.c
 )
 
 target_link_libraries(lisplint
 	umem
 	nvpair
 	/usr/lib/libavl.so.1
+	jeffpc
 )
 
 add_executable(nvdump
@@ -194,11 +179,11 @@ target_link_libraries(nvdump
 	umem
 	nvpair
 	/usr/lib/libavl.so.1
+	jeffpc
 )
 
 add_executable(test_fmt3
 	test_fmt3.c
-	val.c
 	post.c
 	post_index.c
 	${FLEX_fmt3_OUTPUTS} ${BISON_fmt3_OUTPUTS}
@@ -208,11 +193,8 @@ add_executable(test_fmt3
 	math.c
 	listing.c
 	mangle.c utils.c error.c
-	str.c
 	nvl.c
 	nvl_convert.c
-	${FLEX_lisp_OUTPUTS} ${BISON_lisp_OUTPUTS}
-	lisp.c
 )
 
 target_link_libraries(test_fmt3
@@ -222,6 +204,7 @@ target_link_libraries(test_fmt3
 	suntaskq
 	/usr/lib/libavl.so.1
 	/usr/lib/libcmdutils.so.1
+	jeffpc
 )
 
 add_executable(test_qstring
@@ -237,22 +220,7 @@ target_link_libraries(test_qstring
 	umem
 	nvpair
 	/usr/lib/libavl.so.1
-)
-
-add_executable(test_lisp_parser
-	test_lisp_parser.c
-	${FLEX_lisp_OUTPUTS} ${BISON_lisp_OUTPUTS}
-	lisp.c
-	error.c
-	utils.c
-	str.c
-	val.c
-	mangle.c
-)
-
-target_link_libraries(test_lisp_parser
-	umem
-	/usr/lib/libavl.so.1
+	jeffpc
 )
 
 function(simple_c_test type section bin data)

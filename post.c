@@ -24,7 +24,6 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <limits.h>
-#include <errno.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/types.h>
@@ -37,14 +36,17 @@
 
 #include <suntaskq.h>
 
+#include <jeffpc/error.h>
+#include <jeffpc/io.h>
+
 #include "iter.h"
 #include "post.h"
 #include "vars.h"
 #include "req.h"
 #include "parse.h"
-#include "error.h"
 #include "utils.h"
 #include "file_cache.h"
+#include "debug.h"
 
 static umem_cache_t *post_cache;
 static umem_cache_t *comment_cache;
@@ -100,11 +102,11 @@ static void post_add_tags(avl_tree_t *taglist, struct val *list)
 	if (!list)
 		return;
 
-	for (; list; list = lisp_cdr(list)) {
+	for (; list; list = sexpr_cdr(list)) {
 		struct val *tagval;
 		struct str *tagname;
 
-		tagval = lisp_car(val_getref(list));
+		tagval = sexpr_car(val_getref(list));
 
 		/* sanity check */
 		ASSERT3U(tagval->type, ==, VT_STR);
@@ -181,9 +183,9 @@ static void post_add_comment(struct post *post, int commid)
 				 post);
 	ASSERT(!IS_ERR(meta));
 
-	lv = parse_lisp_str(meta);
+	lv = sexpr_parse_str(meta);
 
-	v = lisp_cdr(lisp_assoc(lv, "moderated"));
+	v = sexpr_cdr(sexpr_assoc(lv, "moderated"));
 	if (!v || (v->type != VT_BOOL) || !v->b)
 		goto done;
 
@@ -191,11 +193,11 @@ static void post_add_comment(struct post *post, int commid)
 	ASSERT(comm);
 
 	comm->id     = commid;
-	comm->author = lisp_alist_lookup_str(lv, "author");
-	comm->email  = lisp_alist_lookup_str(lv, "email");
-	comm->time   = parse_time_str(lisp_alist_lookup_str(lv, "time"));
-	comm->ip     = lisp_alist_lookup_str(lv, "ip");
-	comm->url    = lisp_alist_lookup_str(lv, "url");
+	comm->author = sexpr_alist_lookup_str(lv, "author");
+	comm->email  = sexpr_alist_lookup_str(lv, "email");
+	comm->time   = parse_time_str(sexpr_alist_lookup_str(lv, "time"));
+	comm->ip     = sexpr_alist_lookup_str(lv, "ip");
+	comm->url    = sexpr_alist_lookup_str(lv, "url");
 	comm->body   = load_comment(post, comm->id);
 
 	if (!comm->author)
@@ -216,10 +218,10 @@ static void post_add_comments(struct post *post, struct val *list)
 	if (!list)
 		return;
 
-	for (; list; list = lisp_cdr(list)) {
+	for (; list; list = sexpr_cdr(list)) {
 		struct val *val;
 
-		val = lisp_car(val_getref(list));
+		val = sexpr_car(val_getref(list));
 
 		/* sanity check */
 		ASSERT3U(val->type, ==, VT_INT);
@@ -252,7 +254,7 @@ static int __do_load_post_body_fmt3(struct post *post, const struct str *input)
 
 	ret = fmt3_parse(&x);
 	if (ret) {
-		LOG("failed to parse post id %u", post->id);
+		DBG("failed to parse post id %u", post->id);
 		ASSERT(0);
 	}
 
@@ -395,13 +397,13 @@ static int __load_post_body(struct post *post)
 static void __refresh_published_prop(struct post *post, struct val *lv)
 {
 	/* update the time */
-	post->time = parse_time_str(lisp_alist_lookup_str(lv, "time"));
+	post->time = parse_time_str(sexpr_alist_lookup_str(lv, "time"));
 
 	/* update the title */
-	post->title = lisp_alist_lookup_str(lv, "title");
+	post->title = sexpr_alist_lookup_str(lv, "title");
 
 	/* update the format */
-	post->fmt = lisp_alist_lookup_int(lv, "fmt", NULL);
+	post->fmt = sexpr_alist_lookup_int(lv, "fmt", NULL);
 }
 
 static int __refresh_published(struct post *post)
@@ -418,7 +420,7 @@ static int __refresh_published(struct post *post)
 	if (IS_ERR(meta))
 		return PTR_ERR(meta);
 
-	lv = parse_lisp_str(meta);
+	lv = sexpr_parse_str(meta);
 
 	__refresh_published_prop(post, lv);
 
@@ -428,9 +430,9 @@ static int __refresh_published(struct post *post)
 	post_remove_all_comments(post);
 
 	/* populate the tags/cats/comments lists */
-	post_add_tags(&post->tags, lisp_alist_lookup_list(lv, "tags"));
-	post_add_tags(&post->cats, lisp_alist_lookup_list(lv, "cats"));
-	post_add_comments(post, lisp_alist_lookup_list(lv, "comments"));
+	post_add_tags(&post->tags, sexpr_alist_lookup_list(lv, "tags"));
+	post_add_tags(&post->cats, sexpr_alist_lookup_list(lv, "cats"));
+	post_add_comments(post, sexpr_alist_lookup_list(lv, "comments"));
 
 	val_putref(lv);
 	str_putref(meta);
@@ -572,13 +574,13 @@ int load_all_posts(void)
 	snprintf(path, sizeof(path), "%s/posts", data_dir);
 	dir = opendir(path);
 	if (!dir)
-		return errno;
+		return -errno;
 
 	tq = taskq_create("load-all-posts", 16, 1, INT_MAX,
 			  TASKQ_PREPOPULATE);
 	if (!tq) {
 		closedir(dir);
-		return ENOMEM;
+		return -ENOMEM;
 	}
 
 	start_ts = gettime();
@@ -598,10 +600,10 @@ int load_all_posts(void)
 		snprintf(path, FILENAME_MAX, "%s/posts/%u", data_dir, postid);
 
 		/* check that it is a directory */
-		ret = lstat(path, &statbuf);
+		ret = xlstat(path, &statbuf);
 		if (ret) {
-			fprintf(stderr, "skipping '%s' - failed to lstat: %s\n",
-				path, strerror(errno));
+			fprintf(stderr, "skipping '%s' - failed to xlstat: %s\n",
+				path, xstrerror(ret));
 			continue;
 		}
 
@@ -622,7 +624,7 @@ int load_all_posts(void)
 
 	end_ts = gettime();
 
-	LOG("Posts loaded in %"PRIu64".%09"PRIu64" seconds",
+	DBG("Posts loaded in %"PRIu64".%09"PRIu64" seconds",
 	    (end_ts - start_ts) / 1000000000UL,
 	    (end_ts - start_ts) % 1000000000UL);
 

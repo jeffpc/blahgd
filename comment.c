@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2009-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,12 +25,17 @@
 #include <stdarg.h>
 #include <string.h>
 #include <time.h>
-#include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/file.h>
 #include <unistd.h>
 #include <fcntl.h>
+
+#include <jeffpc/error.h>
+#include <jeffpc/atomic.h>
+#include <jeffpc/sexpr.h>
+#include <jeffpc/str.h>
+#include <jeffpc/io.h>
 
 #include "req.h"
 #include "sidebar.h"
@@ -39,11 +44,8 @@
 #include "config.h"
 #include "comment.h"
 #include "decode.h"
-#include "error.h"
 #include "post.h"
-#include "atomic.h"
-#include "lisp.h"
-#include "str.h"
+#include "debug.h"
 
 #define INTERNAL_ERR		"Ouch!  Encountered an internal error.  " \
 				"Please contact me to resolve this issue."
@@ -85,9 +87,9 @@
 #define SC_EMPTY_EQ		19
 #define SC_ERROR		99
 
-static struct str *prep_meta_lisp(const char *author, const char *email,
-				  const char *curdate, const char *ip,
-				  const char *url)
+static struct str *prep_meta_sexpr(const char *author, const char *email,
+				   const char *curdate, const char *ip,
+				   const char *url)
 {
 	struct val *lv;
 	struct str *str;
@@ -118,7 +120,7 @@ static struct str *prep_meta_lisp(const char *author, const char *email,
 	                 VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("moderated"), VAL_ALLOC_BOOL(false)),
 	                 NULL))))));
 
-	str = lisp_dump(lv, false);
+	str = sexpr_dump(lv, false);
 
 	val_putref(lv);
 
@@ -147,23 +149,23 @@ const char *write_out_comment(struct req *req, int id, char *author,
 	nvlist_t *post;
 
 	if (strlen(email) == 0) {
-		LOG("You must fill in email (postid=%d)", id);
+		DBG("You must fill in email (postid=%d)", id);
 		return MISSING_EMAIL;
 	}
 
 	if (strlen(author) == 0) {
-		LOG("You must fill in name (postid=%d)", id);
+		DBG("You must fill in name (postid=%d)", id);
 		return MISSING_NAME;
 	}
 
 	if (strlen(comment) == 0) {
-		LOG("You must fill in comment (postid=%d)", id);
+		DBG("You must fill in comment (postid=%d)", id);
 		return MISSING_CONTENT;
 	}
 
 	post = get_post(req, id, NULL, false);
 	if (!post) {
-		LOG("Gah! %d (postid=%d)", -1, id);
+		DBG("Gah! %d (postid=%d)", -1, id);
 		return GENERIC_ERR_STR;
 	}
 
@@ -172,7 +174,7 @@ const char *write_out_comment(struct req *req, int id, char *author,
 	now_nsec = now % 1000000000UL;
 	now_tm = gmtime(&now_sec);
 	if (!now_tm) {
-		LOG("Ow, gmtime() returned NULL");
+		DBG("Ow, gmtime() returned NULL");
 		return INTERNAL_ERR;
 	}
 
@@ -190,23 +192,25 @@ const char *write_out_comment(struct req *req, int id, char *author,
 	ASSERT3U(strlen(textpath), <, FILENAME_MAX - 1);
 	ASSERT3U(strlen(lisppath), <, FILENAME_MAX - 1);
 
-	if (mkdir(dirpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == -1) {
-		LOG("Ow, could not create directory: %d (%s) '%s'", errno, strerror(errno), dirpath);
+	ret = xmkdir(dirpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+	if (ret) {
+		DBG("Ow, could not create directory: %d (%s) '%s'", ret,
+		    xstrerror(ret), dirpath);
 		return INTERNAL_ERR;
 	}
 
 	ret = write_file(textpath, comment, strlen(comment));
 	if (ret) {
-		LOG("Couldn't write file ... :( %d (%s) '%s'",
-		    ret, strerror(ret), textpath);
+		DBG("Couldn't write file ... :( %d (%s) '%s'",
+		    ret, xstrerror(ret), textpath);
 		return INTERNAL_ERR;
 	}
 
 	remote_addr = nvl_lookup_str(req->request_headers, REMOTE_ADDR);
 
-	meta = prep_meta_lisp(author, email, curdate, remote_addr, url);
+	meta = prep_meta_sexpr(author, email, curdate, remote_addr, url);
 	if (!meta) {
-		LOG("failed to prep lisp meta data");
+		DBG("failed to prep lisp meta data");
 		return INTERNAL_ERR;
 	}
 
@@ -215,15 +219,15 @@ const char *write_out_comment(struct req *req, int id, char *author,
 	str_putref(meta);
 
 	if (ret) {
-		LOG("Couldn't write file ... :( %d (%s) '%s'",
-		    ret, strerror(ret), lisppath);
+		DBG("Couldn't write file ... :( %d (%s) '%s'",
+		    ret, xstrerror(ret), lisppath);
 		return INTERNAL_ERR;
 	}
 
-	ret = rename(dirpath, basepath);
+	ret = xrename(dirpath, basepath);
 	if (ret) {
-		LOG("Could not rename '%s' to '%s' %d (%s)",
-		    dirpath, basepath, errno, strerror(errno));
+		DBG("Could not rename '%s' to '%s' %d (%s)",
+		    dirpath, basepath, ret, xstrerror(ret));
 		return INTERNAL_ERR;
 	}
 
@@ -257,7 +261,7 @@ static const char *save_comment(struct req *req)
 	int id = 0;
 
 	if (!nvl_lookup_str(req->request_headers, HTTP_USER_AGENT)) {
-		LOG("Missing user agent...");
+		DBG("Missing user agent...");
 		return USERAGENT_MISSING;
 	}
 
@@ -267,7 +271,7 @@ static const char *save_comment(struct req *req)
 	comment_buf[0] = '\0'; /* better be paranoid */
 
 	if (!req->request_body) {
-		LOG("missing req. body");
+		DBG("missing req. body");
 		return INTERNAL_ERR;
 	}
 
@@ -277,7 +281,7 @@ static const char *save_comment(struct req *req)
 		tmp = *in;
 
 #if 0
-		LOG("|'%c' %d|", tmp, state);
+		DBG("|'%c' %d|", tmp, state);
 #endif
 
 		switch(state) {
@@ -420,33 +424,35 @@ static const char *save_comment(struct req *req)
 	}
 
 #if 0
-	LOG("author: \"%s\"", author_buf);
-	LOG("email: \"%s\"", email_buf);
-	LOG("url: \"%s\"", url_buf);
-	LOG("comment: \"%s\"", comment_buf);
-	LOG("date: %lu", date);
-	LOG("id: %d", id);
-	LOG("captcha: %lu", captcha);
+	DBG("author: \"%s\"", author_buf);
+	DBG("email: \"%s\"", email_buf);
+	DBG("url: \"%s\"", url_buf);
+	DBG("comment: \"%s\"", comment_buf);
+	DBG("date: %lu", date);
+	DBG("id: %d", id);
+	DBG("captcha: %lu", captcha);
 #endif
 
 	now = gettime();
 	deltat = now - date;
 
 	if (nonempty) {
-		LOG("User filled out supposedly empty field... postid:%d", id);
+		DBG("User filled out supposedly empty field... postid:%d", id);
 		return GENERIC_ERR_STR;
 	}
 
 	if ((deltat > 1000000000ull * config.comment_max_think) ||
 	    (deltat < 1000000000ull * config.comment_min_think)) {
-		LOG("Flash-gordon or geriatric was here... load:%lu comment:%lu delta:%lu postid:%d",
+		DBG("Flash-gordon or geriatric was here... load:%"PRIu64
+		    " comment:%"PRIu64" delta:%"PRIu64" postid:%d",
 		    date, now, deltat, id);
 		return GENERIC_ERR_STR;
 	}
 
 	if (captcha != (config.comment_captcha_a + config.comment_captcha_b)) {
-		LOG("Math illiterate was here... got:%lu expected:%lu postid:%d",
-		    captcha, config.comment_captcha_a + config.comment_captcha_b,
+		DBG("Math illiterate was here... got:%"PRIu64
+		    " expected:%"PRIu64" postid:%d", captcha,
+		    config.comment_captcha_a + config.comment_captcha_b,
 		    id);
 		return CAPTCHA_FAIL;
 	}

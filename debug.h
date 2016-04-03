@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,21 +20,14 @@
  * SOFTWARE.
  */
 
-#ifndef __MX_H
-#define __MX_H
+#ifndef __DEBUG_H
+#define __DEBUG_H
 
-#include <pthread.h>
+#include <jeffpc/error.h>
+#include <jeffpc/jeffpc.h>
 
-#include "error.h"
+#define DBG(...)	cmn_err(CE_DEBUG, __VA_ARGS__)
 
-#define MXINIT(l)	ASSERT0(pthread_mutex_init((l), NULL))
-#define MXDESTROY(l)	ASSERT0(pthread_mutex_destroy(l))
-#define MXLOCK(l)	ASSERT0(pthread_mutex_lock(l))
-#define MXUNLOCK(l)	ASSERT0(pthread_mutex_unlock(l))
-#define CONDINIT(c)	ASSERT0(pthread_cond_init((c), NULL))
-#define CONDDESTROY(c)	ASSERT0(pthread_cond_destroy(c))
-#define CONDWAIT(c,m)	ASSERT0(pthread_cond_wait((c),(m)))
-#define CONDSIG(c)	ASSERT0(pthread_cond_signal(c))
-#define CONDBCAST(c)	ASSERT0(pthread_cond_broadcast(c))
+extern struct jeffpc_ops init_ops;
 
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2009-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,9 +28,10 @@
 #include <sys/list.h>
 #include <sys/avl.h>
 
-#include "mx.h"
+#include <jeffpc/synch.h>
+#include <jeffpc/refcnt.h>
+
 #include "vars.h"
-#include "refcnt.h"
 
 struct post_tag {
 	avl_node_t node;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2013-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,5 @@
 #define __MANGLE_H
 
 extern char *mangle_htmlescape(const char *in);
-extern char *mangle_lispescape(const char *in);
 
 #endif

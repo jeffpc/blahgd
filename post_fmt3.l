@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2011-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,8 +29,9 @@
 %{
 #include <stdlib.h>
 
+#include <jeffpc/str.h>
+
 #include "parse.h"
-#include "str.h"
 
 #include "post_fmt3.tab.h"
 

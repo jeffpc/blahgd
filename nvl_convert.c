@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2015-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,9 +20,10 @@
  * SOFTWARE.
  */
 
+#include <jeffpc/error.h>
+
 #include "nvl.h"
 #include "utils.h"
-#include "error.h"
 
 static void cvt_string(nvlist_t *nvl, nvpair_t *pair, data_type_t tgt)
 {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2015-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,16 +20,18 @@
  * SOFTWARE.
  */
 
+#include <jeffpc/sexpr.h>
+
 #include "config.h"
+#include "utils.h"
 #include "file_cache.h"
-#include "lisp.h"
 
 /*
  * The actual config
  */
 struct config config;
 
-static struct str *exampledotcom;
+static struct str exampledotcom = STR_STATIC_INITIALIZER("example.com");
 
 static void config_load_u64(struct val *lv, const char *vname,
 			    uint64_t *ret, uint64_t def)
@@ -37,7 +39,7 @@ static void config_load_u64(struct val *lv, const char *vname,
 	uint64_t tmp;
 	bool found;
 
-	tmp = lisp_alist_lookup_int(lv, vname, &found);
+	tmp = sexpr_alist_lookup_int(lv, vname, &found);
 
 	if (found)
 		*ret = tmp;
@@ -50,12 +52,12 @@ static void config_load_url(struct val *lv, const char *vname,
 {
 	struct str *s;
 
-	s = lisp_alist_lookup_str(lv, vname);
+	s = sexpr_alist_lookup_str(lv, vname);
 
 	if (s)
 		*ret = s;
 	else
-		*ret = str_getref(exampledotcom);
+		*ret = str_getref(&exampledotcom);
 }
 
 static void config_load_str(struct val *lv, const char *vname,
@@ -63,7 +65,7 @@ static void config_load_str(struct val *lv, const char *vname,
 {
 	struct str *s;
 
-	s = lisp_alist_lookup_str(lv, vname);
+	s = sexpr_alist_lookup_str(lv, vname);
 
 	if (s)
 		*ret = s;
@@ -100,19 +102,17 @@ int config_load(const char *fname)
 
 	srand(time(NULL));
 
-	exampledotcom = STR_DUP("http://example.com");
-
 	if (fname) {
 		raw = read_file(fname);
 		if (IS_ERR(raw))
 			return PTR_ERR(raw);
 
-		lv = parse_lisp_cstr(raw);
+		lv = sexpr_parse_cstr(raw);
 
 		free(raw);
 
 		if (!lv)
-			return EINVAL;
+			return -EINVAL;
 	} else {
 		lv = NULL;
 	}

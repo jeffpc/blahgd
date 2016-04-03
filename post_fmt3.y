@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2011-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,19 +29,20 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include <jeffpc/error.h>
+#include <jeffpc/str.h>
+
 #include "config.h"
-#include "error.h"
 #include "utils.h"
 #include "mangle.h"
 #include "listing.h"
 #include "post_fmt3_cmds.h"
-#include "str.h"
 #include "math.h"
+#include "debug.h"
 
 #include "parse.h"
 
@@ -51,12 +52,12 @@ extern int fmt3_lex(void *, void *);
 
 void yyerror(void *scan, char *e)
 {
-	LOG("Error: %s", e);
+	DBG("Error: %s", e);
 }
 
 void fmt3_error2(char *e, char *yytext)
 {
-	LOG("Error: %s (%s)", e, yytext);
+	DBG("Error: %s (%s)", e, yytext);
 }
 
 static const char *dashes[4] = {
@@ -157,17 +158,17 @@ post : paragraphs PAREND		{ data->stroutput = $1; }
      | PAREND				{ data->stroutput = STR_DUP(""); }
      ;
 
-paragraphs : paragraphs PAREND paragraph	{ $$ = str_cat4($1, STR_DUP("<p>"), $3, STR_DUP("</p>\n")); }
-	   | paragraph				{ $$ = str_cat3(STR_DUP("<p>"), $1, STR_DUP("</p>\n")); }
+paragraphs : paragraphs PAREND paragraph	{ $$ = str_cat(4, $1, STR_DUP("<p>"), $3, STR_DUP("</p>\n")); }
+	   | paragraph				{ $$ = str_cat(3, STR_DUP("<p>"), $1, STR_DUP("</p>\n")); }
 	   ;
 
-paragraph : paragraph thing		{ $$ = str_cat($1, $2); }
+paragraph : paragraph thing		{ $$ = str_cat(2, $1, $2); }
           | thing			{ $$ = $1; }
           ;
 
 thing : WORD				{ $$ = $1; }
-      | UTF8FIRST2 UTF8REST		{ $$ = str_cat($1, $2); }
-      | UTF8FIRST3 UTF8REST UTF8REST	{ $$ = str_cat3($1, $2, $3); }
+      | UTF8FIRST2 UTF8REST		{ $$ = str_cat(2, $1, $2); }
+      | UTF8FIRST3 UTF8REST UTF8REST	{ $$ = str_cat(3, $1, $2, $3); }
       | NLINE				{ $$ = STR_DUP(data->post->texttt_nesting ? "\n" : " "); }
       | WSPACE				{ $$ = $1; }
       | PIPE				{ $$ = STR_DUP("|"); }
@@ -184,10 +185,10 @@ thing : WORD				{ $$ = $1; }
       | PERCENT				{ $$ = STR_DUP("%"); }
       | BSLASH cmd			{ $$ = $2; }
       | MATHSTART math MATHEND		{ $$ = render_math($2); }
-      | VERBSTART verb VERBEND		{ $$ = str_cat3(STR_DUP("</p><p>"), $2, STR_DUP("</p><p>")); }
-      | LISTSTART verb LISTEND		{ $$ = str_cat3(STR_DUP("</p><pre>"),
-							 listing_str($2),
-							 STR_DUP("</pre><p>")); }
+      | VERBSTART verb VERBEND		{ $$ = str_cat(3, STR_DUP("</p><p>"), $2, STR_DUP("</p><p>")); }
+      | LISTSTART verb LISTEND		{ $$ = str_cat(3, STR_DUP("</p><pre>"),
+						       listing_str($2),
+						       STR_DUP("</pre><p>")); }
       ;
 
 cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd(data->post, $1, $3, $2); }
@@ -209,28 +210,28 @@ optcmdarg : OBRACE paragraph CBRACE	{ $$ = $2; }
 cmdarg : OCURLY paragraph CCURLY	{ $$ = $2; }
        ;
 
-verb : verb VERBTEXT			{ $$ = str_cat($1, $2); }
+verb : verb VERBTEXT			{ $$ = str_cat(2, $1, $2); }
      | VERBTEXT				{ $$ = $1; }
 
-math : math mexpr			{ $$ = str_cat($1, $2); }
+math : math mexpr			{ $$ = str_cat(2, $1, $2); }
      | mexpr				{ $$ = $1; }
      ;
 
 mexpr : WORD				{ $$ = $1; }
       | WSPACE				{ $$ = $1; }
       | SCHAR				{ $$ = $1; }
-      | mexpr EQLTGT mexpr 		{ $$ = str_cat3($1, $2, $3); }
-      | mexpr USCORE mexpr 		{ $$ = str_cat3($1, STR_DUP("_"), $3); }
-      | mexpr CARRET mexpr 		{ $$ = str_cat3($1, $2, $3); }
-      | mexpr PLUS mexpr 		{ $$ = str_cat3($1, $2, $3); }
-      | mexpr MINUS mexpr 		{ $$ = str_cat3($1, $2, $3); }
-      | mexpr ASTERISK mexpr	 	{ $$ = str_cat3($1, STR_DUP("*"), $3); }
-      | mexpr SLASH mexpr	 	{ $$ = str_cat3($1, STR_DUP("/"), $3); }
-      | mexpr TILDE mexpr		{ $$ = str_cat3($1, STR_DUP("~"), $3); }
-      | BSLASH WORD			{ $$ = str_cat(STR_DUP("\\"), $2); }
+      | mexpr EQLTGT mexpr 		{ $$ = str_cat(3, $1, $2, $3); }
+      | mexpr USCORE mexpr 		{ $$ = str_cat(3, $1, STR_DUP("_"), $3); }
+      | mexpr CARRET mexpr 		{ $$ = str_cat(3, $1, $2, $3); }
+      | mexpr PLUS mexpr 		{ $$ = str_cat(3, $1, $2, $3); }
+      | mexpr MINUS mexpr 		{ $$ = str_cat(3, $1, $2, $3); }
+      | mexpr ASTERISK mexpr	 	{ $$ = str_cat(3, $1, STR_DUP("*"), $3); }
+      | mexpr SLASH mexpr	 	{ $$ = str_cat(3, $1, STR_DUP("/"), $3); }
+      | mexpr TILDE mexpr		{ $$ = str_cat(3, $1, STR_DUP("~"), $3); }
+      | BSLASH WORD			{ $$ = str_cat(2, STR_DUP("\\"), $2); }
       | BSLASH USCORE			{ $$ = STR_DUP("\\_"); }
-      | OPAREN math CPAREN		{ $$ = str_cat3(STR_DUP("("), $2, STR_DUP(")")); }
-      | OCURLY math CCURLY		{ $$ = str_cat3(STR_DUP("{"), $2, STR_DUP("}")); }
+      | OPAREN math CPAREN		{ $$ = str_cat(3, STR_DUP("("), $2, STR_DUP(")")); }
+      | OCURLY math CCURLY		{ $$ = str_cat(3, STR_DUP("{"), $2, STR_DUP("}")); }
       ;
 
 %%

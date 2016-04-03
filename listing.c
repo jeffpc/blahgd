@@ -49,6 +49,6 @@ struct str *listing(struct post *post, const char *fname)
 
 err:
 	snprintf(path, FILENAME_MAX, "Failed to read in listing '%d/%s': %s",
-		 post->id, fname, strerror(PTR_ERR(in)));
+		 post->id, fname, xstrerror(PTR_ERR(in)));
 	return STR_DUP(path);
 }

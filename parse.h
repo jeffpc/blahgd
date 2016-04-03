@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2012-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,11 +23,12 @@
 #ifndef __PARSE_H
 #define __PARSE_H
 
+#include <jeffpc/error.h>
+#include <jeffpc/str.h>
+#include <jeffpc/sexpr.h>
+
 #include "req.h"
 #include "post.h"
-#include "error.h"
-#include "str.h"
-#include "lisp.h"
 
 struct parser_output {
 	struct req *req;
@@ -52,16 +53,12 @@ typedef void* yyscan_t;
 
 extern int fmt3_lex_destroy(yyscan_t yyscanner);
 extern int tmpl_lex_destroy(yyscan_t yyscanner);
-extern int lisp_reader_lex_destroy(yyscan_t yyscanner);
 extern int fmt3_parse(struct parser_output *data);
 extern int tmpl_parse(struct parser_output *data);
-extern int lisp_reader_parse(struct parser_output *data);
 extern void fmt3_set_extra(void * user_defined, yyscan_t yyscanner);
 extern void tmpl_set_extra(void * user_defined, yyscan_t yyscanner);
-extern void lisp_reader_set_extra(void * user_defined, yyscan_t yyscanner);
 extern int fmt3_lex_init(yyscan_t* scanner);
 extern int tmpl_lex_init(yyscan_t* scanner);
-extern int lisp_reader_lex_init(yyscan_t* scanner);
 
 static inline bool cond_value(struct parser_output *data)
 {

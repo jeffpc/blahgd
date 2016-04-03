@@ -16,9 +16,6 @@ post_fmt3.tab.h
 template.lex.c
 template.tab.c
 template.tab.h
-lisp.lex.c
-lisp.tab.c
-lisp.tab.h
 
 tags
 

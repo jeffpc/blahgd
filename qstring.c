@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2014-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,9 +20,8 @@
  * SOFTWARE.
  */
 
-#include <errno.h>
+#include <jeffpc/error.h>
 
-#include "error.h"
 #include "vars.h"
 #include "decode.h"
 #include "qstring.h"
@@ -65,7 +64,7 @@ static void free_str(struct qstr *str)
 static int append_char_str(struct qstr *str, char c)
 {
 	if ((str->idx + 1) == str->len)
-		return E2BIG;
+		return -E2BIG;
 
 	str->buf[str->idx++] = c;
 

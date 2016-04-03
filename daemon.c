@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2014-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,21 +31,23 @@
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
-#include <errno.h>
 #include <priv.h>
 
-#include "error.h"
+#include <jeffpc/jeffpc.h>
+#include <jeffpc/error.h>
+#include <jeffpc/atomic.h>
+#include <jeffpc/val.h>
+#include <jeffpc/str.h>
+
 #include "utils.h"
 #include "helpers.h"
-#include "atomic.h"
-#include "val.h"
 #include "pipeline.h"
 #include "file_cache.h"
 #include "math.h"
-#include "str.h"
 #include "req.h"
 #include "post.h"
 #include "version.h"
+#include "debug.h"
 
 #define HOST		NULL
 #define CONN_BACKLOG	32
@@ -63,7 +65,7 @@ atomic_t server_shutdown;
 
 static void sigterm_handler(int signum, siginfo_t *info, void *unused)
 {
-	LOG("SIGTERM received");
+	DBG("SIGTERM received");
 
 	atomic_set(&server_shutdown, 1);
 }
@@ -80,14 +82,14 @@ static void handle_signals(void)
 
 	ret = sigaction(SIGPIPE, &action, NULL);
 	if (ret)
-		LOG("Failed to ignore SIGPIPE: %s", strerror(errno));
+		DBG("Failed to ignore SIGPIPE: %s", strerror(errno));
 
 	action.sa_sigaction = sigterm_handler;
 	action.sa_flags = SA_SIGINFO;
 
 	ret = sigaction(SIGTERM, &action, NULL);
 	if (ret)
-		LOG("Failed to set SIGTERM handler: %s", strerror(errno));
+		DBG("Failed to set SIGTERM handler: %s", strerror(errno));
 }
 
 static int bind_sock(int family, struct sockaddr *addr, int addrlen)
@@ -97,11 +99,11 @@ static int bind_sock(int family, struct sockaddr *addr, int addrlen)
 	int fd;
 
 	if (nfds >= MAX_SOCK_FDS)
-		return EMFILE;
+		return -EMFILE;
 
 	fd = socket(family, SOCK_STREAM, 0);
 	if (fd == -1)
-		return errno;
+		return -errno;
 
 	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 
@@ -116,7 +118,7 @@ static int bind_sock(int family, struct sockaddr *addr, int addrlen)
 	return 0;
 
 err:
-	ret = errno;
+	ret = -errno;
 
 	close(fd);
 
@@ -155,7 +157,7 @@ static int start_listening(void)
 				addr = &ipv6->sin6_addr;
 				break;
 			default:
-				LOG("Unsupparted address family: %d",
+				DBG("Unsupparted address family: %d",
 				    p->ai_family);
 				addr = NULL;
 				break;
@@ -167,10 +169,10 @@ static int start_listening(void)
 		inet_ntop(p->ai_family, addr, str, sizeof(str));
 
 		ret = bind_sock(p->ai_family, p->ai_addr, p->ai_addrlen);
-		if (ret && ret != EAFNOSUPPORT)
+		if (ret && ret != -EAFNOSUPPORT)
 			return ret;
 		else if (!ret)
-			LOG("Bound to: %s %s", str, port);
+			DBG("Bound to: %s %s", str, port);
 	}
 
 	freeaddrinfo(res);
@@ -191,6 +193,7 @@ static void accept_conns(void)
 	fd_set set;
 	int maxfd;
 	int ret;
+	int err;
 	int i;
 
 	for (;;) {
@@ -207,14 +210,15 @@ static void accept_conns(void)
 		}
 
 		ret = select(maxfd + 1, &set, NULL, NULL, NULL);
+		err = errno;
 
 		ts = gettime();
 
 		if (atomic_read(&server_shutdown))
 			break;
 
-		if ((ret < 0) && (errno != EINTR))
-			LOG("Error on select: %s", strerror(errno));
+		if ((ret < 0) && (err != EINTR))
+			DBG("Error on select: %s", strerror(err));
 
 		for (i = 0; (i < nfds) && (ret > 0); i++) {
 			if (!FD_ISSET(fds[i], &set))
@@ -223,7 +227,7 @@ static void accept_conns(void)
 			len = sizeof(addr);
 			fd = accept(fds[i], (struct sockaddr *) &addr, &len);
 			if (fd == -1) {
-				LOG("Failed to accept from fd %d: %s",
+				DBG("Failed to accept from fd %d: %s",
 				    fds[i], strerror(errno));
 				continue;
 			}
@@ -251,19 +255,21 @@ static int drop_privs()
 
 	wanted = priv_allocset();
 	if (!wanted)
-		return errno;
+		return -errno;
 
 	priv_emptyset(wanted);
 
 	for (i = 0; privs[i]; i++) {
 		ret = priv_addset(wanted, privs[i]);
 		if (ret) {
-			ret = errno;
+			ret = -errno;
 			goto err_free;
 		}
 	}
 
 	ret = setppriv(PRIV_SET, PRIV_PERMITTED, wanted);
+	if (ret == -1)
+		ret = -errno;
 
 err_free:
 	priv_freeset(wanted);
@@ -285,8 +291,7 @@ int main(int argc, char **argv)
 		goto err;
 
 	init_math(true);
-	init_str_subsys();
-	init_val_subsys();
+	jeffpc_init(&init_ops);
 	init_pipe_subsys();
 	init_req_subsys();
 	init_post_subsys();
@@ -325,7 +330,7 @@ err_helpers:
 	stop_helpers();
 
 err:
-	LOG("Failed to inintialize: %s", strerror(ret));
+	DBG("Failed to inintialize: %s", xstrerror(ret));
 
 	return ret;
 }

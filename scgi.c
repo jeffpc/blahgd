@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2014-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,10 +23,10 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
-#include <errno.h>
 #include <string.h>
 
-#include "error.h"
+#include <jeffpc/error.h>
+
 #include "req.h"
 #include "vars.h"
 #include "utils.h"
@@ -55,7 +55,7 @@ static int read_netstring_length(struct req *req, size_t *len)
 				v = (v * 10) + (c - '0');
 				break;
 			default:
-				return EINVAL;
+				return -EINVAL;
 		}
 	}
 }
@@ -69,13 +69,10 @@ static int read_netstring_string(struct req *req, size_t len)
 
 	buf = malloc(len + 1);
 	if (!buf)
-		return ENOMEM;
+		return -ENOMEM;
 
-	ret = recv(req->fd, buf, len + 1, MSG_WAITALL);
-	ASSERT3S(ret, !=, -1);
-
-	if (ret != (len + 1)) {
-		ret = errno;
+	ret = xread(req->fd, buf, len + 1);
+	if (ret) {
 		free(buf);
 		return ret;
 	}
@@ -148,14 +145,14 @@ static int read_body(struct req *req)
 	ret = nvlist_lookup_uint64(req->request_headers, CONTENT_LENGTH,
 				   &content_len);
 	if (ret)
-		return ret;
+		return -ret;
 
 	if (!content_len)
 		return 0;
 
 	buf = malloc(content_len + 1);
 	if (!buf)
-		return ENOMEM;
+		return -ENOMEM;
 
 	ret = recv(req->fd, buf, content_len, MSG_WAITALL);
 	ASSERT3S(ret, !=, -1);

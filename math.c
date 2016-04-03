@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2014-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-#include "str.h"
+#include <jeffpc/str.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/types.h>
@@ -30,29 +30,18 @@
 
 #include <sha1.h>
 
+#include <jeffpc/error.h>
+#include <jeffpc/atomic.h>
+#include <jeffpc/hexdump.h>
+#include <jeffpc/io.h>
+
 #include "utils.h"
 #include "math.h"
-#include "error.h"
-#include "atomic.h"
+#include "config.h"
+#include "debug.h"
 
 static bool use_door_call;
 static int doorfd;
-
-static inline char asciify(unsigned char c)
-{
-	return (c < 10) ? (c + '0') : (c - 10 + 'A');
-}
-
-static void hexdump(char *a, unsigned char *b, int len)
-{
-	int i;
-
-	for(i=0; i<len; i++) {
-		a[i*2]   = asciify(b[i] >> 4);
-		a[i*2+1] = asciify(b[i] & 15);
-	}
-	a[i*2] = '\0';
-}
 
 #define TEX_TMP_DIR "/tmp"
 static int __render_math(const char *tex, char *md, char *dstpath,
@@ -60,54 +49,74 @@ static int __render_math(const char *tex, char *md, char *dstpath,
 {
 	char cmd[3*FILENAME_MAX];
 	char *pwd;
-	FILE *f;
+	int ret;
+	int fd;
 
 	pwd = getcwd(NULL, FILENAME_MAX);
 	if (!pwd)
-		goto err;
-
-	f = fopen(texpath, "w");
-	if (!f)
-		goto err;
+		return -errno;
 
 	chdir(TEX_TMP_DIR);
 
-	fprintf(f, "\\documentclass{article}\n");
-	fprintf(f, "%% add additional packages here\n");
-	fprintf(f, "\\usepackage{amsmath}\n");
-	fprintf(f, "\\usepackage{bm}\n");
-	fprintf(f, "\\pagestyle{empty}\n");
-	fprintf(f, "\\begin{document}\n");
-	fprintf(f, "\\begin{equation*}\n");
-	fprintf(f, "\\large\n");
-	fprintf(f, tex);
-	fprintf(f, "\\end{equation*}\n");
-	fprintf(f, "\\end{document}\n");
-	fclose(f);
+	fd = xopen(texpath, O_WRONLY, S_IRUSR | S_IWUSR);
+	if (fd < 0) {
+		ret = fd;
+		goto err_chdir;
+	}
+
+	if ((ret = xwrite_str(fd,
+			      "\\documentclass{article}\n"
+			      "% add additional packages here\n"
+			      "\\usepackage{amsmath}\n"
+			      "\\usepackage{bm}\n"
+			      "\\pagestyle{empty}\n"
+			      "\\begin{document}\n"
+			      "\\begin{equation*}\n"
+			      "\\large\n")))
+		goto err_close;
+	if ((ret = xwrite_str(fd, tex)))
+		goto err_close;
+	if ((ret = xwrite_str(fd,
+			      "\\end{equation*}\n"
+			      "\\end{document}\n")))
+		goto err_close;
+
+	xclose(fd);
 
 	snprintf(cmd, sizeof(cmd), "%s --interaction=nonstopmode %s > /dev/null",
 		 str_cstr(config.latex_bin), texpath);
-	LOG("math cmd: '%s'", cmd);
-	if (system(cmd))
+	DBG("math cmd: '%s'", cmd);
+	if (system(cmd) == -1) {
+		ret = -errno;
 		goto err_chdir;
+	}
 
 	snprintf(cmd, sizeof(cmd), "%s -T tight -x 1200 -z 9 "
 		 "-bg Transparent -o %s %s > /dev/null",
 		 str_cstr(config.dvipng_bin), pngpath, dvipath);
-	LOG("math cmd: '%s'", cmd);
-	if (system(cmd))
+	DBG("math cmd: '%s'", cmd);
+	if (system(cmd) == -1) {
+		ret = -errno;
 		goto err_chdir;
+	}
 
 	chdir(pwd);
 
 	snprintf(cmd, sizeof(cmd), "cp %s %s", pngpath, dstpath);
-	LOG("math cmd: '%s'", cmd);
-	if (system(cmd))
+	DBG("math cmd: '%s'", cmd);
+	if (system(cmd) == -1) {
+		ret = -errno;
 		goto err;
+	}
 
 	free(pwd);
 
 	return 0;
+
+err_close:
+	xclose(fd);
+
+	xunlink(texpath);
 
 err_chdir:
 	chdir(pwd);
@@ -115,7 +124,7 @@ err_chdir:
 err:
 	free(pwd);
 
-	return 1;
+	return ret;
 }
 
 static struct str *do_render_math(struct str *val)
@@ -141,7 +150,7 @@ static struct str *do_render_math(struct str *val)
 	SHA1Update(&digest, tex, strlen(tex));
 	SHA1Final(md, &digest);
 
-	hexdump(amd, md, 20);
+	hexdumpz(amd, md, 20, true);
 
 	id = atomic_inc(&nonce);
 
@@ -158,29 +167,29 @@ static struct str *do_render_math(struct str *val)
 	unlink(dvipath);
 	unlink(pngpath);
 
-	ret = stat(finalpath, &statbuf);
+	ret = xstat(finalpath, &statbuf);
 	if (!ret)
 		goto out;
 
 	ret = __render_math(tex, amd, finalpath, texpath, dvipath, pngpath);
 
-	unlink(texpath);
-	unlink(logpath);
-	unlink(auxpath);
-	unlink(dvipath);
-	unlink(pngpath);
+	xunlink(texpath);
+	xunlink(logpath);
+	xunlink(auxpath);
+	xunlink(dvipath);
+	xunlink(pngpath);
 
 	if (ret) {
 		str_putref(val);
 
-		return str_cat3(STR_DUP("<span>Math Error ("),
-		                STR_DUP(strerror(errno)),
-			        STR_DUP(")</span>"));
+		return str_cat(3, STR_DUP("<span>Math Error ("),
+			       STR_DUP(xstrerror(ret)),
+			       STR_DUP(")</span>"));
 	}
 
 out:
-	return str_cat5(STR_DUP("<img src=\""), STR_DUP(finalpath),
-	                STR_DUP("\" alt=\"$"), val, STR_DUP("$\" />"));
+	return str_cat(5, STR_DUP("<img src=\""), STR_DUP(finalpath),
+		       STR_DUP("\" alt=\"$"), val, STR_DUP("$\" />"));
 }
 
 static struct str *door_call_render_math(struct str *val)

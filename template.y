@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2012-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,14 +30,16 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <jeffpc/error.h>
+#include <jeffpc/val.h>
+
 #include "config.h"
 #include "iter.h"
 #include "vars.h"
-#include "error.h"
 #include "render.h"
 #include "pipeline.h"
 #include "utils.h"
-#include "val.h"
+#include "debug.h"
 
 #include "parse.h"
 
@@ -47,7 +49,7 @@ extern int tmpl_lex(void *, void *);
 
 void yyerror(void *scan, char *e)
 {
-	LOG("Error: %s", e);
+	DBG("Error: %s", e);
 }
 
 static char *tostr(char c)
@@ -144,7 +146,7 @@ static char *foreach(struct parser_output *data, struct req *req, char *varname,
 		ret = __foreach_str(req, var, tmpl);
 	} else {
 		//vars_dump(&req->vars);
-		LOG("%s called with '%s' which has type %d", __func__,
+		DBG("%s called with '%s' which has type %d", __func__,
 		    varname, nvpair_type(var));
 		ASSERT(0);
 	}
@@ -170,7 +172,7 @@ static char *print_val(struct val *val)
 		case VT_SYM:
 		case VT_CONS:
 		case VT_BOOL:
-			LOG("%s called with value of type %d", __func__,
+			DBG("%s called with value of type %d", __func__,
 			    val->type);
 			ASSERT(0);
 	}
@@ -194,7 +196,7 @@ static char *print_var(nvpair_t *var)
 			tmp = buf;
 			break;
 		default:
-			LOG("%s called with '%s' which has type %d", __func__,
+			DBG("%s called with '%s' which has type %d", __func__,
 			    nvpair_name(var), nvpair_type(var));
 			ASSERT(0);
 			break;
@@ -231,7 +233,7 @@ static char *pipeline(struct parser_output *data, struct req *req,
 			break;
 		default:
 			vars_dump(&req->vars);
-			LOG("%s called with '%s' which has type %d", __func__,
+			DBG("%s called with '%s' which has type %d", __func__,
 			    varname, nvpair_type(var));
 			ASSERT(0);
 			break;
@@ -331,7 +333,7 @@ static char *function(struct parser_output *data, struct req *req,
 	} else if (!strcmp(fxn, "else")) {
 		cond_else(data);
 	} else {
-		LOG("unknown template function '%s'", fxn);
+		DBG("unknown template function '%s'", fxn);
 		ASSERT(0);
 	}
 

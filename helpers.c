@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2014-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,6 @@
  */
 
 #include <stdlib.h>
-#include <errno.h>
 #include <limits.h>
 
 #include <suntaskq.h>
@@ -30,6 +29,7 @@
 #include "helpers.h"
 #include "scgi.h"
 #include "utils.h"
+#include "debug.h"
 
 static taskq_t *processor;
 
@@ -54,17 +54,17 @@ int enqueue_fd(int fd, uint64_t ts)
 
 	req = req_alloc();
 	if (!req)
-		return ENOMEM;
+		return -ENOMEM;
 
 	req->stats.fd_conn = ts;
 
 	req_init_scgi(req, fd);
 
 	if (!taskq_dispatch(processor, queue_processor, req, 0)) {
-		LOG("failed to dispatch connection");
+		DBG("failed to dispatch connection");
 		req_destroy(req);
 		req_free(req);
-		return ENOMEM;
+		return -ENOMEM;
 	}
 
 	return 0;
@@ -76,7 +76,7 @@ int start_helpers(void)
 				 config.scgi_threads, INT_MAX,
 				 TASKQ_PREPOPULATE);
 	if (!processor)
-		return ENOMEM;
+		return -ENOMEM;
 
 	return 0;
 }

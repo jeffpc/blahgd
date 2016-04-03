@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2015-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@ static void dump_file(char *fname)
 	buf = read_file_len(fname, &len);
 	if (IS_ERR(buf)) {
 		fprintf(stderr, "Error: could not read file: %s: %s\n", fname,
-			strerror(PTR_ERR(buf)));
+			xstrerror(PTR_ERR(buf)));
 		return;
 	}
 

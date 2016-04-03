@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2013-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,71 +20,24 @@
  * SOFTWARE.
  */
 
-#include <sys/debug.h>
+#include <jeffpc/error.h>
+#include <jeffpc/jeffpc.h>
 
-/*
- * clean up the pulled in defines since we want to do our own thing
- */
-#undef ASSERT
-#undef VERIFY
-#undef ASSERT64
-#undef ASSERT32
-#undef IMPLY
-#undef EQUIV
-#undef VERIFY3S
-#undef VERIFY3U
-#undef VERIFY3P
-#undef VERIFY0
-#undef ASSERT3S
-#undef ASSERT3U
-#undef ASSERT3P
-#undef ASSERT0
-
-#include "error.h"
-
-#include <sys/inttypes.h>
 #include <syslog.h>
 #include <stdarg.h>
 
-void __my_log(const char *fmt, ...)
+static void mylog(int level, const char *fmt, va_list ap)
 {
-	va_list ap;
 	char msg[512];
 
-	va_start(ap, fmt);
+	if (getenv("BLAHG_DISABLE_SYSLOG"))
+		return;
 
 	vsnprintf(msg, sizeof(msg), fmt, ap);
 
-	if (!getenv("BLAHG_DISABLE_SYSLOG"))
-		syslog(LOG_LOCAL0 | LOG_CRIT, "%s", msg);
-	else
-		fprintf(stderr, "%s\n", msg);
-
-	va_end(ap);
+	syslog(LOG_LOCAL0 | level, "%s", msg);
 }
 
-void __my_assfail(const char *a, const char *f, int l)
-{
-	LOG("assertion failed: %s, file: %s, line: %d", a, f, l);
-
-	assfail(a, f, l);
-
-	/* this is a hack to shut up gcc */
-	abort();
-}
-
-void __my_assfail3(const char *a, uintmax_t lv, const char *op, uintmax_t rv,
-		   const char *f, int l)
-{
-	char msg[512];
-
-	snprintf(msg, sizeof(msg), "%s (0x%"PRIx64" %s 0x%"PRIx64")", a, lv,
-		 op, rv);
-
-	LOG("assertion failed: %s, file: %s, line: %d", msg, f, l);
-
-	assfail(msg, f, l);
-
-	/* this is a hack to shut up gcc */
-	abort();
-}
+struct jeffpc_ops init_ops = {
+	.log = mylog,
+};

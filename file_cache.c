@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2014-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,15 +26,20 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include <port.h>
 #include <umem.h>
 
+#include <jeffpc/str.h>
+#include <jeffpc/synch.h>
+#include <jeffpc/thread.h>
+#include <jeffpc/refcnt.h>
+#include <jeffpc/io.h>
+
 #include "file_cache.h"
 #include "utils.h"
-#include "str.h"
-#include "mx.h"
 #include "iter.h"
-#include "refcnt.h"
+#include "debug.h"
 
 #define FILE_EVENTS	(FILE_MODIFIED | FILE_ATTRIB)
 
@@ -103,10 +108,15 @@ static void process_file(struct file_node *node, int events)
 
 	MXLOCK(&node->lock);
 
-	if (!(events & FILE_EXCEPTION) && stat(fobj->fo_name, &statbuf) == -1) {
-		fprintf(stderr, "failed to stat '%s' errno %d\n",
-			fobj->fo_name, errno);
-		goto free;
+	if (!(events & FILE_EXCEPTION)) {
+		int ret;
+
+		ret = xstat(fobj->fo_name, &statbuf);
+		if (ret) {
+			DBG("failed to stat '%s' error: %s\n",
+				fobj->fo_name, xstrerror(ret));
+			goto free;
+		}
 	}
 
 	if (events) {
@@ -171,7 +181,7 @@ static int add_cb(struct file_node *node, void (*cb)(void *), void *arg)
 
 	fcb = umem_cache_alloc(file_callback_cache, 0);
 	if (!fcb)
-		return ENOMEM;
+		return -ENOMEM;
 
 	fcb->cb = cb;
 	fcb->arg = arg;
@@ -237,7 +247,7 @@ void init_file_cache(void)
 	filemon_port = port_create();
 	ASSERT(filemon_port != -1);
 
-	ret = pthread_create(&filemon_thread, NULL, filemon, NULL);
+	ret = xthr_create(&filemon_thread, filemon, NULL);
 	ASSERT0(ret);
 }
 
@@ -315,16 +325,16 @@ static int __reload(struct file_node *node)
 	/* read the current */
 	tmp = read_file_common(node->name, &node->stat);
 	if (IS_ERR(tmp)) {
-		LOG("file (%s) read error: %s", node->name,
-		    strerror(PTR_ERR(tmp)));
+		DBG("file (%s) read error: %s", node->name,
+		    xstrerror(PTR_ERR(tmp)));
 		return PTR_ERR(tmp);
 	}
 
 	node->contents = str_alloc(tmp);
 	if (!node->contents) {
-		LOG("file (%s) str_alloc error", node->name);
+		DBG("file (%s) str_alloc error", node->name);
 		free(tmp);
-		return ENOMEM;
+		return -ENOMEM;
 	}
 
 	node->needs_reload = false;
@@ -339,7 +349,7 @@ static struct file_node *load_file(const char *name)
 
 	node = fn_alloc(name);
 	if (!node)
-		return ERR_PTR(ENOMEM);
+		return ERR_PTR(-ENOMEM);
 
 	if ((ret = __reload(node))) {
 		fn_free(node);

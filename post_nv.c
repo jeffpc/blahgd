@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2009-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,10 +20,11 @@
  * SOFTWARE.
  */
 
+#include <jeffpc/str.h>
+
 #include "iter.h"
 #include "post.h"
 #include "req.h"
-#include "str.h"
 
 static void __tag_val(nvlist_t *post, avl_tree_t *list)
 {

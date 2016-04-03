@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2015-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,9 +25,10 @@
 #include <sys/sysmacros.h>
 #include <umem.h>
 
+#include <jeffpc/str.h>
+#include <jeffpc/error.h>
+
 #include "post.h"
-#include "str.h"
-#include "error.h"
 #include "iter.h"
 #include "utils.h"
 
@@ -373,7 +374,7 @@ static int __insert_post_tags(avl_tree_t *index,
 			/* ...allocate one if it doesn't exist */
 			sub = umem_cache_alloc(subindex_cache, 0);
 			if (!sub)
-				return ENOMEM;
+				return -ENOMEM;
 
 			sub->name = str_getref(tag->tag);
 			init_index_tree(&sub->subindex);
@@ -384,7 +385,7 @@ static int __insert_post_tags(avl_tree_t *index,
 		/* allocate & add a entry to the subindex */
 		tag_entry = umem_cache_alloc(index_entry_cache, 0);
 		if (!tag_entry)
-			return ENOMEM;
+			return -ENOMEM;
 
 		tag_entry->global = global;
 		tag_entry->name   = str_getref(tag->tag);
@@ -406,7 +407,7 @@ int index_insert_post(struct post *post)
 	/* allocate an entry for the global index */
 	global = umem_cache_alloc(global_index_entry_cache, 0);
 	if (!global) {
-		ret = ENOMEM;
+		ret = -ENOMEM;
 		goto err;
 	}
 
@@ -421,7 +422,7 @@ int index_insert_post(struct post *post)
 	/* allocate an entry for the by-time index */
 	by_time = umem_cache_alloc(index_entry_cache, 0);
 	if (!by_time) {
-		ret = ENOMEM;
+		ret = -ENOMEM;
 		goto err_free;
 	}
 
@@ -438,7 +439,7 @@ int index_insert_post(struct post *post)
 	/* add the post to the global index */
 	if (safe_avl_add(&index_global, global)) {
 		MXUNLOCK(&index_lock);
-		ret = EEXIST;
+		ret = -EEXIST;
 		goto err_free_by_time;
 	}
 

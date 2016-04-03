@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2015-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,8 +22,9 @@
 
 #include <strings.h>
 
+#include <jeffpc/atomic.h>
+
 #include "stats.h"
-#include "atomic.h"
 
 /* enough for ~110 seconds worst case */
 #define NUM_BUCKETS	40

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2013-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,11 +26,12 @@
 #include <ctype.h>
 #include <umem.h>
 
+#include <jeffpc/error.h>
+#include <jeffpc/val.h>
+
 #include "pipeline.h"
-#include "error.h"
 #include "utils.h"
 #include "mangle.h"
-#include "val.h"
 
 static umem_cache_t *pipestage_cache;
 static umem_cache_t *pipeline_cache;
@@ -139,9 +140,8 @@ static struct val *__escape(struct val *val, char *(*cvt)(const char*))
 		case VT_SYM:
 		case VT_CONS:
 		case VT_BOOL:
-			LOG("%s called with value type %d", __func__,
-			    val->type);
-			ASSERT(0);
+			panic("%s called with value type %d", __func__,
+			      val->type);
 	}
 
 	val_putref(val);

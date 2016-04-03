@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2011-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,12 +26,13 @@
 #include <time.h>
 #include <stdbool.h>
 
+#include <jeffpc/error.h>
+
 #include "config.h"
 #include "render.h"
 #include "req.h"
 #include "utils.h"
 #include "sidebar.h"
-#include "error.h"
 #include "post.h"
 
 static const char *wordpress_catn[] = {
