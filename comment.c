@@ -119,8 +119,6 @@ static struct str *prep_meta_lisp(const char *author, const char *email,
 	                 NULL))))));
 
 	str = lisp_dump(lv, false);
-	if (!str)
-		return NULL;
 
 	val_putref(lv);
 
