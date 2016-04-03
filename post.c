@@ -267,105 +267,9 @@ static int __do_load_post_body_fmt3(struct post *post, const struct str *input)
 	return 0;
 }
 
-/*
- * Concatenate @a with @b.  Only @blen chars are appended to the output.
- *
- * Note: @a will be freed
- */
-static char *cc(char *a, char *b, int blen)
-{
-	int alen;
-	char *ret;
-
-	alen = strlen(a);
-
-	ret = malloc(alen + blen + 1);
-	ASSERT(ret);
-
-	memcpy(ret, a, alen);
-	memcpy(ret + alen, b, blen);
-	ret[alen + blen] = '\0';
-
-	free(a);
-
-	return ret;
-}
-
-#define CATP_SKIP	0
-#define CATP_ECHO	1
-#define CATP_PAR	2
-
-static int __do_load_post_body(struct post *post, const struct str *input)
-{
-	char *ibuf = (char *) str_cstr(input);
-	size_t len = str_len(input);
-	int sidx, eidx;
-	int state = CATP_SKIP;
-	char *ret;
-	char tmp;
-
-	ret = xstrdup("");
-	ASSERT(ret);
-
-	for(eidx = sidx = 0; eidx < len; eidx++) {
-		tmp = ibuf[eidx];
-#if 0
-		printf("\n|'%c' %d| ",tmp, state);
-#endif
-
-		switch(state) {
-			case CATP_SKIP:
-				if (tmp != '\n') {
-					ret = cc(ret, ibuf + sidx, eidx - sidx);
-					if (post->fmt != 2)
-						ret = cc(ret, "<p>", 3);
-					sidx = eidx;
-					state = CATP_ECHO;
-				}
-				break;
-
-			case CATP_ECHO:
-				if (tmp == '\n')
-					state = CATP_PAR;
-				break;
-
-			case CATP_PAR:
-				ret = cc(ret, ibuf + sidx, eidx - sidx);
-				sidx = eidx;
-				if (tmp == '\n') {
-					if (post->fmt != 2)
-						ret = cc(ret, "</p>\n", 5);
-					state = CATP_SKIP;
-				} else if (post->fmt == 1) {
-					state = CATP_ECHO;
-				} else {
-					if (post->fmt != 2)
-						ret = cc(ret, "<br/>\n", 6);
-					state = CATP_ECHO;
-				}
-				break;
-
-		}
-	}
-
-	if (state != CATP_SKIP) {
-		ret = cc(ret, ibuf + sidx, eidx - sidx);
-		if (post->fmt != 2)
-			ret = cc(ret, "</p>", 4);
-	}
-
-	str_putref(post->body); /* free the previous */
-	post->body = str_alloc(ret);
-	ASSERT(post->body);
-
-	return 0;
-}
-
 static int __load_post_body(struct post *post)
 {
 	static const char *exts[4] = {
-		[1] = "txt",
-		[2] = "txt",
 		[3] = "tex",
 	};
 
@@ -373,8 +277,7 @@ static int __load_post_body(struct post *post)
 	struct str *raw;
 	int ret;
 
-	ASSERT3U(post->fmt, >=, 1);
-	ASSERT3U(post->fmt, <=, 3);
+	ASSERT3U(post->fmt, ==, 3);
 
 	snprintf(path, FILENAME_MAX, "%s/posts/%d/post.%s",
 		 str_cstr(config.data_dir), post->id, exts[post->fmt]);
@@ -384,10 +287,7 @@ static int __load_post_body(struct post *post)
 	if (IS_ERR(raw))
 		return PTR_ERR(raw);
 
-	if (post->fmt == 3)
-		ret = __do_load_post_body_fmt3(post, raw);
-	else
-		ret = __do_load_post_body(post, raw);
+	ret = __do_load_post_body_fmt3(post, raw);
 
 	str_putref(raw);
 
