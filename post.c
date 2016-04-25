@@ -465,6 +465,7 @@ int load_all_posts(void)
 	struct dirent *de;
 	uint32_t postid;
 	uint64_t start_ts, end_ts;
+	unsigned nposts;
 	taskq_t *tq;
 	DIR *dir;
 	int ret;
@@ -481,6 +482,7 @@ int load_all_posts(void)
 		return -ENOMEM;
 	}
 
+	nposts = 0;
 	start_ts = gettime();
 
 	while ((de = readdir(dir))) {
@@ -515,6 +517,8 @@ int load_all_posts(void)
 		/* load the post asynchronously */
 		if (!taskq_dispatch(tq, __tq_load_post, (void *)(uintptr_t) postid, 0))
 			__tq_load_post((void *)(uintptr_t) postid);
+
+		nposts++;
 	}
 
 	taskq_wait(tq);
@@ -522,7 +526,8 @@ int load_all_posts(void)
 
 	end_ts = gettime();
 
-	cmn_err(CE_INFO, "Posts loaded in %"PRIu64".%09"PRIu64" seconds",
+	cmn_err(CE_INFO, "Loaded %u posts in %"PRIu64".%09"PRIu64" seconds",
+		nposts,
 		(end_ts - start_ts) / 1000000000UL,
 		(end_ts - start_ts) % 1000000000UL);
 
