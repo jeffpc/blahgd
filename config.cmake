@@ -1,5 +1,8 @@
 include(CheckFunctionExists)
 
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
+find_package(jeffpc)
+
 macro(set_default name default)
 	if(NOT DEFINED ${name})
 		message("-- Defaulting ${name} to ${default}")

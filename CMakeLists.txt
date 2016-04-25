@@ -52,7 +52,11 @@ BISON_TARGET(tmpl template.y template.tab.c COMPILE_FLAGS "-p tmpl_")
 FLEX_TARGET(tmpl template.l template.lex.c COMPILE_FLAGS "-P tmpl_")
 ADD_FLEX_BISON_DEPENDENCY(tmpl tmpl)
 
-include_directories(suntaskq/include)
+include_directories(
+	suntaskq/include
+	${JEFFPC_INCLUDE_DIR}
+)
+
 add_subdirectory(suntaskq)
 
 add_custom_target(revisiontag ALL)
@@ -130,7 +134,7 @@ target_link_libraries(blahgd
 	/usr/lib/libcmdutils.so.1
 	m
 	suntaskq
-	jeffpc
+	${JEFFPC_LIBRARY}
 )
 
 add_executable(mathd
@@ -147,7 +151,7 @@ target_link_libraries(mathd
 	umem
 	md
 	/usr/lib/libavl.so.1
-	jeffpc
+	${JEFFPC_LIBRARY}
 )
 
 add_executable(lisplint
@@ -164,7 +168,7 @@ target_link_libraries(lisplint
 	umem
 	nvpair
 	/usr/lib/libavl.so.1
-	jeffpc
+	${JEFFPC_LIBRARY}
 )
 
 add_executable(nvdump
@@ -179,7 +183,7 @@ target_link_libraries(nvdump
 	umem
 	nvpair
 	/usr/lib/libavl.so.1
-	jeffpc
+	${JEFFPC_LIBRARY}
 )
 
 add_executable(test_fmt3
@@ -204,7 +208,7 @@ target_link_libraries(test_fmt3
 	suntaskq
 	/usr/lib/libavl.so.1
 	/usr/lib/libcmdutils.so.1
-	jeffpc
+	${JEFFPC_LIBRARY}
 )
 
 add_executable(test_qstring
@@ -220,7 +224,7 @@ target_link_libraries(test_qstring
 	umem
 	nvpair
 	/usr/lib/libavl.so.1
-	jeffpc
+	${JEFFPC_LIBRARY}
 )
 
 function(simple_c_test type section bin data)
