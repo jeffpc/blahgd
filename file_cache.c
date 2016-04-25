@@ -80,24 +80,23 @@ REFCNT_INLINE_FXNS(struct file_node, fn, refcnt, fn_free)
 
 static void print_event(const char *fname, int event)
 {
-	printf("%s: %s: ", __func__, fname);
+	DBG("%s: %s", __func__, fname);
 	if (event & FILE_ACCESS)
-		printf("FILE_ACCESS ");
+		DBG("\tFILE_ACCESS");
 	if (event & FILE_MODIFIED)
-		printf("FILE_MODIFIED ");
+		DBG("\tFILE_MODIFIED");
 	if (event & FILE_ATTRIB)
-		printf("FILE_ATTRIB ");
+		DBG("\tFILE_ATTRIB");
 	if (event & FILE_DELETE)
-		printf("FILE_DELETE ");
+		DBG("\tFILE_DELETE");
 	if (event & FILE_RENAME_TO)
-		printf("FILE_RENAME_TO ");
+		DBG("\tFILE_RENAME_TO");
 	if (event & FILE_RENAME_FROM)
-		printf("FILE_RENAME_FROM ");
+		DBG("\tFILE_RENAME_FROM");
 	if (event & UNMOUNTED)
-		printf("UNMOUNTED ");
+		DBG("\tUNMOUNTED");
 	if (event & MOUNTEDOVER)
-		printf("MOUNTEDOVER ");
-	printf("\n");
+		DBG("\tMOUNTEDOVER");
 }
 
 static void process_file(struct file_node *node, int events)
@@ -145,8 +144,8 @@ static void process_file(struct file_node *node, int events)
 
 	if (port_associate(filemon_port, PORT_SOURCE_FILE, (uintptr_t) fobj,
 			   FILE_EVENTS, node) == -1) {
-		fprintf(stderr, "failed to register file '%s' errno %d\n",
-			fobj->fo_name, errno);
+		DBG("failed to register file '%s' errno %d", fobj->fo_name,
+		    errno);
 		goto free;
 	}
 
@@ -202,7 +201,7 @@ static void *filemon(void *arg)
 					     pe.portev_events);
 				break;
 			default:
-				ASSERT(0);
+				panic("unexpected event source");
 		}
 	}
 

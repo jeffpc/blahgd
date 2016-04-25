@@ -146,9 +146,8 @@ static char *foreach(struct parser_output *data, struct req *req, char *varname,
 		ret = __foreach_str(req, var, tmpl);
 	} else {
 		//vars_dump(&req->vars);
-		DBG("%s called with '%s' which has type %d", __func__,
-		    varname, nvpair_type(var));
-		ASSERT(0);
+		panic("%s called with '%s' which has type %d", __func__,
+		      varname, nvpair_type(var));
 	}
 
 	return ret;
@@ -172,9 +171,8 @@ static char *print_val(struct val *val)
 		case VT_SYM:
 		case VT_CONS:
 		case VT_BOOL:
-			DBG("%s called with value of type %d", __func__,
-			    val->type);
-			ASSERT(0);
+			panic("%s called with value of type %d", __func__,
+			      val->type);
 	}
 
 	return xstrdup(tmp);
@@ -196,9 +194,8 @@ static char *print_var(nvpair_t *var)
 			tmp = buf;
 			break;
 		default:
-			DBG("%s called with '%s' which has type %d", __func__,
-			    nvpair_name(var), nvpair_type(var));
-			ASSERT(0);
+			panic("%s called with '%s' which has type %d", __func__,
+			      nvpair_name(var), nvpair_type(var));
 			break;
 	}
 
@@ -233,9 +230,8 @@ static char *pipeline(struct parser_output *data, struct req *req,
 			break;
 		default:
 			vars_dump(&req->vars);
-			DBG("%s called with '%s' which has type %d", __func__,
-			    varname, nvpair_type(var));
-			ASSERT(0);
+			panic("%s called with '%s' which has type %d", __func__,
+			      varname, nvpair_type(var));
 			break;
 	}
 
@@ -288,7 +284,8 @@ static uint64_t __function_get_arg(struct req *req, const char *arg)
 		case DATA_TYPE_UINT64:
 			return pair2int(var);
 		default:
-			ASSERT(0);
+			panic("unexpected nvpair type: %d",
+			      nvpair_type(var));
 	}
 }
 
@@ -333,8 +330,7 @@ static char *function(struct parser_output *data, struct req *req,
 	} else if (!strcmp(fxn, "else")) {
 		cond_else(data);
 	} else {
-		DBG("unknown template function '%s'", fxn);
-		ASSERT(0);
+		panic("unknown template function '%s'", fxn);
 	}
 
 	return xstrdup(NULL);

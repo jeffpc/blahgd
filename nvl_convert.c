@@ -45,7 +45,7 @@ static void cvt_string(nvlist_t *nvl, nvpair_t *pair, data_type_t tgt)
 				nvl_set_int(nvl, name, intval);
 			break;
 		default:
-			ASSERT(0);
+			panic("unexpected target type");
 	}
 }
 

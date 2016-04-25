@@ -25,6 +25,7 @@
 #include "config.h"
 #include "utils.h"
 #include "file_cache.h"
+#include "debug.h"
 
 /*
  * The actual config
@@ -148,24 +149,24 @@ int config_load(const char *fname)
 
 	val_putref(lv);
 
-	printf("config.scgi_port = %u\n", config.scgi_port);
-	printf("config.scgi_threads = %"PRIu64"\n", config.scgi_threads);
-	printf("config.html_index_stories = %"PRIu64"\n", config.html_index_stories);
-	printf("config.feed_index_stories = %"PRIu64"\n", config.feed_index_stories);
-	printf("config.comment_max_think = %"PRIu64"\n", config.comment_max_think);
-	printf("config.comment_min_think = %"PRIu64"\n", config.comment_min_think);
-	printf("config.comment_captcha_a = %"PRIu64"\n", config.comment_captcha_a);
-	printf("config.comment_captcha_b = %"PRIu64"\n", config.comment_captcha_b);
-	printf("config.data_dir = %s\n", str_cstr(config.data_dir));
-	printf("config.web_dir = %s\n", str_cstr(config.web_dir));
-	printf("config.base_url = %s\n", str_cstr(config.base_url));
-	printf("config.wiki_base_url = %s\n", str_cstr(config.wiki_base_url));
-	printf("config.bug_base_url = %s\n", str_cstr(config.bug_base_url));
-	printf("config.photo_base_url = %s\n", str_cstr(config.photo_base_url));
-	printf("config.tagcloud_min_size = %"PRIu64"\n", config.tagcloud_min_size);
-	printf("config.tagcloud_max_size = %"PRIu64"\n", config.tagcloud_max_size);
-	printf("config.latex_bin = %s\n", str_cstr(config.latex_bin));
-	printf("config.dvipng_bin = %s\n", str_cstr(config.dvipng_bin));
+	DBG("config.scgi_port = %u", config.scgi_port);
+	DBG("config.scgi_threads = %"PRIu64, config.scgi_threads);
+	DBG("config.html_index_stories = %"PRIu64, config.html_index_stories);
+	DBG("config.feed_index_stories = %"PRIu64, config.feed_index_stories);
+	DBG("config.comment_max_think = %"PRIu64, config.comment_max_think);
+	DBG("config.comment_min_think = %"PRIu64, config.comment_min_think);
+	DBG("config.comment_captcha_a = %"PRIu64, config.comment_captcha_a);
+	DBG("config.comment_captcha_b = %"PRIu64, config.comment_captcha_b);
+	DBG("config.data_dir = %s", str_cstr(config.data_dir));
+	DBG("config.web_dir = %s", str_cstr(config.web_dir));
+	DBG("config.base_url = %s", str_cstr(config.base_url));
+	DBG("config.wiki_base_url = %s", str_cstr(config.wiki_base_url));
+	DBG("config.bug_base_url = %s", str_cstr(config.bug_base_url));
+	DBG("config.photo_base_url = %s", str_cstr(config.photo_base_url));
+	DBG("config.tagcloud_min_size = %"PRIu64, config.tagcloud_min_size);
+	DBG("config.tagcloud_max_size = %"PRIu64, config.tagcloud_max_size);
+	DBG("config.latex_bin = %s", str_cstr(config.latex_bin));
+	DBG("config.dvipng_bin = %s", str_cstr(config.dvipng_bin));
 
 	return 0;
 }

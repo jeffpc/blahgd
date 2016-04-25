@@ -52,7 +52,7 @@ static void process(void *cookie, char *argp, size_t argsz, door_desc_t *dp,
 
 	MXLOCK(&lock);
 
-	printf("arg: '%s'\n", argp);
+	DBG("arg: '%s'", argp);
 
 	in = STR_DUP(argp);
 
@@ -64,7 +64,7 @@ static void process(void *cookie, char *argp, size_t argsz, door_desc_t *dp,
 
 	str_putref(out);
 
-	printf("out: '%s'\n", str);
+	DBG("out: '%s'", str);
 
 	MXUNLOCK(&lock);
 
@@ -110,10 +110,10 @@ int main(int argc, char **argv)
 
 	openlog("mathd", LOG_NDELAY | LOG_PID, LOG_LOCAL0);
 
-	fprintf(stderr, "mathd version %s\n", version_string);
+	cmn_err(CE_INFO, "mathd version %s", version_string);
 
-	init_math(false);
 	jeffpc_init(&init_ops);
+	init_math(false);
 
 	ret = config_load((argc >= 2) ? argv[1] : NULL);
 	if (ret)

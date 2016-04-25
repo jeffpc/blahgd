@@ -55,7 +55,7 @@ static int __load_post(struct req *req, int p, bool preview)
 int blahg_story(struct req *req, int p, bool preview)
 {
 	if (p == -1) {
-		fprintf(stderr, "Invalid post #\n");
+		DBG("Invalid post #");
 		return 0;
 	}
 

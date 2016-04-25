@@ -172,7 +172,7 @@ static int start_listening(void)
 		if (ret && ret != -EAFNOSUPPORT)
 			return ret;
 		else if (!ret)
-			DBG("Bound to: %s %s", str, port);
+			cmn_err(CE_INFO, "Bound to: %s %s", str, port);
 	}
 
 	freeaddrinfo(res);
@@ -283,15 +283,15 @@ int main(int argc, char **argv)
 
 	ASSERT0(putenv("TZ=UTC"));
 
-	fprintf(stderr, "blahgd version %s\n", version_string);
+	cmn_err(CE_INFO, "blahgd version %s", version_string);
 
 	/* drop unneeded privs */
 	ret = drop_privs();
 	if (ret)
 		goto err;
 
-	init_math(true);
 	jeffpc_init(&init_ops);
+	init_math(true);
 	init_pipe_subsys();
 	init_req_subsys();
 	init_post_subsys();

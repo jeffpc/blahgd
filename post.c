@@ -87,7 +87,7 @@ void revalidate_post(void *arg)
 {
 	struct post *post = arg;
 
-	printf("%s: marking post #%u for refresh\n", __func__, post->id);
+	DBG("%s: marking post #%u for refresh", __func__, post->id);
 
 	post_lock(post, false);
 	post->needs_refresh = true;
@@ -253,10 +253,8 @@ static int __do_load_post_body_fmt3(struct post *post, const struct str *input)
 	fmt3_set_extra(&x, x.scanner);
 
 	ret = fmt3_parse(&x);
-	if (ret) {
-		DBG("failed to parse post id %u", post->id);
-		ASSERT(0);
-	}
+	if (ret)
+		panic("failed to parse post id %u", post->id);
 
 	fmt3_lex_destroy(x.scanner);
 
@@ -492,7 +490,7 @@ int load_all_posts(void)
 
 		ret = str2u32(de->d_name, &postid);
 		if (ret) {
-			fprintf(stderr, "skipping '%s/%s' - not a number\n",
+			cmn_err(CE_INFO, "skipping '%s/%s' - not a number",
 				data_dir, de->d_name);
 			continue;
 		}
@@ -502,14 +500,14 @@ int load_all_posts(void)
 		/* check that it is a directory */
 		ret = xlstat(path, &statbuf);
 		if (ret) {
-			fprintf(stderr, "skipping '%s' - failed to xlstat: %s\n",
+			cmn_err(CE_INFO, "skipping '%s' - failed to xlstat: %s",
 				path, xstrerror(ret));
 			continue;
 		}
 
 		if (!S_ISDIR(statbuf.st_mode)) {
-			fprintf(stderr, "skipping '%s' - not a directory; "
-				"mode = %o\n", path,
+			cmn_err(CE_INFO, "skipping '%s' - not a directory; "
+				"mode = %o", path,
 				(unsigned int) statbuf.st_mode);
 			continue;
 		}
@@ -524,9 +522,9 @@ int load_all_posts(void)
 
 	end_ts = gettime();
 
-	DBG("Posts loaded in %"PRIu64".%09"PRIu64" seconds",
-	    (end_ts - start_ts) / 1000000000UL,
-	    (end_ts - start_ts) % 1000000000UL);
+	cmn_err(CE_INFO, "Posts loaded in %"PRIu64".%09"PRIu64" seconds",
+		(end_ts - start_ts) / 1000000000UL,
+		(end_ts - start_ts) % 1000000000UL);
 
 	closedir(dir);
 
