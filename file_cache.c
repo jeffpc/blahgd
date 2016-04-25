@@ -138,9 +138,9 @@ static void process_file(struct file_node *node, int events)
 	}
 
 	/* re-register */
-	fobj->fo_atime = node->stat.st_atim;
-	fobj->fo_mtime = node->stat.st_mtim;
-	fobj->fo_ctime = node->stat.st_ctim;
+	fobj->fo_atime = statbuf.st_atim;
+	fobj->fo_mtime = statbuf.st_mtim;
+	fobj->fo_ctime = statbuf.st_ctim;
 
 	if (port_associate(filemon_port, PORT_SOURCE_FILE, (uintptr_t) fobj,
 			   FILE_EVENTS, node) == -1) {
