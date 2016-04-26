@@ -85,8 +85,6 @@ static void __load_posts(struct req *req, int page, int archid)
 		filter_args.start = mktime(&start);
 		filter_args.end   = mktime(&end);
 
-		DBG("%s %u %u", __func__, filter_args.start, filter_args.end);
-
 		nposts = index_get_posts(posts, NULL, false, archive_filter,
 					 &filter_args, page * posts_per_page,
 					 posts_per_page);
