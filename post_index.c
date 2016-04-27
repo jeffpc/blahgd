@@ -175,7 +175,7 @@ static avl_tree_t index_by_time;
 static avl_tree_t index_by_tag;
 static avl_tree_t index_by_cat;
 
-static pthread_mutex_t index_lock;
+static struct lock index_lock;
 
 static umem_cache_t *index_entry_cache;
 static umem_cache_t *global_index_entry_cache;

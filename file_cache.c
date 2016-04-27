@@ -44,7 +44,7 @@
 #define FILE_EVENTS	(FILE_MODIFIED | FILE_ATTRIB)
 
 static avl_tree_t file_cache;
-static pthread_mutex_t file_lock;
+static struct lock file_lock;
 
 static pthread_t filemon_thread;
 static int filemon_port;
@@ -63,7 +63,7 @@ struct file_node {
 	char *name;			/* the filename */
 	avl_node_t node;
 	refcnt_t refcnt;
-	pthread_mutex_t lock;
+	struct lock lock;
 
 	/* everything else is protected by the lock */
 	struct str *contents;		/* cache file contents if allowed */

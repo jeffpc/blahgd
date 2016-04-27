@@ -41,7 +41,7 @@
 #include "debug.h"
 #include "version.h"
 
-static pthread_mutex_t lock;
+static struct lock lock;
 
 static void process(void *cookie, char *argp, size_t argsz, door_desc_t *dp,
 		    uint_t ndesc)

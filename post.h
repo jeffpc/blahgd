@@ -53,7 +53,7 @@ struct comment {
 struct post {
 	refcnt_t refcnt;
 
-	pthread_mutex_t lock;
+	struct lock lock;
 
 	bool needs_refresh;
 	bool preview;
