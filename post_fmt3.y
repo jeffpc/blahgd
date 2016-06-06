@@ -169,7 +169,7 @@ paragraph : paragraph thing		{ $$ = str_cat(2, $1, $2); }
 thing : WORD				{ $$ = $1; }
       | UTF8FIRST2 UTF8REST		{ $$ = str_cat(2, $1, $2); }
       | UTF8FIRST3 UTF8REST UTF8REST	{ $$ = str_cat(3, $1, $2, $3); }
-      | NLINE				{ $$ = STR_DUP(data->post->texttt_nesting ? "\n" : " "); }
+      | NLINE				{ $$ = STR_DUP(data->texttt_nesting ? "\n" : " "); }
       | WSPACE				{ $$ = $1; }
       | PIPE				{ $$ = STR_DUP("|"); }
       | ASTERISK			{ $$ = STR_DUP("*"); }
@@ -191,9 +191,9 @@ thing : WORD				{ $$ = $1; }
 						       STR_DUP("</pre><p>")); }
       ;
 
-cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd(data->post, $1, $3, $2); }
-    | WORD cmdarg		{ $$ = process_cmd(data->post, $1, $2, NULL); }
-    | WORD			{ $$ = process_cmd(data->post, $1, NULL, NULL); }
+cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd(data, $1, $3, $2); }
+    | WORD cmdarg		{ $$ = process_cmd(data, $1, $2, NULL); }
+    | WORD			{ $$ = process_cmd(data, $1, NULL, NULL); }
     | BSLASH			{ $$ = STR_DUP("<br/>"); }
     | OCURLY			{ $$ = STR_DUP("{"); }
     | CCURLY			{ $$ = STR_DUP("}"); }

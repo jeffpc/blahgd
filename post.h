@@ -74,10 +74,6 @@ struct post {
 
 	/* body */
 	struct str *body;
-
-	/* fmt3 */
-	int table_nesting;
-	int texttt_nesting;
 };
 
 struct req;

@@ -38,14 +38,14 @@ static int onefile(struct post *post, char *ibuf, size_t len)
 	struct parser_output x;
 	int ret;
 
-	x.req   = NULL;
-	x.post  = post;
-	x.input = ibuf;
-	x.len   = len;
-	x.pos   = 0;
-
-	post->table_nesting = 0;
-	post->texttt_nesting = 0;
+	x.req            = NULL;
+	x.post           = post;
+	x.input          = ibuf;
+	x.len            = len;
+	x.pos            = 0;
+	x.lineno         = 0;
+	x.table_nesting  = 0;
+	x.texttt_nesting = 0;
 
 	fmt3_lex_init(&x.scanner);
 	fmt3_set_extra(&x, x.scanner);

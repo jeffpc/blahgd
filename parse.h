@@ -47,6 +47,10 @@ struct parser_output {
 	/* template related */
 	bool cond_stack[COND_STACK_DEPTH];
 	int cond_stack_use;
+
+	/* fmt3 */
+	int table_nesting;
+	int texttt_nesting;
 };
 
 typedef void* yyscan_t;

@@ -39,11 +39,12 @@
  *  (3) create a function __process_foo(...)
  */
 
-static struct str *__process_listing(struct post *post, struct str *txt, struct str *opt)
+static struct str *__process_listing(struct parser_output *data,
+				     struct str *txt, struct str *opt)
 {
 	struct str *str;
 
-	str = listing(post, str_cstr(txt));
+	str = listing(data->post, str_cstr(txt));
 
 	str_putref(txt);
 	str_putref(opt);
@@ -51,7 +52,8 @@ static struct str *__process_listing(struct post *post, struct str *txt, struct 
 	return str_cat(3, STR_DUP("</p><pre>"), str, STR_DUP("</pre><p>"));
 }
 
-static struct str *__process_link(struct post *post, struct str *txt, struct str *opt)
+static struct str *__process_link(struct parser_output *data, struct str *txt,
+				  struct str *opt)
 {
 	if (!opt)
 		str_getref(txt);
@@ -60,7 +62,8 @@ static struct str *__process_link(struct post *post, struct str *txt, struct str
 		       opt ? opt : txt, STR_DUP("</a>"));
 }
 
-static struct str *__process_photolink(struct post *post, struct str *txt, struct str *opt)
+static struct str *__process_photolink(struct parser_output *data,
+				       struct str *txt, struct str *opt)
 {
 	if (!opt)
 		str_getref(txt);
@@ -72,13 +75,15 @@ static struct str *__process_photolink(struct post *post, struct str *txt, struc
 		       STR_DUP("\">"), opt ? opt : txt, STR_DUP("</a>"));
 }
 
-static struct str *__process_img(struct post *post, struct str *txt, struct str *opt)
+static struct str *__process_img(struct parser_output *data, struct str *txt,
+				 struct str *opt)
 {
 	return str_cat(5, STR_DUP("<img src=\""), txt, STR_DUP("\" alt=\""),
 		       opt, STR_DUP("\" />"));
 }
 
-static struct str *__process_photo(struct post *post, struct str *txt, struct str *opt)
+static struct str *__process_photo(struct parser_output *data, struct str *txt,
+				   struct str *opt)
 {
 	return str_cat(7, STR_DUP("<img src=\""),
 		       str_getref(config.photo_base_url),
@@ -87,30 +92,35 @@ static struct str *__process_photo(struct post *post, struct str *txt, struct st
 		       STR_DUP("\" alt=\""), opt, STR_DUP("\" />"));
 }
 
-static struct str *__process_emph(struct post *post, struct str *txt, struct str *opt)
+static struct str *__process_emph(struct parser_output *data, struct str *txt,
+				  struct str *opt)
 {
 	return str_cat(3, STR_DUP("<em>"), txt, STR_DUP("</em>"));
 }
 
-static struct str *__process_texttt(struct post *post, struct str *txt, struct str *opt)
+static struct str *__process_texttt(struct parser_output *data, struct str *txt,
+				    struct str *opt)
 {
 	return str_cat(3, STR_DUP("<tt>"), txt, STR_DUP("</tt>"));
 }
 
-static struct str *__process_textbf(struct post *post, struct str *txt, struct str *opt)
+static struct str *__process_textbf(struct parser_output *data,
+				    struct str *txt, struct str *opt)
 {
 	return str_cat(3, STR_DUP("<strong>"), txt, STR_DUP("</strong>"));
 }
 
-static struct str *__process_textit(struct post *post, struct str *txt, struct str *opt)
+static struct str *__process_textit(struct parser_output *data, struct str *txt,
+				    struct str *opt)
 {
 	return str_cat(3, STR_DUP("<i>"), txt, STR_DUP("</i>"));
 }
 
-static struct str *__process_begin(struct post *post, struct str *txt, struct str *opt)
+static struct str *__process_begin(struct parser_output *data, struct str *txt,
+				   struct str *opt)
 {
 	if (!strcmp(str_cstr(txt), "texttt")) {
-		post->texttt_nesting++;
+		data->texttt_nesting++;
 		str_putref(txt);
 		return STR_DUP("</p><pre>");
 	}
@@ -138,20 +148,22 @@ static struct str *__process_begin(struct post *post, struct str *txt, struct st
 	if (!strcmp(str_cstr(txt), "tabular")) {
 		str_putref(txt);
 
-		if (post->table_nesting++)
+		if (data->table_nesting++)
 			return STR_DUP("<table>");
 		return STR_DUP("</p><table>");
 	}
 
-	DBG("post_fmt3: invalid environment '%s' (post #%u)", str_cstr(txt), post->id);
+	DBG("post_fmt3: invalid environment '%s' (post #%u)", str_cstr(txt),
+	    data->post->id);
 
 	return str_cat(3, STR_DUP("[INVAL ENVIRON '"), txt, STR_DUP("']"));
 }
 
-static struct str *__process_end(struct post *post, struct str *txt, struct str *opt)
+static struct str *__process_end(struct parser_output *data, struct str *txt,
+				 struct str *opt)
 {
 	if (!strcmp(str_cstr(txt), "texttt")) {
-		post->texttt_nesting--;
+		data->texttt_nesting--;
 		str_putref(txt);
 		return STR_DUP("</pre><p>");
 	}
@@ -179,17 +191,19 @@ static struct str *__process_end(struct post *post, struct str *txt, struct str 
 	if (!strcmp(str_cstr(txt), "tabular")) {
 		str_putref(txt);
 
-		if (--post->table_nesting)
+		if (--data->table_nesting)
 			return STR_DUP("</table>");
 		return STR_DUP("</table><p>");
 	}
 
-	DBG("post_fmt3: invalid environment '%s' (post #%u)", str_cstr(txt), post->id);
+	DBG("post_fmt3: invalid environment '%s' (post #%u)", str_cstr(txt),
+	    data->post->id);
 
 	return str_cat(3, STR_DUP("[INVAL ENVIRON '"), txt, STR_DUP("']"));
 }
 
-static struct str *__process_item(struct post *post, struct str *txt, struct str *opt)
+static struct str *__process_item(struct parser_output *data, struct str *txt,
+				  struct str *opt)
 {
 	// FIXME: we should keep track of what commands we've
 	// encountered and then decide if <li> is the right tag to
@@ -200,7 +214,8 @@ static struct str *__process_item(struct post *post, struct str *txt, struct str
 		       STR_DUP("</dd>"));
 }
 
-static struct str *__process_abbrev(struct post *post, struct str *txt, struct str *opt)
+static struct str *__process_abbrev(struct parser_output *data, struct str *txt,
+				    struct str *opt)
 {
 	if (!opt)
 		str_getref(txt);
@@ -209,22 +224,26 @@ static struct str *__process_abbrev(struct post *post, struct str *txt, struct s
 		       STR_DUP("\">"), txt, STR_DUP("</abbr>"));
 }
 
-static struct str *__process_section(struct post *post, struct str *txt, struct str *opt)
+static struct str *__process_section(struct parser_output *data,
+				     struct str *txt, struct str *opt)
 {
 	return str_cat(3, STR_DUP("</p><h3>"), txt, STR_DUP("</h3><p>"));
 }
 
-static struct str *__process_subsection(struct post *post, struct str *txt, struct str *opt)
+static struct str *__process_subsection(struct parser_output *data,
+					struct str *txt, struct str *opt)
 {
 	return str_cat(3, STR_DUP("</p><h4>"), txt, STR_DUP("</h4><p>"));
 }
 
-static struct str *__process_subsubsection(struct post *post, struct str *txt, struct str *opt)
+static struct str *__process_subsubsection(struct parser_output *data,
+					   struct str *txt, struct str *opt)
 {
 	return str_cat(3, STR_DUP("</p><h5>"), txt, STR_DUP("</h5><p>"));
 }
 
-static struct str *__process_wiki(struct post *post, struct str *txt, struct str *opt)
+static struct str *__process_wiki(struct parser_output *data, struct str *txt,
+				  struct str *opt)
 {
 	if (!opt)
 		str_getref(txt);
@@ -239,7 +258,8 @@ static struct str *__process_wiki(struct post *post, struct str *txt, struct str
 		       opt ? opt : txt, STR_DUP("</a>"));
 }
 
-static struct str *__process_bug(struct post *post, struct str *txt, struct str *opt)
+static struct str *__process_bug(struct parser_output *data, struct str *txt,
+				 struct str *opt)
 {
 	str_getref(txt);
 
@@ -253,7 +273,8 @@ static struct str *__process_bug(struct post *post, struct str *txt, struct str 
 		       txt, STR_DUP("</a>"));
 }
 
-static struct str *__process_post(struct post *post, struct str *txt, struct str *opt)
+static struct str *__process_post(struct parser_output *data, struct str *txt,
+				  struct str *opt)
 {
 	char buf[1024];
 
@@ -267,7 +288,8 @@ static struct str *__process_post(struct post *post, struct str *txt, struct str
 	return STR_DUP(buf);
 }
 
-static struct str *__process_taglink(struct post *post, struct str *txt, struct str *opt)
+static struct str *__process_taglink(struct parser_output *data,
+				     struct str *txt, struct str *opt)
 {
 	char buf[1024];
 
@@ -281,37 +303,44 @@ static struct str *__process_taglink(struct post *post, struct str *txt, struct 
 	return STR_DUP(buf);
 }
 
-static struct str *__process_degree(struct post *post, struct str *txt, struct str *opt)
+static struct str *__process_degree(struct parser_output *data, struct str *txt,
+				    struct str *opt)
 {
 	return str_cat(2, STR_DUP("\xc2\xb0"), txt);
 }
 
-static struct str *__process_trow(struct post *post, struct str *txt, struct str *opt)
+static struct str *__process_trow(struct parser_output *data, struct str *txt,
+				  struct str *opt)
 {
 	return str_cat(3, STR_DUP("<tr><td>"), txt, STR_DUP("</td></tr>"));
 }
 
-static struct str *__process_leftarrow(struct post *post, struct str *txt, struct str *opt)
+static struct str *__process_leftarrow(struct parser_output *data,
+				       struct str *txt, struct str *opt)
 {
 	return STR_DUP("&larr;");
 }
 
-static struct str *__process_rightarrow(struct post *post, struct str *txt, struct str *opt)
+static struct str *__process_rightarrow(struct parser_output *data,
+					struct str *txt, struct str *opt)
 {
 	return STR_DUP("&rarr;");
 }
 
-static struct str *__process_leftrightarrow(struct post *post, struct str *txt, struct str *opt)
+static struct str *__process_leftrightarrow(struct parser_output *data,
+					    struct str *txt, struct str *opt)
 {
 	return STR_DUP("&harr;");
 }
 
-static struct str *__process_tm(struct post *post, struct str *txt, struct str *opt)
+static struct str *__process_tm(struct parser_output *data, struct str *txt,
+				struct str *opt)
 {
 	return STR_DUP("&trade;");
 }
 
-static struct str *__process_nop(struct post *post, struct str *txt, struct str *opt)
+static struct str *__process_nop(struct parser_output *data, struct str *txt,
+				 struct str *opt)
 {
 	str_putref(txt);
 	str_putref(opt);
@@ -327,7 +356,8 @@ typedef enum {
 
 struct cmd {
 	const char *name;
-	struct str *(*fxn)(struct post *, struct str *txt, struct str *opt);
+	struct str *(*fxn)(struct parser_output *, struct str *txt,
+			   struct str *opt);
 	tri square;
 	tri curly;
 };
@@ -422,8 +452,8 @@ static void __check_arg(tri r, struct str *ptr)
 		ASSERT(!ptr);
 }
 
-struct str *process_cmd(struct post *post, struct str *cmd, struct str *txt,
-			struct str *opt)
+struct str *process_cmd(struct parser_output *data, struct str *cmd,
+			struct str *txt, struct str *opt)
 {
 	struct cmd key;
 	const struct cmd *c;
@@ -432,7 +462,8 @@ struct str *process_cmd(struct post *post, struct str *cmd, struct str *txt,
 
 	c = bsearch(&key, cmds, ARRAY_LEN(cmds), sizeof(cmds[0]), cmd_cmp);
 	if (!c) {
-		DBG("post_fmt3: invalid command '%s' (post #%u)", cmd->str, post->id);
+		DBG("post_fmt3: invalid command '%s' (post #%u)", cmd->str,
+		    data->post->id);
 
 		str_putref(txt);
 		str_putref(opt);
@@ -446,5 +477,5 @@ struct str *process_cmd(struct post *post, struct str *cmd, struct str *txt,
 
 	str_putref(cmd);
 
-	return c->fxn(post, txt, opt);
+	return c->fxn(data, txt, opt);
 }

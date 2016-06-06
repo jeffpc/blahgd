@@ -239,15 +239,14 @@ static int __do_load_post_body_fmt3(struct post *post, const struct str *input)
 	struct parser_output x;
 	int ret;
 
-	x.req    = NULL;
-	x.post   = post;
-	x.input  = str_cstr(input);
-	x.len    = str_len(input);
-	x.pos    = 0;
-	x.lineno = 0;
-
-	post->table_nesting = 0;
-	post->texttt_nesting = 0;
+	x.req            = NULL;
+	x.post           = post;
+	x.input          = str_cstr(input);
+	x.len            = str_len(input);
+	x.pos            = 0;
+	x.lineno         = 0;
+	x.table_nesting  = 0;
+	x.texttt_nesting = 0;
 
 	fmt3_lex_init(&x.scanner);
 	fmt3_set_extra(&x, x.scanner);
