@@ -52,8 +52,7 @@ static int onefile(struct post *post, char *ibuf, size_t len)
 
 	ret = fmt3_parse(&x);
 	if (!ret) {
-		ASSERT(x.stroutput);
-		printf("%s", x.stroutput->str);
+		printf("%s", str_cstr(x.stroutput));
 		str_putref(x.stroutput);
 	} else {
 		fprintf(stderr, "failed to parse\n");
