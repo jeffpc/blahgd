@@ -316,6 +316,18 @@ static char *__function(struct parser_output *data, struct req *req,
 	return xstrdup(NULL);
 }
 
+static char *__function_ifset(struct parser_output *data, struct req *req,
+			      const char *arg)
+{
+	nvpair_t *var;
+
+	var = vars_lookup(&req->vars, arg);
+
+	cond_if(data, var != NULL);
+
+	return xstrdup(NULL);
+}
+
 static char *function(struct parser_output *data, struct req *req,
                       const char *fxn, const char *sa1, const char *sa2)
 {
@@ -325,6 +337,8 @@ static char *function(struct parser_output *data, struct req *req,
 		return __function(data, req, IFFXN_LT, sa1, sa2);
 	} else if (!strcmp(fxn, "ifeq")) {
 		return __function(data, req, IFFXN_EQ, sa1, sa2);
+	} else if (!strcmp(fxn, "ifset")) {
+		return __function_ifset(data, req, sa1);
 	} else if (!strcmp(fxn, "endif")) {
 		cond_endif(data);
 	} else if (!strcmp(fxn, "else")) {
