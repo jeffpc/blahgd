@@ -56,7 +56,14 @@ static int onefile(struct post *post, char *ibuf, size_t len)
 
 	ret = fmt3_parse(&x);
 	if (!ret) {
-		printf("%s", str_cstr(x.stroutput));
+		printf("output:\n>>>%s<<<\n", str_cstr(x.stroutput));
+		printf("sc_title:\n>>>%s<<<\n", str_cstr(x.sc_title));
+		printf("sc_pub:\n>>>%s<<<\n", str_cstr(x.sc_pub));
+		printf("sc_tags:\n");
+		sexpr_dump_file(stdout, x.sc_tags, false);
+		printf("\nsc_cats:\n");
+		sexpr_dump_file(stdout, x.sc_cats, false);
+		printf("\n");
 		str_putref(x.stroutput);
 		str_putref(x.sc_title);
 		str_putref(x.sc_pub);
