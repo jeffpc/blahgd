@@ -46,6 +46,7 @@ static void inc_lineno(yyscan_t scanner);
 
 %x VERBATIM
 %x LISTING
+%x SPECIALCMD
 %x MATH
 
 %%
@@ -66,6 +67,13 @@ static void inc_lineno(yyscan_t scanner);
 					inc_lineno(yyscanner);
 					return VERBTEXT;
 				}
+
+"\\title{"			{ BEGIN(SPECIALCMD); return TITLESTART; }
+"\\published{"			{ BEGIN(SPECIALCMD); return PUBSTART; }
+"\\tag{"			{ BEGIN(SPECIALCMD); return TAGSTART; }
+"\\category{"			{ BEGIN(SPECIALCMD); return CATSTART; }
+<SPECIALCMD>"}"			{ BEGIN(INITIAL); return SPECIALCMDEND; }
+<SPECIALCMD>.			{ yylval->ptr = STR_DUP(yytext); return VERBTEXT; }
 
 "$"			{ BEGIN(MATH); return MATHSTART; }
 <MATH>"$"		{ BEGIN(INITIAL); return MATHEND; }

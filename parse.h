@@ -51,6 +51,12 @@ struct parser_output {
 	/* fmt3 */
 	int table_nesting;
 	int texttt_nesting;
+
+	/* fmt3 special commands */
+	struct str *sc_title;
+	struct str *sc_pub;
+	struct val *sc_tags;
+	struct val *sc_cats;
 };
 
 typedef void* yyscan_t;

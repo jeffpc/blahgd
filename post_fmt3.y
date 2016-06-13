@@ -115,6 +115,26 @@ static struct str *special_char(struct str *val)
 	return STR_DUP(ret);
 }
 
+static void special_cmd(struct parser_output *data, struct str **var,
+			struct str *value)
+{
+	str_putref(*var);
+
+	*var = value;
+}
+
+static void special_cmd_list(struct parser_output *data, struct val **var,
+			     struct str *value)
+{
+	struct val *new;
+
+	/* wrap the string in a value */
+	new = VAL_ALLOC_STR(value);
+
+	/* extend the list */
+	*var = VAL_ALLOC_CONS(new, *var);
+}
+
 %}
 
 %union {
@@ -141,6 +161,8 @@ static struct str *special_char(struct str *val)
 %token <ptr> VERBTEXT
 %token VERBSTART VERBEND DOLLAR
 %token LISTSTART LISTEND
+%token TITLESTART TAGSTART CATSTART PUBSTART
+%token SPECIALCMDEND
 
 %type <ptr> paragraphs paragraph thing cmd cmdarg optcmdarg math mexpr
 %type <ptr> verb
@@ -189,6 +211,10 @@ thing : WORD				{ $$ = $1; }
       | LISTSTART verb LISTEND		{ $$ = str_cat(3, STR_DUP("</p><pre>"),
 						       listing_str($2),
 						       STR_DUP("</pre><p>")); }
+      | TITLESTART verb SPECIALCMDEND	{ $$ = NULL; special_cmd(data, &data->sc_title, $2); }
+      | PUBSTART verb SPECIALCMDEND	{ $$ = NULL; special_cmd(data, &data->sc_pub, $2); }
+      | TAGSTART verb SPECIALCMDEND	{ $$ = NULL; special_cmd_list(data, &data->sc_tags, $2); }
+      | CATSTART verb SPECIALCMDEND	{ $$ = NULL; special_cmd_list(data, &data->sc_cats, $2); }
       ;
 
 cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd(data, $1, $3, $2); }

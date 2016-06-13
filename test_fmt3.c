@@ -46,6 +46,10 @@ static int onefile(struct post *post, char *ibuf, size_t len)
 	x.lineno         = 0;
 	x.table_nesting  = 0;
 	x.texttt_nesting = 0;
+	x.sc_title       = NULL;
+	x.sc_pub         = NULL;
+	x.sc_tags        = NULL;
+	x.sc_cats        = NULL;
 
 	fmt3_lex_init(&x.scanner);
 	fmt3_set_extra(&x, x.scanner);
@@ -54,6 +58,10 @@ static int onefile(struct post *post, char *ibuf, size_t len)
 	if (!ret) {
 		printf("%s", str_cstr(x.stroutput));
 		str_putref(x.stroutput);
+		str_putref(x.sc_title);
+		str_putref(x.sc_pub);
+		val_putref(x.sc_tags);
+		val_putref(x.sc_cats);
 	} else {
 		fprintf(stderr, "failed to parse\n");
 	}

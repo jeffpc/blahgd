@@ -247,6 +247,10 @@ static int __do_load_post_body_fmt3(struct post *post, const struct str *input)
 	x.lineno         = 0;
 	x.table_nesting  = 0;
 	x.texttt_nesting = 0;
+	x.sc_title       = NULL;
+	x.sc_pub         = NULL;
+	x.sc_tags        = NULL;
+	x.sc_cats        = NULL;
 
 	fmt3_lex_init(&x.scanner);
 	fmt3_set_extra(&x, x.scanner);
@@ -260,6 +264,11 @@ static int __do_load_post_body_fmt3(struct post *post, const struct str *input)
 	str_putref(post->body); /* free the previous */
 	post->body = x.stroutput;
 	ASSERT(post->body);
+
+	str_putref(x.sc_title);
+	str_putref(x.sc_pub);
+	val_putref(x.sc_tags);
+	val_putref(x.sc_cats);
 
 	return 0;
 }
