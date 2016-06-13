@@ -66,8 +66,13 @@ extern int tmpl_lex_init(yyscan_t* scanner);
 
 static inline bool cond_value(struct parser_output *data)
 {
-	return ((data->cond_stack_use == -1) ||
-		data->cond_stack[data->cond_stack_use]);
+	int i;
+
+	for (i = 0; i <= data->cond_stack_use; i++)
+		if (!data->cond_stack[i])
+			return false;
+
+	return true;
 }
 
 static inline void cond_if(struct parser_output *data, bool val)
