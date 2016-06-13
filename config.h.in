@@ -73,6 +73,8 @@
 #define CONFIG_TAGCLOUD_MAX_SIZE	"tagcloud-max-size"
 #define CONFIG_LATEX_BIN		"latex-bin"
 #define CONFIG_DVIPNG_BIN		"dvipng-bin"
+#define CONFIG_TWITTER_USERNAME		"twitter-username"
+#define CONFIG_TWITTER_DESCRIPTION	"twitter-description"
 
 /*
  * prototypes, etc. for config.c
@@ -99,6 +101,8 @@ struct config {
 	uint64_t tagcloud_max_size;
 	struct str *latex_bin;
 	struct str *dvipng_bin;
+	struct str *twitter_username;
+	struct str *twitter_description;
 };
 
 extern struct config config;
