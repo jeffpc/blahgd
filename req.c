@@ -67,6 +67,16 @@ void req_free(struct req *req)
 	umem_cache_free(req_cache, req);
 }
 
+static void __vars_set_social(struct vars *vars)
+{
+	if (config.twitter_username)
+		vars_set_str(vars, "twitteruser",
+			     str_cstr(config.twitter_username));
+	if (config.twitter_description)
+		vars_set_str(vars, "twitterdesc",
+			     str_cstr(config.twitter_description));
+}
+
 static void req_init(struct req *req, enum req_via via)
 {
 	req->stats.req_init = gettime();
@@ -81,6 +91,7 @@ static void req_init(struct req *req, enum req_via via)
 	vars_set_int(&req->vars, "captcha_a", config.comment_captcha_a);
 	vars_set_int(&req->vars, "captcha_b", config.comment_captcha_b);
 	vars_set_nvl_array(&req->vars, "posts", NULL, 0);
+	__vars_set_social(&req->vars);
 
 	req->fmt   = NULL;
 
