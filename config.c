@@ -70,8 +70,10 @@ static void config_load_str(struct val *lv, const char *vname,
 
 	if (s)
 		*ret = s;
-	else
+	else if (def)
 		*ret = STR_DUP(def);
+	else
+		*ret = NULL;
 }
 
 static void config_load_scgi_port(struct val *lv)
