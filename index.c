@@ -93,9 +93,18 @@ static void __load_posts(struct req *req, int page, int archid)
 	load_posts(req, posts, nposts, nposts == posts_per_page);
 }
 
-static void __store_title(struct vars *vars, char *title)
+static void __store_title(struct vars *vars, char *title, bool prepend)
 {
+	char twittertitle[1024];
+
+	if (prepend)
+		snprintf(twittertitle, sizeof(twittertitle), "%s » %s",
+			 "Blahg", title);
+	else
+		strlcpy(twittertitle, title, sizeof(twittertitle));
+
 	vars_set_str(vars, "title", title);
+	vars_set_str(vars, "twittertitle", twittertitle);
 }
 
 static void __store_pages(struct vars *vars, int page)
@@ -114,7 +123,7 @@ int blahg_index(struct req *req, int page)
 {
 	page = max(page, 0);
 
-	__store_title(&req->vars, "Blahg");
+	__store_title(&req->vars, "Blahg", false);
 	__store_pages(&req->vars, page);
 
 	sidebar(req);
@@ -148,14 +157,14 @@ int blahg_archive(struct req *req, int m, int page)
 	if (!validate_arch_id(m))
 		m = 197001;
 
-	snprintf(nicetitle, sizeof(nicetitle), "%d &raquo; %s", m / 100,
+	snprintf(nicetitle, sizeof(nicetitle), "%d » %s", m / 100,
 		 months[(m % 100) - 1]);
 
 	req_head(req, "Content-Type", "text/html");
 
 	page = max(page, 0);
 
-	__store_title(&req->vars, nicetitle);
+	__store_title(&req->vars, nicetitle, true);
 	__store_pages(&req->vars, page);
 	__store_archid(&req->vars, m);
 

@@ -80,7 +80,12 @@ static const char *wordpress_catn[] = {
 
 static void __store_title(struct vars *vars, const char *title)
 {
+	char twittertitle[1024];
+
+	snprintf(twittertitle, sizeof(twittertitle), "%s » %s", "Blahg", title);
+
 	vars_set_str(vars, "title", title);
+	vars_set_str(vars, "twittertitle", twittertitle);
 }
 
 static void __store_tag(struct vars *vars, const char *tag)

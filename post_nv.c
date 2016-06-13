@@ -89,8 +89,10 @@ static nvlist_t *__store_vars(struct req *req, struct post *post, const char *ti
 {
 	nvlist_t *out;
 
-	if (titlevar)
+	if (titlevar) {
 		vars_set_str(&req->vars, titlevar, str_cstr(post->title));
+		vars_set_str(&req->vars, "twittertitle", str_cstr(post->title));
+	}
 
 	out = nvl_alloc();
 
