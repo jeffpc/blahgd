@@ -251,6 +251,7 @@ static int __do_load_post_body_fmt3(struct post *post, const struct str *input)
 	x.sc_pub         = NULL;
 	x.sc_tags        = NULL;
 	x.sc_cats        = NULL;
+	x.sc_twitter_img = NULL;
 
 	fmt3_lex_init(&x.scanner);
 	fmt3_set_extra(&x, x.scanner);
@@ -276,11 +277,17 @@ static int __do_load_post_body_fmt3(struct post *post, const struct str *input)
 	if (x.sc_pub)
 		post->time = parse_time_str(str_getref(x.sc_pub));
 
+	if (x.sc_twitter_img) {
+		str_putref(post->twitter_img);
+		post->twitter_img = str_getref(x.sc_twitter_img);
+	}
+
 	post_add_tags(&post->tags, x.sc_tags);
 	post_add_tags(&post->cats, x.sc_cats);
 
 	str_putref(x.sc_title);
 	str_putref(x.sc_pub);
+	str_putref(x.sc_twitter_img);
 
 	str_putref(post->body); /* free the previous */
 	post->body = x.stroutput;

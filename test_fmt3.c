@@ -50,6 +50,7 @@ static int onefile(struct post *post, char *ibuf, size_t len)
 	x.sc_pub         = NULL;
 	x.sc_tags        = NULL;
 	x.sc_cats        = NULL;
+	x.sc_twitter_img = NULL;
 
 	fmt3_lex_init(&x.scanner);
 	fmt3_set_extra(&x, x.scanner);
@@ -63,12 +64,14 @@ static int onefile(struct post *post, char *ibuf, size_t len)
 		sexpr_dump_file(stdout, x.sc_tags, false);
 		printf("\nsc_cats:\n");
 		sexpr_dump_file(stdout, x.sc_cats, false);
-		printf("\n");
+		printf("\nsc_twitter_img:\n>>>%s<<<\n",
+		       str_cstr(x.sc_twitter_img));
 		str_putref(x.stroutput);
 		str_putref(x.sc_title);
 		str_putref(x.sc_pub);
 		val_putref(x.sc_tags);
 		val_putref(x.sc_cats);
+		str_putref(x.sc_twitter_img);
 	} else {
 		fprintf(stderr, "failed to parse\n");
 	}

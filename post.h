@@ -74,6 +74,8 @@ struct post {
 
 	/* body */
 	struct str *body;
+
+	struct str *twitter_img;
 };
 
 struct req;

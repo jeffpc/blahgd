@@ -57,6 +57,7 @@ struct parser_output {
 	struct str *sc_pub;
 	struct val *sc_tags;
 	struct val *sc_cats;
+	struct str *sc_twitter_img;
 };
 
 typedef void* yyscan_t;

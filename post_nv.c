@@ -92,6 +92,23 @@ static nvlist_t *__store_vars(struct req *req, struct post *post, const char *ti
 	if (titlevar) {
 		vars_set_str(&req->vars, titlevar, str_cstr(post->title));
 		vars_set_str(&req->vars, "twittertitle", str_cstr(post->title));
+
+		/*
+		 * Only set the twitter image if we're dealing with an
+		 * individual post - this happens when the titlevar is not
+		 * NULL.
+		 */
+		if (post->twitter_img) {
+			struct str *tmp;
+
+			tmp = str_cat(3, str_getref(config.photo_base_url),
+				      STR_DUP("/"),
+				      str_getref(post->twitter_img));
+
+			vars_set_str(&req->vars, "twitterimg", str_cstr(tmp));
+
+			str_putref(tmp);
+		}
 	}
 
 	out = nvl_alloc();

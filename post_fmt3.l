@@ -72,6 +72,7 @@ static void inc_lineno(yyscan_t scanner);
 "\\published{"			{ BEGIN(SPECIALCMD); return PUBSTART; }
 "\\tag{"			{ BEGIN(SPECIALCMD); return TAGSTART; }
 "\\category{"			{ BEGIN(SPECIALCMD); return CATSTART; }
+"\\twitterimg{"			{ BEGIN(SPECIALCMD); return TWITTERIMGSTART; }
 <SPECIALCMD>"}"			{ BEGIN(INITIAL); return SPECIALCMDEND; }
 <SPECIALCMD>.			{ yylval->ptr = STR_DUP(yytext); return VERBTEXT; }
 
