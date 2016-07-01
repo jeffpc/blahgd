@@ -261,14 +261,30 @@ static int __do_load_post_body_fmt3(struct post *post, const struct str *input)
 
 	fmt3_lex_destroy(x.scanner);
 
-	str_putref(post->body); /* free the previous */
-	post->body = x.stroutput;
-	ASSERT(post->body);
+	/*
+	 * Now update struct post based on what we got from the .tex file.
+	 * The struct is already populated by data from the metadata file.
+	 * For the simple string values, we merely override whatever was
+	 * there.  For tags and categories we use the union.
+	 */
+
+	if (x.sc_title) {
+		str_putref(post->title);
+		post->title = str_getref(x.sc_title);
+	}
+
+	if (x.sc_pub)
+		post->time = parse_time_str(str_getref(x.sc_pub));
+
+	post_add_tags(&post->tags, x.sc_tags);
+	post_add_tags(&post->cats, x.sc_cats);
 
 	str_putref(x.sc_title);
 	str_putref(x.sc_pub);
-	val_putref(x.sc_tags);
-	val_putref(x.sc_cats);
+
+	str_putref(post->body); /* free the previous */
+	post->body = x.stroutput;
+	ASSERT(post->body);
 
 	return 0;
 }
