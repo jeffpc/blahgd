@@ -45,7 +45,8 @@ static int doorfd;
 
 #define TEX_TMP_DIR "/tmp"
 static int __render_math(const char *tex, char *md, char *dstpath,
-			 char *texpath, char *dvipath, char *pngpath)
+			 char *texpath, char *dvipath, char *pspath,
+			 char *pngpath)
 {
 	char cmd[3*FILENAME_MAX];
 	char *pwd;
@@ -58,7 +59,7 @@ static int __render_math(const char *tex, char *md, char *dstpath,
 
 	chdir(TEX_TMP_DIR);
 
-	fd = xopen(texpath, O_WRONLY, S_IRUSR | S_IWUSR);
+	fd = xopen(texpath, O_WRONLY | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
 	if (fd < 0) {
 		ret = fd;
 		goto err_chdir;
@@ -91,9 +92,16 @@ static int __render_math(const char *tex, char *md, char *dstpath,
 		goto err_chdir;
 	}
 
-	snprintf(cmd, sizeof(cmd), "%s -T tight -x 1200 -z 9 "
-		 "-bg Transparent -o %s %s > /dev/null",
-		 str_cstr(config.dvipng_bin), pngpath, dvipath);
+	snprintf(cmd, sizeof(cmd), "%s -q -o %s %s",
+		 str_cstr(config.dvips_bin), pspath, dvipath);
+	DBG("math cmd: '%s'", cmd);
+	if (system(cmd) == -1) {
+		ret = -errno;
+		goto err_chdir;
+	}
+
+	snprintf(cmd, sizeof(cmd), "%s -trim -density 125 %s %s",
+		 str_cstr(config.convert_bin), pspath, pngpath);
 	DBG("math cmd: '%s'", cmd);
 	if (system(cmd) == -1) {
 		ret = -errno;
@@ -136,6 +144,7 @@ static struct str *do_render_math(struct str *val)
 	char logpath[FILENAME_MAX];
 	char auxpath[FILENAME_MAX];
 	char dvipath[FILENAME_MAX];
+	char pspath[FILENAME_MAX];
 	char pngpath[FILENAME_MAX];
 
 	const char *tex = str_cstr(val);
@@ -159,24 +168,28 @@ static struct str *do_render_math(struct str *val)
 	snprintf(logpath, FILENAME_MAX, "%s/blahg_math_%s_%d.log", TEX_TMP_DIR, amd, id);
 	snprintf(auxpath, FILENAME_MAX, "%s/blahg_math_%s_%d.aux", TEX_TMP_DIR, amd, id);
 	snprintf(dvipath, FILENAME_MAX, "%s/blahg_math_%s_%d.dvi", TEX_TMP_DIR, amd, id);
+	snprintf(pspath,  FILENAME_MAX, "%s/blahg_math_%s_%d.ps",  TEX_TMP_DIR, amd, id);
 	snprintf(pngpath, FILENAME_MAX, "%s/blahg_math_%s_%d.png", TEX_TMP_DIR, amd, id);
 
 	unlink(texpath);
 	unlink(logpath);
 	unlink(auxpath);
 	unlink(dvipath);
+	unlink(pspath);
 	unlink(pngpath);
 
 	ret = xstat(finalpath, &statbuf);
 	if (!ret)
 		goto out;
 
-	ret = __render_math(tex, amd, finalpath, texpath, dvipath, pngpath);
+	ret = __render_math(tex, amd, finalpath, texpath, dvipath, pspath,
+			    pngpath);
 
 	xunlink(texpath);
 	xunlink(logpath);
 	xunlink(auxpath);
 	xunlink(dvipath);
+	xunlink(pspath);
 	xunlink(pngpath);
 
 	if (ret) {

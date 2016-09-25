@@ -47,7 +47,8 @@
 #cmakedefine DEFAULT_TAGCLOUD_MAX_SIZE	${DEFAULT_TAGCLOUD_MAX_SIZE}
 
 #cmakedefine DEFAULT_LATEX_BIN		"${DEFAULT_LATEX_BIN}"
-#cmakedefine DEFAULT_DVIPNG_BIN		"${DEFAULT_DVIPNG_BIN}"
+#cmakedefine DEFAULT_DVIPS_BIN		"${DEFAULT_DVIPS_BIN}"
+#cmakedefine DEFAULT_CONVERT_BIN	"${DEFAULT_CONVERT_BIN}"
 
 #cmakedefine PREVIEW_SECRET		${PREVIEW_SECRET}
 
@@ -72,7 +73,8 @@
 #define CONFIG_TAGCLOUD_MIN_SIZE	"tagcloud-min-size"
 #define CONFIG_TAGCLOUD_MAX_SIZE	"tagcloud-max-size"
 #define CONFIG_LATEX_BIN		"latex-bin"
-#define CONFIG_DVIPNG_BIN		"dvipng-bin"
+#define CONFIG_DVIPS_BIN		"dvips-bin"
+#define CONFIG_CONVERT_BIN		"convert-bin"
 #define CONFIG_TWITTER_USERNAME		"twitter-username"
 #define CONFIG_TWITTER_DESCRIPTION	"twitter-description"
 
@@ -100,7 +102,8 @@ struct config {
 	uint64_t tagcloud_min_size;
 	uint64_t tagcloud_max_size;
 	struct str *latex_bin;
-	struct str *dvipng_bin;
+	struct str *dvips_bin;
+	struct str *convert_bin;
 	struct str *twitter_username;
 	struct str *twitter_description;
 };

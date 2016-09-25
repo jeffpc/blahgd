@@ -146,8 +146,10 @@ int config_load(const char *fname)
 			DEFAULT_TAGCLOUD_MAX_SIZE);
 	config_load_str(lv, CONFIG_LATEX_BIN, &config.latex_bin,
 			DEFAULT_LATEX_BIN);
-	config_load_str(lv, CONFIG_DVIPNG_BIN, &config.dvipng_bin,
-			DEFAULT_DVIPNG_BIN);
+	config_load_str(lv, CONFIG_DVIPS_BIN, &config.dvips_bin,
+			DEFAULT_DVIPS_BIN);
+	config_load_str(lv, CONFIG_CONVERT_BIN, &config.convert_bin,
+			DEFAULT_CONVERT_BIN);
 	config_load_str(lv, CONFIG_TWITTER_USERNAME, &config.twitter_username,
 			NULL);
 	config_load_str(lv, CONFIG_TWITTER_DESCRIPTION, &config.twitter_description,
@@ -172,7 +174,8 @@ int config_load(const char *fname)
 	DBG("config.tagcloud_min_size = %"PRIu64, config.tagcloud_min_size);
 	DBG("config.tagcloud_max_size = %"PRIu64, config.tagcloud_max_size);
 	DBG("config.latex_bin = %s", str_cstr(config.latex_bin));
-	DBG("config.dvipng_bin = %s", str_cstr(config.dvipng_bin));
+	DBG("config.dvips_bin = %s", str_cstr(config.dvips_bin));
+	DBG("config.convert_bin = %s", str_cstr(config.convert_bin));
 	DBG("config.twitter_username = %s", str_cstr(config.twitter_username));
 	DBG("config.twitter_description = %s", str_cstr(config.twitter_description));
 

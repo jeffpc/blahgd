@@ -149,7 +149,8 @@ static bool check_config(const char *fname, struct val *lv)
 	ret = check_type(fname, lv, CONFIG_TAGCLOUD_MIN_SIZE, VT_INT, false) && ret;
 	ret = check_type(fname, lv, CONFIG_TAGCLOUD_MAX_SIZE, VT_INT, false) && ret;
 	ret = check_type(fname, lv, CONFIG_LATEX_BIN, VT_STR, false) && ret;
-	ret = check_type(fname, lv, CONFIG_DVIPNG_BIN, VT_STR, false) && ret;
+	ret = check_type(fname, lv, CONFIG_DVIPS_BIN, VT_STR, false) && ret;
+	ret = check_type(fname, lv, CONFIG_CONVERT_BIN, VT_STR, false) && ret;
 
 	return ret;
 }

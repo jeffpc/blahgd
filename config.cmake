@@ -62,7 +62,8 @@ set_default(DEFAULT_TAGCLOUD_MIN_SIZE	6)
 set_default(DEFAULT_TAGCLOUD_MAX_SIZE	18)
 
 set_default(DEFAULT_LATEX_BIN		"/usr/bin/latex")
-set_default(DEFAULT_DVIPNG_BIN		"/usr/bin/dvipng")
+set_default(DEFAULT_DVIPS_BIN		"/usr/bin/dvips")
+set_default(DEFAULT_CONVERT_BIN		"/usr/bin/convert")
 
 set_default(PREVIEW_SECRET		0x1985)
 
