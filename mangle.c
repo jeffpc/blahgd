@@ -46,6 +46,10 @@ char *mangle_htmlescape(const char *in)
 				/* "&amp;" */
 				outlen += 4;
 				break;
+			case '"':
+				/* "&quot;" */
+				outlen += 5;
+				break;
 		}
 	}
 
@@ -68,6 +72,10 @@ char *mangle_htmlescape(const char *in)
 			case '&':
 				strcpy(tmp, "&amp;");
 				tmp += 4;
+				break;
+			case '"':
+				strcpy(tmp, "&quot;");
+				tmp += 5;
 				break;
 			default:
 				*tmp = c;
