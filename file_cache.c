@@ -322,7 +322,7 @@ static int __reload(struct file_node *node)
 	node->contents = NULL;
 
 	/* read the current */
-	tmp = read_file_common(node->name, &node->stat);
+	tmp = read_file_common(AT_FDCWD, node->name, &node->stat);
 	if (IS_ERR(tmp)) {
 		DBG("file (%s) read error: %s", node->name,
 		    xstrerror(PTR_ERR(tmp)));
