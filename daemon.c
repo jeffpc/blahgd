@@ -248,6 +248,11 @@ static int drop_privs()
 		"net_access",
 		NULL,
 	};
+	static const priv_ptype_t privsets[] = {
+		PRIV_PERMITTED,
+		PRIV_LIMIT,
+		PRIV_INHERITABLE,
+	};
 
 	priv_set_t *wanted;
 	int ret;
@@ -267,9 +272,13 @@ static int drop_privs()
 		}
 	}
 
-	ret = setppriv(PRIV_SET, PRIV_PERMITTED, wanted);
-	if (ret == -1)
-		ret = -errno;
+	for (i = 0; i < ARRAY_LEN(privsets); i++) {
+		ret = setppriv(PRIV_SET, privsets[i], wanted);
+		if (ret == -1) {
+			ret = -errno;
+			break;
+		}
+	}
 
 err_free:
 	priv_freeset(wanted);
