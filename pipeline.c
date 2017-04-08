@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2013-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -140,6 +140,7 @@ static struct val *__escape(struct val *val, char *(*cvt)(const char*))
 		case VT_SYM:
 		case VT_CONS:
 		case VT_BOOL:
+		case VT_CHAR:
 			panic("%s called with value type %d", __func__,
 			      val->type);
 	}

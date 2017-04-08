@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2012-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -171,6 +171,7 @@ static char *print_val(struct val *val)
 		case VT_SYM:
 		case VT_CONS:
 		case VT_BOOL:
+		case VT_CHAR:
 			panic("%s called with value of type %d", __func__,
 			      val->type);
 	}
