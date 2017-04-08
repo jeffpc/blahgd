@@ -130,7 +130,7 @@ target_link_libraries(blahgd
 	umem
 	nvpair
 	md
-	/usr/lib/libavl.so.1
+	avl
 	/usr/lib/libcmdutils.so.1
 	m
 	suntaskq
@@ -150,7 +150,7 @@ target_link_libraries(mathd
 	version
 	umem
 	md
-	/usr/lib/libavl.so.1
+	avl
 	${JEFFPC_LIBRARY}
 )
 
@@ -167,7 +167,7 @@ add_executable(lisplint
 target_link_libraries(lisplint
 	umem
 	nvpair
-	/usr/lib/libavl.so.1
+	avl
 	${JEFFPC_LIBRARY}
 )
 
@@ -182,7 +182,7 @@ add_executable(nvdump
 target_link_libraries(nvdump
 	umem
 	nvpair
-	/usr/lib/libavl.so.1
+	avl
 	${JEFFPC_LIBRARY}
 )
 
@@ -206,7 +206,7 @@ target_link_libraries(test_fmt3
 	nvpair
 	md
 	suntaskq
-	/usr/lib/libavl.so.1
+	avl
 	/usr/lib/libcmdutils.so.1
 	${JEFFPC_LIBRARY}
 )
@@ -223,7 +223,7 @@ add_executable(test_qstring
 target_link_libraries(test_qstring
 	umem
 	nvpair
-	/usr/lib/libavl.so.1
+	avl
 	${JEFFPC_LIBRARY}
 )
 
