@@ -34,8 +34,7 @@
 #include <dirent.h>
 #include <umem.h>
 
-#include <suntaskq.h>
-
+#include <jeffpc/taskq.h>
 #include <jeffpc/error.h>
 #include <jeffpc/io.h>
 
@@ -497,7 +496,7 @@ int load_all_posts(void)
 	uint32_t postid;
 	uint64_t start_ts, end_ts;
 	unsigned nposts;
-	taskq_t *tq;
+	struct taskq *tq;
 	DIR *dir;
 	int ret;
 
@@ -506,11 +505,10 @@ int load_all_posts(void)
 	if (!dir)
 		return -errno;
 
-	tq = taskq_create("load-all-posts", 16, 1, INT_MAX,
-			  TASKQ_PREPOPULATE);
-	if (!tq) {
+	tq = taskq_create_fixed("load-all-posts", -1);
+	if (IS_ERR(tq)) {
 		closedir(dir);
-		return -ENOMEM;
+		return PTR_ERR(tq);
 	}
 
 	nposts = 0;
@@ -546,7 +544,7 @@ int load_all_posts(void)
 		}
 
 		/* load the post asynchronously */
-		if (!taskq_dispatch(tq, __tq_load_post, (void *)(uintptr_t) postid, 0))
+		if (taskq_dispatch(tq, __tq_load_post, (void *)(uintptr_t) postid))
 			__tq_load_post((void *)(uintptr_t) postid);
 
 		nposts++;

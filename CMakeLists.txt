@@ -53,11 +53,8 @@ FLEX_TARGET(tmpl template.l template.lex.c COMPILE_FLAGS "-P tmpl_")
 ADD_FLEX_BISON_DEPENDENCY(tmpl tmpl)
 
 include_directories(
-	suntaskq/include
 	${JEFFPC_INCLUDE_DIR}
 )
-
-add_subdirectory(suntaskq)
 
 add_custom_target(revisiontag ALL)
 
@@ -133,7 +130,6 @@ target_link_libraries(blahgd
 	avl
 	/usr/lib/libcmdutils.so.1
 	m
-	suntaskq
 	${JEFFPC_LIBRARY}
 )
 
@@ -205,7 +201,6 @@ target_link_libraries(test_fmt3
 	umem
 	nvpair
 	md
-	suntaskq
 	avl
 	/usr/lib/libcmdutils.so.1
 	${JEFFPC_LIBRARY}

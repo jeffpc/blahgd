@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <limits.h>
 
-#include <suntaskq.h>
+#include <jeffpc/taskq.h>
 
 #include "req.h"
 #include "helpers.h"
@@ -31,7 +31,7 @@
 #include "utils.h"
 #include "debug.h"
 
-static taskq_t *processor;
+static struct taskq *processor;
 
 static void queue_processor(void *arg)
 {
@@ -51,6 +51,7 @@ static void queue_processor(void *arg)
 int enqueue_fd(int fd, uint64_t ts)
 {
 	struct req *req;
+	int ret;
 
 	req = req_alloc();
 	if (!req)
@@ -60,30 +61,28 @@ int enqueue_fd(int fd, uint64_t ts)
 
 	req_init_scgi(req, fd);
 
-	if (!taskq_dispatch(processor, queue_processor, req, 0)) {
-		DBG("failed to dispatch connection");
+	ret = taskq_dispatch(processor, queue_processor, req);
+	if (ret) {
+		DBG("failed to dispatch connection: %s", xstrerror(ret));
 		req_destroy(req);
 		req_free(req);
-		return -ENOMEM;
 	}
 
-	return 0;
+	return ret;
 }
 
 int start_helpers(void)
 {
-	processor = taskq_create("scgi", config.scgi_threads,
-				 config.scgi_threads, INT_MAX,
-				 TASKQ_PREPOPULATE);
-	if (!processor)
-		return -ENOMEM;
+	processor = taskq_create_fixed("scgi", config.scgi_threads);
+	if (IS_ERR(processor))
+		return PTR_ERR(processor);
 
 	return 0;
 }
 
 void stop_helpers(void)
 {
-	if (!processor)
+	if (!processor || IS_ERR(processor))
 		return;
 
 	taskq_wait(processor);
