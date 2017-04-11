@@ -62,7 +62,7 @@ add_custom_command(TARGET revisiontag
 	COMMAND ${CMAKE_COMMAND}
 		-DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
 		-DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-		-P ${CMAKE_CURRENT_SOURCE_DIR}/git.cmake
+		-P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/hg.cmake
 )
 
 add_library(version

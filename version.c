@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-#include "gitversion.h"
+#include "hgversion.h"
 #include "version.h"
 
 const char version_string[] = VERSION;

@@ -10,7 +10,7 @@ test_qstring
 test_lisp_parser
 
 libversion.a
-gitversion.h
+hgversion.h
 
 post_fmt3.lex.c
 post_fmt3.tab.c
