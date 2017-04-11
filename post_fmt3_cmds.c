@@ -458,11 +458,11 @@ struct str *process_cmd(struct parser_output *data, struct str *cmd,
 	struct cmd key;
 	const struct cmd *c;
 
-	key.name = cmd->str;
+	key.name = str_cstr(cmd);
 
 	c = bsearch(&key, cmds, ARRAY_LEN(cmds), sizeof(cmds[0]), cmd_cmp);
 	if (!c) {
-		DBG("post_fmt3: invalid command '%s' (post #%u)", cmd->str,
+		DBG("post_fmt3: invalid command '%s' (post #%u)", key.name,
 		    data->post->id);
 
 		str_putref(txt);
