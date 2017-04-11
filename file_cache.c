@@ -76,7 +76,7 @@ struct file_node {
 static void fn_free(struct file_node *node);
 static int __reload(struct file_node *node);
 
-REFCNT_INLINE_FXNS(struct file_node, fn, refcnt, fn_free)
+REFCNT_INLINE_FXNS(struct file_node, fn, refcnt, fn_free, NULL)
 
 static void print_event(const char *fname, int event)
 {

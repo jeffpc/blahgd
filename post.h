@@ -105,7 +105,7 @@ extern void index_for_each_tag(int (*init)(void *, unsigned long),
 			       void *private);
 extern int index_insert_post(struct post *post);
 
-REFCNT_INLINE_FXNS(struct post, post, refcnt, post_destroy)
+REFCNT_INLINE_FXNS(struct post, post, refcnt, post_destroy, NULL)
 
 static inline void post_lock(struct post *post, bool allow_refresh)
 {
