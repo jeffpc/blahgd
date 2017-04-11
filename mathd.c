@@ -31,6 +31,7 @@
 #include <alloca.h>
 
 #include <jeffpc/jeffpc.h>
+#include <jeffpc/version.h>
 #include <jeffpc/error.h>
 #include <jeffpc/val.h>
 #include <jeffpc/str.h>
@@ -111,6 +112,7 @@ int main(int argc, char **argv)
 	openlog("mathd", LOG_NDELAY | LOG_PID, LOG_LOCAL0);
 
 	cmn_err(CE_INFO, "mathd version %s", version_string);
+	cmn_err(CE_INFO, "libjeffpc version %s", jeffpc_version);
 
 	jeffpc_init(&init_ops);
 	init_math(false);

@@ -34,6 +34,7 @@
 #include <priv.h>
 
 #include <jeffpc/jeffpc.h>
+#include <jeffpc/version.h>
 #include <jeffpc/error.h>
 #include <jeffpc/atomic.h>
 #include <jeffpc/val.h>
@@ -293,6 +294,7 @@ int main(int argc, char **argv)
 	ASSERT0(putenv("TZ=UTC"));
 
 	cmn_err(CE_INFO, "blahgd version %s", version_string);
+	cmn_err(CE_INFO, "libjeffpc version %s", jeffpc_version);
 
 	/* drop unneeded privs */
 	ret = drop_privs();
