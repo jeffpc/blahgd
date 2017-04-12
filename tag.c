@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2011-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@
 #include <stdbool.h>
 
 #include <jeffpc/error.h>
+#include <jeffpc/types.h>
 
 #include "config.h"
 #include "render.h"
@@ -74,9 +75,6 @@ static const char *wordpress_catn[] = {
 	[42] = "documentation",
 	[43] = "stargate",
 };
-
-#define MIN_CATN 1
-#define MAX_CATN 43
 
 static void __store_title(struct vars *vars, const char *title)
 {
@@ -143,15 +141,24 @@ int blahg_tag(struct req *req, char *tag, int page)
 
 int blahg_category(struct req *req, char *cat, int page)
 {
-	int catn;
+	uint32_t catn;
 
-	/* wordpress cat name */
-	catn = atoi(cat);
-	if (catn && ((catn < MIN_CATN) || (catn > MAX_CATN)))
-		return R404(req, NULL);
+	/*
+	 * Wordpress uses category numbers.  We need to map them the string
+	 * based category names we use and generate a redirect.
+	 *
+	 * If we fail to parse the category number or it refers to a
+	 * non-mapped category, we just use it as is.
+	 */
 
-	if (catn) {
+	if (!str2u32(cat, &catn)) {
 		char url[256];
+
+		if (catn >= ARRAY_LEN(wordpress_catn))
+			goto out;
+
+		if (!wordpress_catn[catn])
+			goto out;
 
 		snprintf(url, sizeof(url), "%s/?cat=%s",
 			 str_cstr(config.base_url), wordpress_catn[catn]);
@@ -159,5 +166,6 @@ int blahg_category(struct req *req, char *cat, int page)
 		return R301(req, url);
 	}
 
+out:
 	return __tagcat(req, cat, page, "{catindex}", false);
 }
