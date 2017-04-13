@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2015-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -74,6 +74,12 @@ static void config_load_str(struct val *lv, const char *vname,
 		*ret = STR_DUP(def);
 	else
 		*ret = NULL;
+}
+
+static void config_load_list(struct val *lv, const char *vname,
+			     struct val **ret)
+{
+	*ret = sexpr_alist_lookup_val(lv, vname);
 }
 
 static void config_load_scgi_port(struct val *lv)
@@ -154,6 +160,8 @@ int config_load(const char *fname)
 			NULL);
 	config_load_str(lv, CONFIG_TWITTER_DESCRIPTION, &config.twitter_description,
 			NULL);
+	config_load_list(lv, CONFIG_WORDPRESS_CATEGORIES,
+			 &config.wordpress_categories);
 
 	val_putref(lv);
 

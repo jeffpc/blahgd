@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2015-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -151,6 +151,7 @@ static bool check_config(const char *fname, struct val *lv)
 	ret = check_type(fname, lv, CONFIG_LATEX_BIN, VT_STR, false) && ret;
 	ret = check_type(fname, lv, CONFIG_DVIPS_BIN, VT_STR, false) && ret;
 	ret = check_type(fname, lv, CONFIG_CONVERT_BIN, VT_STR, false) && ret;
+	ret = check_type(fname, lv, CONFIG_WORDPRESS_CATEGORIES, VT_CONS, false) && ret;
 
 	return ret;
 }

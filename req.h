@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2014-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -139,5 +139,7 @@ extern int blahg_comment(struct req *req);
 extern int blahg_index(struct req *req, int paged);
 extern int blahg_story(struct req *req, int p, bool preview);
 extern int blahg_admin(struct req *req);
+
+extern int init_wordpress_categories(void);
 
 #endif

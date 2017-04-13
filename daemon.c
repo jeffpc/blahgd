@@ -313,6 +313,10 @@ int main(int argc, char **argv)
 	if (ret)
 		goto err;
 
+	ret = init_wordpress_categories();
+	if (ret)
+		goto err;
+
 	ret = load_all_posts();
 	if (ret)
 		goto err;

@@ -28,6 +28,7 @@
 
 #include <jeffpc/error.h>
 #include <jeffpc/types.h>
+#include <jeffpc/sexpr.h>
 
 #include "config.h"
 #include "render.h"
@@ -36,45 +37,15 @@
 #include "sidebar.h"
 #include "post.h"
 
-static const char *wordpress_catn[] = {
-	[1]  = "miscellaneous",
-	[2]  = "programming/kernel",
-	[3]  = "school",
-	[4]  = "work",
-	[5]  = "random",
-	[6]  = "programming",
-	[7]  = "events/ols-2005",
-	[8]  = "events",
-	[9]  = "rants",
-	[10] = "movies",
-	[11] = "humor",
-	[13] = "star-trek",
-	[15] = "star-trek/tng",
-	[16] = "star-trek/tos",
-	[17] = "legal",
-	[18] = "star-trek/voy",
-	[19] = "star-trek/ent",
-	[20] = "events/ols-2006",
-	[21] = "fsl",
-	[22] = "fsl/unionfs",
-	[23] = "stargate/sg-1",
-	[24] = "open-source",
-	[25] = "astronomy",
-	[26] = "programming/vcs",
-	[27] = "programming/vcs/git",
-	[28] = "programming/vcs/mercurial",
-	[29] = "events/ols-2007",
-	[30] = "programming/vcs/guilt",
-	[31] = "photography",
-	[34] = "music",
-	[35] = "programming/mainframes",
-	[36] = "events/sc-07",
-	[39] = "hvf",
-	[40] = "events/ols-2008",
-	[41] = "sysadmin",
-	[42] = "documentation",
-	[43] = "stargate",
-};
+/*
+ * Wordpress uses category numbers.  We need to map them to the string based
+ * category names we use and generate a redirect.
+ *
+ * The list of number to string mappings is in the config file and we stuff
+ * them into these variables on startup.  See init_wordpress_categories().
+ */
+static struct str **wordpress_cats;
+static size_t wordpress_ncats;
 
 static void __store_title(struct vars *vars, const char *title)
 {
@@ -144,28 +115,87 @@ int blahg_category(struct req *req, char *cat, int page)
 	uint32_t catn;
 
 	/*
-	 * Wordpress uses category numbers.  We need to map them the string
-	 * based category names we use and generate a redirect.
-	 *
 	 * If we fail to parse the category number or it refers to a
 	 * non-mapped category, we just use it as is.
 	 */
 
-	if (!str2u32(cat, &catn)) {
+	if (wordpress_cats && !str2u32(cat, &catn)) {
 		char url[256];
 
-		if (catn >= ARRAY_LEN(wordpress_catn))
+		if (catn >= wordpress_ncats)
 			goto out;
 
-		if (!wordpress_catn[catn])
+		if (!wordpress_cats[catn])
 			goto out;
 
 		snprintf(url, sizeof(url), "%s/?cat=%s",
-			 str_cstr(config.base_url), wordpress_catn[catn]);
+			 str_cstr(config.base_url),
+			 str_cstr(wordpress_cats[catn]));
 
 		return R301(req, url);
 	}
 
 out:
 	return __tagcat(req, cat, page, "{catindex}", false);
+}
+
+/*
+ * Each entry should be of the form: (int . str)
+ */
+static int store_wordpress_category(struct val *cur)
+{
+	struct val *idx, *name;
+	int ret;
+
+	if (!cur)
+		return 0; /* empty list is ok */
+
+	if (cur->type != VT_CONS)
+		return -EINVAL;
+
+	idx = sexpr_car(val_getref(cur));
+	name = sexpr_cdr(cur);
+
+	if ((idx->type != VT_INT) || (name->type != VT_STR)) {
+		cmn_err(CE_ERROR, "wordpress category entry type error - "
+			"expecting: (int . string)");
+		ret = -EINVAL;
+		goto out;
+	}
+
+	if (idx->i >= wordpress_ncats) {
+		/* need to grow the array */
+		size_t newcount = idx->i + 1;
+		size_t oldcount = wordpress_ncats;
+		size_t newsize = newcount * sizeof(struct str *);
+		size_t oldsize = oldcount * sizeof(struct str *);
+		struct str **tmp;
+
+		tmp = realloc(wordpress_cats, newsize);
+		if (!tmp) {
+			ret = -ENOMEM;
+			goto out;
+		}
+
+		memset(&tmp[oldcount], 0, newsize - oldsize);
+
+		wordpress_cats = tmp;
+		wordpress_ncats = newcount;
+	}
+
+	wordpress_cats[idx->i] = str_getref(name->str);
+
+	ret = 0;
+
+out:
+	val_putref(idx);
+	val_putref(name);
+
+	return ret;
+}
+
+int init_wordpress_categories(void)
+{
+	return sexpr_for_each(val_getref(config.wordpress_categories),
+			      store_wordpress_category);
 }
