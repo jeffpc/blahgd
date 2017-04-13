@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2013-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,6 @@
 #include "utils.h"
 #include "math.h"
 #include "file_cache.h"
-#include "debug.h"
 
 static int onefile(struct post *post, char *ibuf, size_t len)
 {
@@ -91,10 +90,8 @@ int main(int argc, char **argv)
 	result = 0;
 
 	ASSERT0(putenv("UMEM_DEBUG=default,verbose"));
-	ASSERT0(putenv("BLAHG_DISABLE_SYSLOG=1"));
 
 	init_math(false);
-	jeffpc_init(&init_ops);
 	init_file_cache();
 
 	for (i = 1; i < argc; i++) {

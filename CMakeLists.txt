@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+# Copyright (c) 2011-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -152,7 +152,6 @@ target_link_libraries(mathd
 
 add_executable(lisplint
 	lisplint.c
-	error.c
 	mangle.c
 	utils.c
 
@@ -172,7 +171,6 @@ add_executable(nvdump
 	utils.c
 	nvl.c
 	vars_dump.c
-	error.c
 )
 
 target_link_libraries(nvdump
@@ -192,7 +190,7 @@ add_executable(test_fmt3
 	config.c
 	math.c
 	listing.c
-	mangle.c utils.c error.c
+	mangle.c utils.c
 	nvl.c
 	nvl_convert.c
 )
@@ -208,7 +206,6 @@ target_link_libraries(test_fmt3
 
 add_executable(test_qstring
 	test_qstring.c
-	error.c
 	utils.c
 	vars.c vars_dump.c nvl.c
 	qstring.c

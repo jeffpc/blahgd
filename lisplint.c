@@ -30,7 +30,6 @@
 
 #include "utils.h"
 #include "config.h"
-#include "debug.h"
 
 static char *prog;
 
@@ -193,9 +192,6 @@ int main(int argc, char **argv)
 	result = 0;
 
 	ASSERT0(putenv("UMEM_DEBUG=default,verbose"));
-	ASSERT0(putenv("BLAHG_DISABLE_SYSLOG=1"));
-
-	jeffpc_init(&init_ops);
 
 	while ((opt = getopt(argc, argv, "pcCv")) != -1) {
 		switch (opt) {
