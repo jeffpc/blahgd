@@ -55,7 +55,6 @@ Specifically, blahgd requires:
 
   - doors (for communicating with mathd)
   - libavl.so (for AVL trees)
-  - libcmdutils.so.1 (for linked lists)
   - libumem.so
   - libnvpair.so
 

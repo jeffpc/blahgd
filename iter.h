@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2014-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,18 +24,6 @@
 #define __ITER_H
 
 #include <stddef.h>
-#include <sys/list.h>
-
-#define list_for_each(list, pos) \
-	for (pos = list_head(list); pos; pos = list_next((list), pos))
-
-#define list_for_each_reverse(list, pos) \
-	for (pos = list_tail(list); pos; pos = list_prev((list), pos))
-
-#define list_for_each_safe(list, pos, tmp) \
-	for (pos = list_head(list), tmp = (pos) ? list_next((list), (pos)) : NULL; \
-	     pos; \
-	     pos = (tmp), tmp = (pos) ? list_next((list), (pos)) : NULL)
 
 #define avl_for_each(tree, pos) \
 	for (pos = avl_first(tree); pos; pos = AVL_NEXT(tree, pos))

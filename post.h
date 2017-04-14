@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2009-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,11 +25,11 @@
 
 #include <time.h>
 #include <stdbool.h>
-#include <sys/list.h>
 #include <sys/avl.h>
 
 #include <jeffpc/synch.h>
 #include <jeffpc/refcnt.h>
+#include <jeffpc/list.h>
 
 #include "vars.h"
 
@@ -39,7 +39,7 @@ struct post_tag {
 };
 
 struct comment {
-	list_node_t list;
+	struct list_node list;
 	unsigned int id;
 	struct str *author;
 	struct str *email;
@@ -69,7 +69,7 @@ struct post {
 	avl_tree_t cats;
 
 	/* from 'comments' table */
-	list_t comments;
+	struct list comments;
 	unsigned int numcom;
 
 	/* body */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2009-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,6 +21,7 @@
  */
 
 #include <jeffpc/str.h>
+#include <jeffpc/list.h>
 
 #include "iter.h"
 #include "post.h"
@@ -47,7 +48,7 @@ static void __tag_val(nvlist_t *post, avl_tree_t *list)
 	free(tags);
 }
 
-static void __com_val(nvlist_t *post, list_t *list)
+static void __com_val(nvlist_t *post, struct list *list)
 {
 	struct comment *cur;
 	nvlist_t **comments;
@@ -56,14 +57,14 @@ static void __com_val(nvlist_t *post, list_t *list)
 
 	/* count the comments */
 	ncomments = 0;
-	list_for_each(list, cur)
+	list_for_each(cur, list)
 		ncomments++;
 
 	comments = malloc(sizeof(nvlist_t *) * ncomments);
 	ASSERT(comments);
 
 	i = 0;
-	list_for_each(list, cur) {
+	list_for_each(cur, list) {
 		comments[i] = nvl_alloc();
 
 		nvl_set_int(comments[i], "commid", cur->id);

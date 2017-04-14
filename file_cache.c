@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2014-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,6 @@
  */
 
 #include <sys/avl.h>
-#include <sys/list.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -35,6 +34,7 @@
 #include <jeffpc/thread.h>
 #include <jeffpc/refcnt.h>
 #include <jeffpc/io.h>
+#include <jeffpc/list.h>
 
 #include "file_cache.h"
 #include "utils.h"
@@ -53,7 +53,7 @@ static umem_cache_t *file_node_cache;
 static umem_cache_t *file_callback_cache;
 
 struct file_callback {
-	list_node_t list;
+	struct list_node list;
 
 	void (*cb)(void *);
 	void *arg;
@@ -67,7 +67,7 @@ struct file_node {
 
 	/* everything else is protected by the lock */
 	struct str *contents;		/* cache file contents if allowed */
-	list_t callbacks;		/* list of callbacks to invoke */
+	struct list callbacks;		/* list of callbacks to invoke */
 	struct stat stat;		/* the stat info of the cached file */
 	bool needs_reload;		/* caching stale data */
 	struct file_obj fobj;		/* FEN port object */
@@ -124,7 +124,7 @@ static void process_file(struct file_node *node, int events)
 
 		print_event(fobj->fo_name, events);
 
-		list_for_each(&node->callbacks, fcb)
+		list_for_each(fcb, &node->callbacks)
 			fcb->cb(fcb->arg);
 
 		/*
@@ -174,7 +174,7 @@ static int add_cb(struct file_node *node, void (*cb)(void *), void *arg)
 	if (!cb)
 		return 0;
 
-	list_for_each(&node->callbacks, fcb)
+	list_for_each(fcb, &node->callbacks)
 		if ((fcb->cb == cb) && (fcb->arg == arg))
 			return 0;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2015-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -134,8 +134,8 @@ struct post_global_index_entry {
 	unsigned int time;
 
 	/* list of tags & cats associated with this post */
-	list_t by_tag;
-	list_t by_cat;
+	struct list by_tag;
+	struct list by_cat;
 };
 
 struct post_index_entry {
@@ -157,7 +157,7 @@ struct post_index_entry {
 	enum entry_type type;
 
 	/* list node for global index tag/cat list */
-	list_node_t xref;
+	struct list_node xref;
 };
 
 struct post_subindex {
@@ -355,7 +355,7 @@ int index_get_posts(struct post **ret, const struct str *tagname, bool tag,
 
 static int __insert_post_tags(avl_tree_t *index,
 			      struct post_global_index_entry *global,
-			      avl_tree_t *taglist, list_t *xreflist,
+			      avl_tree_t *taglist, struct list *xreflist,
 			      enum entry_type type)
 {
 	struct post_index_entry *tag_entry;
@@ -558,7 +558,7 @@ static void __free_index(avl_tree_t *tree)
 
 	cookie = NULL;
 	while ((cur = avl_destroy_nodes(tree, &cookie))) {
-		list_t *xreflist = NULL;
+		struct list *xreflist = NULL;
 
 		switch (cur->type) {
 			case ET_TAG:

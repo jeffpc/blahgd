@@ -25,7 +25,6 @@
 
 #include <libnvpair.h>
 #include <stdbool.h>
-#include <sys/list.h>
 
 #include "vars.h"
 #include "stats.h"

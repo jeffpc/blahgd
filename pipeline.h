@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2013-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,7 @@
 #ifndef __PIPELINE_H
 #define __PIPELINE_H
 
-#include <sys/list.h>
+#include <jeffpc/list.h>
 
 #include "vars.h"
 
@@ -33,12 +33,12 @@ struct pipestageinfo {
 };
 
 struct pipestage {
-	list_node_t pipe;
+	struct list_node pipe;
 	const struct pipestageinfo *stage;
 };
 
 struct pipeline {
-	list_t pipe;
+	struct list pipe;
 };
 
 extern void init_pipe_subsys(void);

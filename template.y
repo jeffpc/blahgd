@@ -236,7 +236,7 @@ static char *pipeline(struct parser_output *data, struct req *req,
 			break;
 	}
 
-	list_for_each(&line->pipe, cur)
+	list_for_each(cur, &line->pipe)
 		val = cur->stage->f(val);
 
 	pipeline_destroy(line);

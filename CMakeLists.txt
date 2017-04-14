@@ -128,7 +128,6 @@ target_link_libraries(blahgd
 	nvpair
 	md
 	avl
-	/usr/lib/libcmdutils.so.1
 	m
 	${JEFFPC_LIBRARY}
 )
@@ -200,7 +199,6 @@ target_link_libraries(test_fmt3
 	nvpair
 	md
 	avl
-	/usr/lib/libcmdutils.so.1
 	${JEFFPC_LIBRARY}
 )
 
