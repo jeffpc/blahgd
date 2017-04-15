@@ -24,29 +24,27 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <umem.h>
 
 #include <jeffpc/error.h>
 #include <jeffpc/val.h>
+#include <jeffpc/mem.h>
 
 #include "pipeline.h"
 #include "utils.h"
 #include "mangle.h"
 
-static umem_cache_t *pipestage_cache;
-static umem_cache_t *pipeline_cache;
+static struct mem_cache *pipestage_cache;
+static struct mem_cache *pipeline_cache;
 
 void init_pipe_subsys(void)
 {
-	pipestage_cache = umem_cache_create("pipestage-cache",
-					    sizeof(struct pipestage), 0, NULL,
-					    NULL, NULL, NULL, NULL, 0);
-	ASSERT(pipestage_cache);
+	pipestage_cache = mem_cache_create("pipestage-cache",
+					   sizeof(struct pipestage), 0);
+	ASSERT(!IS_ERR(pipestage_cache));
 
-	pipeline_cache = umem_cache_create("pipeline-cache",
-					   sizeof(struct pipeline), 0, NULL,
-					   NULL, NULL, NULL, NULL, 0);
-	ASSERT(pipeline_cache);
+	pipeline_cache = mem_cache_create("pipeline-cache",
+					  sizeof(struct pipeline), 0);
+	ASSERT(!IS_ERR(pipeline_cache));
 }
 
 static struct val *nop_fxn(struct val *val)
@@ -216,7 +214,7 @@ struct pipestage *pipestage_alloc(char *name)
 	struct pipestage *pipe;
 	int i;
 
-	pipe = umem_cache_alloc(pipestage_cache, 0);
+	pipe = mem_cache_alloc(pipestage_cache);
 	ASSERT(pipe);
 
 	pipe->stage = &nop;
@@ -235,7 +233,7 @@ struct pipeline *pipestage_to_pipeline(struct pipestage *stage)
 {
 	struct pipeline *line;
 
-	line = umem_cache_alloc(pipeline_cache, 0);
+	line = mem_cache_alloc(pipeline_cache);
 	ASSERT(line);
 
 	list_create(&line->pipe, sizeof(struct pipestage),
@@ -254,7 +252,7 @@ void pipeline_append(struct pipeline *line, struct pipestage *stage)
 void pipeline_destroy(struct pipeline *line)
 {
 	while (!list_is_empty(&line->pipe))
-		umem_cache_free(pipestage_cache, list_remove_head(&line->pipe));
+		mem_cache_free(pipestage_cache, list_remove_head(&line->pipe));
 
-	umem_cache_free(pipeline_cache, line);
+	mem_cache_free(pipeline_cache, line);
 }
