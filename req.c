@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2014-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,9 +24,9 @@
 #include <sys/systeminfo.h>
 #include <sys/inttypes.h>
 #include <pthread.h>
-#include <umem.h>
 
 #include <jeffpc/atomic.h>
+#include <jeffpc/mem.h>
 
 #include "req.h"
 #include "utils.h"
@@ -37,21 +37,20 @@
 #include "debug.h"
 #include "version.h"
 
-static umem_cache_t *req_cache;
+static struct mem_cache *req_cache;
 static atomic_t reqids;
 
 void init_req_subsys(void)
 {
-	req_cache = umem_cache_create("req-cache", sizeof(struct req),
-				      0, NULL, NULL, NULL, NULL, NULL, 0);
-	ASSERT(req_cache);
+	req_cache = mem_cache_create("req-cache", sizeof(struct req), 0);
+	ASSERT(!IS_ERR(req_cache));
 }
 
 struct req *req_alloc(void)
 {
 	struct req *req;
 
-	req = umem_cache_alloc(req_cache, 0);
+	req = mem_cache_alloc(req_cache);
 
 	if (req)
 		req->id = atomic_inc(&reqids);
@@ -64,7 +63,7 @@ void req_free(struct req *req)
 	if (!req)
 		return;
 
-	umem_cache_free(req_cache, req);
+	mem_cache_free(req_cache, req);
 }
 
 static void __vars_set_social(struct vars *vars)
