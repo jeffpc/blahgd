@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2009-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -32,11 +32,11 @@
 #include <fcntl.h>
 #include <time.h>
 #include <dirent.h>
-#include <umem.h>
 
 #include <jeffpc/taskq.h>
 #include <jeffpc/error.h>
 #include <jeffpc/io.h>
+#include <jeffpc/mem.h>
 
 #include "iter.h"
 #include "post.h"
@@ -47,8 +47,8 @@
 #include "file_cache.h"
 #include "debug.h"
 
-static umem_cache_t *post_cache;
-static umem_cache_t *comment_cache;
+static struct mem_cache *post_cache;
+static struct mem_cache *comment_cache;
 
 static void post_remove_all_tags(avl_tree_t *taglist);
 static void post_remove_all_comments(struct post *post);
@@ -70,14 +70,12 @@ static int tag_cmp(const void *va, const void *vb)
 
 void init_post_subsys(void)
 {
-	post_cache = umem_cache_create("post-cache", sizeof(struct post),
-				       0, NULL, NULL, NULL, NULL, NULL, 0);
-	ASSERT(post_cache);
+	post_cache = mem_cache_create("post-cache", sizeof(struct post), 0);
+	ASSERT(!IS_ERR(post_cache));
 
-	comment_cache = umem_cache_create("comment-cache",
-					  sizeof(struct comment), 0, NULL,
-					  NULL, NULL, NULL, NULL, 0);
-	ASSERT(comment_cache);
+	comment_cache = mem_cache_create("comment-cache",
+					 sizeof(struct comment), 0);
+	ASSERT(!IS_ERR(comment_cache));
 
 	init_post_index();
 }
@@ -140,7 +138,7 @@ static void post_remove_all_comments(struct post *post)
 		str_putref(com->ip);
 		str_putref(com->url);
 		str_putref(com->body);
-		umem_cache_free(comment_cache, com);
+		mem_cache_free(comment_cache, com);
 	}
 
 	post->numcom = 0;
@@ -188,7 +186,7 @@ static void post_add_comment(struct post *post, int commid)
 	if (!v || (v->type != VT_BOOL) || !v->b)
 		goto done;
 
-	comm = umem_cache_alloc(comment_cache, 0);
+	comm = mem_cache_alloc(comment_cache);
 	ASSERT(comm);
 
 	comm->id     = commid;
@@ -415,7 +413,7 @@ struct post *load_post(int postid, bool preview)
 			return post;
 	}
 
-	post = umem_cache_alloc(post_cache, 0);
+	post = mem_cache_alloc(post_cache);
 	if (!post)
 		return NULL;
 
@@ -476,7 +474,7 @@ void post_destroy(struct post *post)
 
 	MXDESTROY(&post->lock);
 
-	umem_cache_free(post_cache, post);
+	mem_cache_free(post_cache, post);
 }
 
 static void __tq_load_post(void *arg)
