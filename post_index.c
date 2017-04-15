@@ -23,10 +23,10 @@
 #include <string.h>
 #include <stddef.h>
 #include <sys/sysmacros.h>
-#include <umem.h>
 
 #include <jeffpc/str.h>
 #include <jeffpc/error.h>
+#include <jeffpc/mem.h>
 
 #include "post.h"
 #include "iter.h"
@@ -177,9 +177,9 @@ static avl_tree_t index_by_cat;
 
 static struct lock index_lock;
 
-static umem_cache_t *index_entry_cache;
-static umem_cache_t *global_index_entry_cache;
-static umem_cache_t *subindex_cache;
+static struct mem_cache *index_entry_cache;
+static struct mem_cache *global_index_entry_cache;
+static struct mem_cache *subindex_cache;
 
 /*
  * Assorted comparators
@@ -257,22 +257,19 @@ void init_post_index(void)
 
 	MXINIT(&index_lock);
 
-	index_entry_cache = umem_cache_create("index-entry-cache",
-					      sizeof(struct post_index_entry),
-					      0, NULL, NULL, NULL, NULL, NULL,
-					      0);
-	ASSERT(index_entry_cache);
+	index_entry_cache = mem_cache_create("index-entry-cache",
+					     sizeof(struct post_index_entry),
+					     0);
+	ASSERT(!IS_ERR(index_entry_cache));
 
-	global_index_entry_cache = umem_cache_create("global-index-entry-cache",
-						     sizeof(struct post_global_index_entry),
-						     0, NULL, NULL, NULL, NULL,
-						     NULL, 0);
-	ASSERT(global_index_entry_cache);
+	global_index_entry_cache = mem_cache_create("global-index-entry-cache",
+						    sizeof(struct post_global_index_entry),
+						    0);
+	ASSERT(!IS_ERR(global_index_entry_cache));
 
-	subindex_cache = umem_cache_create("subindex-cache",
-					   sizeof(struct post_subindex),
-					   0, NULL, NULL, NULL, NULL, NULL, 0);
-	ASSERT(subindex_cache);
+	subindex_cache = mem_cache_create("subindex-cache",
+					  sizeof(struct post_subindex), 0);
+	ASSERT(!IS_ERR(subindex_cache));
 }
 
 static avl_tree_t *__get_subindex(avl_tree_t *index, const struct str *tagname)
@@ -372,7 +369,7 @@ static int __insert_post_tags(avl_tree_t *index,
 		sub = avl_find(index, &key, &where);
 		if (!sub) {
 			/* ...allocate one if it doesn't exist */
-			sub = umem_cache_alloc(subindex_cache, 0);
+			sub = mem_cache_alloc(subindex_cache);
 			if (!sub)
 				return -ENOMEM;
 
@@ -383,7 +380,7 @@ static int __insert_post_tags(avl_tree_t *index,
 		}
 
 		/* allocate & add a entry to the subindex */
-		tag_entry = umem_cache_alloc(index_entry_cache, 0);
+		tag_entry = mem_cache_alloc(index_entry_cache);
 		if (!tag_entry)
 			return -ENOMEM;
 
@@ -405,7 +402,7 @@ int index_insert_post(struct post *post)
 	int ret;
 
 	/* allocate an entry for the global index */
-	global = umem_cache_alloc(global_index_entry_cache, 0);
+	global = mem_cache_alloc(global_index_entry_cache);
 	if (!global) {
 		ret = -ENOMEM;
 		goto err;
@@ -420,7 +417,7 @@ int index_insert_post(struct post *post)
 		    offsetof(struct post_index_entry, xref));
 
 	/* allocate an entry for the by-time index */
-	by_time = umem_cache_alloc(index_entry_cache, 0);
+	by_time = mem_cache_alloc(index_entry_cache);
 	if (!by_time) {
 		ret = -ENOMEM;
 		goto err_free;
@@ -471,11 +468,11 @@ err_free_tags:
 	MXUNLOCK(&index_lock);
 
 err_free_by_time:
-	umem_cache_free(index_entry_cache, by_time);
+	mem_cache_free(index_entry_cache, by_time);
 
 err_free:
 	post_putref(global->post);
-	umem_cache_free(global_index_entry_cache, global);
+	mem_cache_free(global_index_entry_cache, global);
 
 err:
 	return ret;
@@ -545,7 +542,7 @@ static void __free_global_index(avl_tree_t *tree)
 		post_putref(cur->post);
 		list_destroy(&cur->by_tag);
 		list_destroy(&cur->by_cat);
-		umem_cache_free(global_index_entry_cache, cur);
+		mem_cache_free(global_index_entry_cache, cur);
 	}
 
 	avl_destroy(tree);
@@ -576,7 +573,7 @@ static void __free_index(avl_tree_t *tree)
 			list_remove(xreflist, cur);
 
 		str_putref(cur->name);
-		umem_cache_free(index_entry_cache, cur);
+		mem_cache_free(index_entry_cache, cur);
 	}
 
 	avl_destroy(tree);
@@ -591,7 +588,7 @@ static void __free_tag_index(avl_tree_t *tree)
 	while ((cur = avl_destroy_nodes(tree, &cookie))) {
 		__free_index(&cur->subindex);
 		str_putref((struct str *) cur->name);
-		umem_cache_free(subindex_cache, cur);
+		mem_cache_free(subindex_cache, cur);
 	}
 
 	avl_destroy(tree);
