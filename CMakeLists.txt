@@ -124,7 +124,6 @@ target_link_libraries(blahgd
 	pthread
 	socket
 	nsl
-	umem
 	nvpair
 	md
 	avl
@@ -143,7 +142,6 @@ add_executable(mathd
 
 target_link_libraries(mathd
 	version
-	umem
 	md
 	avl
 	${JEFFPC_LIBRARY}
@@ -159,7 +157,6 @@ add_executable(lisplint
 )
 
 target_link_libraries(lisplint
-	umem
 	nvpair
 	avl
 	${JEFFPC_LIBRARY}
@@ -173,7 +170,6 @@ add_executable(nvdump
 )
 
 target_link_libraries(nvdump
-	umem
 	nvpair
 	avl
 	${JEFFPC_LIBRARY}
@@ -195,7 +191,6 @@ add_executable(test_fmt3
 )
 
 target_link_libraries(test_fmt3
-	umem
 	nvpair
 	md
 	avl
@@ -211,7 +206,6 @@ add_executable(test_qstring
 )
 
 target_link_libraries(test_qstring
-	umem
 	nvpair
 	avl
 	${JEFFPC_LIBRARY}
