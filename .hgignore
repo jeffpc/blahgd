@@ -33,3 +33,5 @@ config.h
 
 CTestTestfile.cmake
 Testing
+
+subinclude:web/math/.hgignore
