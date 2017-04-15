@@ -27,7 +27,6 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <port.h>
-#include <umem.h>
 
 #include <jeffpc/str.h>
 #include <jeffpc/synch.h>
@@ -35,6 +34,7 @@
 #include <jeffpc/refcnt.h>
 #include <jeffpc/io.h>
 #include <jeffpc/list.h>
+#include <jeffpc/mem.h>
 
 #include "file_cache.h"
 #include "utils.h"
@@ -49,8 +49,8 @@ static struct lock file_lock;
 static pthread_t filemon_thread;
 static int filemon_port;
 
-static umem_cache_t *file_node_cache;
-static umem_cache_t *file_callback_cache;
+static struct mem_cache *file_node_cache;
+static struct mem_cache *file_callback_cache;
 
 struct file_callback {
 	struct list_node list;
@@ -178,7 +178,7 @@ static int add_cb(struct file_node *node, void (*cb)(void *), void *arg)
 		if ((fcb->cb == cb) && (fcb->arg == arg))
 			return 0;
 
-	fcb = umem_cache_alloc(file_callback_cache, 0);
+	fcb = mem_cache_alloc(file_callback_cache);
 	if (!fcb)
 		return -ENOMEM;
 
@@ -231,16 +231,13 @@ void init_file_cache(void)
 	avl_create(&file_cache, filename_cmp, sizeof(struct file_node),
 		   offsetof(struct file_node, node));
 
-	file_node_cache = umem_cache_create("file-node-cache",
-					    sizeof(struct file_node),
-					    0, NULL, NULL, NULL, NULL, NULL, 0);
-	ASSERT(file_node_cache);
+	file_node_cache = mem_cache_create("file-node-cache",
+					   sizeof(struct file_node), 0);
+	ASSERT(!IS_ERR(file_node_cache));
 
-	file_callback_cache = umem_cache_create("file-callback-cache",
-						sizeof(struct file_callback),
-						0, NULL, NULL, NULL, NULL, NULL,
-						0);
-	ASSERT(file_callback_cache);
+	file_callback_cache = mem_cache_create("file-callback-cache",
+					       sizeof(struct file_callback), 0);
+	ASSERT(!IS_ERR(file_callback_cache));
 
 	/* start the file event monitor */
 	filemon_port = port_create();
@@ -254,7 +251,7 @@ static struct file_node *fn_alloc(const char *name)
 {
 	struct file_node *node;
 
-	node = umem_cache_alloc(file_node_cache, 0);
+	node = mem_cache_alloc(file_node_cache);
 	if (!node)
 		return NULL;
 
@@ -274,7 +271,7 @@ static struct file_node *fn_alloc(const char *name)
 	return node;
 
 err:
-	umem_cache_free(file_node_cache, node);
+	mem_cache_free(file_node_cache, node);
 	return NULL;
 }
 
@@ -303,11 +300,11 @@ static void fn_free(struct file_node *node)
 
 	/* free all the callbacks */
 	while ((fcb = list_remove_head(&node->callbacks)))
-		umem_cache_free(file_callback_cache, fcb);
+		mem_cache_free(file_callback_cache, fcb);
 
 	str_putref(node->contents);
 	free(node->name);
-	umem_cache_free(file_node_cache, node);
+	mem_cache_free(file_node_cache, node);
 }
 
 static int __reload(struct file_node *node)
