@@ -46,7 +46,6 @@
 static avl_tree_t file_cache;
 static struct lock file_lock;
 
-static pthread_t filemon_thread;
 static int filemon_port;
 
 static struct mem_cache *file_node_cache;
@@ -243,7 +242,7 @@ void init_file_cache(void)
 	filemon_port = port_create();
 	ASSERT(filemon_port != -1);
 
-	ret = xthr_create(&filemon_thread, filemon, NULL);
+	ret = xthr_create(NULL, filemon, NULL);
 	ASSERT0(ret);
 }
 
