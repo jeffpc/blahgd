@@ -70,11 +70,7 @@ add_library(version
 )
 add_dependencies(version revisiontag)
 
-add_executable(blahgd
-	daemon.c helpers.c
-	scgi.c
-	config.c
-
+add_library(blahg
 	# file caching & change monitoring
 	file_cache.c
 
@@ -86,7 +82,8 @@ add_executable(blahgd
 	# post - format 3
 	${FLEX_fmt3_OUTPUTS} ${BISON_fmt3_OUTPUTS}
 	post_fmt3_cmds.c
-	listing.c mangle.c
+	listing.c
+	mangle.c
 	math.c
 
 	# templates
@@ -95,11 +92,31 @@ add_executable(blahgd
 	pipeline.c
 
 	# nvlist related things
-	qstring.c
-	decode.c fsm.c
-	vars.c vars_dump.c
+	decode.c
+	fsm.c
 	nvl.c
 	nvl_convert.c
+	qstring.c
+	vars.c
+	vars_dump.c
+
+	# misc
+	config.c
+	error.c
+	utils.c
+	sidebar.c
+)
+
+target_link_libraries(blahg
+	md
+	avl
+	m
+	${JEFFPC_LIBRARY}
+)
+
+add_executable(blahgd
+	daemon.c helpers.c
+	scgi.c
 
 	# request processing
 	req.c
@@ -109,106 +126,61 @@ add_executable(blahgd
 	admin.c
 	comment.c
 	index.c
-	sidebar.c
 	story.c
 	tag.c
 	static.c
-
-	# misc
-	error.c
-	utils.c
 )
 
 target_link_libraries(blahgd
 	version
+	blahg
 	pthread
 	socket
 	nsl
 	nvpair
-	md
-	avl
-	m
-	${JEFFPC_LIBRARY}
 )
 
 add_executable(mathd
 	mathd.c
-	math.c
-	error.c
-	config.c
-	mangle.c
-	utils.c
 )
 
 target_link_libraries(mathd
 	version
-	md
-	avl
-	${JEFFPC_LIBRARY}
+	blahg
 )
 
 add_executable(lisplint
 	lisplint.c
-	mangle.c
-	utils.c
-
-	nvl.c
-	nvl_convert.c
 )
 
 target_link_libraries(lisplint
-	nvpair
-	avl
-	${JEFFPC_LIBRARY}
+	blahg
 )
 
 add_executable(nvdump
 	nvdump.c
-	utils.c
-	nvl.c
-	vars_dump.c
 )
 
 target_link_libraries(nvdump
+	blahg
 	nvpair
-	avl
-	${JEFFPC_LIBRARY}
 )
 
 add_executable(test_fmt3
 	test_fmt3.c
-	post.c
-	post_index.c
-	${FLEX_fmt3_OUTPUTS} ${BISON_fmt3_OUTPUTS}
-	post_fmt3_cmds.c
-	file_cache.c
-	config.c
-	math.c
-	listing.c
-	mangle.c utils.c
-	nvl.c
-	nvl_convert.c
 )
 
 target_link_libraries(test_fmt3
-	nvpair
-	md
-	avl
-	${JEFFPC_LIBRARY}
+	blahg
 )
 
 add_executable(test_qstring
 	test_qstring.c
-	utils.c
-	vars.c vars_dump.c nvl.c
-	qstring.c
-	decode.c fsm.c
 )
 
 target_link_libraries(test_qstring
+	blahg
 	nvpair
-	avl
-	${JEFFPC_LIBRARY}
 )
 
 function(simple_c_test type section bin data)

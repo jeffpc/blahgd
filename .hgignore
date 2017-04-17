@@ -1,6 +1,6 @@
 syntax: glob
 
-blahg
+libblahg.a
 blahgd
 mathd
 lisplint
