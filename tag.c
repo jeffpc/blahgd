@@ -26,6 +26,7 @@
 #include <time.h>
 #include <stdbool.h>
 
+#include <jeffpc/array.h>
 #include <jeffpc/error.h>
 #include <jeffpc/types.h>
 #include <jeffpc/sexpr.h>
@@ -45,7 +46,6 @@
  * them into these variables on startup.  See init_wordpress_categories().
  */
 static struct str **wordpress_cats;
-static size_t wordpress_ncats;
 
 static void __store_title(struct vars *vars, const char *title)
 {
@@ -122,7 +122,7 @@ int blahg_category(struct req *req, char *cat, int page)
 	if (wordpress_cats && !str2u32(cat, &catn)) {
 		char url[256];
 
-		if (catn >= wordpress_ncats)
+		if (catn >= array_size(wordpress_cats))
 			goto out;
 
 		if (!wordpress_cats[catn])
@@ -163,24 +163,10 @@ static int store_wordpress_category(struct val *cur)
 		goto out;
 	}
 
-	if (idx->i >= wordpress_ncats) {
-		/* need to grow the array */
-		size_t newcount = idx->i + 1;
-		size_t oldcount = wordpress_ncats;
-		size_t newsize = newcount * sizeof(struct str *);
-		size_t oldsize = oldcount * sizeof(struct str *);
-		struct str **tmp;
-
-		tmp = realloc(wordpress_cats, newsize);
-		if (!tmp) {
-			ret = -ENOMEM;
+	if (idx->i >= array_size(wordpress_cats)) {
+		ret = array_truncate(&wordpress_cats, idx->i + 1);
+		if (ret)
 			goto out;
-		}
-
-		memset(&tmp[oldcount], 0, newsize - oldsize);
-
-		wordpress_cats = tmp;
-		wordpress_ncats = newcount;
 	}
 
 	wordpress_cats[idx->i] = str_getref(name->str);
@@ -196,6 +182,8 @@ out:
 
 int init_wordpress_categories(void)
 {
+	wordpress_cats = array_alloc(sizeof(struct str *), 0);
+
 	return sexpr_for_each(val_getref(config.wordpress_categories),
 			      store_wordpress_category);
 }
