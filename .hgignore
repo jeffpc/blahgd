@@ -9,7 +9,6 @@ test_fmt3
 test_qstring
 test_lisp_parser
 
-libversion.a
 hgversion.h
 
 post_fmt3.lex.c

@@ -65,12 +65,9 @@ add_custom_command(TARGET revisiontag
 		-P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/hg.cmake
 )
 
-add_library(version
-	version.c
-)
-add_dependencies(version revisiontag)
-
 add_library(blahg
+	version.c
+
 	# file caching & change monitoring
 	file_cache.c
 
@@ -107,6 +104,8 @@ add_library(blahg
 	sidebar.c
 )
 
+add_dependencies(blahg revisiontag)
+
 target_link_libraries(blahg
 	md
 	avl
@@ -132,7 +131,6 @@ add_executable(blahgd
 )
 
 target_link_libraries(blahgd
-	version
 	blahg
 	pthread
 	socket
@@ -145,7 +143,6 @@ add_executable(mathd
 )
 
 target_link_libraries(mathd
-	version
 	blahg
 )
 
