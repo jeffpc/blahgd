@@ -44,7 +44,7 @@ gethgrev(HG_COMMIT "{node}")
 gethgrev(VERSION
 	"{ifeq(latesttagdistance,0,\"{latesttag}\",\"{latesttag}-{latesttagdistance}-{node|short}\")}")
 
-if(${HG_COMMIT} EQUAL "unknown")
+if(${HG_COMMIT} STREQUAL "unknown")
 	message(WARNING "Failed to get revision info from Mercurial.")
 endif()
 
