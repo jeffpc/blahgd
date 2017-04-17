@@ -182,8 +182,18 @@ out:
 
 int init_wordpress_categories(void)
 {
+	int ret;
+
 	wordpress_cats = array_alloc(sizeof(struct str *), 0);
 
-	return sexpr_for_each(val_getref(config.wordpress_categories),
-			      store_wordpress_category);
+	ret = sexpr_for_each(val_getref(config.wordpress_categories),
+			     store_wordpress_category);
+
+	/* if there is nothing, free it */
+	if (!array_size(wordpress_cats)) {
+		array_free(wordpress_cats);
+		wordpress_cats = NULL;
+	}
+
+	return ret;
 }
