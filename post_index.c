@@ -330,12 +330,19 @@ int index_get_posts(struct post **ret, const struct str *tagname, bool tag,
 		return 0;
 	}
 
-	/* skip over the first entries as requested */
-	for (cur = avl_last(tree); cur && skip; cur = AVL_PREV(tree, cur))
+	/* skip over the first (listed) entries as requested */
+	for (cur = avl_last(tree); cur && skip; cur = AVL_PREV(tree, cur)) {
+		if (!cur->global->post->listed)
+			continue; /* don't count non-listed posts */
+
 		skip--;
+	}
 
 	/* get a reference for every post we're returning */
 	for (i = 0; cur && nposts; cur = AVL_PREV(tree, cur)) {
+		if (!cur->global->post->listed)
+			continue; /* skip non-listed posts */
+
 		if (pred && !pred(cur->global->post, private))
 			continue;
 

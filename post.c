@@ -330,6 +330,9 @@ static void __refresh_published_prop(struct post *post, struct val *lv)
 
 	/* update the format */
 	post->fmt = sexpr_alist_lookup_int(lv, "fmt", NULL);
+
+	/* update the listed bool */
+	post->listed = sexpr_alist_lookup_bool(lv, "listed", true, NULL);
 }
 
 static int __refresh_published(struct post *post)

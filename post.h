@@ -57,6 +57,7 @@ struct post {
 
 	bool needs_refresh;
 	bool preview;
+	bool listed;
 
 	/* from 'posts' table */
 	unsigned int id;
