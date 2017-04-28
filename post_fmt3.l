@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2011-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -80,9 +80,9 @@ static void inc_lineno(yyscan_t scanner);
 <MATH>"$"		{ BEGIN(INITIAL); return MATHEND; }
 <MATH>"\\"		{ return BSLASH; }
 <MATH>"_"		{ return USCORE; }
-<MATH>"^"		{ yylval->ptr = STR_DUP(yytext); return CARRET; }
-<MATH>"+"		{ yylval->ptr = STR_DUP(yytext); return PLUS; }
-<MATH>"-"		{ yylval->ptr = STR_DUP(yytext); return MINUS; }
+<MATH>"^"		{ return CARRET; }
+<MATH>"+"		{ return PLUS; }
+<MATH>"-"		{ return MINUS; }
 <MATH>"*"		{ return ASTERISK; }
 <MATH>"/"		{ return SLASH; }
 <MATH>"{"		{ return OCURLY; }

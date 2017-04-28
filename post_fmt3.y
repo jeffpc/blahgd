@@ -149,12 +149,13 @@ static void special_cmd_list(struct parser_output *data, struct val **var,
 %token SLASH
 %token PIPE
 %token OCURLY CCURLY OBRACE CBRACE
-%token USCORE ASTERISK
+%token USCORE CARRET ASTERISK
 %token BSLASH PERCENT AMP TILDE ELLIPSIS
 %token PAREND NLINE
 
 /* math specific tokens */
-%token <ptr> PLUS MINUS EQLTGT CARRET
+%token <ptr> EQLTGT
+%token PLUS MINUS
 %token OPAREN CPAREN
 %token MATHSTART MATHEND
 
@@ -251,9 +252,9 @@ mexpr : WORD				{ $$ = $1; }
       | SCHAR				{ $$ = $1; }
       | mexpr EQLTGT mexpr 		{ $$ = str_cat(3, $1, $2, $3); }
       | mexpr USCORE mexpr 		{ $$ = str_cat(3, $1, STR_DUP("_"), $3); }
-      | mexpr CARRET mexpr 		{ $$ = str_cat(3, $1, $2, $3); }
-      | mexpr PLUS mexpr 		{ $$ = str_cat(3, $1, $2, $3); }
-      | mexpr MINUS mexpr 		{ $$ = str_cat(3, $1, $2, $3); }
+      | mexpr CARRET mexpr 		{ $$ = str_cat(3, $1, STR_DUP("^"), $3); }
+      | mexpr PLUS mexpr 		{ $$ = str_cat(3, $1, STR_DUP("+"), $3); }
+      | mexpr MINUS mexpr 		{ $$ = str_cat(3, $1, STR_DUP("-"), $3); }
       | mexpr ASTERISK mexpr	 	{ $$ = str_cat(3, $1, STR_DUP("*"), $3); }
       | mexpr SLASH mexpr	 	{ $$ = str_cat(3, $1, STR_DUP("/"), $3); }
       | mexpr TILDE mexpr		{ $$ = str_cat(3, $1, STR_DUP("~"), $3); }
