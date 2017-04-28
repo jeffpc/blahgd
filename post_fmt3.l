@@ -121,6 +121,7 @@ static void inc_lineno(yyscan_t scanner);
 "\\%"			{ return PERCENT; }
 "~"			{ return TILDE; }
 "|"			{ return PIPE; }
+"^"			{ return CARRET; }
 \.{3}			{ return ELLIPSIS; }
 -{1,3}			{ yylval->ptr = STR_DUP(yytext); return DASH; }
 `{1,2}			{ yylval->ptr = STR_DUP(yytext); return OQUOT; }

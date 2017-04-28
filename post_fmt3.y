@@ -231,6 +231,7 @@ cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd(data, $1, $3, $2); }
     | CBRACE			{ $$ = STR_DUP("]"); }
     | AMP			{ $$ = STR_DUP("&amp;"); }
     | USCORE			{ $$ = STR_DUP("_"); }
+    | CARRET			{ $$ = STR_DUP("^"); }
     | TILDE			{ $$ = STR_DUP("~"); }
     ;
 
