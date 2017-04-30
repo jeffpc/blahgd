@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2009-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -91,8 +91,15 @@ static struct str *prep_meta_sexpr(const char *author, const char *email,
 				   const char *curdate, const char *ip,
 				   const char *url)
 {
+	struct val *url_val;
 	struct val *lv;
 	struct str *str;
+
+	/* Treat empty URLs as NULL */
+	if (url && (url[0] != '\0'))
+		url_val = VAL_DUP_CSTR((char *) url);
+	else
+		url_val = NULL;
 
 	/*
 	 * We're looking for a list looking something like:
@@ -115,7 +122,7 @@ static struct str *prep_meta_sexpr(const char *author, const char *email,
 	           VAL_ALLOC_CONS(
 	             VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("ip"), VAL_DUP_CSTR((char *) ip)),
 		     VAL_ALLOC_CONS(
-	               VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("url"), VAL_DUP_CSTR((char *) url)),
+	               VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("url"), url_val),
 		       VAL_ALLOC_CONS(
 	                 VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("moderated"), VAL_ALLOC_BOOL(false)),
 	                 NULL))))));
