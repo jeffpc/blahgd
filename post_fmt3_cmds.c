@@ -50,7 +50,7 @@ static struct str *__process_listing(struct parser_output *data,
 	str_putref(txt);
 	str_putref(opt);
 
-	return str_cat(3, STR_DUP("</p><pre>"), str, STR_DUP("</pre><p>"));
+	return str_cat(3, STATIC_STR("</p><pre>"), str, STATIC_STR("</pre><p>"));
 }
 
 static struct str *__process_link(struct parser_output *data, struct str *txt,
@@ -59,8 +59,8 @@ static struct str *__process_link(struct parser_output *data, struct str *txt,
 	if (!opt)
 		str_getref(txt);
 
-	return str_cat(5, STR_DUP("<a href=\""), txt, STR_DUP("\">"),
-		       opt ? opt : txt, STR_DUP("</a>"));
+	return str_cat(5, STATIC_STR("<a href=\""), txt, STATIC_STR("\">"),
+		       opt ? opt : txt, STATIC_STR("</a>"));
 }
 
 static struct str *__process_photolink(struct parser_output *data,
@@ -69,52 +69,52 @@ static struct str *__process_photolink(struct parser_output *data,
 	if (!opt)
 		str_getref(txt);
 
-	return str_cat(7, STR_DUP("<a href=\""),
+	return str_cat(7, STATIC_STR("<a href=\""),
 		       str_getref(config.photo_base_url),
-		       STR_DUP("/"),
+		       STATIC_STR("/"),
 		       txt,
-		       STR_DUP("\">"), opt ? opt : txt, STR_DUP("</a>"));
+		       STATIC_STR("\">"), opt ? opt : txt, STATIC_STR("</a>"));
 }
 
 static struct str *__process_img(struct parser_output *data, struct str *txt,
 				 struct str *opt)
 {
-	return str_cat(5, STR_DUP("<img src=\""), txt, STR_DUP("\" alt=\""),
-		       opt, STR_DUP("\" />"));
+	return str_cat(5, STATIC_STR("<img src=\""), txt, STATIC_STR("\" alt=\""),
+		       opt, STATIC_STR("\" />"));
 }
 
 static struct str *__process_photo(struct parser_output *data, struct str *txt,
 				   struct str *opt)
 {
-	return str_cat(7, STR_DUP("<img src=\""),
+	return str_cat(7, STATIC_STR("<img src=\""),
 		       str_getref(config.photo_base_url),
-		       STR_DUP("/"),
+		       STATIC_STR("/"),
 		       txt,
-		       STR_DUP("\" alt=\""), opt, STR_DUP("\" />"));
+		       STATIC_STR("\" alt=\""), opt, STATIC_STR("\" />"));
 }
 
 static struct str *__process_emph(struct parser_output *data, struct str *txt,
 				  struct str *opt)
 {
-	return str_cat(3, STR_DUP("<em>"), txt, STR_DUP("</em>"));
+	return str_cat(3, STATIC_STR("<em>"), txt, STATIC_STR("</em>"));
 }
 
 static struct str *__process_texttt(struct parser_output *data, struct str *txt,
 				    struct str *opt)
 {
-	return str_cat(3, STR_DUP("<tt>"), txt, STR_DUP("</tt>"));
+	return str_cat(3, STATIC_STR("<tt>"), txt, STATIC_STR("</tt>"));
 }
 
 static struct str *__process_textbf(struct parser_output *data,
 				    struct str *txt, struct str *opt)
 {
-	return str_cat(3, STR_DUP("<strong>"), txt, STR_DUP("</strong>"));
+	return str_cat(3, STATIC_STR("<strong>"), txt, STATIC_STR("</strong>"));
 }
 
 static struct str *__process_textit(struct parser_output *data, struct str *txt,
 				    struct str *opt)
 {
-	return str_cat(3, STR_DUP("<i>"), txt, STR_DUP("</i>"));
+	return str_cat(3, STATIC_STR("<i>"), txt, STATIC_STR("</i>"));
 }
 
 static struct str *__process_begin(struct parser_output *data, struct str *txt,
@@ -123,41 +123,41 @@ static struct str *__process_begin(struct parser_output *data, struct str *txt,
 	if (!strcmp(str_cstr(txt), "texttt")) {
 		data->texttt_nesting++;
 		str_putref(txt);
-		return STR_DUP("</p><pre>");
+		return STATIC_STR("</p><pre>");
 	}
 
 	if (!strcmp(str_cstr(txt), "enumerate")) {
 		str_putref(txt);
-		return STR_DUP("</p><ol>");
+		return STATIC_STR("</p><ol>");
 	}
 
 	if (!strcmp(str_cstr(txt), "itemize")) {
 		str_putref(txt);
-		return STR_DUP("</p><ul>");
+		return STATIC_STR("</p><ul>");
 	}
 
 	if (!strcmp(str_cstr(txt), "description")) {
 		str_putref(txt);
-		return STR_DUP("</p><dl>");
+		return STATIC_STR("</p><dl>");
 	}
 
 	if (!strcmp(str_cstr(txt), "quote")) {
 		str_putref(txt);
-		return STR_DUP("</p><blockquote><p>");
+		return STATIC_STR("</p><blockquote><p>");
 	}
 
 	if (!strcmp(str_cstr(txt), "tabular")) {
 		str_putref(txt);
 
 		if (data->table_nesting++)
-			return STR_DUP("<table>");
-		return STR_DUP("</p><table>");
+			return STATIC_STR("<table>");
+		return STATIC_STR("</p><table>");
 	}
 
 	DBG("post_fmt3: invalid environment '%s' (post #%u)", str_cstr(txt),
 	    data->post->id);
 
-	return str_cat(3, STR_DUP("[INVAL ENVIRON '"), txt, STR_DUP("']"));
+	return str_cat(3, STATIC_STR("[INVAL ENVIRON '"), txt, STATIC_STR("']"));
 }
 
 static struct str *__process_end(struct parser_output *data, struct str *txt,
@@ -166,41 +166,41 @@ static struct str *__process_end(struct parser_output *data, struct str *txt,
 	if (!strcmp(str_cstr(txt), "texttt")) {
 		data->texttt_nesting--;
 		str_putref(txt);
-		return STR_DUP("</pre><p>");
+		return STATIC_STR("</pre><p>");
 	}
 
 	if (!strcmp(str_cstr(txt), "enumerate")) {
 		str_putref(txt);
-		return STR_DUP("</ol><p>");
+		return STATIC_STR("</ol><p>");
 	}
 
 	if (!strcmp(str_cstr(txt), "itemize")) {
 		str_putref(txt);
-		return STR_DUP("</ul><p>");
+		return STATIC_STR("</ul><p>");
 	}
 
 	if (!strcmp(str_cstr(txt), "description")) {
 		str_putref(txt);
-		return STR_DUP("</dl><p>");
+		return STATIC_STR("</dl><p>");
 	}
 
 	if (!strcmp(str_cstr(txt), "quote")) {
 		str_putref(txt);
-		return STR_DUP("</p></blockquote><p>");
+		return STATIC_STR("</p></blockquote><p>");
 	}
 
 	if (!strcmp(str_cstr(txt), "tabular")) {
 		str_putref(txt);
 
 		if (--data->table_nesting)
-			return STR_DUP("</table>");
-		return STR_DUP("</table><p>");
+			return STATIC_STR("</table>");
+		return STATIC_STR("</table><p>");
 	}
 
 	DBG("post_fmt3: invalid environment '%s' (post #%u)", str_cstr(txt),
 	    data->post->id);
 
-	return str_cat(3, STR_DUP("[INVAL ENVIRON '"), txt, STR_DUP("']"));
+	return str_cat(3, STATIC_STR("[INVAL ENVIRON '"), txt, STATIC_STR("']"));
 }
 
 static struct str *__process_item(struct parser_output *data, struct str *txt,
@@ -210,9 +210,9 @@ static struct str *__process_item(struct parser_output *data, struct str *txt,
 	// encountered and then decide if <li> is the right tag to
 	// use
 	if (!opt)
-		return str_cat(3, STR_DUP("<li>"), txt, STR_DUP("</li>"));
-	return str_cat(5, STR_DUP("<dt>"), opt, STR_DUP("</dt><dd>"), txt,
-		       STR_DUP("</dd>"));
+		return str_cat(3, STATIC_STR("<li>"), txt, STATIC_STR("</li>"));
+	return str_cat(5, STATIC_STR("<dt>"), opt, STATIC_STR("</dt><dd>"), txt,
+		       STATIC_STR("</dd>"));
 }
 
 static struct str *__process_abbrev(struct parser_output *data, struct str *txt,
@@ -221,26 +221,26 @@ static struct str *__process_abbrev(struct parser_output *data, struct str *txt,
 	if (!opt)
 		str_getref(txt);
 
-	return str_cat(5, STR_DUP("<abbr title=\""), opt ? opt : txt,
-		       STR_DUP("\">"), txt, STR_DUP("</abbr>"));
+	return str_cat(5, STATIC_STR("<abbr title=\""), opt ? opt : txt,
+		       STATIC_STR("\">"), txt, STATIC_STR("</abbr>"));
 }
 
 static struct str *__process_section(struct parser_output *data,
 				     struct str *txt, struct str *opt)
 {
-	return str_cat(3, STR_DUP("</p><h3>"), txt, STR_DUP("</h3><p>"));
+	return str_cat(3, STATIC_STR("</p><h3>"), txt, STATIC_STR("</h3><p>"));
 }
 
 static struct str *__process_subsection(struct parser_output *data,
 					struct str *txt, struct str *opt)
 {
-	return str_cat(3, STR_DUP("</p><h4>"), txt, STR_DUP("</h4><p>"));
+	return str_cat(3, STATIC_STR("</p><h4>"), txt, STATIC_STR("</h4><p>"));
 }
 
 static struct str *__process_subsubsection(struct parser_output *data,
 					   struct str *txt, struct str *opt)
 {
-	return str_cat(3, STR_DUP("</p><h5>"), txt, STR_DUP("</h5><p>"));
+	return str_cat(3, STATIC_STR("</p><h5>"), txt, STATIC_STR("</h5><p>"));
 }
 
 static struct str *__process_wiki(struct parser_output *data, struct str *txt,
@@ -249,14 +249,14 @@ static struct str *__process_wiki(struct parser_output *data, struct str *txt,
 	if (!opt)
 		str_getref(txt);
 
-	return str_cat(9, STR_DUP("<a href=\""),
+	return str_cat(9, STATIC_STR("<a href=\""),
 		       str_getref(config.wiki_base_url),
-		       STR_DUP("/"),
+		       STATIC_STR("/"),
 		       txt,
-		       STR_DUP("\"><img src=\""),
+		       STATIC_STR("\"><img src=\""),
 		       str_getref(config.base_url),
-		       STR_DUP("/wiki.png\" alt=\"Wikipedia article:\" />&nbsp;"),
-		       opt ? opt : txt, STR_DUP("</a>"));
+		       STATIC_STR("/wiki.png\" alt=\"Wikipedia article:\" />&nbsp;"),
+		       opt ? opt : txt, STATIC_STR("</a>"));
 }
 
 static struct str *__process_bug(struct parser_output *data, struct str *txt,
@@ -264,14 +264,14 @@ static struct str *__process_bug(struct parser_output *data, struct str *txt,
 {
 	str_getref(txt);
 
-	return str_cat(9, STR_DUP("<a href=\""),
+	return str_cat(9, STATIC_STR("<a href=\""),
 		       str_getref(config.bug_base_url),
-		       STR_DUP("/"),
+		       STATIC_STR("/"),
 		       txt,
-		       STR_DUP("\"><img src=\""),
+		       STATIC_STR("\"><img src=\""),
 		       str_getref(config.base_url),
-		       STR_DUP("/bug.png\" alt=\"bug #\" />&nbsp;"),
-		       txt, STR_DUP("</a>"));
+		       STATIC_STR("/bug.png\" alt=\"bug #\" />&nbsp;"),
+		       txt, STATIC_STR("</a>"));
 }
 
 static struct str *__process_post(struct parser_output *data, struct str *txt,
@@ -307,37 +307,37 @@ static struct str *__process_taglink(struct parser_output *data,
 static struct str *__process_degree(struct parser_output *data, struct str *txt,
 				    struct str *opt)
 {
-	return str_cat(2, STR_DUP("\xc2\xb0"), txt);
+	return str_cat(2, STATIC_STR("\xc2\xb0"), txt);
 }
 
 static struct str *__process_trow(struct parser_output *data, struct str *txt,
 				  struct str *opt)
 {
-	return str_cat(3, STR_DUP("<tr><td>"), txt, STR_DUP("</td></tr>"));
+	return str_cat(3, STATIC_STR("<tr><td>"), txt, STATIC_STR("</td></tr>"));
 }
 
 static struct str *__process_leftarrow(struct parser_output *data,
 				       struct str *txt, struct str *opt)
 {
-	return STR_DUP("&larr;");
+	return STATIC_STR("&larr;");
 }
 
 static struct str *__process_rightarrow(struct parser_output *data,
 					struct str *txt, struct str *opt)
 {
-	return STR_DUP("&rarr;");
+	return STATIC_STR("&rarr;");
 }
 
 static struct str *__process_leftrightarrow(struct parser_output *data,
 					    struct str *txt, struct str *opt)
 {
-	return STR_DUP("&harr;");
+	return STATIC_STR("&harr;");
 }
 
 static struct str *__process_tm(struct parser_output *data, struct str *txt,
 				struct str *opt)
 {
-	return STR_DUP("&trade;");
+	return STATIC_STR("&trade;");
 }
 
 static struct str *__process_nop(struct parser_output *data, struct str *txt,
@@ -346,7 +346,7 @@ static struct str *__process_nop(struct parser_output *data, struct str *txt,
 	str_putref(txt);
 	str_putref(opt);
 
-	return STR_DUP("");
+	return STATIC_STR("");
 }
 
 typedef enum {
@@ -469,8 +469,8 @@ struct str *process_cmd(struct parser_output *data, struct str *cmd,
 		str_putref(txt);
 		str_putref(opt);
 
-		return str_cat(3, STR_DUP("[INVAL CMD '"), cmd,
-			       STR_DUP("']"));
+		return str_cat(3, STATIC_STR("[INVAL CMD '"), cmd,
+			       STATIC_STR("']"));
 	}
 
 	__check_arg(c->square, opt);

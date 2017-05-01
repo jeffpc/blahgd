@@ -103,7 +103,7 @@ static nvlist_t *__store_vars(struct req *req, struct post *post, const char *ti
 			struct str *tmp;
 
 			tmp = str_cat(3, str_getref(config.photo_base_url),
-				      STR_DUP("/"),
+				      STATIC_STR("/"),
 				      str_getref(post->twitter_img));
 
 			vars_set_str(&req->vars, "twitterimg", str_cstr(tmp));

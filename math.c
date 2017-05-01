@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2014-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -195,14 +195,14 @@ static struct str *do_render_math(struct str *val)
 	if (ret) {
 		str_putref(val);
 
-		return str_cat(3, STR_DUP("<span>Math Error ("),
-			       STR_DUP(xstrerror(ret)),
-			       STR_DUP(")</span>"));
+		return str_cat(3, STATIC_STR("<span>Math Error ("),
+			       STR_ALLOC_STATIC(xstrerror(ret)),
+			       STATIC_STR(")</span>"));
 	}
 
 out:
-	return str_cat(5, STR_DUP("<img src=\""), STR_DUP(finalpath),
-		       STR_DUP("\" alt=\"$"), val, STR_DUP("$\" />"));
+	return str_cat(5, STATIC_STR("<img src=\""), STR_DUP(finalpath),
+		       STATIC_STR("\" alt=\"$"), val, STATIC_STR("$\" />"));
 }
 
 static struct str *door_call_render_math(struct str *val)

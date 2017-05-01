@@ -150,7 +150,7 @@ static struct str *load_comment(struct post *post, int commid)
 	struct str *err_msg;
 	struct str *out;
 
-	err_msg = STR_DUP("Error: could not load comment text.");
+	err_msg = STATIC_STR("Error: could not load comment text.");
 
 	snprintf(path, FILENAME_MAX, "%s/posts/%d/comments/%d/text.txt",
 		 str_cstr(config.data_dir), post->id, commid);
@@ -199,7 +199,7 @@ static void post_add_comment(struct post *post, int commid)
 	comm->body   = load_comment(post, comm->id);
 
 	if (!comm->author)
-		comm->author = STR_DUP("[unknown]");
+		comm->author = STATIC_STR("[unknown]");
 
 	list_insert_tail(&post->comments, comm);
 
@@ -382,7 +382,7 @@ int __refresh(struct post *post)
 	post->title = NULL;
 
 	if (post->preview) {
-		post->title = STR_DUP("PREVIEW");
+		post->title = STATIC_STR("PREVIEW");
 		post->time  = time(NULL);
 		post->fmt   = 3;
 
