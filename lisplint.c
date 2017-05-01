@@ -161,6 +161,11 @@ static bool onefile(const char *fname, char *ibuf, size_t len)
 	bool ret;
 
 	lv = sexpr_parse(ibuf, len);
+	if (IS_ERR(lv)) {
+		fprintf(stderr, "Error parsing %s: %s\n",
+			fname, xstrerror(PTR_ERR(lv)));
+		return false;
+	}
 
 	if (verbose) {
 		sexpr_dump_file(stderr, lv, false);

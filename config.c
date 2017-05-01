@@ -120,8 +120,8 @@ int config_load(const char *fname)
 
 		free(raw);
 
-		if (!lv)
-			return -EINVAL;
+		if (IS_ERR(lv))
+			return PTR_ERR(lv);
 	} else {
 		lv = NULL;
 	}

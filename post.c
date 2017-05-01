@@ -181,6 +181,7 @@ static void post_add_comment(struct post *post, int commid)
 	ASSERT(!IS_ERR(meta));
 
 	lv = sexpr_parse_str(meta);
+	ASSERT(!IS_ERR(lv));
 
 	v = sexpr_cdr(sexpr_assoc(lv, "moderated"));
 	if (!v || (v->type != VT_BOOL) || !v->b)
@@ -350,6 +351,10 @@ static int __refresh_published(struct post *post)
 		return PTR_ERR(meta);
 
 	lv = sexpr_parse_str(meta);
+	if (IS_ERR(lv)) {
+		str_putref(meta);
+		return PTR_ERR(lv);
+	}
 
 	__refresh_published_prop(post, lv);
 
@@ -417,8 +422,10 @@ struct post *load_post(int postid, bool preview)
 	}
 
 	post = mem_cache_alloc(post_cache);
-	if (!post)
-		return NULL;
+	if (!post) {
+		err = -ENOMEM;
+		goto err;
+	}
 
 	memset(post, 0, sizeof(struct post));
 
@@ -439,15 +446,18 @@ struct post *load_post(int postid, bool preview)
 	MXINIT(&post->lock);
 
 	if ((err = __refresh(post)))
-		goto err;
+		goto err_free;
 
 	if (!post->preview)
 		ASSERT0(index_insert_post(post));
 
 	return post;
 
-err:
+err_free:
 	post_destroy(post);
+err:
+	cmn_err(CE_ERROR, "Failed to load post id %u: %s", postid,
+		xstrerror(err));
 	return NULL;
 }
 
