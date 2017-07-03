@@ -183,7 +183,7 @@ out:
 int init_wordpress_categories(void)
 {
 	struct val *cur, *tmp;
-	int ret;
+	int ret = 0;
 
 	wordpress_cats = array_alloc(sizeof(struct str *), 0);
 
