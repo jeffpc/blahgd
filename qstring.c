@@ -86,20 +86,23 @@ static void insert(nvlist_t *vars, struct qstr *name, struct qstr *val)
 	nvl_set_str(vars, name->buf, val->buf);
 }
 
-void parse_query_string_len(nvlist_t *vars, const char *qs, size_t len)
+int parse_query_string_len(nvlist_t *vars, const char *qs, size_t len)
 {
 	struct qstr *name, *val;
 	const char *cur, *end;
 	int state;
+	int ret;
 
 	if (!qs || !len)
-		return;
+		return 0;
 
 	name = alloc_str(VAR_NAME_MAXLEN);
 	val  = alloc_str(64 * 1024);
 
-	ASSERT(name);
-	ASSERT(val);
+	if (!name || !val) {
+		ret = -ENOMEM;
+		goto out;
+	}
 
 	state = QS_STATE_NAME;
 
@@ -112,8 +115,8 @@ void parse_query_string_len(nvlist_t *vars, const char *qs, size_t len)
 		if (state == QS_STATE_NAME) {
 			if (c == '=')
 				state = QS_STATE_VAL;
-			else
-				ASSERT0(append_char_str(name, c));
+			else if ((ret = append_char_str(name, c)) != 0)
+				goto out;
 		} else if (state == QS_STATE_VAL) {
 			if (c == '&') {
 				insert(vars, name, val);
@@ -121,8 +124,8 @@ void parse_query_string_len(nvlist_t *vars, const char *qs, size_t len)
 				state = QS_STATE_NAME;
 				reset_str(name);
 				reset_str(val);
-			} else {
-				ASSERT0(append_char_str(val, c));
+			} else if ((ret = append_char_str(val, c)) != 0) {
+				goto out;
 			}
 		}
 	}
@@ -130,6 +133,11 @@ void parse_query_string_len(nvlist_t *vars, const char *qs, size_t len)
 	if (state == QS_STATE_VAL)
 		insert(vars, name, val);
 
+	ret = 0;
+
+out:
 	free_str(name);
 	free_str(val);
+
+	return ret;
 }

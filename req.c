@@ -533,9 +533,10 @@ void convert_headers(nvlist_t *headers, const struct convert_info *table)
 
 int req_dispatch(struct req *req)
 {
-	parse_query_string(req->request_qs,
-			   nvl_lookup_str(req->request_headers,
-					  QUERY_STRING));
+	if (parse_query_string(req->request_qs,
+			       nvl_lookup_str(req->request_headers,
+					      QUERY_STRING)))
+		return R404(req, NULL); /* FIXME: this should be R400 */
 
 	if (!select_page(req))
 		return R404(req, NULL);

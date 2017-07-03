@@ -26,9 +26,9 @@
 #include <libnvpair.h>
 #include <string.h>
 
-extern void parse_query_string_len(nvlist_t *vars, const char *qs, size_t len);
+extern int parse_query_string_len(nvlist_t *vars, const char *qs, size_t len);
 
-static inline void parse_query_string(nvlist_t *vars, const char *qs)
+static inline int parse_query_string(nvlist_t *vars, const char *qs)
 {
 	size_t len;
 
@@ -37,7 +37,7 @@ static inline void parse_query_string(nvlist_t *vars, const char *qs)
 	else
 		len = 0;
 
-	parse_query_string_len(vars, qs, len);
+	return parse_query_string_len(vars, qs, len);
 }
 
 #endif
