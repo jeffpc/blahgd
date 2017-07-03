@@ -60,6 +60,10 @@ static void __com_val(nvlist_t *post, struct list *list)
 	list_for_each(cur, list)
 		ncomments++;
 
+	/* no comments = nothing to set in the nvlist */
+	if (!ncomments)
+		return;
+
 	comments = malloc(sizeof(nvlist_t *) * ncomments);
 	ASSERT(comments);
 
