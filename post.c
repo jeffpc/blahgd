@@ -385,8 +385,6 @@ int __refresh(struct post *post)
 		post->title = STATIC_STR("PREVIEW");
 		post->time  = time(NULL);
 		post->fmt   = 3;
-
-		ret = 0;
 	} else {
 		ret = __refresh_published(post);
 		if (ret)
