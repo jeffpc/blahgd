@@ -62,7 +62,7 @@ static int __tagcloud_init(void *arg, unsigned long ntags)
 	return state->cloud ? 0 : -ENOMEM;
 }
 
-static void __tagcloud_step(void *arg, const struct str *name,
+static void __tagcloud_step(void *arg, struct str *name,
 			    unsigned long count,
 			    unsigned long cmin,
 			    unsigned long cmax)

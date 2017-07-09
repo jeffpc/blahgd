@@ -164,7 +164,7 @@ struct post_subindex {
 	avl_node_t index;
 
 	/* key */
-	const struct str *name;
+	struct str *name;
 
 	/* value */
 	avl_tree_t subindex;
@@ -272,7 +272,7 @@ void init_post_index(void)
 	ASSERT(!IS_ERR(subindex_cache));
 }
 
-static avl_tree_t *__get_subindex(avl_tree_t *index, const struct str *tagname)
+static avl_tree_t *__get_subindex(avl_tree_t *index, struct str *tagname)
 {
 	struct post_subindex *ret;
 	struct post_subindex key = {
@@ -307,7 +307,7 @@ struct post *index_lookup_post(unsigned int postid)
 }
 
 /* get a list of posts based on tagname & return value from predicate */
-int index_get_posts(struct post **ret, const struct str *tagname, bool tag,
+int index_get_posts(struct post **ret, struct str *tagname, bool tag,
 		    bool (*pred)(struct post *, void *), void *private,
 		    int skip, int nposts)
 {
@@ -496,7 +496,7 @@ void revalidate_all_posts(void *arg)
 }
 
 void index_for_each_tag(int (*init)(void *, unsigned long),
-			void (*step)(void *, const struct str *, unsigned long,
+			void (*step)(void *, struct str *, unsigned long,
 				     unsigned long, unsigned long),
 			void *private)
 {
