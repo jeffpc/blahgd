@@ -161,6 +161,37 @@ static void __req_stats(struct req *req)
 	stats_update_request(pg, &req->stats);
 }
 
+static void calculate_content_length(struct req *req)
+{
+	size_t content_length;
+	char tmp[64];
+
+	/* if body length is 0, we automatically figure out the length */
+	if (!req->bodylen)
+		req->bodylen = strlen(req->body);
+
+	/* construct latency comment */
+	if (!req->dump_latency) {
+		req->latency_comment[0] = '\0';
+	} else {
+		uint64_t delta;
+
+		delta = req->stats.req_output - req->stats.req_init;
+
+		snprintf(req->latency_comment, sizeof(req->latency_comment),
+			"\n<!-- time to render: %"PRIu64".%09"PRIu64" seconds -->\n",
+		       delta / 1000000000UL,
+		       delta % 1000000000UL);
+	}
+
+	/* calculate the content-length */
+	content_length = req->bodylen + strlen(req->latency_comment);
+
+	snprintf(tmp, sizeof(tmp), "%zu", content_length);
+
+	req_head(req, "Content-Length", tmp);
+}
+
 void req_output(struct req *req)
 {
 	char tmp[256];
@@ -168,6 +199,8 @@ void req_output(struct req *req)
 	int ret;
 
 	req->stats.req_output = gettime();
+
+	calculate_content_length(req);
 
 	/* return status */
 	snprintf(tmp, sizeof(tmp), "Status: %u\n", req->status);
@@ -192,28 +225,13 @@ void req_output(struct req *req)
 	if (ret)
 		goto out;
 
-	/* if body length is 0, we automatically figure out the length */
-	if (!req->bodylen)
-		req->bodylen = strlen(req->body);
-
 	/* write out the body */
 	ret = xwrite(req->fd, req->body, req->bodylen);
 	if (ret)
 		goto out;
 
-	/* when requested, write out the latency for this operation */
-	if (req->dump_latency) {
-		uint64_t delta;
-
-		delta = req->stats.req_output - req->stats.req_init;
-
-		snprintf(tmp, sizeof(tmp),
-			"\n<!-- time to render: %"PRIu64".%09"PRIu64" seconds -->\n",
-		       delta / 1000000000UL,
-		       delta % 1000000000UL);
-
-		ret = xwrite_str(req->fd, tmp);
-	}
+	/* write out the latency for this operation */
+	ret = xwrite_str(req->fd, req->latency_comment);
 
 out:
 	/*
