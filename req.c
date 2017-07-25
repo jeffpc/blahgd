@@ -70,8 +70,6 @@ static void __vars_set_social(struct vars *vars)
 
 void req_init(struct req *req)
 {
-	req->stats.req_init = gettime();
-
 	/* state */
 	req->dump_latency = true;
 
@@ -94,53 +92,6 @@ void req_init(struct req *req)
 	/* (nothing) */
 }
 
-static void __req_stats(struct req *req)
-{
-	enum statpage pg = STATPAGE_HTTP_XXX;
-
-	switch (req->scgi->response.status) {
-		case SCGI_STATUS_REDIRECT:
-			pg = STATPAGE_HTTP_301;
-			break;
-		case SCGI_STATUS_NOTFOUND:
-			pg = STATPAGE_HTTP_404;
-			break;
-		case SCGI_STATUS_OK:
-			switch (req->args.page) {
-				case PAGE_ARCHIVE:
-					pg = STATPAGE_ARCHIVE;
-					break;
-				case PAGE_CATEGORY:
-					pg = STATPAGE_CAT;
-					break;
-				case PAGE_TAG:
-					pg = STATPAGE_TAG;
-					break;
-				case PAGE_COMMENT:
-					pg = STATPAGE_COMMENT;
-					break;
-				case PAGE_INDEX:
-					pg = STATPAGE_INDEX;
-					break;
-				case PAGE_STORY:
-					pg = STATPAGE_STORY;
-					break;
-				case PAGE_ADMIN:
-					pg = STATPAGE_ADMIN;
-					break;
-				case PAGE_STATIC:
-					pg = STATPAGE_STATIC;
-					break;
-			}
-			break;
-		default:
-			pg = STATPAGE_HTTP_XXX;
-			break;
-	}
-
-	stats_update_request(pg, &req->stats);
-}
-
 static void calculate_content_length(struct req *req)
 {
 	size_t content_length;
@@ -156,7 +107,7 @@ static void calculate_content_length(struct req *req)
 	} else {
 		uint64_t delta;
 
-		delta = req->stats.req_output - req->stats.req_init;
+		delta = gettime() - req->scgi->scgi_stats.read_body_time;
 
 		snprintf(req->latency_comment, sizeof(req->latency_comment),
 			"\n<!-- time to render: %"PRIu64".%09"PRIu64" seconds -->\n",
@@ -174,13 +125,15 @@ static void calculate_content_length(struct req *req)
 
 void req_output(struct req *req)
 {
-	req->stats.req_output = gettime();
-
 	calculate_content_length(req);
+}
 
-	req->stats.req_done = gettime();
-
-	__req_stats(req);
+static void nvl_set_time(struct nvlist *nvl, const char *name, uint64_t ts)
+{
+	if (ts)
+		nvl_set_int(nvl, name, ts);
+	else
+		nvl_set_null(nvl, name);
 }
 
 static void log_request(struct req *req)
@@ -246,13 +199,14 @@ static void log_request(struct req *req)
 	tmp = nvl_alloc();
 	if (!tmp)
 		goto err_free;
-	nvl_set_int(tmp, "fd-conn", req->stats.fd_conn);
-	nvl_set_int(tmp, "req-init", req->stats.req_init);
-	nvl_set_int(tmp, "enqueue", req->stats.enqueue);
-	nvl_set_int(tmp, "dequeue", req->stats.dequeue);
-	nvl_set_int(tmp, "req-output", req->stats.req_output);
-	nvl_set_int(tmp, "req-done", req->stats.req_done);
-	nvl_set_int(tmp, "destroy", req->stats.destroy);
+	nvl_set_time(tmp, "conn-selected", scgi->conn_stats.selected_time);
+	nvl_set_time(tmp, "conn-accepted", scgi->conn_stats.accepted_time);
+	nvl_set_time(tmp, "conn-dequeued", scgi->conn_stats.dequeued_time);
+	nvl_set_time(tmp, "scgi-read-header", scgi->scgi_stats.read_header_time);
+	nvl_set_time(tmp, "scgi-read-body", scgi->scgi_stats.read_body_time);
+	nvl_set_time(tmp, "scgi-compute", scgi->scgi_stats.compute_time);
+	nvl_set_time(tmp, "scgi-write-header", scgi->scgi_stats.write_header_time);
+	nvl_set_time(tmp, "scgi-write-body", scgi->scgi_stats.write_body_time);
 	nvl_set_nvl(logentry, "stats", tmp);
 
 	/*
@@ -291,8 +245,6 @@ err:
 
 void req_destroy(struct req *req)
 {
-	req->stats.destroy = gettime();
-
 	log_request(req);
 
 	vars_destroy(&req->vars);

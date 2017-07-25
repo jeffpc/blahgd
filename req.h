@@ -28,7 +28,6 @@
 #include <jeffpc/scgisvc.h>
 
 #include "vars.h"
-#include "stats.h"
 
 /*
  * Defines to make it easier to keep track of required headers in
@@ -86,9 +85,6 @@ struct req {
 
 	/* state */
 	bool dump_latency;	/* request latency calculation */
-
-	/* stats */
-	struct stats stats;
 
 	struct vars vars;
 

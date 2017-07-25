@@ -43,9 +43,6 @@
 static void process_request(struct scgi *scgi, void *private)
 {
 	struct req *req;
-	uint64_t now;
-
-	now = gettime();
 
 	req = req_alloc();
 	if (!req)
@@ -53,7 +50,6 @@ static void process_request(struct scgi *scgi, void *private)
 
 	req_init(req);
 
-	req->stats.dequeue = now;
 	req->scgi = scgi;
 
 	req_dispatch(req);
