@@ -132,7 +132,7 @@ int blahg_index(struct req *req, int page)
 
 	__load_posts(req, page, 0);
 
-	req->body = render_page(req, "{index}");
+	req->scgi->response.body = render_page(req, "{index}");
 	return 0;
 }
 
@@ -174,6 +174,6 @@ int blahg_archive(struct req *req, int m, int page)
 
 	__load_posts(req, page, m);
 
-	req->body = render_page(req, "{archive}");
+	req->scgi->response.body = render_page(req, "{archive}");
 	return 0;
 }

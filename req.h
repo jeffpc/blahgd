@@ -25,6 +25,8 @@
 
 #include <stdbool.h>
 
+#include <jeffpc/scgisvc.h>
+
 #include "vars.h"
 #include "stats.h"
 
@@ -57,10 +59,6 @@ enum {
 	PAGE_STATIC,
 };
 
-enum req_via {
-	REQ_SCGI,
-};
-
 struct qs {
 	int page;
 
@@ -76,26 +74,13 @@ struct qs {
 };
 
 struct req {
-	uint32_t id;
-
-	union {
-		struct {
-			int dummy;
-		} scgi;
-	};
+	struct scgi *scgi;
 
 	/* request */
-	enum req_via via;
-	struct nvlist *request_headers;
 	struct nvlist *request_qs;
-	char *request_body;
 	struct qs args;
 
 	/* response */
-	unsigned int status;
-	struct nvlist *headers;
-	void *body;
-	size_t bodylen;
 	int write_errno;	/* xwrite() return in req_output() */
 	char latency_comment[128];
 
@@ -120,14 +105,11 @@ extern void init_req_subsys(void);
 extern struct req *req_alloc(void);
 extern void req_free(struct req *req);
 
-extern void req_init_scgi(struct req *req, int fd);
+extern void req_init(struct req *req);
 extern void req_destroy(struct req *req);
 extern void req_output(struct req *req);
 extern void req_head(struct req *req, const char *name, const char *val);
 extern int req_dispatch(struct req *req);
-
-extern void convert_headers(struct nvlist *headers,
-			    const struct nvl_convert_info *table);
 
 extern int R404(struct req *req, char *tmpl);
 extern int R301(struct req *req, const char *url);

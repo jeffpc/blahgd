@@ -109,11 +109,11 @@ target_link_libraries(blahg
 	avl
 	m
 	${JEFFPC_LIBRARY}
+	${JEFFPC_COMM_LIBRARY}
 )
 
 add_executable(blahgd
-	daemon.c helpers.c
-	scgi.c
+	daemon.c
 
 	# request processing
 	req.c

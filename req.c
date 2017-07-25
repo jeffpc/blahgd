@@ -38,7 +38,6 @@
 #include "version.h"
 
 static struct mem_cache *req_cache;
-static atomic_t reqids;
 
 void init_req_subsys(void)
 {
@@ -48,14 +47,7 @@ void init_req_subsys(void)
 
 struct req *req_alloc(void)
 {
-	struct req *req;
-
-	req = mem_cache_alloc(req_cache);
-
-	if (req)
-		req->id = atomic_inc(&reqids);
-
-	return req;
+	return mem_cache_alloc(req_cache);
 }
 
 void req_free(struct req *req)
@@ -76,7 +68,7 @@ static void __vars_set_social(struct vars *vars)
 			     str_getref(config.twitter_description));
 }
 
-static void req_init(struct req *req, enum req_via via)
+void req_init(struct req *req)
 {
 	req->stats.req_init = gettime();
 
@@ -92,41 +84,28 @@ static void req_init(struct req *req, enum req_via via)
 	vars_set_array(&req->vars, "posts", NULL, 0);
 	__vars_set_social(&req->vars);
 
-	req->fmt   = NULL;
+	req->fmt = NULL;
 
 	/* request */
-	req->via = via;
-	req->request_headers = NULL;
-	req->request_body = NULL;
 	req->request_qs = nvl_alloc();
 	ASSERT(req->request_qs);
 
 	/* response */
-	req->status  = 200;
-	req->headers = nvl_alloc();
-	req->body    = NULL;
-	req->bodylen = 0;
-}
-
-void req_init_scgi(struct req *req, int fd)
-{
-	req_init(req, REQ_SCGI);
-
-	req->fd = fd;
+	/* (nothing) */
 }
 
 static void __req_stats(struct req *req)
 {
 	enum statpage pg = STATPAGE_HTTP_XXX;
 
-	switch (req->status) {
-		case 301:
+	switch (req->scgi->response.status) {
+		case SCGI_STATUS_REDIRECT:
 			pg = STATPAGE_HTTP_301;
 			break;
-		case 404:
+		case SCGI_STATUS_NOTFOUND:
 			pg = STATPAGE_HTTP_404;
 			break;
-		case 200:
+		case SCGI_STATUS_OK:
 			switch (req->args.page) {
 				case PAGE_ARCHIVE:
 					pg = STATPAGE_ARCHIVE;
@@ -168,8 +147,8 @@ static void calculate_content_length(struct req *req)
 	char tmp[64];
 
 	/* if body length is 0, we automatically figure out the length */
-	if (!req->bodylen)
-		req->bodylen = strlen(req->body);
+	if (!req->scgi->response.bodylen)
+		req->scgi->response.bodylen = strlen(req->scgi->response.body);
 
 	/* construct latency comment */
 	if (!req->dump_latency) {
@@ -186,7 +165,7 @@ static void calculate_content_length(struct req *req)
 	}
 
 	/* calculate the content-length */
-	content_length = req->bodylen + strlen(req->latency_comment);
+	content_length = req->scgi->response.bodylen + strlen(req->latency_comment);
 
 	snprintf(tmp, sizeof(tmp), "%zu", content_length);
 
@@ -195,62 +174,9 @@ static void calculate_content_length(struct req *req)
 
 void req_output(struct req *req)
 {
-	const struct nvpair *header;
-	char tmp[256];
-	int ret;
-
 	req->stats.req_output = gettime();
 
 	calculate_content_length(req);
-
-	/* return status */
-	snprintf(tmp, sizeof(tmp), "Status: %u\n", req->status);
-	ret = xwrite_str(req->fd, tmp);
-	if (ret)
-		goto out;
-
-	/* write out the headers */
-	nvl_for_each(header, req->headers) {
-		struct str *value;
-
-		value = nvpair_value_str(header);
-		ASSERT(!IS_ERR(value));
-
-		snprintf(tmp, sizeof(tmp), "%s: %s\n", nvpair_name(header),
-			 str_cstr(value));
-
-		str_putref(value);
-
-		ret = xwrite_str(req->fd, tmp);
-		if (ret)
-			goto out;
-	}
-
-	/* separate headers from body */
-	ret = xwrite_str(req->fd, "\n");
-	if (ret)
-		goto out;
-
-	/* write out the body */
-	ret = xwrite(req->fd, req->body, req->bodylen);
-	if (ret)
-		goto out;
-
-	/* write out the latency for this operation */
-	ret = xwrite_str(req->fd, req->latency_comment);
-
-out:
-	/*
-	 * At this point, we're done as far as the client is concerned.  We
-	 * have nothing else to send, so we make sure that we actually push
-	 * all the bytes along now.
-	 */
-	close(req->fd);
-
-	/*
-	 * Stash away the success/failure of the above writes
-	 */
-	req->write_errno = -ret;
 
 	req->stats.req_done = gettime();
 
@@ -273,7 +199,7 @@ static void log_request(struct req *req)
 
 	snprintf(fname, sizeof(fname), "%s/requests/%"PRIu64".%09"PRIu64"-%011u",
 		 str_cstr(config.data_dir), now / 1000000000llu,
-		 now % 1000000000llu, req->id);
+		 now % 1000000000llu, req->scgi->id);
 
 	/*
 	 * allocate a log entry & store some misc info
@@ -291,12 +217,12 @@ static void log_request(struct req *req)
 	tmp = nvl_alloc();
 	if (!tmp)
 		goto err_free;
-	nvl_set_int(tmp, "id", req->id);
-	nvl_set_nvl(tmp, "headers", nvl_getref(req->request_headers));
+	nvl_set_int(tmp, "id", req->scgi->id);
+	nvl_set_nvl(tmp, "headers", nvl_getref(req->scgi->request.headers));
 	nvl_set_nvl(tmp, "query-string", nvl_getref(req->request_qs));
-	nvl_set_str(tmp, "body", STR_DUP(req->request_body));
+	nvl_set_str(tmp, "body", STR_DUP(req->scgi->request.body));
 	nvl_set_str(tmp, "fmt", STR_DUP(req->fmt));
-	nvl_set_int(tmp, "file-descriptor", req->fd);
+	nvl_set_int(tmp, "file-descriptor", req->scgi->fd);
 	nvl_set_int(tmp, "thread-id", (uint64_t) pthread_self());
 	nvl_set_nvl(logentry, "request", tmp);
 
@@ -306,9 +232,9 @@ static void log_request(struct req *req)
 	tmp = nvl_alloc();
 	if (!tmp)
 		goto err_free;
-	nvl_set_int(tmp, "status", req->status);
-	nvl_set_nvl(tmp, "headers", nvl_getref(req->headers));
-	nvl_set_int(tmp, "body-length", req->bodylen);
+	nvl_set_int(tmp, "status", req->scgi->response.status);
+	nvl_set_nvl(tmp, "headers", nvl_getref(req->scgi->response.headers));
+	nvl_set_int(tmp, "body-length", req->scgi->response.bodylen);
 	nvl_set_bool(tmp, "dump-latency", req->dump_latency);
 	nvl_set_int(tmp, "write-errno", req->write_errno);
 	nvl_set_nvl(logentry, "response", tmp);
@@ -370,23 +296,15 @@ void req_destroy(struct req *req)
 
 	vars_destroy(&req->vars);
 
-	nvl_putref(req->headers);
-
-	free(req->request_body);
-	nvl_putref(req->request_headers);
 	nvl_putref(req->request_qs);
-
-	switch (req->via) {
-		case REQ_SCGI:
-			break;
-	}
-
-	free(req->body);
 }
 
 void req_head(struct req *req, const char *name, const char *val)
 {
-	nvl_set_str(req->headers, name, STR_DUP(val));
+	int ret;
+
+	ret = nvl_set_str(req->scgi->response.headers, name, STR_DUP(val));
+	ASSERT0(ret);
 }
 
 static bool select_page(struct req *req)
@@ -406,7 +324,7 @@ static bool select_page(struct req *req)
 	args->feed = NULL;
 	args->preview = 0;
 
-	uri = nvl_lookup_str(req->request_headers, DOCUMENT_URI);
+	uri = nvl_lookup_str(req->scgi->request.headers, DOCUMENT_URI);
 	ASSERT(!IS_ERR(uri));
 
 	switch (get_uri_type(uri)) {
@@ -553,7 +471,7 @@ int req_dispatch(struct req *req)
 {
 	struct str *qs;
 
-	qs = nvl_lookup_str(req->request_headers, QUERY_STRING);
+	qs = nvl_lookup_str(req->scgi->request.headers, QUERY_STRING);
 	if (IS_ERR(qs))
 		return R404(req, NULL); /* FIXME: this should be R400 */
 
@@ -606,14 +524,14 @@ int R404(struct req *req, char *tmpl)
 
 	req_head(req, "Content-Type", "text/html");
 
-	req->status = 404;
-	req->fmt    = "html";
+	req->scgi->response.status = SCGI_STATUS_NOTFOUND;
+	req->fmt = "html";
 
 	vars_scope_push(&req->vars);
 
 	sidebar(req);
 
-	req->body = render_page(req, tmpl);
+	req->scgi->response.body = render_page(req, tmpl);
 
 	return 0;
 }
@@ -625,14 +543,14 @@ int R301(struct req *req, const char *url)
 	req_head(req, "Content-Type", "text/html");
 	req_head(req, "Location", url);
 
-	req->status = 301;
-	req->fmt    = "html";
+	req->scgi->response.status = SCGI_STATUS_REDIRECT;
+	req->fmt = "html";
 
 	vars_scope_push(&req->vars);
 
 	vars_set_str(&req->vars, "redirect", STR_DUP(url));
 
-	req->body = render_page(req, "{301}");
+	req->scgi->response.body = render_page(req, "{301}");
 
 	return 0;
 }

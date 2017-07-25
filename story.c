@@ -75,7 +75,7 @@ int blahg_story(struct req *req, int p, bool preview)
 	if (__load_post(req, p, preview))
 		return R404(req, NULL);
 
-	req->body = render_page(req, "{storyview}");
+	req->scgi->response.body = render_page(req, "{storyview}");
 
 	return 0;
 }

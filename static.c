@@ -86,7 +86,7 @@ int blahg_static(struct req *req)
 	struct str *uri_str;
 	const char *uri;
 
-	uri_str = nvl_lookup_str(req->request_headers, DOCUMENT_URI);
+	uri_str = nvl_lookup_str(req->scgi->request.headers, DOCUMENT_URI);
 	ASSERT(!IS_ERR(uri_str));
 
 	uri = str_cstr(uri_str);
@@ -105,9 +105,10 @@ int blahg_static(struct req *req)
 	 * We assume that the URI is relative to the web dir.  Since we
 	 * have a whitelist of allowed URIs, whe should be safe here.
 	 */
-	req->body = read_file_len(path, &req->bodylen);
+	req->scgi->response.body = read_file_len(path,
+						 &req->scgi->response.bodylen);
 
-	if (IS_ERR(req->body))
+	if (IS_ERR(req->scgi->response.body))
 		return R404(req, NULL);
 
 	req_head(req, "Content-Type", info->content_type);

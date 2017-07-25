@@ -20,17 +20,6 @@
  * SOFTWARE.
  */
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <resolv.h>
-#include <pthread.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <signal.h>
 #include <priv.h>
 
 #include <jeffpc/jeffpc.h>
@@ -40,9 +29,9 @@
 #include <jeffpc/val.h>
 #include <jeffpc/str.h>
 #include <jeffpc/types.h>
+#include <jeffpc/scgisvc.h>
 
 #include "utils.h"
-#include "helpers.h"
 #include "pipeline.h"
 #include "file_cache.h"
 #include "math.h"
@@ -51,195 +40,27 @@
 #include "version.h"
 #include "debug.h"
 
-#define HOST		NULL
-#define CONN_BACKLOG	32
-
-union sockaddr_union {
-	struct sockaddr_in inet;
-	struct sockaddr_in6 inet6;
-};
-
-#define MAX_SOCK_FDS		8
-static int fds[MAX_SOCK_FDS];
-static int nfds;
-
-atomic_t server_shutdown;
-
-static void sigterm_handler(int signum, siginfo_t *info, void *unused)
+static void process_request(struct scgi *scgi, void *private)
 {
-	DBG("SIGTERM received");
+	struct req *req;
+	uint64_t now;
 
-	atomic_set(&server_shutdown, 1);
-}
+	now = gettime();
 
-static void handle_signals(void)
-{
-	struct sigaction action;
-	int ret;
+	req = req_alloc();
+	if (!req)
+		return;
 
-	sigemptyset(&action.sa_mask);
+	req_init(req);
 
-	action.sa_handler = SIG_IGN;
-	action.sa_flags = 0;
+	req->stats.dequeue = now;
+	req->scgi = scgi;
 
-	ret = sigaction(SIGPIPE, &action, NULL);
-	if (ret)
-		DBG("Failed to ignore SIGPIPE: %s", strerror(errno));
+	req_dispatch(req);
 
-	action.sa_sigaction = sigterm_handler;
-	action.sa_flags = SA_SIGINFO;
-
-	ret = sigaction(SIGTERM, &action, NULL);
-	if (ret)
-		DBG("Failed to set SIGTERM handler: %s", strerror(errno));
-}
-
-static int bind_sock(int family, struct sockaddr *addr, int addrlen)
-{
-	int on = 1;
-	int ret;
-	int fd;
-
-	if (nfds >= MAX_SOCK_FDS)
-		return -EMFILE;
-
-	fd = socket(family, SOCK_STREAM, 0);
-	if (fd == -1)
-		return -errno;
-
-	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
-
-	if (bind(fd, addr, addrlen))
-		goto err;
-
-	if (listen(fd, CONN_BACKLOG))
-		goto err;
-
-	fds[nfds++] = fd;
-
-	return 0;
-
-err:
-	ret = -errno;
-
-	close(fd);
-
-	return ret;
-}
-
-static int start_listening(void)
-{
-	struct addrinfo hints, *res, *p;
-	char port[10];
-
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_PASSIVE;
-
-	snprintf(port, sizeof(port), "%d", config.scgi_port);
-
-	if (getaddrinfo(HOST, port, &hints, &res))
-		return -1;
-
-	for (p = res; p; p = p->ai_next) {
-		struct sockaddr_in *ipv4;
-		struct sockaddr_in6 *ipv6;
-		char str[64];
-		void *addr;
-		int ret;
-
-		switch (p->ai_family) {
-			case AF_INET:
-				ipv4 = (struct sockaddr_in *) p->ai_addr;
-				addr = &ipv4->sin_addr;
-				break;
-			case AF_INET6:
-				ipv6 = (struct sockaddr_in6 *) p->ai_addr;
-				addr = &ipv6->sin6_addr;
-				break;
-			default:
-				DBG("Unsupparted address family: %d",
-				    p->ai_family);
-				addr = NULL;
-				break;
-		}
-
-		if (!addr)
-			continue;
-
-		inet_ntop(p->ai_family, addr, str, sizeof(str));
-
-		ret = bind_sock(p->ai_family, p->ai_addr, p->ai_addrlen);
-		if (ret && ret != -EAFNOSUPPORT)
-			return ret;
-		else if (!ret)
-			cmn_err(CE_INFO, "Bound to: %s %s", str, port);
-	}
-
-	freeaddrinfo(res);
-
-	return 0;
-}
-
-static void stop_listening(void)
-{
-	int i;
-
-	for (i = 0; i < nfds; i++)
-		close(fds[i]);
-}
-
-static void accept_conns(void)
-{
-	fd_set set;
-	int maxfd;
-	int ret;
-	int err;
-	int i;
-
-	for (;;) {
-		union sockaddr_union addr;
-		unsigned len;
-		uint64_t ts;
-		int fd;
-
-		FD_ZERO(&set);
-		maxfd = 0;
-		for (i = 0; i < nfds; i++) {
-			FD_SET(fds[i], &set);
-			maxfd = MAX(maxfd, fds[i]);
-		}
-
-		ret = select(maxfd + 1, &set, NULL, NULL, NULL);
-		err = errno;
-
-		ts = gettime();
-
-		if (atomic_read(&server_shutdown))
-			break;
-
-		if ((ret < 0) && (err != EINTR))
-			DBG("Error on select: %s", strerror(err));
-
-		for (i = 0; (i < nfds) && (ret > 0); i++) {
-			if (!FD_ISSET(fds[i], &set))
-				continue;
-
-			len = sizeof(addr);
-			fd = accept(fds[i], (struct sockaddr *) &addr, &len);
-			if (fd == -1) {
-				DBG("Failed to accept from fd %d: %s",
-				    fds[i], strerror(errno));
-				continue;
-			}
-
-			if (enqueue_fd(fd, ts))
-				close(fd);
-
-			ret--;
-		}
-	}
+	req_output(req);
+	req_destroy(req);
+	req_free(req);
 }
 
 static int drop_privs()
@@ -321,29 +142,15 @@ int main(int argc, char **argv)
 	if (ret)
 		goto err;
 
-	handle_signals();
-
-	ret = start_helpers();
+	ret = scgisvc(NULL, config.scgi_port, config.scgi_threads,
+		      process_request, NULL);
 	if (ret)
-		goto err_helpers;
-
-	ret = start_listening();
-	if (ret)
-		goto err_helpers;
-
-	accept_conns();
-
-	stop_listening();
-
-	stop_helpers();
+		goto err;
 
 	free_all_posts();
 	uncache_all_files();
 
 	return 0;
-
-err_helpers:
-	stop_helpers();
 
 err:
 	DBG("Failed to inintialize: %s", xstrerror(ret));

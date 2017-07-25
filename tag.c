@@ -101,7 +101,8 @@ int __tagcat(struct req *req, const char *tagcat, int page, char *tmpl,
 
 	str_putref(tag);
 
-	req->body = render_page(req, tmpl);
+	req->scgi->response.body = render_page(req, tmpl);
+
 	return 0;
 }
 

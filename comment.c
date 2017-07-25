@@ -199,7 +199,8 @@ static const char *write_out_comment(struct req *req, int id,
 	}
 
 	meta = prep_meta_sexpr(author, email, STR_DUP(curdate),
-			       nvl_lookup_str(req->request_headers, REMOTE_ADDR),
+			       nvl_lookup_str(req->scgi->request.headers,
+					      REMOTE_ADDR),
 			       url);
 	if (!meta) {
 		DBG("failed to prep lisp meta data");
@@ -419,17 +420,19 @@ static const char *save_comment(struct req *req)
 	int ret;
 	int id;
 
-	if (nvl_exists_type(req->request_headers, HTTP_USER_AGENT, NVT_STR)) {
+	if (nvl_exists_type(req->scgi->request.headers, HTTP_USER_AGENT,
+			    NVT_STR)) {
 		DBG("Missing user agent...");
 		return USERAGENT_MISSING;
 	}
 
-	if (nvl_exists_type(req->request_headers, REMOTE_ADDR, NVT_STR)) {
+	if (nvl_exists_type(req->scgi->request.headers, REMOTE_ADDR,
+			    NVT_STR)) {
 		DBG("Missing remote addr...");
 		return INTERNAL_ERR;
 	}
 
-	if (!req->request_body) {
+	if (!req->scgi->request.body) {
 		DBG("missing req. body");
 		return INTERNAL_ERR;
 	}
@@ -442,7 +445,7 @@ static const char *save_comment(struct req *req)
 
 	err = GENERIC_ERR_STR;
 
-	ret = parse_query_string(qs, req->request_body);
+	ret = parse_query_string(qs, req->scgi->request.body);
 	if (ret) {
 		DBG("failed to parse comment: %s", xstrerror(ret));
 		goto err;
@@ -494,6 +497,7 @@ int blahg_comment(struct req *req)
 		tmpl = "{comment_saved}";
 	}
 
-	req->body = render_page(req, tmpl);
+	req->scgi->response.body = render_page(req, tmpl);
+
 	return 0;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2013-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@ int blahg_admin(struct req *req)
 	 *  - dump the post body
 	 */
 
-	req->body = xstrdup("Nothing here to see...move along");
+	req->scgi->response.body = xstrdup("Nothing here to see...move along");
 
 	return 0;
 }
