@@ -425,7 +425,7 @@ static bool select_page(struct req *req)
 	     cur;
 	     cur = nvlist_next_nvpair(req->request_qs, cur)) {
 		char *name, *val;
-		char **cptr;
+		const char **cptr;
 		int *iptr;
 
 		iptr = NULL;
@@ -490,7 +490,7 @@ static bool select_page(struct req *req)
  */
 static bool switch_content_type(struct req *req)
 {
-	char *fmt = req->args.feed;
+	const char *fmt = req->args.feed;
 	int page = req->args.page;
 
 	const char *content_type;

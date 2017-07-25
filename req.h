@@ -71,9 +71,9 @@ struct qs {
 	int preview;
 	int admin;
 	int comment;
-	char *cat;
-	char *tag;
-	char *feed;
+	const char *cat;
+	const char *tag;
+	const char *feed;
 };
 
 struct req {
@@ -108,7 +108,7 @@ struct req {
 
 	struct vars vars;
 
-	char *fmt;		/* format (e.g., "html") */
+	const char *fmt;	/* format (e.g., "html") */
 
 	struct {
 		int index_stories;
@@ -133,8 +133,8 @@ extern int R404(struct req *req, char *tmpl);
 extern int R301(struct req *req, const char *url);
 
 extern int blahg_archive(struct req *req, int m, int paged);
-extern int blahg_category(struct req *req, char *cat, int page);
-extern int blahg_tag(struct req *req, char *tag, int paged);
+extern int blahg_category(struct req *req, const char *cat, int page);
+extern int blahg_tag(struct req *req, const char *tag, int paged);
 extern int blahg_comment(struct req *req);
 extern int blahg_index(struct req *req, int paged);
 extern int blahg_story(struct req *req, int p, bool preview);

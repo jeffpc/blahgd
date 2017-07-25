@@ -105,12 +105,12 @@ int __tagcat(struct req *req, const char *tagcat, int page, char *tmpl,
 	return 0;
 }
 
-int blahg_tag(struct req *req, char *tag, int page)
+int blahg_tag(struct req *req, const char *tag, int page)
 {
 	return __tagcat(req, tag, page, "{tagindex}", true);
 }
 
-int blahg_category(struct req *req, char *cat, int page)
+int blahg_category(struct req *req, const char *cat, int page)
 {
 	uint32_t catn;
 
