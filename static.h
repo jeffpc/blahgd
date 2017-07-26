@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2015-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,8 @@
 #ifndef __STATIC_H
 #define __STATIC_H
 
+#include <jeffpc/str.h>
+
 #include "req.h"
 
 enum uri_type {
@@ -31,7 +33,7 @@ enum uri_type {
 	URI_BAD,
 };
 
-extern enum uri_type get_uri_type(const char *path);
+extern enum uri_type get_uri_type(struct str *path);
 extern int blahg_static(struct req *req);
 
 #endif

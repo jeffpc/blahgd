@@ -68,11 +68,13 @@ static const struct uri_info *get_uri_info(const char *path)
 	return NULL;
 }
 
-enum uri_type get_uri_type(const char *path)
+enum uri_type get_uri_type(struct str *path)
 {
 	const struct uri_info *info;
 
-	info = get_uri_info(path);
+	info = get_uri_info(str_cstr(path));
+
+	str_putref(path);
 
 	return info ? info->type : URI_BAD;
 }

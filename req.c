@@ -409,7 +409,7 @@ static bool select_page(struct req *req)
 	uri = nvl_lookup_str(req->request_headers, DOCUMENT_URI);
 	ASSERT(!IS_ERR(uri));
 
-	switch (get_uri_type(str_cstr(uri))) {
+	switch (get_uri_type(uri)) {
 		case URI_STATIC:
 			/* static file */
 			args->page = PAGE_STATIC;
