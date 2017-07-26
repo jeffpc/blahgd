@@ -81,8 +81,6 @@ struct req {
 };
 
 extern void init_req_subsys(void);
-extern struct req *req_alloc(void);
-extern void req_free(struct req *req);
 
 extern void req_init(struct req *req);
 extern void req_destroy(struct req *req);

@@ -37,25 +37,8 @@
 #include "debug.h"
 #include "version.h"
 
-static struct mem_cache *req_cache;
-
 void init_req_subsys(void)
 {
-	req_cache = mem_cache_create("req-cache", sizeof(struct req), 0);
-	ASSERT(!IS_ERR(req_cache));
-}
-
-struct req *req_alloc(void)
-{
-	return mem_cache_alloc(req_cache);
-}
-
-void req_free(struct req *req)
-{
-	if (!req)
-		return;
-
-	mem_cache_free(req_cache, req);
 }
 
 static void __vars_set_social(struct vars *vars)
@@ -70,6 +53,8 @@ static void __vars_set_social(struct vars *vars)
 
 void req_init(struct req *req)
 {
+	memset(req, 0, sizeof(struct req));
+
 	/* state */
 	vars_init(&req->vars);
 	vars_set_str(&req->vars, "generatorversion", STATIC_STR(version_string));

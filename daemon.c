@@ -42,21 +42,16 @@
 
 static void process_request(struct scgi *scgi, void *private)
 {
-	struct req *req;
+	struct req req;
 
-	req = req_alloc();
-	if (!req)
-		return;
+	req_init(&req);
 
-	req_init(req);
+	req.scgi = scgi;
 
-	req->scgi = scgi;
+	req_dispatch(&req);
 
-	req_dispatch(req);
-
-	req_output(req);
-	req_destroy(req);
-	req_free(req);
+	req_output(&req);
+	req_destroy(&req);
 }
 
 static int drop_privs()
