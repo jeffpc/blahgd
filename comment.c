@@ -44,6 +44,7 @@
 #include "config.h"
 #include "decode.h"
 #include "post.h"
+#include "qstring.h"
 #include "debug.h"
 
 #define INTERNAL_ERR		"Ouch!  Encountered an internal error.  " \
@@ -65,40 +66,38 @@
 #define MEDIUM_BUF_LEN		256
 #define LONG_BUF_LEN		(64*1024)
 
-#define SC_IGNORE		0
-#define SC_AUTHOR		1
-#define SC_AUTHOR_EQ		11
-#define SC_EMAIL		2
-#define SC_EMAIL_EQ		12
-#define SC_URL			3
-#define SC_URL_EQ		13
-#define SC_COMMENT		4
-#define SC_COMMENT_EQ		14
-#define SC_DATE			5
-#define SC_DATE_EQ		15
-#define SC_SUB			6
-#define SC_SUB_EQ		16
-#define SC_ID			7
-#define SC_ID_EQ		17
-#define SC_CAPTCHA		8
-#define SC_CAPTCHA_EQ		18
-#define SC_EMPTY		9
-#define SC_EMPTY_EQ		19
-#define SC_ERROR		99
+/*
+ * We use one-letter field names because of historic reasons.  The short
+ * names help a bit with transfer sizes, but mostly serve to trivially
+ * obfuscate the form from spammers.
+ *
+ * These defines give reasonable names to the field names.
+ */
+#define COMMENT_AUTHOR		"a"
+#define COMMENT_EMAIL		"e"
+#define COMMENT_URL		"u"
+#define COMMENT_COMMENT		"c"
+#define COMMENT_DATE		"d"
+#define COMMENT_ID		"i"
+#define COMMENT_CAPTCHA		"v"
+#define COMMENT_EMPTY		"x"
 
-static struct str *prep_meta_sexpr(const char *author, const char *email,
-				   const char *curdate, struct str *ip,
-				   const char *url)
+static const struct nvl_convert_info comment_convert[] = {
+	{ .name = COMMENT_DATE,		.tgt_type = NVT_INT, },
+	{ .name = COMMENT_ID,		.tgt_type = NVT_INT, },
+	{ .name = COMMENT_CAPTCHA,	.tgt_type = NVT_INT, },
+	{ .name = NULL, },
+};
+
+static struct str *prep_meta_sexpr(struct str *author, struct str *email,
+				   struct str *curdate, struct str *ip,
+				   struct str *url)
 {
 	struct val *url_val;
 	struct val *lv;
 	struct str *str;
 
-	/* Treat empty URLs as NULL */
-	if (url && (url[0] != '\0'))
-		url_val = VAL_DUP_CSTR((char *) url);
-	else
-		url_val = NULL;
+	url_val = url ? VAL_ALLOC_STR(url) : NULL;
 
 	/*
 	 * We're looking for a list looking something like:
@@ -112,9 +111,9 @@ static struct str *prep_meta_sexpr(const char *author, const char *email,
 	 */
 
 	lv = sexpr_args_to_list(6,
-				VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("author"), VAL_DUP_CSTR((char *) author)),
-				VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("email"), VAL_DUP_CSTR((char *) email)),
-				VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("time"), VAL_DUP_CSTR((char *) curdate)),
+				VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("author"), VAL_ALLOC_STR(author)),
+				VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("email"), VAL_ALLOC_STR(email)),
+				VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("time"), VAL_ALLOC_STR(curdate)),
 				VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("ip"), VAL_ALLOC_STR(ip)),
 				VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("url"), url_val),
 				VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("moderated"), VAL_ALLOC_BOOL(false)));
@@ -126,10 +125,15 @@ static struct str *prep_meta_sexpr(const char *author, const char *email,
 	return str;
 }
 
-static const char *write_out_comment(struct req *req, int id, char *author,
-				     char *email, char *url, char *comment)
+static const char *write_out_comment(struct req *req, int id,
+				     struct str *email,
+				     struct str *author,
+				     struct str *url,
+				     struct str *comment)
 {
 	static atomic_t nonce;
+
+	const char *err;
 
 	char basepath[FILENAME_MAX];
 	char dirpath[FILENAME_MAX];
@@ -146,25 +150,11 @@ static const char *write_out_comment(struct req *req, int id, char *author,
 
 	struct nvlist *post;
 
-	if (strlen(email) == 0) {
-		DBG("You must fill in email (postid=%d)", id);
-		return MISSING_EMAIL;
-	}
-
-	if (strlen(author) == 0) {
-		DBG("You must fill in name (postid=%d)", id);
-		return MISSING_NAME;
-	}
-
-	if (strlen(comment) == 0) {
-		DBG("You must fill in comment (postid=%d)", id);
-		return MISSING_CONTENT;
-	}
-
 	post = get_post(req, id, NULL, false);
 	if (!post) {
 		DBG("Gah! %d (postid=%d)", -1, id);
-		return GENERIC_ERR_STR;
+		err = GENERIC_ERR_STR;
+		goto err;
 	}
 	nvl_putref(post);
 
@@ -174,7 +164,8 @@ static const char *write_out_comment(struct req *req, int id, char *author,
 	now_tm = gmtime(&now_sec);
 	if (!now_tm) {
 		DBG("Ow, gmtime() returned NULL");
-		return INTERNAL_ERR;
+		err = INTERNAL_ERR;
+		goto err;
 	}
 
 	strftime(curdate, 31, "%Y-%m-%d %H:%M", now_tm);
@@ -195,22 +186,25 @@ static const char *write_out_comment(struct req *req, int id, char *author,
 	if (ret) {
 		DBG("Ow, could not create directory: %d (%s) '%s'", ret,
 		    xstrerror(ret), dirpath);
-		return INTERNAL_ERR;
+		err = INTERNAL_ERR;
+		goto err;
 	}
 
-	ret = write_file(textpath, comment, strlen(comment));
+	ret = write_file(textpath, str_cstr(comment), str_len(comment));
 	if (ret) {
 		DBG("Couldn't write file ... :( %d (%s) '%s'",
 		    ret, xstrerror(ret), textpath);
-		return INTERNAL_ERR;
+		err = INTERNAL_ERR;
+		goto err;
 	}
 
-	meta = prep_meta_sexpr(author, email, curdate,
+	meta = prep_meta_sexpr(author, email, STR_DUP(curdate),
 			       nvl_lookup_str(req->request_headers, REMOTE_ADDR),
 			       url);
 	if (!meta) {
 		DBG("failed to prep lisp meta data");
-		return INTERNAL_ERR;
+		err = INTERNAL_ERR;
+		goto err;
 	}
 
 	ret = write_file(lisppath, meta->str, str_len(meta));
@@ -220,44 +214,111 @@ static const char *write_out_comment(struct req *req, int id, char *author,
 	if (ret) {
 		DBG("Couldn't write file ... :( %d (%s) '%s'",
 		    ret, xstrerror(ret), lisppath);
-		return INTERNAL_ERR;
+		err = INTERNAL_ERR;
+		goto err;
 	}
 
 	ret = xrename(dirpath, basepath);
 	if (ret) {
 		DBG("Could not rename '%s' to '%s' %d (%s)",
 		    dirpath, basepath, ret, xstrerror(ret));
-		return INTERNAL_ERR;
+		err = INTERNAL_ERR;
+		goto err;
 	}
+
+	return NULL;
+
+err:
+	str_putref(author);
+	str_putref(email);
+	str_putref(url);
+	str_putref(comment);
+
+	return err;
+}
+
+static const char *get_postid(struct nvlist *qs, int *id_r)
+{
+	uint64_t id;
+	int ret;
+
+	ret = nvl_lookup_int(qs, COMMENT_ID, &id);
+	if (ret) {
+		DBG("failed to look up id: %s", xstrerror(ret));
+		return GENERIC_ERR_STR;
+	}
+
+	if (id > INT_MAX) {
+		DBG("postid:%"PRIu64" > INT_MAX", id);
+		return GENERIC_ERR_STR;
+	}
+
+	*id_r = id;
 
 	return NULL;
 }
 
-static const char *spam_check(int id, uint64_t date, uint64_t captcha,
-			      bool nonempty)
+static const char *spam_check(int id, struct nvlist *qs)
 {
+	uint64_t now, date;
+	uint64_t captcha;
 	uint64_t deltat;
-	uint64_t now;
+	struct str *str;
+	bool nonempty;
+	int ret;
+
+	/*
+	 * Check empty field.
+	 */
+	str = nvl_lookup_str(qs, COMMENT_EMPTY);
+	if (IS_ERR(str)) {
+		DBG("failed to look up captcha (postid:%u): %s", id,
+		    xstrerror(PTR_ERR(str)));
+		return GENERIC_ERR_STR;
+	}
+
+	nonempty = str_len(str) != 0;
+	str_putref(str);
+
+	if (nonempty) {
+		DBG("User filled out supposedly empty field... postid:%u", id);
+		return GENERIC_ERR_STR;
+	}
+
+	/*
+	 * Check think time.
+	 */
+	ret = nvl_lookup_int(qs, COMMENT_DATE, &date);
+	if (ret) {
+		DBG("failed to look up date (postid:%u): %s", id,
+		    xstrerror(ret));
+		return GENERIC_ERR_STR;
+	}
 
 	now = gettime();
 	deltat = now - date;
 
-	if (nonempty) {
-		DBG("User filled out supposedly empty field... postid:%d", id);
-		return GENERIC_ERR_STR;
-	}
-
 	if ((deltat > 1000000000ull * config.comment_max_think) ||
 	    (deltat < 1000000000ull * config.comment_min_think)) {
 		DBG("Flash-gordon or geriatric was here... load:%"PRIu64
-		    " comment:%"PRIu64" delta:%"PRIu64" postid:%d",
+		    " comment:%"PRIu64" delta:%"PRIu64" postid:%u",
 		    date, now, deltat, id);
+		return GENERIC_ERR_STR;
+	}
+
+	/*
+	 * Check captcha.
+	 */
+	ret = nvl_lookup_int(qs, COMMENT_CAPTCHA, &captcha);
+	if (ret) {
+		DBG("failed to look up captcha (postid:%u): %s", id,
+		    xstrerror(ret));
 		return GENERIC_ERR_STR;
 	}
 
 	if (captcha != (config.comment_captcha_a + config.comment_captcha_b)) {
 		DBG("Math illiterate was here... got:%"PRIu64
-		    " expected:%"PRIu64" postid:%d", captcha,
+		    " expected:%"PRIu64" postid:%u", captcha,
 		    config.comment_captcha_a + config.comment_captcha_b,
 		    id);
 		return CAPTCHA_FAIL;
@@ -266,31 +327,97 @@ static const char *spam_check(int id, uint64_t date, uint64_t captcha,
 	return NULL;
 }
 
-#define COPYCHAR(ob, oi, c)	do { \
-					ob[oi] = (c); \
-					oi++; \
-				} while(0)
+static const char *get_str(int id, struct nvlist *nvl, const char *name,
+			   const char *dbg_name, const char *err,
+			   struct str **str_r)
+{
+	struct str *str;
+
+	str = nvl_lookup_str(nvl, name);
+	if (IS_ERR(str)) {
+		DBG("%s: failed to look up %s (postid=%u): %s", __func__,
+		    dbg_name, id, xstrerror(PTR_ERR(str)));
+		return GENERIC_ERR_STR;
+	}
+
+	if (str_len(str) == 0) {
+		if (err) {
+			DBG("%s: must fill in %s (postid=%u)", __func__, dbg_name,
+			    id);
+			str_putref(str);
+			return err;
+		}
+
+		/* turn empty strings to NULL */
+		str_putref(str);
+		str = NULL;
+	}
+
+	*str_r = str;
+
+	return NULL;
+}
+
+static const char *get_strings(int id,
+			       struct nvlist *qs,
+			       struct str **email_r,
+			       struct str **author_r,
+			       struct str **comment_r,
+			       struct str **url_r)
+{
+	struct str *author;
+	struct str *email;
+	struct str *comment;
+	struct str *url;
+	const char *err;
+
+	err = get_str(id, qs, COMMENT_EMAIL, "email", MISSING_EMAIL, &email);
+	if (err)
+		goto err;
+
+	err = get_str(id, qs, COMMENT_AUTHOR, "author", MISSING_NAME, &author);
+	if (err)
+		goto err_email;
+
+	err = get_str(id, qs, COMMENT_COMMENT, "comment", MISSING_CONTENT,
+		      &comment);
+	if (err)
+		goto err_author;
+
+	err = get_str(id, qs, COMMENT_URL, "url", NULL, &url);
+	if (err)
+		goto err_comment;
+
+	*email_r = email;
+	*author_r = author;
+	*comment_r = comment;
+	*url_r = url;
+
+	return NULL;
+
+err_comment:
+	str_putref(comment);
+
+err_author:
+	str_putref(author);
+
+err_email:
+	str_putref(email);
+
+err:
+	return err;
+}
 
 static const char *save_comment(struct req *req)
 {
+	struct nvlist *qs;
+	struct str *author;
+	struct str *email;
+	struct str *url;
+	struct str *comment;
 	const char *err;
-	char *in;
-	char tmp;
-
-	int state;
-
-	char author_buf[SHORT_BUF_LEN];
-	int author_len = 0;
-	char email_buf[SHORT_BUF_LEN];
-	int email_len = 0;
-	char url_buf[MEDIUM_BUF_LEN];
-	int url_len = 0;
-	char comment_buf[LONG_BUF_LEN];
-	int comment_len = 0;
-	uint64_t date = 0;
-	uint64_t captcha = 0;
-	bool nonempty = false;
-	int id = 0;
+	int ret;
+	int id;
 
 	if (nvl_exists_type(req->request_headers, HTTP_USER_AGENT, NVT_STR)) {
 		DBG("Missing user agent...");
@@ -302,185 +429,49 @@ static const char *save_comment(struct req *req)
 		return INTERNAL_ERR;
 	}
 
-	author_buf[0] = '\0'; /* better be paranoid */
-	email_buf[0] = '\0'; /* better be paranoid */
-	url_buf[0] = '\0'; /* better be paranoid */
-	comment_buf[0] = '\0'; /* better be paranoid */
-
 	if (!req->request_body) {
 		DBG("missing req. body");
 		return INTERNAL_ERR;
 	}
 
-	in = req->request_body;
-
-	for (state = SC_IGNORE; *in; in++) {
-		tmp = *in;
-
-#if 0
-		DBG("|'%c' %d|", tmp, state);
-#endif
-
-		switch(state) {
-			case SC_IGNORE:
-				if (tmp == 'a')
-					state = SC_AUTHOR_EQ;
-				if (tmp == 'e')
-					state = SC_EMAIL_EQ;
-				if (tmp == 'u')
-					state = SC_URL_EQ;
-				if (tmp == 'c')
-					state = SC_COMMENT_EQ;
-				if (tmp == 'd')
-					state = SC_DATE_EQ;
-				if (tmp == 's')
-					state = SC_SUB_EQ;
-				if (tmp == 'i')
-					state = SC_ID_EQ;
-				if (tmp == 'v')
-					state = SC_CAPTCHA_EQ;
-				if (tmp == 'x')
-					state = SC_EMPTY_EQ;
-				break;
-
-			case SC_AUTHOR_EQ:
-				state = (tmp == '=') ? SC_AUTHOR : SC_ERROR;
-				break;
-
-			case SC_EMAIL_EQ:
-				state = (tmp == '=') ? SC_EMAIL : SC_ERROR;
-				break;
-
-			case SC_URL_EQ:
-				state = (tmp == '=') ? SC_URL : SC_ERROR;
-				break;
-
-			case SC_COMMENT_EQ:
-				state = (tmp == '=') ? SC_COMMENT : SC_ERROR;
-				break;
-
-			case SC_DATE_EQ:
-				state = (tmp == '=') ? SC_DATE : SC_ERROR;
-				break;
-
-			case SC_SUB_EQ:
-				state = (tmp == '=') ? SC_SUB : SC_ERROR;
-				break;
-
-			case SC_ID_EQ:
-				state = (tmp == '=') ? SC_ID : SC_ERROR;
-				break;
-
-			case SC_CAPTCHA_EQ:
-				state = (tmp == '=') ? SC_CAPTCHA : SC_ERROR;
-				break;
-
-			case SC_EMPTY_EQ:
-				state = (tmp == '=') ? SC_EMPTY : SC_ERROR;
-				break;
-
-			case SC_AUTHOR:
-				if (tmp == '&' || author_len == SHORT_BUF_LEN-1) {
-					tmp = '\0';
-					state = SC_IGNORE;
-				}
-
-				COPYCHAR(author_buf, author_len, tmp);
-				break;
-
-			case SC_EMAIL:
-				if (tmp == '&' || email_len == SHORT_BUF_LEN-1) {
-					tmp = '\0';
-					state = SC_IGNORE;
-				}
-
-				COPYCHAR(email_buf, email_len, tmp);
-				break;
-
-			case SC_URL:
-				if (tmp == '&' || url_len == MEDIUM_BUF_LEN-1) {
-					tmp = '\0';
-					state = SC_IGNORE;
-				}
-
-				COPYCHAR(url_buf, url_len, tmp);
-				break;
-
-			case SC_COMMENT:
-				if (tmp == '&' || comment_len == LONG_BUF_LEN-1) {
-					tmp = '\0';
-					state = SC_IGNORE;
-				}
-
-				if (tmp == '+')
-					COPYCHAR(comment_buf, comment_len, ' ');
-				else
-					COPYCHAR(comment_buf, comment_len, tmp);
-				break;
-
-			case SC_DATE:
-				if (tmp == '&')
-					state = SC_IGNORE;
-				else
-					date = (date * 10) + (tmp - '0');
-				break;
-
-			case SC_SUB:
-				/* ignore the submit button */
-				if (tmp == '&')
-					state = SC_IGNORE;
-				break;
-
-			case SC_ID:
-				if (tmp == '&')
-					state = SC_IGNORE;
-				else
-					id = (id * 10) + (tmp - '0');
-				break;
-
-			case SC_CAPTCHA:
-				if (tmp == '&')
-					state = SC_IGNORE;
-				else
-					captcha = (captcha * 10) + (tmp - '0');
-				break;
-
-			case SC_EMPTY:
-				if (tmp == '&') {
-					state = SC_IGNORE;
-				} else {
-					nonempty = true;
-					state = SC_ERROR;
-				}
-
-				break;
-		}
-
-		if (state == SC_ERROR)
-			break;
+	qs = nvl_alloc();
+	if (!qs) {
+		DBG("failed to allocate nvlist");
+		return INTERNAL_ERR;
 	}
 
-#if 0
-	DBG("author: \"%s\"", author_buf);
-	DBG("email: \"%s\"", email_buf);
-	DBG("url: \"%s\"", url_buf);
-	DBG("comment: \"%s\"", comment_buf);
-	DBG("date: %lu", date);
-	DBG("id: %d", id);
-	DBG("captcha: %lu", captcha);
-#endif
+	err = GENERIC_ERR_STR;
 
-	err = spam_check(id, date, captcha, nonempty);
+	ret = parse_query_string(qs, req->request_body);
+	if (ret) {
+		DBG("failed to parse comment: %s", xstrerror(ret));
+		goto err;
+	}
+
+	ret = nvl_convert(qs, comment_convert);
+	if (ret) {
+		DBG("Failed to convert nvlist types: %s", xstrerror(ret));
+		goto err;
+	}
+
+	err = get_postid(qs, &id);
 	if (err)
-		return err;
+		goto err;
 
-	/* URL decode everything */
-	urldecode(comment_buf, strlen(comment_buf), comment_buf);
-	urldecode(author_buf, strlen(author_buf), author_buf);
-	urldecode(email_buf, strlen(email_buf), email_buf);
-	urldecode(url_buf, strlen(url_buf), url_buf);
+	err = spam_check(id, qs);
+	if (err)
+		goto err;
 
-	return write_out_comment(req, id, author_buf, email_buf, url_buf, comment_buf);
+	err = get_strings(id, qs, &email, &author, &comment, &url);
+	if (err)
+		goto err;
+
+	/* consumes all the string refs */
+	err = write_out_comment(req, id, email, author, url, comment);
+
+err:
+	nvl_putref(qs);
+	return err;
 }
 
 int blahg_comment(struct req *req)
