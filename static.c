@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2015-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -81,10 +81,13 @@ int blahg_static(struct req *req)
 {
 	char path[FILENAME_MAX];
 	const struct uri_info *info;
+	struct str *uri_str;
 	const char *uri;
 
-	uri = nvl_lookup_str(req->request_headers, DOCUMENT_URI);
-	ASSERT(uri);
+	uri_str = nvl_lookup_str(req->request_headers, DOCUMENT_URI);
+	ASSERT(!IS_ERR(uri_str));
+
+	uri = str_cstr(uri_str);
 
 	info = get_uri_info(uri);
 	ASSERT(info);
@@ -93,6 +96,8 @@ int blahg_static(struct req *req)
 	uri++;
 
 	snprintf(path, sizeof(path), "%s/%s", str_cstr(config.web_dir), uri);
+
+	str_putref(uri_str);
 
 	/*
 	 * We assume that the URI is relative to the web dir.  Since we

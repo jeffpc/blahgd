@@ -91,8 +91,8 @@ extern void load_posts(struct req *req, struct post **posts, int nposts,
 		       bool moreposts);
 extern int load_all_posts(void);
 extern void free_all_posts(void);
-extern nvlist_t *get_post(struct req *req, int postid, const char *titlevar,
-		bool preview);
+extern struct nvlist *get_post(struct req *req, int postid,
+			       const char *titlevar, bool preview);
 
 extern void init_post_index(void);
 extern struct post *index_lookup_post(unsigned int postid);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2013-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,7 @@
 #include "nvl.h"
 
 struct vars {
-	nvlist_t *scopes[VAR_MAX_SCOPES];
+	struct nvlist *scopes[VAR_MAX_SCOPES];
 	int cur;
 };
 
@@ -35,14 +35,14 @@ extern void vars_init(struct vars *vars);
 extern void vars_destroy(struct vars *vars);
 extern void vars_scope_push(struct vars *vars);
 extern void vars_scope_pop(struct vars *vars);
-extern void vars_set_str(struct vars *vars, const char *name, const char *val);
+extern void vars_set_str(struct vars *vars, const char *name, struct str *val);
 extern void vars_set_int(struct vars *vars, const char *name, uint64_t val);
-extern void vars_set_nvl_array(struct vars *vars, const char *name,
-		nvlist_t **val, uint_t nval);
-extern nvpair_t *vars_lookup(struct vars *vars, const char *name);
-extern char *vars_lookup_str(struct vars *vars, const char *name);
+extern void vars_set_array(struct vars *vars, const char *name,
+		struct nvval *val, size_t nval);
+extern const struct nvpair *vars_lookup(struct vars *vars, const char *name);
+extern struct str *vars_lookup_str(struct vars *vars, const char *name);
 extern uint64_t vars_lookup_int(struct vars *vars, const char *name);
-extern void vars_merge(struct vars *vars, nvlist_t *items);
+extern void vars_merge(struct vars *vars, struct nvlist *items);
 extern void vars_dump(struct vars *vars);
 
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2015-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,122 +24,25 @@
 
 #include "nvl.h"
 
-nvlist_t *nvl_alloc(void)
+uint64_t pair2int(const struct nvpair *pair)
 {
-	nvlist_t *out;
+	uint64_t out;
 	int ret;
 
-	ret = nvlist_alloc(&out, NV_UNIQUE_NAME, 0);
-
+	ret = nvpair_value_int(pair, &out);
 	ASSERT0(ret);
 
 	return out;
 }
 
-#define DECL_NVL_SET(name, nvfxn, argtype)				\
-void name(nvlist_t *nvl, const char *name, argtype val)			\
-{									\
-	int ret;							\
-									\
-	ret = nvfxn(nvl, name, val);					\
-									\
-	ASSERT0(ret);							\
-}
-
-DECL_NVL_SET(nvl_set_int,  nvlist_add_uint64,        uint64_t)
-DECL_NVL_SET(nvl_set_bool, nvlist_add_boolean_value, bool)
-DECL_NVL_SET(nvl_set_char, nvlist_add_uint8,         char)
-DECL_NVL_SET(nvl_set_nvl,  nvlist_add_nvlist,        nvlist_t *)
-
-/* nvl_set_str is special, it's a no-op if the value is NULL */
-void nvl_set_str(nvlist_t *nvl, const char *name, const char *val)
+const char *pair2str(const struct nvpair *pair)
 {
-	int ret;
+	struct str *str;
 
-	if (!val)
-		return;
+	str = nvpair_value_str(pair);
+	ASSERT(!IS_ERR(str));
 
-	ret = nvlist_add_string(nvl, name, val);
+	/* FIXME: we are leaking a refence */
 
-	ASSERT0(ret);
+	return str_cstr(str);
 }
-
-#define DECL_NVL_SET_ARR(name, nvfxn, argtype)				\
-void name(nvlist_t *nvl, const char *name, argtype *val, uint_t nval)	\
-{									\
-	int ret;							\
-									\
-	ret = nvfxn(nvl, name, val, nval);				\
-									\
-	ASSERT0(ret);							\
-}
-
-DECL_NVL_SET_ARR(nvl_set_str_array, nvlist_add_string_array, char *)
-DECL_NVL_SET_ARR(nvl_set_nvl_array, nvlist_add_nvlist_array, nvlist_t *)
-
-nvpair_t *nvl_lookup(nvlist_t *nvl, const char *name)
-{
-	nvpair_t *pair;
-	int ret;
-
-	ret = nvlist_lookup_nvpair(nvl, name, &pair);
-	if (!ret)
-		return pair;
-
-	return NULL;
-}
-
-char *nvl_lookup_str(nvlist_t *nvl, const char *name)
-{
-	nvpair_t *pair;
-
-	pair = nvl_lookup(nvl, name);
-	if (!pair)
-		return NULL;
-
-	ASSERT3U(nvpair_type(pair), ==, DATA_TYPE_STRING);
-
-	return pair2str(pair);
-}
-
-uint64_t nvl_lookup_int(nvlist_t *nvl, const char *name)
-{
-	nvpair_t *pair;
-
-	pair = nvl_lookup(nvl, name);
-	ASSERT(pair);
-
-	ASSERT3U(nvpair_type(pair), ==, DATA_TYPE_UINT64);
-
-	return pair2int(pair);
-}
-
-bool nvl_lookup_bool(nvlist_t *nvl, const char *name)
-{
-	nvpair_t *pair;
-
-	pair = nvl_lookup(nvl, name);
-	ASSERT(pair);
-
-	ASSERT3U(nvpair_type(pair), ==, DATA_TYPE_BOOLEAN_VALUE);
-
-	return pair2bool(pair);
-}
-
-#define DECL_PAIR2(name, nvfxn, rettype, localtype)			\
-rettype name(nvpair_t *pair)						\
-{									\
-	localtype out;							\
-	int ret;							\
-									\
-	ret = nvfxn(pair, &out);					\
-	ASSERT0(ret);							\
-									\
-	return out;							\
-}
-
-DECL_PAIR2(pair2str,  nvpair_value_string,        char *,     char *)
-DECL_PAIR2(pair2bool, nvpair_value_boolean_value, bool,       boolean_t)
-DECL_PAIR2(pair2char, nvpair_value_uint8,         char,       uint8_t)
-DECL_PAIR2(pair2int,  nvpair_value_uint64,        uint64_t,   uint64_t)
-DECL_PAIR2(pair2nvl,  nvpair_value_nvlist,        nvlist_t *, nvlist_t *)

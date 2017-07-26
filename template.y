@@ -75,49 +75,36 @@ static char *condconcat(struct parser_output *data, char *a, char *b)
 	return concat(a, b);
 }
 
-static char *__foreach_nv(struct req *req, nvpair_t *var, char *tmpl)
+static char *__foreach(struct req *req, const struct nvpair *var, char *tmpl)
 {
-	nvlist_t **items;
-	uint_t nitems;
-	uint_t i;
+	const struct nvval *items;
+	size_t nitems;
+	size_t i;
 	char *out;
 	int ret;
 
 	out = NULL;
 
-	ret = nvpair_value_nvlist_array(var, &items, &nitems);
+	ret = nvpair_value_array(var, &items, &nitems);
 	ASSERT0(ret);
 
 	for (i = 0; i < nitems; i++) {
 		vars_scope_push(&req->vars);
 
-		vars_merge(&req->vars, items[i]);
-
-		out = concat(out, render_template(req, tmpl));
-
-		vars_scope_pop(&req->vars);
-	}
-
-	return out;
-}
-
-static char *__foreach_str(struct req *req, nvpair_t *var, char *tmpl)
-{
-	uint_t nitems;
-	uint_t i;
-	char **items;
-	char *out;
-	int ret;
-
-	out = NULL;
-
-	ret = nvpair_value_string_array(var, &items, &nitems);
-	ASSERT0(ret);
-
-	for (i = 0; i < nitems; i++) {
-		vars_scope_push(&req->vars);
-
-		vars_set_str(&req->vars, nvpair_name(var), items[i]);
+		switch (items[i].type) {
+			case NVT_NVL:
+				vars_merge(&req->vars, items[i].nvl);
+				break;
+			case NVT_STR:
+				vars_set_str(&req->vars, nvpair_name(var),
+					     str_getref(items[i].str));
+				break;
+			default:
+				//vars_dump(&req->vars);
+				panic("%s called with '%s' which has type %d",
+				      __func__, nvpair_name(var),
+				      nvpair_type(var));
+		}
 
 		out = concat(out, render_template(req, tmpl));
 
@@ -130,8 +117,7 @@ static char *__foreach_str(struct req *req, nvpair_t *var, char *tmpl)
 static char *foreach(struct parser_output *data, struct req *req, char *varname,
                      char *tmpl)
 {
-	nvpair_t *var;
-	char *ret;
+	const struct nvpair *var;
 
 	if (!cond_value(data))
 		return xstrdup("");
@@ -140,17 +126,7 @@ static char *foreach(struct parser_output *data, struct req *req, char *varname,
 	if (!var)
 		return xstrdup("");
 
-	if (nvpair_type(var) == DATA_TYPE_NVLIST_ARRAY) {
-		ret = __foreach_nv(req, var, tmpl);
-	} else if (nvpair_type(var) == DATA_TYPE_STRING_ARRAY) {
-		ret = __foreach_str(req, var, tmpl);
-	} else {
-		//vars_dump(&req->vars);
-		panic("%s called with '%s' which has type %d", __func__,
-		      varname, nvpair_type(var));
-	}
-
-	return ret;
+	return __foreach(req, var, tmpl);
 }
 
 static char *print_val(struct val *val)
@@ -179,20 +155,21 @@ static char *print_val(struct val *val)
 	return xstrdup(tmp);
 }
 
-static char *print_var(nvpair_t *var)
+static char *print_var(const struct nvpair *var)
 {
+	struct str *str;
 	char buf[32];
-	const char *tmp;
-
-	tmp = NULL;
+	char *ret;
 
 	switch (nvpair_type(var)) {
-		case DATA_TYPE_STRING:
-			tmp = pair2str(var);
+		case NVT_STR:
+			str = nvpair_value_str(var);
+			ret = xstrdup(str_cstr(str));
+			str_putref(str);
 			break;
-		case DATA_TYPE_UINT64:
+		case NVT_INT:
 			snprintf(buf, sizeof(buf), "%"PRIu64, pair2int(var));
-			tmp = buf;
+			ret = xstrdup(buf);
 			break;
 		default:
 			panic("%s called with '%s' which has type %d", __func__,
@@ -200,15 +177,15 @@ static char *print_var(nvpair_t *var)
 			break;
 	}
 
-	return xstrdup(tmp);
+	return ret;
 }
 
 static char *pipeline(struct parser_output *data, struct req *req,
 		      char *varname, struct pipeline *line)
 {
+	const struct nvpair *var;
 	struct pipestage *cur;
 	struct val *val;
-	nvpair_t *var;
 	char *out;
 
 	if (!cond_value(data)) {
@@ -223,10 +200,10 @@ static char *pipeline(struct parser_output *data, struct req *req,
 	}
 
 	switch (nvpair_type(var)) {
-		case DATA_TYPE_STRING:
-			val = VAL_DUP_CSTR(pair2str(var));
+		case NVT_STR:
+			val = VAL_ALLOC_STR(nvpair_value_str(var));
 			break;
-		case DATA_TYPE_UINT64:
+		case NVT_INT:
 			val = VAL_ALLOC_INT(pair2int(var));
 			break;
 		default:
@@ -250,7 +227,7 @@ static char *pipeline(struct parser_output *data, struct req *req,
 
 static char *variable(struct parser_output *data, struct req *req, char *name)
 {
-	nvpair_t *var;
+	const struct nvpair *var;
 
 	if (!cond_value(data))
 		return xstrdup("");
@@ -271,7 +248,7 @@ enum if_fxns {
 
 static uint64_t __function_get_arg(struct req *req, const char *arg)
 {
-	nvpair_t *var;
+	const struct nvpair *var;
 	uint64_t val;
 
 	if (!str2u64(arg, &val))
@@ -282,7 +259,7 @@ static uint64_t __function_get_arg(struct req *req, const char *arg)
 		return 0;
 
 	switch (nvpair_type(var)) {
-		case DATA_TYPE_UINT64:
+		case NVT_INT:
 			return pair2int(var);
 		default:
 			panic("unexpected nvpair type: %d",
@@ -320,7 +297,7 @@ static char *__function(struct parser_output *data, struct req *req,
 static char *__function_ifset(struct parser_output *data, struct req *req,
 			      const char *arg)
 {
-	nvpair_t *var;
+	const struct nvpair *var;
 
 	var = vars_lookup(&req->vars, arg);
 

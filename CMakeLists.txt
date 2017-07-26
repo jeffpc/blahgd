@@ -92,10 +92,8 @@ add_library(blahg
 	decode.c
 	fsm.c
 	nvl.c
-	nvl_convert.c
 	qstring.c
 	vars.c
-	vars_dump.c
 
 	# misc
 	config.c
@@ -135,7 +133,6 @@ target_link_libraries(blahgd
 	pthread
 	socket
 	nsl
-	nvpair
 )
 
 add_executable(mathd
@@ -154,15 +151,6 @@ target_link_libraries(lisplint
 	blahg
 )
 
-add_executable(nvdump
-	nvdump.c
-)
-
-target_link_libraries(nvdump
-	blahg
-	nvpair
-)
-
 add_executable(test_fmt3
 	test_fmt3.c
 )
@@ -177,7 +165,6 @@ add_executable(test_qstring
 
 target_link_libraries(test_qstring
 	blahg
-	nvpair
 )
 
 function(simple_c_test type section bin data)

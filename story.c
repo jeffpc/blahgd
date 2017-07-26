@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2009-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,20 +36,29 @@
 
 static int __load_post(struct req *req, int p, bool preview)
 {
-	nvlist_t *post;
+	struct nvlist *post;
+	struct nvval *val;
 
 	post = get_post(req, p, "title", preview);
 	if (!post) {
 		DBG("failed to load post #%d: %s (%d)%s", p, "XXX",
 		    -1, preview ? " preview" : "");
 
-		vars_set_str(&req->vars, "title", "not found");
-	} else {
-		vars_set_nvl_array(&req->vars, "posts", &post, 1);
-		nvlist_free(post);
+		vars_set_str(&req->vars, "title", STATIC_STR("not found"));
+
+		return -ENOENT;
 	}
 
-	return post ? 0 : -ENOENT;
+	val = malloc(sizeof(struct nvval));
+	if (!val)
+		return -ENOMEM;
+
+	val->type = NVT_NVL;
+	val->nvl = post;
+
+	vars_set_array(&req->vars, "posts", val, 1);
+
+	return 0;
 }
 
 int blahg_story(struct req *req, int p, bool preview)

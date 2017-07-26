@@ -70,10 +70,10 @@ static void __vars_set_social(struct vars *vars)
 {
 	if (config.twitter_username)
 		vars_set_str(vars, "twitteruser",
-			     str_cstr(config.twitter_username));
+			     str_getref(config.twitter_username));
 	if (config.twitter_description)
 		vars_set_str(vars, "twitterdesc",
-			     str_cstr(config.twitter_description));
+			     str_getref(config.twitter_description));
 }
 
 static void req_init(struct req *req, enum req_via via)
@@ -84,12 +84,12 @@ static void req_init(struct req *req, enum req_via via)
 	req->dump_latency = true;
 
 	vars_init(&req->vars);
-	vars_set_str(&req->vars, "generatorversion", version_string);
-	vars_set_str(&req->vars, "baseurl", str_cstr(config.base_url));
+	vars_set_str(&req->vars, "generatorversion", STATIC_STR(version_string));
+	vars_set_str(&req->vars, "baseurl", str_getref(config.base_url));
 	vars_set_int(&req->vars, "now", gettime());
 	vars_set_int(&req->vars, "captcha_a", config.comment_captcha_a);
 	vars_set_int(&req->vars, "captcha_b", config.comment_captcha_b);
-	vars_set_nvl_array(&req->vars, "posts", NULL, 0);
+	vars_set_array(&req->vars, "posts", NULL, 0);
 	__vars_set_social(&req->vars);
 
 	req->fmt   = NULL;
@@ -99,6 +99,7 @@ static void req_init(struct req *req, enum req_via via)
 	req->request_headers = NULL;
 	req->request_body = NULL;
 	req->request_qs = nvl_alloc();
+	ASSERT(req->request_qs);
 
 	/* response */
 	req->status  = 200;
@@ -194,8 +195,8 @@ static void calculate_content_length(struct req *req)
 
 void req_output(struct req *req)
 {
+	const struct nvpair *header;
 	char tmp[256];
-	nvpair_t *header;
 	int ret;
 
 	req->stats.req_output = gettime();
@@ -209,9 +210,7 @@ void req_output(struct req *req)
 		goto out;
 
 	/* write out the headers */
-	for (header = nvlist_next_nvpair(req->headers, NULL);
-	     header;
-	     header = nvlist_next_nvpair(req->headers, header)) {
+	nvl_for_each(header, req->headers) {
 		snprintf(tmp, sizeof(tmp), "%s: %s\n", nvpair_name(header),
 			 pair2str(header));
 
@@ -255,11 +254,10 @@ static void log_request(struct req *req)
 {
 	char fname[FILENAME_MAX];
 	char hostname[128];
-	nvlist_t *logentry;
-	nvlist_t *tmp;
+	struct nvlist *logentry;
+	struct nvlist *tmp;
+	struct buffer *buf;
 	uint64_t now;
-	size_t len;
-	char *buf;
 	int ret;
 
 	now = gettime();
@@ -278,7 +276,7 @@ static void log_request(struct req *req)
 		goto err;
 	nvl_set_int(logentry, "time-stamp", now);
 	nvl_set_int(logentry, "pid", getpid());
-	nvl_set_str(logentry, "hostname", hostname);
+	nvl_set_str(logentry, "hostname", STR_DUP(hostname));
 
 	/*
 	 * store the request
@@ -287,14 +285,13 @@ static void log_request(struct req *req)
 	if (!tmp)
 		goto err_free;
 	nvl_set_int(tmp, "id", req->id);
-	nvl_set_nvl(tmp, "headers", req->request_headers);
-	nvl_set_nvl(tmp, "query-string", req->request_qs);
-	nvl_set_str(tmp, "body", req->request_body);
-	nvl_set_str(tmp, "fmt", req->fmt);
+	nvl_set_nvl(tmp, "headers", nvl_getref(req->request_headers));
+	nvl_set_nvl(tmp, "query-string", nvl_getref(req->request_qs));
+	nvl_set_str(tmp, "body", STR_DUP(req->request_body));
+	nvl_set_str(tmp, "fmt", STR_DUP(req->fmt));
 	nvl_set_int(tmp, "file-descriptor", req->fd);
 	nvl_set_int(tmp, "thread-id", (uint64_t) pthread_self());
 	nvl_set_nvl(logentry, "request", tmp);
-	nvlist_free(tmp);
 
 	/*
 	 * store the response
@@ -303,12 +300,11 @@ static void log_request(struct req *req)
 	if (!tmp)
 		goto err_free;
 	nvl_set_int(tmp, "status", req->status);
-	nvl_set_nvl(tmp, "headers", req->headers);
+	nvl_set_nvl(tmp, "headers", nvl_getref(req->headers));
 	nvl_set_int(tmp, "body-length", req->bodylen);
 	nvl_set_bool(tmp, "dump-latency", req->dump_latency);
 	nvl_set_int(tmp, "write-errno", req->write_errno);
 	nvl_set_nvl(logentry, "response", tmp);
-	nvlist_free(tmp);
 
 	/*
 	 * store the stats
@@ -324,7 +320,6 @@ static void log_request(struct req *req)
 	nvl_set_int(tmp, "req-done", req->stats.req_done);
 	nvl_set_int(tmp, "destroy", req->stats.destroy);
 	nvl_set_nvl(logentry, "stats", tmp);
-	nvlist_free(tmp);
 
 	/*
 	 * store the options
@@ -334,29 +329,27 @@ static void log_request(struct req *req)
 		goto err_free;
 	nvl_set_int(tmp, "index-stories", req->opts.index_stories);
 	nvl_set_nvl(logentry, "options", tmp);
-	nvlist_free(tmp);
 
 	/* serialize */
-	buf = NULL;
-	ret = nvlist_pack(logentry, &buf, &len, NV_ENCODE_XDR, 0);
-	if (ret)
+	buf = nvl_pack(logentry, NVF_JSON);
+	if (IS_ERR(buf))
 		goto err_free;
 
-	ret = write_file(fname, buf, len);
+	ret = write_file(fname, buffer_data(buf), buffer_used(buf));
 	if (ret)
 		goto err_free_buf;
 
-	free(buf);
+	buffer_free(buf);
 
-	nvlist_free(logentry);
+	nvl_putref(logentry);
 
 	return;
 
 err_free_buf:
-	free(buf);
+	buffer_free(buf);
 
 err_free:
-	nvlist_free(logentry);
+	nvl_putref(logentry);
 
 err:
 	DBG("Failed to log request");
@@ -370,11 +363,11 @@ void req_destroy(struct req *req)
 
 	vars_destroy(&req->vars);
 
-	nvlist_free(req->headers);
+	nvl_putref(req->headers);
 
 	free(req->request_body);
-	nvlist_free(req->request_headers);
-	nvlist_free(req->request_qs);
+	nvl_putref(req->request_headers);
+	nvl_putref(req->request_qs);
 
 	switch (req->via) {
 		case REQ_SCGI:
@@ -386,14 +379,14 @@ void req_destroy(struct req *req)
 
 void req_head(struct req *req, const char *name, const char *val)
 {
-	nvl_set_str(req->headers, name, val);
+	nvl_set_str(req->headers, name, STR_DUP(val));
 }
 
 static bool select_page(struct req *req)
 {
 	struct qs *args = &req->args;
-	nvpair_t *cur;
-	char *uri;
+	const struct nvpair *cur;
+	struct str *uri;
 
 	args->page = PAGE_INDEX;
 	args->p = -1;
@@ -407,8 +400,9 @@ static bool select_page(struct req *req)
 	args->preview = 0;
 
 	uri = nvl_lookup_str(req->request_headers, DOCUMENT_URI);
+	ASSERT(!IS_ERR(uri));
 
-	switch (get_uri_type(uri)) {
+	switch (get_uri_type(str_cstr(uri))) {
 		case URI_STATIC:
 			/* static file */
 			args->page = PAGE_STATIC;
@@ -421,10 +415,8 @@ static bool select_page(struct req *req)
 			return false;
 	}
 
-	for (cur = nvlist_next_nvpair(req->request_qs, NULL);
-	     cur;
-	     cur = nvlist_next_nvpair(req->request_qs, cur)) {
-		char *name, *val;
+	nvl_for_each(cur, req->request_qs) {
+		const char *name, *val;
 		const char **cptr;
 		int *iptr;
 
@@ -536,12 +528,13 @@ static bool switch_content_type(struct req *req)
 	return true;
 }
 
-void convert_headers(nvlist_t *headers, const struct convert_info *table)
+void convert_headers(struct nvlist *headers,
+		     const struct nvl_convert_info *table)
 {
-	static const struct convert_info generic_table[] = {
-		{ .name = CONTENT_LENGTH,	.type = DATA_TYPE_UINT64, },
-		{ .name = REMOTE_PORT,		.type = DATA_TYPE_UINT64, },
-		{ .name = SERVER_PORT,		.type = DATA_TYPE_UINT64, },
+	static const struct nvl_convert_info generic_table[] = {
+		{ .name = CONTENT_LENGTH,	.tgt_type = NVT_INT, },
+		{ .name = REMOTE_PORT,		.tgt_type = NVT_INT, },
+		{ .name = SERVER_PORT,		.tgt_type = NVT_INT, },
 		{ .name = NULL, },
 	};
 
@@ -551,10 +544,18 @@ void convert_headers(nvlist_t *headers, const struct convert_info *table)
 
 int req_dispatch(struct req *req)
 {
-	if (parse_query_string(req->request_qs,
-			       nvl_lookup_str(req->request_headers,
-					      QUERY_STRING)))
+	struct str *qs;
+
+	qs = nvl_lookup_str(req->request_headers, QUERY_STRING);
+	if (IS_ERR(qs))
 		return R404(req, NULL); /* FIXME: this should be R400 */
+
+	if (parse_query_string(req->request_qs, str_cstr(qs))) {
+		str_putref(qs);
+		return R404(req, NULL); /* FIXME: this should be R400 */
+	}
+
+	str_putref(qs);
 
 	if (!select_page(req))
 		return R404(req, NULL);
@@ -622,7 +623,7 @@ int R301(struct req *req, const char *url)
 
 	vars_scope_push(&req->vars);
 
-	vars_set_str(&req->vars, "redirect", url);
+	vars_set_str(&req->vars, "redirect", STR_DUP(url));
 
 	req->body = render_page(req, "{301}");
 

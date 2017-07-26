@@ -4,7 +4,6 @@ libblahg.a
 blahgd
 mathd
 lisplint
-nvdump
 test_fmt3
 test_qstring
 test_lisp_parser

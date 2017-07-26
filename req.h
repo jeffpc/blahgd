@@ -23,7 +23,6 @@
 #ifndef __REQ_H
 #define __REQ_H
 
-#include <libnvpair.h>
 #include <stdbool.h>
 
 #include "vars.h"
@@ -87,14 +86,14 @@ struct req {
 
 	/* request */
 	enum req_via via;
-	nvlist_t *request_headers;
-	nvlist_t *request_qs;
+	struct nvlist *request_headers;
+	struct nvlist *request_qs;
 	char *request_body;
 	struct qs args;
 
 	/* response */
 	unsigned int status;
-	nvlist_t *headers;
+	struct nvlist *headers;
 	void *body;
 	size_t bodylen;
 	int write_errno;	/* xwrite() return in req_output() */
@@ -127,7 +126,8 @@ extern void req_output(struct req *req);
 extern void req_head(struct req *req, const char *name, const char *val);
 extern int req_dispatch(struct req *req);
 
-extern void convert_headers(nvlist_t *headers, const struct convert_info *table);
+extern void convert_headers(struct nvlist *headers,
+			    const struct nvl_convert_info *table);
 
 extern int R404(struct req *req, char *tmpl);
 extern int R301(struct req *req, const char *url);

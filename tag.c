@@ -53,13 +53,13 @@ static void __store_title(struct vars *vars, const char *title)
 
 	snprintf(twittertitle, sizeof(twittertitle), "%s » %s", "Blahg", title);
 
-	vars_set_str(vars, "title", title);
-	vars_set_str(vars, "twittertitle", twittertitle);
+	vars_set_str(vars, "title", STR_DUP(title));
+	vars_set_str(vars, "twittertitle", STR_DUP(twittertitle));
 }
 
 static void __store_tag(struct vars *vars, const char *tag)
 {
-	vars_set_str(vars, "tagid", tag);
+	vars_set_str(vars, "tagid", STR_DUP(tag));
 }
 
 static void __store_pages(struct vars *vars, int page)

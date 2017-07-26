@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2014-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -62,7 +62,7 @@ static int read_netstring_length(struct req *req, size_t *len)
 
 static int read_netstring_string(struct req *req, size_t len)
 {
-	nvlist_t *nvl;
+	struct nvlist *nvl;
 	char *cur, *end;
 	char *buf;
 	int ret;
@@ -71,11 +71,15 @@ static int read_netstring_string(struct req *req, size_t len)
 	if (!buf)
 		return -ENOMEM;
 
-	ret = xread(req->fd, buf, len + 1);
-	if (ret) {
-		free(buf);
-		return ret;
+	nvl = nvl_alloc();
+	if (!nvl) {
+		ret = -ENOMEM;
+		goto err;
 	}
+
+	ret = xread(req->fd, buf, len + 1);
+	if (ret)
+		goto err;
 
 	ASSERT3U(buf[len], ==, ',');
 
@@ -88,15 +92,13 @@ static int read_netstring_string(struct req *req, size_t len)
 	cur = buf;
 	end = buf + len;
 
-	nvl = nvl_alloc();
-
 	while (cur < end) {
 		char *name, *val;
 
 		name = cur;
 		val = cur + strlen(name) + 1;
 
-		nvl_set_str(nvl, name, val);
+		nvl_set_str(nvl, name, STR_DUP(val));
 
 		cur = val + strlen(val) + 1;
 	}
@@ -106,12 +108,16 @@ static int read_netstring_string(struct req *req, size_t len)
 	free(buf);
 
 	return 0;
+
+err:
+	free(buf);
+	return ret;
 }
 
 static void cvt_headers(struct req *req)
 {
-	static const struct convert_info table[] = {
-		{ .name = "SCGI",		.type = DATA_TYPE_UINT64, },
+	static const struct nvl_convert_info table[] = {
+		{ .name = "SCGI",		.tgt_type = NVT_INT, },
 		{ .name = NULL, },
 	};
 
@@ -142,10 +148,10 @@ static int read_body(struct req *req)
 	ssize_t ret;
 	char *buf;
 
-	ret = nvlist_lookup_uint64(req->request_headers, CONTENT_LENGTH,
-				   &content_len);
+	ret = nvl_lookup_int(req->request_headers, CONTENT_LENGTH,
+			     &content_len);
 	if (ret)
-		return -ret;
+		return ret;
 
 	if (!content_len)
 		return 0;

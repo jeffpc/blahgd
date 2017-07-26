@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2013-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,19 +23,20 @@
 #include <jeffpc/error.h>
 
 #include "nvl.h"
-#include "vars_impl.h"
+#include "vars.h"
+
+#define SCOPE(vars, scope)	((vars)->scopes[scope])
+#define C(vars)			SCOPE((vars), (vars)->cur)
 
 static void __init_scope(struct vars *vars)
 {
-	int ret;
-
-	ret = nvlist_alloc(&vars->scopes[vars->cur], NV_UNIQUE_NAME, 0);
-	ASSERT0(ret);
+	vars->scopes[vars->cur] = nvl_alloc();
+	ASSERT(vars->scopes[vars->cur]);
 }
 
-static void __free_scope(nvlist_t *scope)
+static void __free_scope(struct nvlist *scope)
 {
-	nvlist_free(scope);
+	nvl_putref(scope);
 }
 
 void vars_init(struct vars *vars)
@@ -74,75 +75,86 @@ void vars_scope_pop(struct vars *vars)
 	ASSERT(vars->cur >= 0);
 }
 
-void vars_set_str(struct vars *vars, const char *name, const char *val)
-{
-	nvl_set_str(C(vars), name, val);
+#define WRAP_SET1(varfxn, nvlfxn, ctype)				\
+void varfxn(struct vars *vars, const char *name, ctype val)		\
+{									\
+	int ret;							\
+									\
+	ret = nvlfxn(C(vars), name, val);				\
+	ASSERT0(ret);							\
 }
 
-void vars_set_int(struct vars *vars, const char *name, uint64_t val)
-{
-	nvl_set_int(C(vars), name, val);
+#define WRAP_SET2(varfxn, nvlfxn, ctype)				\
+void varfxn(struct vars *vars, const char *name, ctype val, size_t len)	\
+{									\
+	int ret;							\
+									\
+	ret = nvlfxn(C(vars), name, val, len);				\
+	ASSERT0(ret);							\
 }
 
-void vars_set_nvl_array(struct vars *vars, const char *name,
-			nvlist_t **val, uint_t nval)
-{
-	nvl_set_nvl_array(C(vars), name, val, nval);
-}
+WRAP_SET1(vars_set_str, nvl_set_str, struct str *);
+WRAP_SET1(vars_set_int, nvl_set_int, uint64_t);
+WRAP_SET2(vars_set_array, nvl_set_array, struct nvval *);
 
-nvpair_t *vars_lookup(struct vars *vars, const char *name)
+const struct nvpair *vars_lookup(struct vars *vars, const char *name)
 {
-	nvpair_t *ret;
+	const struct nvpair *ret;
 	int scope;
 
 	for (scope = vars->cur; scope >= 0; scope--) {
 		ret = nvl_lookup(SCOPE(vars, scope), name);
-		if (ret)
+		if (!IS_ERR(ret))
 			return ret;
 	}
 
 	return NULL;
 }
 
-char *vars_lookup_str(struct vars *vars, const char *name)
+struct str *vars_lookup_str(struct vars *vars, const char *name)
 {
-	nvpair_t *pair;
-	char *out;
-	int ret;
+	const struct nvpair *pair;
+	struct str *ret;
 
 	pair = vars_lookup(vars, name);
 	ASSERT(pair);
 
-	ASSERT3S(nvpair_type(pair), ==, DATA_TYPE_STRING);
+	ret = nvpair_value_str(pair);
+	ASSERT(!IS_ERR(ret));
 
-	ret = nvpair_value_string(pair, &out);
-	ASSERT0(ret);
-
-	return out;
+	return ret;
 }
 
 uint64_t vars_lookup_int(struct vars *vars, const char *name)
 {
-	nvpair_t *pair;
-	uint64_t out;
-	int ret;
+	const struct nvpair *pair;
+	uint64_t ret;
+	int err;
 
 	pair = vars_lookup(vars, name);
 	ASSERT(pair);
 
-	ASSERT3S(nvpair_type(pair), ==, DATA_TYPE_STRING);
+	err = nvpair_value_int(pair, &ret);
+	ASSERT(!err);
 
-	ret = nvpair_value_uint64(pair, &out);
-	ASSERT0(ret);
-
-	return out;
+	return ret;
 }
 
-void vars_merge(struct vars *vars, nvlist_t *items)
+void vars_merge(struct vars *vars, struct nvlist *items)
 {
 	int ret;
 
-	ret = nvlist_merge(C(vars), items, 0);
-
+	ret = nvl_merge(C(vars), items);
 	ASSERT0(ret);
+}
+
+void vars_dump(struct vars *vars)
+{
+	int i;
+
+	for (i = 0; i <= vars->cur; i++) {
+		fprintf(stderr, "VARS DUMP scope %d @ %p\n", i,
+			vars->scopes[i]);
+		nvl_dump_file(stderr, vars->scopes[i]);
+	}
 }

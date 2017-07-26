@@ -88,10 +88,11 @@
 #define SC_ERROR		99
 
 static struct str *prep_meta_sexpr(const char *author, const char *email,
-				   const char *curdate, const char *ip,
+				   const char *curdate, struct str *ip,
 				   const char *url)
 {
 	struct val *url_val;
+	struct val *ip_val;
 	struct val *lv;
 	struct str *str;
 
@@ -100,6 +101,11 @@ static struct str *prep_meta_sexpr(const char *author, const char *email,
 		url_val = VAL_DUP_CSTR((char *) url);
 	else
 		url_val = NULL;
+
+	if (!IS_ERR(ip))
+		ip_val = VAL_ALLOC_STR(ip);
+	else
+		ip_val = NULL;
 
 	/*
 	 * We're looking for a list looking something like:
@@ -116,7 +122,7 @@ static struct str *prep_meta_sexpr(const char *author, const char *email,
 				VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("author"), VAL_DUP_CSTR((char *) author)),
 				VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("email"), VAL_DUP_CSTR((char *) email)),
 				VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("time"), VAL_DUP_CSTR((char *) curdate)),
-				VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("ip"), VAL_DUP_CSTR((char *) ip)),
+				VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("ip"), ip_val),
 				VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("url"), url_val),
 				VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("moderated"), VAL_ALLOC_BOOL(false)));
 
@@ -138,7 +144,6 @@ const char *write_out_comment(struct req *req, int id, char *author,
 	char lisppath[FILENAME_MAX];
 
 	char curdate[32];
-	char *remote_addr; /* yes, this is a pointer */
 	int ret;
 	struct str *meta;
 
@@ -146,7 +151,7 @@ const char *write_out_comment(struct req *req, int id, char *author,
 	time_t now_sec;
 	struct tm *now_tm;
 
-	nvlist_t *post;
+	struct nvlist *post;
 
 	if (strlen(email) == 0) {
 		DBG("You must fill in email (postid=%d)", id);
@@ -168,6 +173,7 @@ const char *write_out_comment(struct req *req, int id, char *author,
 		DBG("Gah! %d (postid=%d)", -1, id);
 		return GENERIC_ERR_STR;
 	}
+	nvl_putref(post);
 
 	now = gettime();
 	now_sec  = now / 1000000000UL;
@@ -206,9 +212,9 @@ const char *write_out_comment(struct req *req, int id, char *author,
 		return INTERNAL_ERR;
 	}
 
-	remote_addr = nvl_lookup_str(req->request_headers, REMOTE_ADDR);
-
-	meta = prep_meta_sexpr(author, email, curdate, remote_addr, url);
+	meta = prep_meta_sexpr(author, email, curdate,
+			       nvl_lookup_str(req->request_headers, REMOTE_ADDR),
+			       url);
 	if (!meta) {
 		DBG("failed to prep lisp meta data");
 		return INTERNAL_ERR;
@@ -260,7 +266,7 @@ static const char *save_comment(struct req *req)
 	bool nonempty = false;
 	int id = 0;
 
-	if (!nvl_lookup_str(req->request_headers, HTTP_USER_AGENT)) {
+	if (nvl_exists_type(req->request_headers, HTTP_USER_AGENT, NVT_STR)) {
 		DBG("Missing user agent...");
 		return USERAGENT_MISSING;
 	}
@@ -480,7 +486,7 @@ int blahg_comment(struct req *req)
 	errmsg = save_comment(req);
 	if (errmsg) {
 		tmpl = "{comment_error}";
-		vars_set_str(&req->vars, "comment_error_str", errmsg);
+		vars_set_str(&req->vars, "comment_error_str", STR_DUP(errmsg));
 		// FIXME: __store_title(&req->vars, "Error");
 	} else {
 		tmpl = "{comment_saved}";

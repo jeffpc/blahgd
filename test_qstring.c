@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2014-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,15 +28,17 @@
 
 static int onefile(char *ibuf, size_t len)
 {
-	nvlist_t *vars;
+	struct nvlist *vars;
 
 	vars = nvl_alloc();
+	if (!vars)
+		return -ENOMEM;
 
 	parse_query_string_len(vars, ibuf, len);
 
-	dump_nvlist(vars, 0);
+	nvl_dump_file(stderr, vars);
 
-	nvlist_free(vars);
+	nvl_putref(vars);
 
 	return 0;
 }

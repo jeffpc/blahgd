@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2014-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,12 +23,14 @@
 #ifndef __QSTRING_H
 #define __QSTRING_H
 
-#include <libnvpair.h>
 #include <string.h>
 
-extern int parse_query_string_len(nvlist_t *vars, const char *qs, size_t len);
+#include <jeffpc/nvl.h>
 
-static inline int parse_query_string(nvlist_t *vars, const char *qs)
+extern int parse_query_string_len(struct nvlist *vars, const char *qs,
+				  size_t len);
+
+static inline int parse_query_string(struct nvlist *vars, const char *qs)
 {
 	size_t len;
 

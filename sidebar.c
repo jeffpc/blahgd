@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2013-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +35,7 @@
 
 struct tagcloud_state {
 	unsigned long ntags;
-	nvlist_t **cloud;
+	struct nvval *cloud;
 };
 
 static int __tag_size(int count, int cmin, int cmax)
@@ -56,7 +56,7 @@ static int __tagcloud_init(void *arg, unsigned long ntags)
 {
 	struct tagcloud_state *state = arg;
 
-	state->cloud = malloc(sizeof(nvlist_t *) * ntags);
+	state->cloud = reallocarray(NULL, ntags, sizeof(struct nvval));
 	state->ntags = 0;
 
 	return state->cloud ? 0 : -ENOMEM;
@@ -68,37 +68,48 @@ static void __tagcloud_step(void *arg, struct str *name,
 			    unsigned long cmax)
 {
 	struct tagcloud_state *state = arg;
+	struct nvlist *tmp;
+	int ret;
 
 	/* skip the really boring tags */
 	if (count <= 1)
 		return;
 
-	state->cloud[state->ntags] = nvl_alloc();
+	tmp = nvl_alloc();
+	if (!tmp)
+		return;
 
-	nvl_set_str(state->cloud[state->ntags], "name", str_cstr(name));
-	nvl_set_int(state->cloud[state->ntags], "count", count);
-	nvl_set_int(state->cloud[state->ntags], "size",
-		    __tag_size(count, cmin, cmax));
+	if ((ret = nvl_set_str(tmp, "name", str_getref(name))))
+		goto err;
+	if ((ret = nvl_set_int(tmp, "count", count)))
+		goto err;
+	if ((ret = nvl_set_int(tmp, "size", __tag_size(count, cmin, cmax))))
+		goto err;
 
+	state->cloud[state->ntags].type = NVT_NVL;
+	state->cloud[state->ntags].nvl = tmp;
 	state->ntags++;
+
+	return;
+
+err:
+	/*
+	 * On error, we simply skip over this tag.  There is no reason to
+	 * fail since the tag cloud isn't actually a vital part of the whole
+	 * system.
+	 */
+	nvl_putref(tmp);
 }
 
 static void tagcloud(struct req *req)
 {
 	struct tagcloud_state state;
-	unsigned int i;
 
 	/* gather up tag info */
 	index_for_each_tag(__tagcloud_init, __tagcloud_step, &state);
 
 	/* stash the info in request vars */
-	vars_set_nvl_array(&req->vars, "tagcloud", state.cloud, state.ntags);
-
-	/* free everything */
-	for (i = 0; i < state.ntags; i++)
-		nvlist_free(state.cloud[i]);
-
-	free(state.cloud);
+	vars_set_array(&req->vars, "tagcloud", state.cloud, state.ntags);
 }
 
 void sidebar(struct req *req)

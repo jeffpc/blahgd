@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2014-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -76,17 +76,17 @@ static void reset_str(struct qstr *str)
 	str->idx = 0;
 }
 
-static void insert(nvlist_t *vars, struct qstr *name, struct qstr *val)
+static void insert(struct nvlist *vars, struct qstr *name, struct qstr *val)
 {
 	urldecode(name->buf, name->idx, name->buf);
 	urldecode(val->buf, val->idx, val->buf);
 
 	/* now, {name,val}->buf are null-terminated strings */
 
-	nvl_set_str(vars, name->buf, val->buf);
+	VERIFY0(nvl_set_str(vars, name->buf, STR_DUP(val->buf)));
 }
 
-int parse_query_string_len(nvlist_t *vars, const char *qs, size_t len)
+int parse_query_string_len(struct nvlist *vars, const char *qs, size_t len)
 {
 	struct qstr *name, *val;
 	const char *cur, *end;
