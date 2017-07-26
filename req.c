@@ -185,6 +185,7 @@ void req_output(struct req *req)
 
 static void log_request(struct req *req)
 {
+	struct scgi *scgi = req->scgi;
 	char fname[FILENAME_MAX];
 	char hostname[128];
 	struct nvlist *logentry;
@@ -199,7 +200,7 @@ static void log_request(struct req *req)
 
 	snprintf(fname, sizeof(fname), "%s/requests/%"PRIu64".%09"PRIu64"-%011u",
 		 str_cstr(config.data_dir), now / 1000000000llu,
-		 now % 1000000000llu, req->scgi->id);
+		 now % 1000000000llu, scgi->id);
 
 	/*
 	 * allocate a log entry & store some misc info
@@ -217,12 +218,12 @@ static void log_request(struct req *req)
 	tmp = nvl_alloc();
 	if (!tmp)
 		goto err_free;
-	nvl_set_int(tmp, "id", req->scgi->id);
-	nvl_set_nvl(tmp, "headers", nvl_getref(req->scgi->request.headers));
+	nvl_set_int(tmp, "id", scgi->id);
+	nvl_set_nvl(tmp, "headers", nvl_getref(scgi->request.headers));
 	nvl_set_nvl(tmp, "query-string", nvl_getref(req->request_qs));
-	nvl_set_str(tmp, "body", STR_DUP(req->scgi->request.body));
+	nvl_set_str(tmp, "body", STR_DUP(scgi->request.body));
 	nvl_set_str(tmp, "fmt", STR_DUP(req->fmt));
-	nvl_set_int(tmp, "file-descriptor", req->scgi->fd);
+	nvl_set_int(tmp, "file-descriptor", scgi->fd);
 	nvl_set_int(tmp, "thread-id", (uint64_t) pthread_self());
 	nvl_set_nvl(logentry, "request", tmp);
 
@@ -232,9 +233,9 @@ static void log_request(struct req *req)
 	tmp = nvl_alloc();
 	if (!tmp)
 		goto err_free;
-	nvl_set_int(tmp, "status", req->scgi->response.status);
-	nvl_set_nvl(tmp, "headers", nvl_getref(req->scgi->response.headers));
-	nvl_set_int(tmp, "body-length", req->scgi->response.bodylen);
+	nvl_set_int(tmp, "status", scgi->response.status);
+	nvl_set_nvl(tmp, "headers", nvl_getref(scgi->response.headers));
+	nvl_set_int(tmp, "body-length", scgi->response.bodylen);
 	nvl_set_bool(tmp, "dump-latency", req->dump_latency);
 	nvl_set_int(tmp, "write-errno", req->write_errno);
 	nvl_set_nvl(logentry, "response", tmp);
