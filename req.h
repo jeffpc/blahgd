@@ -87,8 +87,6 @@ struct req {
 	struct {
 		int index_stories;
 	} opts;
-
-	int fd;
 };
 
 extern void init_req_subsys(void);
