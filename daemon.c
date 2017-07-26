@@ -117,7 +117,6 @@ int main(int argc, char **argv)
 	jeffpc_init(&init_ops);
 	init_math(true);
 	init_pipe_subsys();
-	init_req_subsys();
 	init_post_subsys();
 	init_file_cache();
 

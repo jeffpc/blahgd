@@ -37,10 +37,6 @@
 #include "debug.h"
 #include "version.h"
 
-void init_req_subsys(void)
-{
-}
-
 static void __vars_set_social(struct vars *vars)
 {
 	if (config.twitter_username)
