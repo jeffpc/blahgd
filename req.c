@@ -400,20 +400,6 @@ static bool switch_content_type(struct req *req)
 	return true;
 }
 
-void convert_headers(struct nvlist *headers,
-		     const struct nvl_convert_info *table)
-{
-	static const struct nvl_convert_info generic_table[] = {
-		{ .name = CONTENT_LENGTH,	.tgt_type = NVT_INT, },
-		{ .name = REMOTE_PORT,		.tgt_type = NVT_INT, },
-		{ .name = SERVER_PORT,		.tgt_type = NVT_INT, },
-		{ .name = NULL, },
-	};
-
-	nvl_convert(headers, generic_table);
-	nvl_convert(headers, table);
-}
-
 int req_dispatch(struct req *req)
 {
 	struct str *qs;
