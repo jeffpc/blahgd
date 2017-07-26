@@ -56,7 +56,11 @@ static int __tagcloud_init(void *arg, unsigned long ntags)
 {
 	struct tagcloud_state *state = arg;
 
+#ifdef HAVE_REALLOCARRAY
 	state->cloud = reallocarray(NULL, ntags, sizeof(struct nvval));
+#else
+	state->cloud = malloc(ntags * sizeof(struct nvval));
+#endif
 	state->ntags = 0;
 
 	return state->cloud ? 0 : -ENOMEM;
