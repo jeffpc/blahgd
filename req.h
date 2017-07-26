@@ -79,9 +79,6 @@ struct req {
 	struct nvlist *request_qs;
 	struct qs args;
 
-	/* response */
-	int write_errno;	/* xwrite() return in req_output() */
-
 	/* state */
 	struct vars vars;
 

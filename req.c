@@ -185,7 +185,6 @@ static void log_request(struct req *req)
 	nvl_set_int(tmp, "status", scgi->response.status);
 	nvl_set_nvl(tmp, "headers", nvl_getref(scgi->response.headers));
 	nvl_set_int(tmp, "body-length", scgi->response.bodylen);
-	nvl_set_int(tmp, "write-errno", req->write_errno);
 	nvl_set_nvl(logentry, "response", tmp);
 
 	/*
