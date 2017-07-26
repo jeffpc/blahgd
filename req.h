@@ -81,11 +81,8 @@ struct req {
 
 	/* response */
 	int write_errno;	/* xwrite() return in req_output() */
-	char latency_comment[128];
 
 	/* state */
-	bool dump_latency;	/* request latency calculation */
-
 	struct vars vars;
 
 	const char *fmt;	/* format (e.g., "html") */

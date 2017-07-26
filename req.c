@@ -71,8 +71,6 @@ static void __vars_set_social(struct vars *vars)
 void req_init(struct req *req)
 {
 	/* state */
-	req->dump_latency = true;
-
 	vars_init(&req->vars);
 	vars_set_str(&req->vars, "generatorversion", STATIC_STR(version_string));
 	vars_set_str(&req->vars, "baseurl", str_getref(config.base_url));
@@ -94,38 +92,36 @@ void req_init(struct req *req)
 
 static void calculate_content_length(struct req *req)
 {
-	size_t content_length;
 	char tmp[64];
 
 	/* if body length is 0, we automatically figure out the length */
 	if (!req->scgi->response.bodylen)
 		req->scgi->response.bodylen = strlen(req->scgi->response.body);
 
-	/* construct latency comment */
-	if (!req->dump_latency) {
-		req->latency_comment[0] = '\0';
-	} else {
-		uint64_t delta;
-
-		delta = gettime() - req->scgi->scgi_stats.read_body_time;
-
-		snprintf(req->latency_comment, sizeof(req->latency_comment),
-			"\n<!-- time to render: %"PRIu64".%09"PRIu64" seconds -->\n",
-		       delta / 1000000000UL,
-		       delta % 1000000000UL);
-	}
-
-	/* calculate the content-length */
-	content_length = req->scgi->response.bodylen + strlen(req->latency_comment);
-
-	snprintf(tmp, sizeof(tmp), "%zu", content_length);
+	/* set the Content-Length header */
+	snprintf(tmp, sizeof(tmp), "%zu", req->scgi->response.bodylen);
 
 	req_head(req, "Content-Length", tmp);
+}
+
+static void calculate_render_time(struct req *req)
+{
+	uint64_t delta;
+	char tmp[64];
+
+	delta = gettime() - req->scgi->scgi_stats.read_body_time;
+
+	snprintf(tmp, sizeof(tmp), "%"PRIu64".%09"PRIu64,
+		 delta / 1000000000UL,
+		 delta % 1000000000UL);
+
+	req_head(req, "X-blahgd-render-time", tmp);
 }
 
 void req_output(struct req *req)
 {
 	calculate_content_length(req);
+	calculate_render_time(req);
 }
 
 static void nvl_set_time(struct nvlist *nvl, const char *name, uint64_t ts)
@@ -189,7 +185,6 @@ static void log_request(struct req *req)
 	nvl_set_int(tmp, "status", scgi->response.status);
 	nvl_set_nvl(tmp, "headers", nvl_getref(scgi->response.headers));
 	nvl_set_int(tmp, "body-length", scgi->response.bodylen);
-	nvl_set_bool(tmp, "dump-latency", req->dump_latency);
 	nvl_set_int(tmp, "write-errno", req->write_errno);
 	nvl_set_nvl(logentry, "response", tmp);
 

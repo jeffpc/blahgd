@@ -113,8 +113,6 @@ int blahg_static(struct req *req)
 
 	req_head(req, "Content-Type", info->content_type);
 
-	req->dump_latency = false;
-
 	return 0;
 }
 
