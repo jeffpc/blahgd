@@ -92,7 +92,6 @@ static struct str *prep_meta_sexpr(const char *author, const char *email,
 				   const char *url)
 {
 	struct val *url_val;
-	struct val *ip_val;
 	struct val *lv;
 	struct str *str;
 
@@ -101,11 +100,6 @@ static struct str *prep_meta_sexpr(const char *author, const char *email,
 		url_val = VAL_DUP_CSTR((char *) url);
 	else
 		url_val = NULL;
-
-	if (!IS_ERR(ip))
-		ip_val = VAL_ALLOC_STR(ip);
-	else
-		ip_val = NULL;
 
 	/*
 	 * We're looking for a list looking something like:
@@ -122,7 +116,7 @@ static struct str *prep_meta_sexpr(const char *author, const char *email,
 				VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("author"), VAL_DUP_CSTR((char *) author)),
 				VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("email"), VAL_DUP_CSTR((char *) email)),
 				VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("time"), VAL_DUP_CSTR((char *) curdate)),
-				VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("ip"), ip_val),
+				VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("ip"), VAL_ALLOC_STR(ip)),
 				VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("url"), url_val),
 				VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("moderated"), VAL_ALLOC_BOOL(false)));
 
@@ -302,6 +296,11 @@ static const char *save_comment(struct req *req)
 	if (nvl_exists_type(req->request_headers, HTTP_USER_AGENT, NVT_STR)) {
 		DBG("Missing user agent...");
 		return USERAGENT_MISSING;
+	}
+
+	if (nvl_exists_type(req->request_headers, REMOTE_ADDR, NVT_STR)) {
+		DBG("Missing remote addr...");
+		return INTERNAL_ERR;
 	}
 
 	author_buf[0] = '\0'; /* better be paranoid */
