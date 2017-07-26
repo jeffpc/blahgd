@@ -211,8 +211,15 @@ void req_output(struct req *req)
 
 	/* write out the headers */
 	nvl_for_each(header, req->headers) {
+		struct str *value;
+
+		value = nvpair_value_str(header);
+		ASSERT(!IS_ERR(value));
+
 		snprintf(tmp, sizeof(tmp), "%s: %s\n", nvpair_name(header),
-			 pair2str(header));
+			 str_cstr(value));
+
+		str_putref(value);
 
 		ret = xwrite_str(req->fd, tmp);
 		if (ret)
