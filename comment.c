@@ -42,7 +42,6 @@
 #include "render.h"
 #include "utils.h"
 #include "config.h"
-#include "comment.h"
 #include "decode.h"
 #include "post.h"
 #include "debug.h"
@@ -127,8 +126,8 @@ static struct str *prep_meta_sexpr(const char *author, const char *email,
 	return str;
 }
 
-const char *write_out_comment(struct req *req, int id, char *author,
-			      char *email, char *url, char *comment)
+static const char *write_out_comment(struct req *req, int id, char *author,
+				     char *email, char *url, char *comment)
 {
 	static atomic_t nonce;
 
