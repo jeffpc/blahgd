@@ -240,6 +240,39 @@ const char *write_out_comment(struct req *req, int id, char *author,
 	return NULL;
 }
 
+static const char *spam_check(int id, uint64_t date, uint64_t captcha,
+			      bool nonempty)
+{
+	uint64_t deltat;
+	uint64_t now;
+
+	now = gettime();
+	deltat = now - date;
+
+	if (nonempty) {
+		DBG("User filled out supposedly empty field... postid:%d", id);
+		return GENERIC_ERR_STR;
+	}
+
+	if ((deltat > 1000000000ull * config.comment_max_think) ||
+	    (deltat < 1000000000ull * config.comment_min_think)) {
+		DBG("Flash-gordon or geriatric was here... load:%"PRIu64
+		    " comment:%"PRIu64" delta:%"PRIu64" postid:%d",
+		    date, now, deltat, id);
+		return GENERIC_ERR_STR;
+	}
+
+	if (captcha != (config.comment_captcha_a + config.comment_captcha_b)) {
+		DBG("Math illiterate was here... got:%"PRIu64
+		    " expected:%"PRIu64" postid:%d", captcha,
+		    config.comment_captcha_a + config.comment_captcha_b,
+		    id);
+		return CAPTCHA_FAIL;
+	}
+
+	return NULL;
+}
+
 #define COPYCHAR(ob, oi, c)	do { \
 					ob[oi] = (c); \
 					oi++; \
@@ -247,9 +280,9 @@ const char *write_out_comment(struct req *req, int id, char *author,
 
 static const char *save_comment(struct req *req)
 {
+	const char *err;
 	char *in;
 	char tmp;
-	uint64_t now, deltat;
 
 	int state;
 
@@ -439,29 +472,9 @@ static const char *save_comment(struct req *req)
 	DBG("captcha: %lu", captcha);
 #endif
 
-	now = gettime();
-	deltat = now - date;
-
-	if (nonempty) {
-		DBG("User filled out supposedly empty field... postid:%d", id);
-		return GENERIC_ERR_STR;
-	}
-
-	if ((deltat > 1000000000ull * config.comment_max_think) ||
-	    (deltat < 1000000000ull * config.comment_min_think)) {
-		DBG("Flash-gordon or geriatric was here... load:%"PRIu64
-		    " comment:%"PRIu64" delta:%"PRIu64" postid:%d",
-		    date, now, deltat, id);
-		return GENERIC_ERR_STR;
-	}
-
-	if (captcha != (config.comment_captcha_a + config.comment_captcha_b)) {
-		DBG("Math illiterate was here... got:%"PRIu64
-		    " expected:%"PRIu64" postid:%d", captcha,
-		    config.comment_captcha_a + config.comment_captcha_b,
-		    id);
-		return CAPTCHA_FAIL;
-	}
+	err = spam_check(id, date, captcha, nonempty);
+	if (err)
+		return err;
 
 	/* URL decode everything */
 	urldecode(comment_buf, strlen(comment_buf), comment_buf);
