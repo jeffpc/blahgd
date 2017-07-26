@@ -26,17 +26,9 @@
 #include <stdbool.h>
 
 #include <jeffpc/scgisvc.h>
+#include <jeffpc/scgi.h>
 
 #include "vars.h"
-
-/*
- * Defines to make it easier to keep track of required headers in
- * req->scgi->request.headers.
- */
-#define DOCUMENT_URI		"DOCUMENT_URI"		/* excludes QS */
-#define HTTP_USER_AGENT		"HTTP_USER_AGENT"
-#define QUERY_STRING		"QUERY_STRING"
-#define REMOTE_ADDR		"REMOTE_ADDR"
 
 enum {
 	PAGE_ARCHIVE,

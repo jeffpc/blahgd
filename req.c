@@ -252,7 +252,7 @@ static bool select_page(struct req *req)
 	args->feed = NULL;
 	args->preview = 0;
 
-	uri = nvl_lookup_str(req->scgi->request.headers, DOCUMENT_URI);
+	uri = nvl_lookup_str(req->scgi->request.headers, SCGI_DOCUMENT_URI);
 	ASSERT(!IS_ERR(uri));
 
 	switch (get_uri_type(uri)) {
@@ -385,7 +385,7 @@ int req_dispatch(struct req *req)
 {
 	struct str *qs;
 
-	qs = nvl_lookup_str(req->scgi->request.headers, QUERY_STRING);
+	qs = nvl_lookup_str(req->scgi->request.headers, SCGI_QUERY_STRING);
 	if (IS_ERR(qs))
 		return R404(req, NULL); /* FIXME: this should be R400 */
 

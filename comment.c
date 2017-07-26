@@ -200,7 +200,7 @@ static const char *write_out_comment(struct req *req, int id,
 
 	meta = prep_meta_sexpr(author, email, STR_DUP(curdate),
 			       nvl_lookup_str(req->scgi->request.headers,
-					      REMOTE_ADDR),
+					      SCGI_REMOTE_ADDR),
 			       url);
 	if (!meta) {
 		DBG("failed to prep lisp meta data");
@@ -420,13 +420,13 @@ static const char *save_comment(struct req *req)
 	int ret;
 	int id;
 
-	if (nvl_exists_type(req->scgi->request.headers, HTTP_USER_AGENT,
+	if (nvl_exists_type(req->scgi->request.headers, SCGI_HTTP_USER_AGENT,
 			    NVT_STR)) {
 		DBG("Missing user agent...");
 		return USERAGENT_MISSING;
 	}
 
-	if (nvl_exists_type(req->scgi->request.headers, REMOTE_ADDR,
+	if (nvl_exists_type(req->scgi->request.headers, SCGI_REMOTE_ADDR,
 			    NVT_STR)) {
 		DBG("Missing remote addr...");
 		return INTERNAL_ERR;

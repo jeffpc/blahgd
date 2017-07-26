@@ -86,7 +86,7 @@ int blahg_static(struct req *req)
 	struct str *uri_str;
 	const char *uri;
 
-	uri_str = nvl_lookup_str(req->scgi->request.headers, DOCUMENT_URI);
+	uri_str = nvl_lookup_str(req->scgi->request.headers, SCGI_DOCUMENT_URI);
 	ASSERT(!IS_ERR(uri_str));
 
 	uri = str_cstr(uri_str);
@@ -94,7 +94,7 @@ int blahg_static(struct req *req)
 	info = get_uri_info(uri);
 	ASSERT(info);
 
-	/* DOCUMENT_URI comes with a leading /, remove it. */
+	/* SCGI_DOCUMENT_URI comes with a leading /, remove it. */
 	uri++;
 
 	snprintf(path, sizeof(path), "%s/%s", str_cstr(config.web_dir), uri);
