@@ -5,7 +5,6 @@ blahgd
 mathd
 lisplint
 test_fmt3
-test_qstring
 test_lisp_parser
 
 hgversion.h

@@ -1,1 +1,0 @@
-a-very-long-string---longer-than-the-max-variable-name-length-times-three-because-we-have-to-account-for-percent-deflation

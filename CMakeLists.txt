@@ -90,7 +90,6 @@ add_library(blahg
 
 	# nvlist related things
 	nvl.c
-	qstring.c
 	vars.c
 
 	# misc
@@ -153,14 +152,6 @@ add_executable(test_fmt3
 )
 
 target_link_libraries(test_fmt3
-	blahg
-)
-
-add_executable(test_qstring
-	test_qstring.c
-)
-
-target_link_libraries(test_qstring
 	blahg
 )
 

@@ -27,12 +27,12 @@
 
 #include <jeffpc/atomic.h>
 #include <jeffpc/mem.h>
+#include <jeffpc/qstring.h>
 
 #include "req.h"
 #include "utils.h"
 #include "sidebar.h"
 #include "render.h"
-#include "qstring.h"
 #include "static.h"
 #include "debug.h"
 #include "version.h"
@@ -389,7 +389,7 @@ int req_dispatch(struct req *req)
 	if (IS_ERR(qs))
 		return R404(req, NULL); /* FIXME: this should be R400 */
 
-	if (parse_query_string(req->request_qs, str_cstr(qs))) {
+	if (qstring_parse(req->request_qs, str_cstr(qs))) {
 		str_putref(qs);
 		return R404(req, NULL); /* FIXME: this should be R400 */
 	}

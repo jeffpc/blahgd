@@ -36,6 +36,7 @@
 #include <jeffpc/sexpr.h>
 #include <jeffpc/str.h>
 #include <jeffpc/io.h>
+#include <jeffpc/qstring.h>
 
 #include "req.h"
 #include "sidebar.h"
@@ -43,7 +44,6 @@
 #include "utils.h"
 #include "config.h"
 #include "post.h"
-#include "qstring.h"
 #include "debug.h"
 
 #define INTERNAL_ERR		"Ouch!  Encountered an internal error.  " \
@@ -444,7 +444,7 @@ static const char *save_comment(struct req *req)
 
 	err = GENERIC_ERR_STR;
 
-	ret = parse_query_string(qs, req->scgi->request.body);
+	ret = qstring_parse(qs, req->scgi->request.body);
 	if (ret) {
 		DBG("failed to parse comment: %s", xstrerror(ret));
 		goto err;
