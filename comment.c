@@ -42,7 +42,6 @@
 #include "render.h"
 #include "utils.h"
 #include "config.h"
-#include "decode.h"
 #include "post.h"
 #include "qstring.h"
 #include "debug.h"

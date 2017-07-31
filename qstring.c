@@ -21,9 +21,9 @@
  */
 
 #include <jeffpc/error.h>
+#include <jeffpc/urldecode.h>
 
 #include "vars.h"
-#include "decode.h"
 #include "qstring.h"
 #include "utils.h"
 
@@ -78,8 +78,15 @@ static void reset_str(struct qstr *str)
 
 static void insert(struct nvlist *vars, struct qstr *name, struct qstr *val)
 {
-	urldecode(name->buf, name->idx, name->buf);
+	ssize_t outlen;
+
+	outlen = urldecode(name->buf, name->idx, name->buf);
+	VERIFY3S(outlen, >=, 0);
+	name->buf[outlen] = '\0';
+
 	urldecode(val->buf, val->idx, val->buf);
+	VERIFY3S(outlen, >=, 0);
+	val->buf[outlen] = '\0';
 
 	/* now, {name,val}->buf are null-terminated strings */
 
