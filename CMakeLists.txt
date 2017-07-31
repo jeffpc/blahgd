@@ -89,7 +89,6 @@ add_library(blahg
 	pipeline.c
 
 	# nvlist related things
-	fsm.c
 	nvl.c
 	qstring.c
 	vars.c
