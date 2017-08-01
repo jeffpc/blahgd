@@ -75,9 +75,9 @@ You can start the blahg daemon (blahgd):
 
 $ ./blahgd
 
-At this point, blahgd is listening on port 2014 for SCGI connections.  At
-this point you need to configure your webserver to pass requests to blahgd.
-For example, for nginx, use a config stanza similar to:
+At this point, blahgd is listening on port 2014 for SCGI connections.  Now,
+you need to configure your webserver to pass requests to blahgd.  For example,
+for nginx, use a config stanza similar to:
 
 
         server {
