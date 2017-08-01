@@ -2,7 +2,6 @@ syntax: glob
 
 libblahg.a
 blahgd
-mathd
 lisplint
 test_fmt3
 test_lisp_parser

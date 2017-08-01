@@ -29,7 +29,6 @@
 
 #include "parse.h"
 #include "utils.h"
-#include "math.h"
 #include "file_cache.h"
 
 static int onefile(struct post *post, char *ibuf, size_t len)
@@ -91,7 +90,6 @@ int main(int argc, char **argv)
 
 	ASSERT0(putenv("UMEM_DEBUG=default,verbose"));
 
-	init_math(false);
 	init_file_cache();
 
 	for (i = 1; i < argc; i++) {

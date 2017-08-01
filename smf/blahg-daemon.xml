@@ -13,10 +13,6 @@
 			<service_fmri value="svc:/system/filesystem/local"/>
 		</dependency>
 
-		<dependency name="mathd" grouping="require_all" restart_on="error" type="service">
-			<service_fmri value="svc:/poc/math"/>
-		</dependency>
-
 		<method_context working_directory="/blahg">
 			<method_credential user="jeffpc" group="webservd"/>
 			<method_environment>

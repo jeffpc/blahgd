@@ -38,8 +38,6 @@
 #cmakedefine DEFAULT_DATA_DIR		"${DEFAULT_DATA_DIR}"
 #cmakedefine DEFAULT_WEB_DIR		"${DEFAULT_WEB_DIR}"
 
-#cmakedefine MATHD_DOOR_PATH		"${MATHD_DOOR_PATH}"
-
 #cmakedefine VAR_MAX_SCOPES		${VAR_MAX_SCOPES}
 #cmakedefine VAR_NAME_MAXLEN		${VAR_NAME_MAXLEN}
 

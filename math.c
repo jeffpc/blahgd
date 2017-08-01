@@ -20,16 +20,10 @@
  * SOFTWARE.
  */
 
-#include <jeffpc/str.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <stdbool.h>
-#include <door.h>
-
 #include <sha1.h>
 
+#include <jeffpc/str.h>
+#include <jeffpc/synch.h>
 #include <jeffpc/error.h>
 #include <jeffpc/atomic.h>
 #include <jeffpc/hexdump.h>
@@ -40,8 +34,22 @@
 #include "config.h"
 #include "debug.h"
 
-static bool use_door_call;
-static int doorfd;
+/*
+ * There are three different ways we get called to render a math expression.
+ *
+ * (1) render_math() without an init_math() call - this is done by the test,
+ *     the math code can chdir as necessary
+ * (2) render_math() after an init_math() call - this is done by the
+ *     daemon's main process, the math input needs to be sent over the
+ *     pipefd to the math worker process, no math is actually rendered by
+ *     the main process
+ * (3) render_math_processor() reads in a string - this is the math worker
+ *     process doing its job; it can chdir as needed
+ */
+
+static struct lock lock;
+
+static int pipefd = -1;
 
 #define TEX_TMP_DIR "/tmp"
 static int __render_math(const char *tex, char *md, char *dstpath,
@@ -135,7 +143,7 @@ err:
 	return ret;
 }
 
-static struct str *do_render_math(struct str *val)
+static struct str *render_math_real(struct str *val)
 {
 	static atomic_t nonce;
 
@@ -205,42 +213,161 @@ out:
 		       STATIC_STR("\" alt=\"$"), val, STATIC_STR("$\" />"));
 }
 
-static struct str *door_call_render_math(struct str *val)
+static int consume(int fd, size_t len)
 {
-	door_arg_t params = {
-		.data_ptr = (void *) str_cstr(val),
-		.data_size = str_len(val) + 1,
-		.desc_ptr = NULL,
-		.desc_num = 0,
-	};
+	char buf[1024];
+
+	while (len) {
+		int ret;
+
+		ret = xread(fd, buf, MIN(len, sizeof(buf)));
+		if (ret)
+			return ret;
+
+		len -= MIN(len, sizeof(buf));
+	}
+
+	return 0;
+}
+
+static struct str *render_math_send(struct str *val)
+{
+	size_t len;
+	char *buf;
 	int ret;
 
-	ret = door_call(doorfd, &params);
-	ASSERT3S(ret, >=, 0);
+	VERIFY3S(pipefd, !=, -1);
+
+	len = str_len(val);
+
+	MXLOCK(&lock);
+
+	/* write the input length */
+	ret = xwrite(pipefd, &len, sizeof(len));
+	if (ret)
+		goto failed;
+
+	/* write the input */
+	ret = xwrite(pipefd, str_cstr(val), len);
+	if (ret)
+		goto failed;
 
 	str_putref(val);
 
-	val = STR_DUP(params.rbuf);
+	/* read the output length */
+	ret = xread(pipefd, &len, sizeof(len));
+	if (ret)
+		goto failed;
 
-	return val;
+	/* allocate output buffer */
+	buf = malloc(len + 1);
+
+	/* either read or just consume the output */
+	if (!buf)
+		ret = consume(pipefd, len);
+	else
+		ret = xread(pipefd, buf, len);
+
+	if (!buf) {
+		ret = -ENOMEM;
+		goto failed;
+	}
+
+	if (ret)
+		goto failed;
+
+	MXUNLOCK(&lock);
+
+	/* nul-terminate the output */
+	buf[len] = '\0';
+
+	return STR_ALLOC(buf);
+
+failed:
+	/*
+	 * We failed because of a partial read or write.  This is *very*
+	 * bad.  We could either invent a complicated re-synchronization
+	 * protocol, or use a much bigger hammer and assert.  In theory, we
+	 * could try to close the pipe, kill the worker, and start up a new
+	 * one.  But in practice, we already dropped privs and there is no
+	 * way for us to fork again.  So, we just panic.
+	 */
+	panic("Failed to send/receive via math worker pipe: %s",
+	      xstrerror(ret));
 }
 
 struct str *render_math(struct str *val)
 {
-	if (!use_door_call)
-		return do_render_math(val);
+	if (pipefd != -1)
+		return render_math_send(val);
 
-	return door_call_render_math(val);
+	return render_math_real(val);
 }
 
-void init_math(bool daemonized)
+/* run "server" */
+int render_math_processor(int fd)
 {
-	if (use_door_call && !daemonized) {
-		close(doorfd);
-	} else if (!use_door_call && daemonized) {
-		doorfd = open(MATHD_DOOR_PATH, O_RDWR);
-		ASSERT3S(doorfd, >=, 0);
+	int ret;
+
+	/*
+	 * Process requests until we get the first error reading or writing
+	 * the pipe.  At that point, just break out of the loop and return.
+	 * This will cause the worker to terminate, and the parent will
+	 * panic (see comment in render_math).
+	 */
+
+	for (;;) {
+		struct str *out;
+		size_t len;
+		char *in;
+
+		/* read the input length */
+		ret = xread(fd, &len, sizeof(len));
+		if (ret)
+			break;
+
+		in = malloc(len + 1);
+		if (!in) {
+			ret = -ENOMEM;
+			break;
+		}
+
+		/* read the input */
+		ret = xread(fd, in, len);
+		if (ret)
+			break;
+
+		in[len] = '\0';
+
+		out = render_math_real(STR_ALLOC(in));
+
+		len = str_len(out);
+
+		/* write the output length */
+		ret = xwrite(fd, &len, sizeof(len));
+		if (ret)
+			break;
+
+		/* write the output */
+		ret = xwrite(fd, str_cstr(out), len);
+		if (ret)
+			break;
+
+		str_putref(out);
 	}
 
-	use_door_call = daemonized;
+	xclose(fd);
+
+	return ret;
+}
+
+/* initialize "client" */
+void init_math(int fd)
+{
+	ASSERT3S(pipefd, ==, -1);
+	ASSERT3S(fd, !=, -1);
+
+	pipefd = fd;
+
+	MXINIT(&lock);
 }

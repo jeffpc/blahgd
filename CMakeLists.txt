@@ -131,14 +131,6 @@ target_link_libraries(blahgd
 	nsl
 )
 
-add_executable(mathd
-	mathd.c
-)
-
-target_link_libraries(mathd
-	blahg
-)
-
 add_executable(lisplint
 	lisplint.c
 )

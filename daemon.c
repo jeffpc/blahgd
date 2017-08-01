@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+#include <syslog.h>
 #include <priv.h>
 
 #include <jeffpc/jeffpc.h>
@@ -100,14 +101,10 @@ err_free:
 	return ret;
 }
 
-int main(int argc, char **argv)
+/* the main daemon process */
+static int main_blahgd(int argc, char **argv, int mathfd)
 {
 	int ret;
-
-	ASSERT0(putenv("TZ=UTC"));
-
-	cmn_err(CE_INFO, "blahgd version %s", version_string);
-	cmn_err(CE_INFO, "libjeffpc version %s", jeffpc_version);
 
 	/* drop unneeded privs */
 	ret = drop_privs();
@@ -115,7 +112,7 @@ int main(int argc, char **argv)
 		goto err;
 
 	jeffpc_init(&init_ops);
-	init_math(true);
+	init_math(mathfd);
 	init_pipe_subsys();
 	init_post_subsys();
 	init_file_cache();
@@ -143,7 +140,63 @@ int main(int argc, char **argv)
 	return 0;
 
 err:
-	DBG("Failed to inintialize: %s", xstrerror(ret));
+	return ret;
+}
+
+/* the math helper worker */
+static int main_mathd(int argc, char **argv, int mathfd)
+{
+	int ret;
+
+	openlog("mathd", LOG_NDELAY | LOG_PID, LOG_LOCAL0);
+
+	jeffpc_init(&init_ops);
+
+	ret = config_load((argc >= 2) ? argv[1] : NULL);
+	if (ret)
+		goto out;
+
+	ret = render_math_processor(mathfd);
+
+out:
+	return ret;
+}
+
+int main(int argc, char **argv)
+{
+	int mathfds[2];
+	pid_t pid;
+	int ret;
+
+	ASSERT0(putenv("TZ=UTC"));
+
+	cmn_err(CE_INFO, "blahgd version %s", version_string);
+	cmn_err(CE_INFO, "libjeffpc version %s", jeffpc_version);
+
+	ret = pipe(mathfds);
+	if (ret == -1) {
+		ret = -errno;
+		goto err;
+	}
+
+	switch ((pid = fork())) {
+		case -1:
+			/* error */
+			ret = -errno;
+			break;
+		case 0:
+			/* child */
+			ret = main_mathd(argc, argv, mathfds[0]);
+			break;
+		default:
+			/* parent */
+			ret = main_blahgd(argc, argv, mathfds[1]);
+			break;
+	}
+
+err:
+	if (ret)
+		DBG("Failed to initialize: %s", xstrerror(ret));
 
 	return ret;
 }

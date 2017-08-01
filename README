@@ -28,8 +28,6 @@ blahgd's behavior:
 	DEFAULT_DATA_DIR	- default path to the data directory
 	DEFAULT_WEB_DIR		- default path to the web directory
 
-	MATHD_DOOR_PATH		- path for the door used to talk to mathd
-
 	VAR_MAX_SCOPES		- maximum number of internal scopes
 	VAR_NAME_MAXLEN		- maximum length of a variable name
 
@@ -53,7 +51,6 @@ At present time, blahgd depends on a number of interfaces and features
 provided by illumos-based distros (e.g., OmniOS or OpenIndiana hipster).
 Specifically, blahgd requires:
 
-  - doors (for communicating with mathd)
   - libavl.so (for AVL trees)
   - libmd.so (for SHA1)
 
@@ -74,11 +71,7 @@ This will install the binaries under the specified prefix.
 Running
 =======
 
-First, you need to start the math daemon (mathd):
-
-$ ./mathd
-
-Once that is running, you can start the blahg daemon (blahgd) itself:
+You can start the blahg daemon (blahgd):
 
 $ ./blahgd
 
