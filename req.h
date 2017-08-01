@@ -59,7 +59,6 @@ struct req {
 	struct scgi *scgi;
 
 	/* request */
-	struct nvlist *request_qs;
 	struct qs args;
 
 	/* state */

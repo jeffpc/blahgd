@@ -27,7 +27,6 @@
 
 #include <jeffpc/atomic.h>
 #include <jeffpc/mem.h>
-#include <jeffpc/qstring.h>
 
 #include "req.h"
 #include "utils.h"
@@ -64,9 +63,6 @@ void req_init(struct req *req)
 	req->fmt = NULL;
 
 	/* request */
-	req->request_qs = nvl_alloc();
-	ASSERT(req->request_qs);
-
 	/* response */
 	/* (nothing) */
 }
@@ -150,7 +146,7 @@ static void log_request(struct req *req)
 		goto err_free;
 	nvl_set_int(tmp, "id", scgi->id);
 	nvl_set_nvl(tmp, "headers", nvl_getref(scgi->request.headers));
-	nvl_set_nvl(tmp, "query-string", nvl_getref(req->request_qs));
+	nvl_set_nvl(tmp, "query", nvl_getref(scgi->request.query));
 	nvl_set_str(tmp, "body", STR_DUP(scgi->request.body));
 	nvl_set_str(tmp, "fmt", STR_DUP(req->fmt));
 	nvl_set_int(tmp, "file-descriptor", scgi->fd);
@@ -223,8 +219,6 @@ void req_destroy(struct req *req)
 	log_request(req);
 
 	vars_destroy(&req->vars);
-
-	nvl_putref(req->request_qs);
 }
 
 void req_head(struct req *req, const char *name, const char *val)
@@ -268,7 +262,7 @@ static bool select_page(struct req *req)
 			return false;
 	}
 
-	nvl_for_each(cur, req->request_qs) {
+	nvl_for_each(cur, req->scgi->request.query) {
 		const char *name, *val;
 		const char **cptr;
 		int *iptr;
@@ -383,19 +377,6 @@ static bool switch_content_type(struct req *req)
 
 int req_dispatch(struct req *req)
 {
-	struct str *qs;
-
-	qs = nvl_lookup_str(req->scgi->request.headers, SCGI_QUERY_STRING);
-	if (IS_ERR(qs))
-		return R404(req, NULL); /* FIXME: this should be R400 */
-
-	if (qstring_parse(req->request_qs, str_cstr(qs))) {
-		str_putref(qs);
-		return R404(req, NULL); /* FIXME: this should be R400 */
-	}
-
-	str_putref(qs);
-
 	if (!select_page(req))
 		return R404(req, NULL);
 
