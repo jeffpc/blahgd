@@ -27,7 +27,6 @@
 
 /* settings */
 #cmakedefine DEFAULT_SCGI_PORT		${DEFAULT_SCGI_PORT}
-#cmakedefine DEFAULT_SCGI_THREADS	${DEFAULT_SCGI_THREADS}
 
 #cmakedefine DEFAULT_HTML_INDEX_STORIES	${DEFAULT_HTML_INDEX_STORIES}
 #cmakedefine DEFAULT_FEED_INDEX_STORIES	${DEFAULT_FEED_INDEX_STORIES}
@@ -87,7 +86,7 @@
 
 struct config {
 	uint16_t scgi_port;
-	uint64_t scgi_threads;
+	int scgi_threads;
 	uint64_t html_index_stories;
 	uint64_t feed_index_stories;
 	uint64_t comment_max_think;

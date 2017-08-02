@@ -96,12 +96,17 @@ static void config_load_scgi_port(struct val *lv)
 
 static void config_load_scgi_threads(struct val *lv)
 {
-	config_load_u64(lv, CONFIG_SCGI_THREADS, &config.scgi_threads,
-			DEFAULT_SCGI_THREADS);
+	uint64_t tmp;
 
-	/* we need at least one thread */
-	if (!config.scgi_threads)
-		config.scgi_threads = DEFAULT_SCGI_THREADS;
+	config_load_u64(lv, CONFIG_SCGI_THREADS, &tmp, 0);
+
+	/* zero threads means 1/CPU; the taskq code expects -1 for that */
+	if (!tmp)
+		config.scgi_threads = -1;
+	else if (tmp > INT_MAX)
+		config.scgi_threads = INT_MAX;
+	else
+		config.scgi_threads = tmp;
 }
 
 int config_load(const char *fname)
@@ -166,7 +171,7 @@ int config_load(const char *fname)
 	val_putref(lv);
 
 	DBG("config.scgi_port = %u", config.scgi_port);
-	DBG("config.scgi_threads = %"PRIu64, config.scgi_threads);
+	DBG("config.scgi_threads = %d", config.scgi_threads);
 	DBG("config.html_index_stories = %"PRIu64, config.html_index_stories);
 	DBG("config.feed_index_stories = %"PRIu64, config.feed_index_stories);
 	DBG("config.comment_max_think = %"PRIu64, config.comment_max_think);
