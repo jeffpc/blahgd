@@ -111,15 +111,10 @@ static int main_blahgd(int argc, char **argv, int mathfd)
 	if (ret)
 		goto err;
 
-	jeffpc_init(&init_ops);
 	init_math(mathfd);
 	init_pipe_subsys();
 	init_post_subsys();
 	init_file_cache();
-
-	ret = config_load((argc >= 2) ? argv[1] : NULL);
-	if (ret)
-		goto err;
 
 	ret = init_wordpress_categories();
 	if (ret)
@@ -146,20 +141,9 @@ err:
 /* the math helper worker */
 static int main_mathd(int argc, char **argv, int mathfd)
 {
-	int ret;
-
 	openlog("mathd", LOG_NDELAY | LOG_PID, LOG_LOCAL0);
 
-	jeffpc_init(&init_ops);
-
-	ret = config_load((argc >= 2) ? argv[1] : NULL);
-	if (ret)
-		goto out;
-
-	ret = render_math_processor(mathfd);
-
-out:
-	return ret;
+	return render_math_processor(mathfd);
 }
 
 int main(int argc, char **argv)
@@ -173,10 +157,16 @@ int main(int argc, char **argv)
 	cmn_err(CE_INFO, "blahgd version %s", version_string);
 	cmn_err(CE_INFO, "libjeffpc version %s", jeffpc_version);
 
+	jeffpc_init(&init_ops);
+
+	ret = config_load((argc >= 2) ? argv[1] : NULL);
+	if (ret)
+		goto out;
+
 	ret = pipe(mathfds);
 	if (ret == -1) {
 		ret = -errno;
-		goto err;
+		goto out;
 	}
 
 	switch ((pid = fork())) {
@@ -196,7 +186,7 @@ int main(int argc, char **argv)
 			break;
 	}
 
-err:
+out:
 	if (ret)
 		DBG("Failed to initialize: %s", xstrerror(ret));
 
