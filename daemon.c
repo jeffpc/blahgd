@@ -190,6 +190,8 @@ int main(int argc, char **argv)
 			break;
 		default:
 			/* parent */
+			cmn_err(CE_DEBUG, "math worker pid is %lu",
+				(unsigned long) pid);
 			ret = main_blahgd(argc, argv, mathfds[1]);
 			break;
 	}
