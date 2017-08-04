@@ -108,7 +108,8 @@ static struct str *special_char(struct str *val)
 		case '<': ret = STATIC_STR("&lt;"); break;
 		case '>': ret = STATIC_STR("&gt;"); break;
 		default:
-			return val;
+			panic("%s given an unexpected character '%c'",
+			      __func__, str_cstr(val)[0]);
 	}
 
 	str_putref(val);
@@ -144,7 +145,7 @@ static void special_cmd_list(struct parser_output *data, struct val **var,
 
 /* generic tokens */
 %token <ptr> WSPACE
-%token <ptr> DASH OQUOT CQUOT SCHAR
+%token <ptr> DASH OQUOT CQUOT SCHAR CHAR
 %token <ptr> UTF8FIRST3 UTF8FIRST2 UTF8REST WORD
 %token PERCENT ELLIPSIS
 %token PAREND
@@ -195,6 +196,7 @@ thing : WORD				{ $$ = $1; }
       | DASH				{ $$ = dash($1); }
       | OQUOT				{ $$ = oquote($1); }
       | CQUOT				{ $$ = cquote($1); }
+      | CHAR				{ $$ = $1; }
       | SCHAR				{ $$ = special_char($1); }
       | ELLIPSIS			{ $$ = STATIC_STR("&hellip;"); }
       | '~'				{ $$ = STATIC_STR("&nbsp;"); }
@@ -244,6 +246,7 @@ math : math mexpr			{ $$ = str_cat(2, $1, $2); }
 
 mexpr : WORD				{ $$ = $1; }
       | WSPACE				{ $$ = $1; }
+      | CHAR				{ $$ = $1; }
       | SCHAR				{ $$ = $1; }
       | mexpr EQLTGT mexpr 		{ $$ = str_cat(3, $1, $2, $3); }
       | mexpr '_' mexpr 		{ $$ = str_cat(3, $1, STATIC_STR("_"), $3); }
