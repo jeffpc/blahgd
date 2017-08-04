@@ -146,17 +146,11 @@ static void special_cmd_list(struct parser_output *data, struct val **var,
 %token <ptr> WSPACE
 %token <ptr> DASH OQUOT CQUOT SCHAR
 %token <ptr> UTF8FIRST3 UTF8FIRST2 UTF8REST WORD
-%token SLASH
-%token PIPE
-%token OCURLY CCURLY OBRACE CBRACE
-%token USCORE CARRET ASTERISK
-%token BSLASH PERCENT AMP TILDE ELLIPSIS
-%token PAREND NLINE
+%token PERCENT ELLIPSIS
+%token PAREND
 
 /* math specific tokens */
 %token <ptr> EQLTGT
-%token PLUS MINUS
-%token OPAREN CPAREN
 %token MATHSTART MATHEND
 
 /* verbose & listing environment */
@@ -169,11 +163,11 @@ static void special_cmd_list(struct parser_output *data, struct val **var,
 %type <ptr> paragraphs paragraph thing cmd cmdarg optcmdarg math mexpr
 %type <ptr> verb
 
-%left USCORE CARRET
-%left TILDE
+%left '_' '^'
+%left '~'
 %left EQLTGT
-%left PLUS MINUS
-%left ASTERISK SLASH
+%left '+' '-'
+%left '*' '/'
 
 %%
 
@@ -193,21 +187,21 @@ paragraph : paragraph thing		{ $$ = str_cat(2, $1, $2); }
 thing : WORD				{ $$ = $1; }
       | UTF8FIRST2 UTF8REST		{ $$ = str_cat(2, $1, $2); }
       | UTF8FIRST3 UTF8REST UTF8REST	{ $$ = str_cat(3, $1, $2, $3); }
-      | NLINE				{ $$ = data->texttt_nesting ? STATIC_STR("\n") : STATIC_STR(" "); }
+      | '\n'				{ $$ = data->texttt_nesting ? STATIC_STR("\n") : STATIC_STR(" "); }
       | WSPACE				{ $$ = $1; }
-      | PIPE				{ $$ = STATIC_STR("|"); }
-      | ASTERISK			{ $$ = STATIC_STR("*"); }
-      | SLASH				{ $$ = STATIC_STR("/"); }
+      | '|'				{ $$ = STATIC_STR("|"); }
+      | '*'				{ $$ = STATIC_STR("*"); }
+      | '/'				{ $$ = STATIC_STR("/"); }
       | DASH				{ $$ = dash($1); }
       | OQUOT				{ $$ = oquote($1); }
       | CQUOT				{ $$ = cquote($1); }
       | SCHAR				{ $$ = special_char($1); }
       | ELLIPSIS			{ $$ = STATIC_STR("&hellip;"); }
-      | TILDE				{ $$ = STATIC_STR("&nbsp;"); }
-      | AMP				{ $$ = STATIC_STR("</td><td>"); }
+      | '~'				{ $$ = STATIC_STR("&nbsp;"); }
+      | '&'				{ $$ = STATIC_STR("</td><td>"); }
       | DOLLAR				{ $$ = STATIC_STR("$"); }
       | PERCENT				{ $$ = STATIC_STR("%"); }
-      | BSLASH cmd			{ $$ = $2; }
+      | '\\' cmd			{ $$ = $2; }
       | MATHSTART math MATHEND		{ $$ = render_math($2); }
       | VERBSTART verb VERBEND		{ $$ = str_cat(3, STATIC_STR("</p><p>"), $2, STATIC_STR("</p><p>")); }
       | LISTSTART verb LISTEND		{ $$ = str_cat(3, STATIC_STR("</p><pre>"),
@@ -224,21 +218,21 @@ thing : WORD				{ $$ = $1; }
 cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd(data, $1, $3, $2); }
     | WORD cmdarg		{ $$ = process_cmd(data, $1, $2, NULL); }
     | WORD			{ $$ = process_cmd(data, $1, NULL, NULL); }
-    | BSLASH			{ $$ = STATIC_STR("<br/>"); }
-    | OCURLY			{ $$ = STATIC_STR("{"); }
-    | CCURLY			{ $$ = STATIC_STR("}"); }
-    | OBRACE			{ $$ = STATIC_STR("["); }
-    | CBRACE			{ $$ = STATIC_STR("]"); }
-    | AMP			{ $$ = STATIC_STR("&amp;"); }
-    | USCORE			{ $$ = STATIC_STR("_"); }
-    | CARRET			{ $$ = STATIC_STR("^"); }
-    | TILDE			{ $$ = STATIC_STR("~"); }
+    | '\\'			{ $$ = STATIC_STR("<br/>"); }
+    | '{'			{ $$ = STATIC_STR("{"); }
+    | '}'			{ $$ = STATIC_STR("}"); }
+    | '['			{ $$ = STATIC_STR("["); }
+    | ']'			{ $$ = STATIC_STR("]"); }
+    | '&'			{ $$ = STATIC_STR("&amp;"); }
+    | '_'			{ $$ = STATIC_STR("_"); }
+    | '^'			{ $$ = STATIC_STR("^"); }
+    | '~'			{ $$ = STATIC_STR("~"); }
     ;
 
-optcmdarg : OBRACE paragraph CBRACE	{ $$ = $2; }
+optcmdarg : '[' paragraph ']'	{ $$ = $2; }
           ;
 
-cmdarg : OCURLY paragraph CCURLY	{ $$ = $2; }
+cmdarg : '{' paragraph '}'	{ $$ = $2; }
        ;
 
 verb : verb VERBTEXT			{ $$ = str_cat(2, $1, $2); }
@@ -252,17 +246,17 @@ mexpr : WORD				{ $$ = $1; }
       | WSPACE				{ $$ = $1; }
       | SCHAR				{ $$ = $1; }
       | mexpr EQLTGT mexpr 		{ $$ = str_cat(3, $1, $2, $3); }
-      | mexpr USCORE mexpr 		{ $$ = str_cat(3, $1, STATIC_STR("_"), $3); }
-      | mexpr CARRET mexpr 		{ $$ = str_cat(3, $1, STATIC_STR("^"), $3); }
-      | mexpr PLUS mexpr 		{ $$ = str_cat(3, $1, STATIC_STR("+"), $3); }
-      | mexpr MINUS mexpr 		{ $$ = str_cat(3, $1, STATIC_STR("-"), $3); }
-      | mexpr ASTERISK mexpr	 	{ $$ = str_cat(3, $1, STATIC_STR("*"), $3); }
-      | mexpr SLASH mexpr	 	{ $$ = str_cat(3, $1, STATIC_STR("/"), $3); }
-      | mexpr TILDE mexpr		{ $$ = str_cat(3, $1, STATIC_STR("~"), $3); }
-      | BSLASH WORD			{ $$ = str_cat(2, STATIC_STR("\\"), $2); }
-      | BSLASH USCORE			{ $$ = STATIC_STR("\\_"); }
-      | OPAREN math CPAREN		{ $$ = str_cat(3, STATIC_STR("("), $2, STATIC_STR(")")); }
-      | OCURLY math CCURLY		{ $$ = str_cat(3, STATIC_STR("{"), $2, STATIC_STR("}")); }
+      | mexpr '_' mexpr 		{ $$ = str_cat(3, $1, STATIC_STR("_"), $3); }
+      | mexpr '^' mexpr 		{ $$ = str_cat(3, $1, STATIC_STR("^"), $3); }
+      | mexpr '+' mexpr 		{ $$ = str_cat(3, $1, STATIC_STR("+"), $3); }
+      | mexpr '-' mexpr 		{ $$ = str_cat(3, $1, STATIC_STR("-"), $3); }
+      | mexpr '*' mexpr		 	{ $$ = str_cat(3, $1, STATIC_STR("*"), $3); }
+      | mexpr '/' mexpr	 		{ $$ = str_cat(3, $1, STATIC_STR("/"), $3); }
+      | mexpr '~' mexpr			{ $$ = str_cat(3, $1, STATIC_STR("~"), $3); }
+      | '\\' WORD			{ $$ = str_cat(2, STATIC_STR("\\"), $2); }
+      | '\\' '_'			{ $$ = STATIC_STR("\\_"); }
+      | '(' math ')'			{ $$ = str_cat(3, STATIC_STR("("), $2, STATIC_STR(")")); }
+      | '{' math '}'			{ $$ = str_cat(3, STATIC_STR("{"), $2, STATIC_STR("}")); }
       ;
 
 %%
