@@ -101,12 +101,12 @@ static void inc_lineno(yyscan_t scanner);
 %[^\n]*			{ /* tex comment */ }
 [ \t]+			{ yylval->ptr = STR_DUP(yytext); return WSPACE; }
 "\\%"			{ return PERCENT; }
-[\\{}|~&^_[\]]		{ return *yytext; }
+[\\{}~&^_[\]]		{ return *yytext; }
 \.{3}			{ return ELLIPSIS; }
 -{1,3}			{ yylval->ptr = STR_DUP(yytext); return DASH; }
 `{1,2}			{ yylval->ptr = STR_DUP(yytext); return OQUOT; }
 '{1,2}			{ yylval->ptr = STR_DUP(yytext); return CQUOT; }
-[.,()/=!:;\+?@*#]	{ yylval->ptr = STR_DUP(yytext); return CHAR; }
+[.,()/=!:;\+?@*#|]	{ yylval->ptr = STR_DUP(yytext); return CHAR; }
 ["<>]			{ yylval->ptr = STR_DUP(yytext); return SCHAR; }
 [\xe0-\xef]		{ yylval->ptr = STR_DUP(yytext); return UTF8FIRST3; }
 [\xc0-\xdf]		{ yylval->ptr = STR_DUP(yytext); return UTF8FIRST2; }

@@ -190,7 +190,6 @@ thing : WORD				{ $$ = $1; }
       | UTF8FIRST3 UTF8REST UTF8REST	{ $$ = str_cat(3, $1, $2, $3); }
       | '\n'				{ $$ = data->texttt_nesting ? STATIC_STR("\n") : STATIC_STR(" "); }
       | WSPACE				{ $$ = $1; }
-      | '|'				{ $$ = STATIC_STR("|"); }
       | DASH				{ $$ = dash($1); }
       | OQUOT				{ $$ = oquote($1); }
       | CQUOT				{ $$ = cquote($1); }
