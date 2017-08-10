@@ -144,6 +144,7 @@ static char *print_val(struct val *val)
 			snprintf(buf, sizeof(buf), "%"PRIu64, val->i);
 			tmp = buf;
 			break;
+		case VT_NULL:
 		case VT_SYM:
 		case VT_CONS:
 		case VT_BOOL:

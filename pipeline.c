@@ -135,6 +135,9 @@ static struct val *__escape(struct val *val, char *(*cvt)(const char*))
 		case VT_STR:
 			out = cvt(str_cstr(val->str));
 			break;
+		case VT_NULL:
+			val_putref(val);
+			return VAL_DUP_CSTR("");
 		case VT_SYM:
 		case VT_CONS:
 		case VT_BOOL:
