@@ -92,11 +92,8 @@ static struct str *prep_meta_sexpr(struct str *author, struct str *email,
 				   struct str *curdate, struct str *ip,
 				   struct str *url)
 {
-	struct val *url_val;
 	struct val *lv;
 	struct str *str;
-
-	url_val = url ? VAL_ALLOC_STR(url) : NULL;
 
 	/*
 	 * We're looking for a list looking something like:
@@ -110,12 +107,12 @@ static struct str *prep_meta_sexpr(struct str *author, struct str *email,
 	 */
 
 	lv = sexpr_args_to_list(6,
-				VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("author"), VAL_ALLOC_STR(author)),
-				VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("email"), VAL_ALLOC_STR(email)),
-				VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("time"), VAL_ALLOC_STR(curdate)),
-				VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("ip"), VAL_ALLOC_STR(ip)),
-				VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("url"), url_val),
-				VAL_ALLOC_CONS(VAL_ALLOC_SYM_CSTR("moderated"), VAL_ALLOC_BOOL(false)));
+				VAL_ALLOC_CONS(str_cast_to_val(STATIC_STR("author")), str_cast_to_val(author)),
+				VAL_ALLOC_CONS(str_cast_to_val(STATIC_STR("email")), str_cast_to_val(email)),
+				VAL_ALLOC_CONS(str_cast_to_val(STATIC_STR("time")), str_cast_to_val(curdate)),
+				VAL_ALLOC_CONS(str_cast_to_val(STATIC_STR("ip")), str_cast_to_val(ip)),
+				VAL_ALLOC_CONS(str_cast_to_val(STATIC_STR("url")), str_cast_to_val(url)),
+				VAL_ALLOC_CONS(str_cast_to_val(STATIC_STR("moderated")), VAL_ALLOC_BOOL(false)));
 
 	str = sexpr_dump(lv, false);
 
@@ -207,7 +204,7 @@ static const char *write_out_comment(struct req *req, int id,
 		goto err;
 	}
 
-	ret = write_file(lisppath, meta->str, str_len(meta));
+	ret = write_file(lisppath, str_cstr(meta), str_len(meta));
 
 	str_putref(meta);
 

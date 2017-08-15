@@ -109,10 +109,7 @@ static void post_add_tags(avl_tree_t *taglist, struct val *list)
 		ASSERT3U(tagval->type, ==, VT_STR);
 
 		/* get the tag name */
-		tagname = str_getref(tagval->str);
-
-		/* release the tag value */
-		val_putref(tagval);
+		tagname = val_cast_to_str(tagval);
 
 		tag = malloc(sizeof(struct post_tag));
 		ASSERT(tag);

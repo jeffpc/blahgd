@@ -170,7 +170,7 @@ static int store_wordpress_category(struct val *cur)
 			goto out;
 	}
 
-	wordpress_cats[idx->i] = str_getref(name->str);
+	wordpress_cats[idx->i] = val_getref_str(name);
 
 	ret = 0;
 

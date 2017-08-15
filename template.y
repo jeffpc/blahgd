@@ -138,7 +138,7 @@ static char *print_val(struct val *val)
 
 	switch (val->type) {
 		case VT_STR:
-			tmp = str_cstr(val->str);
+			tmp = str_cstr(val_cast_to_str(val));
 			break;
 		case VT_INT:
 			snprintf(buf, sizeof(buf), "%"PRIu64, val->i);
@@ -202,7 +202,7 @@ static char *pipeline(struct parser_output *data, struct req *req,
 
 	switch (nvpair_type(var)) {
 		case NVT_STR:
-			val = VAL_ALLOC_STR(nvpair_value_str(var));
+			val = str_cast_to_val(nvpair_value_str(var));
 			break;
 		case NVT_INT:
 			val = VAL_ALLOC_INT(pair2int(var));

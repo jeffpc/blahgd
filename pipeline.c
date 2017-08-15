@@ -133,11 +133,11 @@ static struct val *__escape(struct val *val, char *(*cvt)(const char*))
 			out = str_of_int(val->i);
 			break;
 		case VT_STR:
-			out = cvt(str_cstr(val->str));
+			out = cvt(str_cstr(val_cast_to_str(val)));
 			break;
 		case VT_NULL:
 			val_putref(val);
-			return VAL_DUP_CSTR("");
+			return str_cast_to_val(str_empty_string());
 		case VT_SYM:
 		case VT_CONS:
 		case VT_BOOL:
@@ -150,7 +150,7 @@ static struct val *__escape(struct val *val, char *(*cvt)(const char*))
 
 	ASSERT(out);
 
-	return VAL_ALLOC_CSTR(out);
+	return VAL_ALLOC_STR(out);
 }
 
 static struct val *urlescape_fxn(struct val *val)
@@ -177,7 +177,7 @@ static struct val *__datetime(struct val *val, const char *fmt)
 
 	val_putref(val);
 
-	return VAL_DUP_CSTR(buf);
+	return VAL_DUP_STR(buf);
 }
 
 static struct val *time_fxn(struct val *val)

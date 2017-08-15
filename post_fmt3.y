@@ -128,13 +128,8 @@ static void special_cmd(struct parser_output *data, struct str **var,
 static void special_cmd_list(struct parser_output *data, struct val **var,
 			     struct str *value)
 {
-	struct val *new;
-
-	/* wrap the string in a value */
-	new = VAL_ALLOC_STR(value);
-
 	/* extend the list */
-	*var = VAL_ALLOC_CONS(new, *var);
+	*var = VAL_ALLOC_CONS(str_cast_to_val(value), *var);
 }
 
 %}
