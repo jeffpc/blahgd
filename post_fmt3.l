@@ -29,8 +29,6 @@
 %{
 #include <stdlib.h>
 
-#include <jeffpc/str.h>
-
 #include "parse.h"
 
 #include "post_fmt3.tab.h"

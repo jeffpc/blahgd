@@ -34,7 +34,6 @@
 #include <jeffpc/error.h>
 #include <jeffpc/atomic.h>
 #include <jeffpc/sexpr.h>
-#include <jeffpc/str.h>
 #include <jeffpc/io.h>
 #include <jeffpc/qstring.h>
 

@@ -34,7 +34,6 @@
 #include <sys/stat.h>
 
 #include <jeffpc/error.h>
-#include <jeffpc/str.h>
 #include <jeffpc/types.h>
 
 #include "config.h"

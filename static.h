@@ -23,7 +23,7 @@
 #ifndef __STATIC_H
 #define __STATIC_H
 
-#include <jeffpc/str.h>
+#include <jeffpc/val.h>
 
 #include "req.h"
 

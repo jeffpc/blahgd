@@ -24,7 +24,7 @@
 #include <stddef.h>
 #include <sys/sysmacros.h>
 
-#include <jeffpc/str.h>
+#include <jeffpc/val.h>
 #include <jeffpc/error.h>
 #include <jeffpc/mem.h>
 

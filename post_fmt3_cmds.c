@@ -22,7 +22,7 @@
 
 #include <stdbool.h>
 
-#include <jeffpc/str.h>
+#include <jeffpc/val.h>
 #include <jeffpc/types.h>
 
 #include "config.h"

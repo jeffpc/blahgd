@@ -24,7 +24,6 @@
 
 #include <jeffpc/jeffpc.h>
 #include <jeffpc/error.h>
-#include <jeffpc/str.h>
 #include <jeffpc/val.h>
 
 #include "parse.h"

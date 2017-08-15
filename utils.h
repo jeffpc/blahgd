@@ -30,7 +30,7 @@
 
 #include <jeffpc/error.h>
 #include <jeffpc/int.h>
-#include <jeffpc/str.h>
+#include <jeffpc/val.h>
 #include <jeffpc/io.h>
 #include <jeffpc/time.h>
 

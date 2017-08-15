@@ -25,7 +25,7 @@
 
 #include <stdbool.h>
 
-#include <jeffpc/str.h>
+#include <jeffpc/val.h>
 
 extern void init_math(int fd);
 extern int render_math_processor(int fd);

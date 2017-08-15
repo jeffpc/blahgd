@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-#include <jeffpc/str.h>
+#include <jeffpc/val.h>
 #include <jeffpc/list.h>
 
 #include "iter.h"

@@ -28,7 +28,6 @@
 #include <jeffpc/error.h>
 #include <jeffpc/atomic.h>
 #include <jeffpc/val.h>
-#include <jeffpc/str.h>
 #include <jeffpc/types.h>
 #include <jeffpc/scgisvc.h>
 

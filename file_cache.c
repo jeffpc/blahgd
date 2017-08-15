@@ -28,7 +28,7 @@
 #include <stdbool.h>
 #include <port.h>
 
-#include <jeffpc/str.h>
+#include <jeffpc/val.h>
 #include <jeffpc/synch.h>
 #include <jeffpc/thread.h>
 #include <jeffpc/refcnt.h>

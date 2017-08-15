@@ -22,7 +22,7 @@
 
 #include <sha1.h>
 
-#include <jeffpc/str.h>
+#include <jeffpc/val.h>
 #include <jeffpc/synch.h>
 #include <jeffpc/error.h>
 #include <jeffpc/atomic.h>

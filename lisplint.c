@@ -25,7 +25,6 @@
 #include <jeffpc/jeffpc.h>
 #include <jeffpc/error.h>
 #include <jeffpc/sexpr.h>
-#include <jeffpc/str.h>
 #include <jeffpc/val.h>
 
 #include "utils.h"
