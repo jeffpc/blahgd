@@ -346,7 +346,7 @@ static struct str *__process_nop(struct parser_output *data, struct str *txt,
 	str_putref(txt);
 	str_putref(opt);
 
-	return STATIC_STR("");
+	return str_empty_string();
 }
 
 typedef enum {

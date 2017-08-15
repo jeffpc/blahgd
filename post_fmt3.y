@@ -174,7 +174,7 @@ static void special_cmd_list(struct parser_output *data, struct val **var,
 
 post : paragraphs PAREND		{ data->stroutput = $1; }
      | paragraphs			{ data->stroutput = $1; }
-     | PAREND				{ data->stroutput = STATIC_STR(""); }
+     | PAREND				{ data->stroutput = str_empty_string(); }
      ;
 
 paragraphs : paragraphs PAREND paragraph	{ $$ = str_cat(4, $1, STATIC_STR("<p>"), $3, STATIC_STR("</p>\n")); }
