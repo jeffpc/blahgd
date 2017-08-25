@@ -138,6 +138,7 @@ static struct val *__escape(struct val *val, char *(*cvt)(const char*))
 		case VT_NULL:
 			val_putref(val);
 			return str_cast_to_val(str_empty_string());
+		case VT_BLOB:
 		case VT_SYM:
 		case VT_CONS:
 		case VT_BOOL:
