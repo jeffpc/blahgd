@@ -151,8 +151,10 @@ static int store_wordpress_category(struct val *cur)
 	if (!cur)
 		return 0; /* empty list is ok */
 
-	if (cur->type != VT_CONS)
+	if (cur->type != VT_CONS) {
+		val_putref(cur);
 		return -EINVAL;
+	}
 
 	idx = sexpr_car(val_getref(cur));
 	name = sexpr_cdr(cur);
