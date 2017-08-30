@@ -27,6 +27,7 @@
 #include <stdarg.h>
 
 /* session info */
+static __thread char session_str[64];
 static __thread uint32_t session_id;
 
 static void mylog(int level, const char *fmt, va_list ap)
@@ -46,6 +47,17 @@ void set_session(uint32_t id)
 	session_id = id;
 }
 
+static const char *get_session(void)
+{
+	if (!session_id)
+		return "";
+
+	snprintf(session_str, sizeof(session_str), " {%u}", session_id);
+
+	return session_str;
+}
+
 struct jeffpc_ops init_ops = {
 	.log = mylog,
+	.get_session = get_session,
 };
