@@ -28,6 +28,8 @@
 
 #define DBG(...)	cmn_err(CE_DEBUG, __VA_ARGS__)
 
+extern void set_session(uint32_t id);
+
 extern struct jeffpc_ops init_ops;
 
 #endif

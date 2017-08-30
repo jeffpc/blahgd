@@ -48,6 +48,8 @@ static void __vars_set_social(struct vars *vars)
 
 void req_init(struct req *req, struct scgi *scgi)
 {
+	set_session(scgi->id);
+
 	memset(req, 0, sizeof(struct req));
 
 	req->scgi = scgi;
@@ -221,6 +223,8 @@ void req_destroy(struct req *req)
 	log_request(req);
 
 	vars_destroy(&req->vars);
+
+	set_session(0);
 }
 
 void req_head(struct req *req, const char *name, const char *val)

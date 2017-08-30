@@ -26,6 +26,9 @@
 #include <syslog.h>
 #include <stdarg.h>
 
+/* session info */
+static __thread uint32_t session_id;
+
 static void mylog(int level, const char *fmt, va_list ap)
 {
 	char msg[512];
@@ -36,6 +39,11 @@ static void mylog(int level, const char *fmt, va_list ap)
 	vsnprintf(msg, sizeof(msg), fmt, ap);
 
 	syslog(LOG_LOCAL0 | level, "%s", msg);
+}
+
+void set_session(uint32_t id)
+{
+	session_id = id;
 }
 
 struct jeffpc_ops init_ops = {
