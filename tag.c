@@ -188,7 +188,7 @@ int init_wordpress_categories(void)
 
 	wordpress_cats = array_alloc(sizeof(struct str *), 0);
 
-	sexpr_for_each(cur, tmp, config.wordpress_categories) {
+	sexpr_for_each_noref(cur, tmp, config.wordpress_categories) {
 		ret = store_wordpress_category(val_getref(cur));
 		if (ret)
 			break;
