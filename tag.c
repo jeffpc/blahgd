@@ -148,9 +148,6 @@ static int store_wordpress_category(struct val *cur)
 	struct val *idx, *name;
 	int ret;
 
-	if (!cur)
-		return 0; /* empty list is ok */
-
 	if (cur->type != VT_CONS) {
 		val_putref(cur);
 		return -EINVAL;
