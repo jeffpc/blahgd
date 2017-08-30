@@ -46,9 +46,11 @@ static void __vars_set_social(struct vars *vars)
 			     str_getref(config.twitter_description));
 }
 
-void req_init(struct req *req)
+void req_init(struct req *req, struct scgi *scgi)
 {
 	memset(req, 0, sizeof(struct req));
+
+	req->scgi = scgi;
 
 	/* state */
 	vars_init(&req->vars);

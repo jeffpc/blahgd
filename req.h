@@ -71,7 +71,7 @@ struct req {
 	} opts;
 };
 
-extern void req_init(struct req *req);
+extern void req_init(struct req *req, struct scgi *scgi);
 extern void req_destroy(struct req *req);
 extern void req_output(struct req *req);
 extern void req_head(struct req *req, const char *name, const char *val);

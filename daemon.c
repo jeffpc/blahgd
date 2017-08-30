@@ -44,9 +44,7 @@ static void process_request(struct scgi *scgi, void *private)
 {
 	struct req req;
 
-	req_init(&req);
-
-	req.scgi = scgi;
+	req_init(&req, scgi);
 
 	req_dispatch(&req);
 
