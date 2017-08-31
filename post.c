@@ -93,23 +93,18 @@ void revalidate_post(void *arg)
 
 static void post_add_tags(avl_tree_t *taglist, struct val *list)
 {
-	struct post_tag *tag;
+	struct val *tagval;
+	struct val *tmp;
 
-	/* tags list not present in metadata */
-	if (!list)
-		return;
-
-	for (; list; list = sexpr_cdr(list)) {
-		struct val *tagval;
+	sexpr_for_each(tagval, tmp, list) {
+		struct post_tag *tag;
 		struct str *tagname;
-
-		tagval = sexpr_car(val_getref(list));
 
 		/* sanity check */
 		ASSERT3U(tagval->type, ==, VT_STR);
 
 		/* get the tag name */
-		tagname = val_cast_to_str(tagval);
+		tagname = val_getref_str(tagval);
 
 		tag = malloc(sizeof(struct post_tag));
 		ASSERT(tag);
@@ -210,22 +205,15 @@ done:
 
 static void post_add_comments(struct post *post, struct val *list)
 {
-	if (!list)
-		return;
+	struct val *val;
+	struct val *tmp;
 
-	for (; list; list = sexpr_cdr(list)) {
-		struct val *val;
-
-		val = sexpr_car(val_getref(list));
-
+	sexpr_for_each(val, tmp, list) {
 		/* sanity check */
 		ASSERT3U(val->type, ==, VT_INT);
 
 		/* add the comment */
 		post_add_comment(post, val->i);
-
-		/* release the value */
-		val_putref(val);
 	}
 }
 
