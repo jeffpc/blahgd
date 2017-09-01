@@ -40,7 +40,7 @@
 #include "version.h"
 #include "debug.h"
 
-static void process_request(struct scgi *scgi, void *private)
+static void process_request(struct scgi *scgi)
 {
 	struct req req;
 
