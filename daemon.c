@@ -101,6 +101,9 @@ err_free:
 /* the main daemon process */
 static int main_blahgd(int argc, char **argv, int mathfd)
 {
+	static const struct scgiops ops = {
+		.process = process_request,
+	};
 	int ret;
 
 	/* drop unneeded privs */
@@ -122,7 +125,7 @@ static int main_blahgd(int argc, char **argv, int mathfd)
 		goto err;
 
 	ret = scgisvc(NULL, config.scgi_port, config.scgi_threads,
-		      process_request, NULL);
+		      &ops, NULL);
 	if (ret)
 		goto err;
 
