@@ -40,16 +40,31 @@
 #include "version.h"
 #include "debug.h"
 
+static int init_request(struct scgi *scgi, void *private)
+{
+	struct req *req;
+
+	req = malloc(sizeof(struct req));
+	if (!req)
+		return -ENOMEM;
+
+	req_init(req, scgi);
+
+	scgi->private = req;
+
+	return 0;
+}
+
+static void deinit_request(struct scgi *scgi)
+{
+	req_destroy(scgi->private);
+	free(scgi->private);
+}
+
 static void process_request(struct scgi *scgi)
 {
-	struct req req;
-
-	req_init(&req, scgi);
-
-	req_dispatch(&req);
-
-	req_output(&req);
-	req_destroy(&req);
+	req_dispatch(scgi->private);
+	req_output(scgi->private);
 }
 
 static int drop_privs()
@@ -102,7 +117,9 @@ err_free:
 static int main_blahgd(int argc, char **argv, int mathfd)
 {
 	static const struct scgiops ops = {
+		.init = init_request,
 		.process = process_request,
+		.deinit = deinit_request,
 	};
 	int ret;
 
