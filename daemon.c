@@ -171,10 +171,10 @@ int main(int argc, char **argv)
 
 	ASSERT0(putenv("TZ=UTC"));
 
+	jeffpc_init(&init_ops);
+
 	cmn_err(CE_INFO, "blahgd version %s", version_string);
 	cmn_err(CE_INFO, "libjeffpc version %s", jeffpc_version);
-
-	jeffpc_init(&init_ops);
 
 	ret = config_load((argc >= 2) ? argv[1] : NULL);
 	if (ret)
