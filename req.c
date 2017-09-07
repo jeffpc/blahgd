@@ -237,6 +237,7 @@ void req_head(struct req *req, const char *name, const char *val)
 
 static bool select_page(struct req *req)
 {
+	struct nvlist *query = req->scgi->request.query;
 	struct qs *args = &req->args;
 	const struct nvpair *cur;
 	struct str *uri;
@@ -268,7 +269,7 @@ static bool select_page(struct req *req)
 			return false;
 	}
 
-	nvl_for_each(cur, req->scgi->request.query) {
+	nvl_for_each(cur, query) {
 		const char *name, *val;
 		const char **cptr;
 		int *iptr;
