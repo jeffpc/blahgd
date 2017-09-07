@@ -446,7 +446,7 @@ static const char *save_comment(struct req *req)
 		goto err;
 	}
 
-	ret = nvl_convert(qs, comment_convert);
+	ret = nvl_convert(qs, comment_convert, false);
 	if (ret) {
 		DBG("Failed to convert nvlist types: %s", xstrerror(ret));
 		goto err;
