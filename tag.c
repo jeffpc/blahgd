@@ -47,19 +47,20 @@
  */
 static struct str **wordpress_cats;
 
-static void __store_title(struct vars *vars, const char *title)
+static void __store_title(struct vars *vars, struct str *title)
 {
 	char twittertitle[1024];
 
-	snprintf(twittertitle, sizeof(twittertitle), "%s » %s", "Blahg", title);
+	snprintf(twittertitle, sizeof(twittertitle), "%s » %s", "Blahg",
+		 str_cstr(title));
 
-	vars_set_str(vars, "title", STR_DUP(title));
+	vars_set_str(vars, "title", title);
 	vars_set_str(vars, "twittertitle", STR_DUP(twittertitle));
 }
 
-static void __store_tag(struct vars *vars, const char *tag)
+static void __store_tag(struct vars *vars, struct str *tag)
 {
-	vars_set_str(vars, "tagid", STR_DUP(tag));
+	vars_set_str(vars, "tagid", tag);
 }
 
 static void __store_pages(struct vars *vars, int page)
@@ -69,24 +70,21 @@ static void __store_pages(struct vars *vars, int page)
 	vars_set_int(vars, "nextpage", page - 1);
 }
 
-int __tagcat(struct req *req, const char *tagcat, int page, char *tmpl,
+int __tagcat(struct req *req, struct str *tag, int page, char *tmpl,
 	     bool istag)
 {
 	const unsigned int posts_per_page = req->opts.index_stories;
 	struct post *posts[posts_per_page];
-	struct str *tag;
 	int nposts;
 
-	if (!tagcat)
+	if (IS_ERR(tag))
 		return R404(req, NULL);
-
-	tag = STR_DUP(tagcat);
 
 	req_head(req, "Content-Type", "text/html");
 
-	__store_title(&req->vars, tagcat);
+	__store_title(&req->vars, str_getref(tag));
 	__store_pages(&req->vars, page);
-	__store_tag(&req->vars, tagcat);
+	__store_tag(&req->vars, str_getref(tag));
 
 	sidebar(req);
 
@@ -104,21 +102,27 @@ int __tagcat(struct req *req, const char *tagcat, int page, char *tmpl,
 	return 0;
 }
 
-int blahg_tag(struct req *req, const char *tag, int page)
+int blahg_tag(struct req *req, int page)
 {
-	return __tagcat(req, tag, page, "{tagindex}", true);
+	return __tagcat(req, nvl_lookup_str(req->scgi->request.query, "tag"),
+			page, "{tagindex}", true);
 }
 
-int blahg_category(struct req *req, const char *cat, int page)
+int blahg_category(struct req *req, int page)
 {
+	struct str *cat;
 	uint32_t catn;
+
+	cat = nvl_lookup_str(req->scgi->request.query, "cat");
+	if (IS_ERR(cat))
+		goto out;
 
 	/*
 	 * If we fail to parse the category number or it refers to a
 	 * non-mapped category, we just use it as is.
 	 */
 
-	if (wordpress_cats && !str2u32(cat, &catn)) {
+	if (wordpress_cats && !str2u32(str_cstr(cat), &catn)) {
 		char url[256];
 
 		if (catn >= array_size(wordpress_cats))
@@ -126,6 +130,8 @@ int blahg_category(struct req *req, const char *cat, int page)
 
 		if (!wordpress_cats[catn])
 			goto out;
+
+		str_putref(cat);
 
 		snprintf(url, sizeof(url), "%s/?cat=%s",
 			 str_cstr(config.base_url),

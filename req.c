@@ -249,12 +249,9 @@ static bool select_page(struct req *req)
 {
 	struct nvlist *query = req->scgi->request.query;
 	struct qs *args = &req->args;
-	const struct nvpair *cur;
 	struct str *uri;
 
 	args->page = PAGE_INDEX;
-	args->cat = NULL;
-	args->tag = NULL;
 
 	uri = nvl_lookup_str(req->scgi->request.headers, SCGI_DOCUMENT_URI);
 	ASSERT(!IS_ERR(uri));
@@ -272,48 +269,13 @@ static bool select_page(struct req *req)
 			return false;
 	}
 
-	nvl_for_each(cur, query) {
-		const char *name, *val;
-		const char **cptr;
-
-		cptr = NULL;
-
-		name = nvpair_name(cur);
-		val = pair2str(cur);
-
-		if (!strcmp(name, "p")) {
-			continue;
-		} else if (!strcmp(name, "paged")) {
-			continue;
-		} else if (!strcmp(name, "m")) {
-			continue;
-		} else if (!strcmp(name, "cat")) {
-			cptr = &args->cat;
-		} else if (!strcmp(name, "tag")) {
-			cptr = &args->tag;
-		} else if (!strcmp(name, "feed")) {
-			continue;
-		} else if (!strcmp(name, "comment")) {
-			continue;
-		} else if (!strcmp(name, "preview")) {
-			continue;
-		} else if (!strcmp(name, "admin")) {
-			continue;
-		} else {
-			return false;
-		}
-
-		if (cptr)
-			*cptr = val;
-	}
-
 	(void) nvl_convert(query, info, true);
 
 	if (nvl_exists(query, "comment"))
 		args->page = PAGE_COMMENT;
-	else if (args->tag)
+	else if (nvl_exists(query, "tag"))
 		args->page = PAGE_TAG;
-	else if (args->cat)
+	else if (nvl_exists(query, "cat"))
 		args->page = PAGE_CATEGORY;
 	else if (nvl_exists(query, "m"))
 		args->page = PAGE_ARCHIVE;
@@ -430,11 +392,9 @@ int req_dispatch(struct req *req)
 		case PAGE_ARCHIVE:
 			return blahg_archive(req, get_page_number(req));
 		case PAGE_CATEGORY:
-			return blahg_category(req, req->args.cat,
-					      get_page_number(req));
+			return blahg_category(req, get_page_number(req));
 		case PAGE_TAG:
-			return blahg_tag(req, req->args.tag,
-					 get_page_number(req));
+			return blahg_tag(req, get_page_number(req));
 		case PAGE_COMMENT:
 			return blahg_comment(req);
 		case PAGE_INDEX:
