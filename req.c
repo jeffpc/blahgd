@@ -152,7 +152,7 @@ static void log_request(struct req *req)
 	nvl_set_nvl(tmp, "headers", nvl_getref(scgi->request.headers));
 	nvl_set_nvl(tmp, "query", nvl_getref(scgi->request.query));
 	nvl_set_str(tmp, "body", STR_DUP(scgi->request.body));
-	nvl_set_str(tmp, "fmt", STR_DUP(req->fmt));
+	nvl_set_str(tmp, "fmt", str_getref(req->fmt));
 	nvl_set_int(tmp, "file-descriptor", scgi->fd);
 	nvl_set_int(tmp, "thread-id", (uint64_t) pthread_self());
 	nvl_set_nvl(logentry, "request", tmp);
@@ -222,6 +222,8 @@ void req_destroy(struct req *req)
 {
 	log_request(req);
 
+	str_putref(req->fmt);
+
 	vars_destroy(&req->vars);
 
 	set_session(0);
@@ -253,7 +255,6 @@ static bool select_page(struct req *req)
 	args->page = PAGE_INDEX;
 	args->cat = NULL;
 	args->tag = NULL;
-	args->feed = NULL;
 
 	uri = nvl_lookup_str(req->scgi->request.headers, SCGI_DOCUMENT_URI);
 	ASSERT(!IS_ERR(uri));
@@ -291,7 +292,7 @@ static bool select_page(struct req *req)
 		} else if (!strcmp(name, "tag")) {
 			cptr = &args->tag;
 		} else if (!strcmp(name, "feed")) {
-			cptr = &args->feed;
+			continue;
 		} else if (!strcmp(name, "comment")) {
 			continue;
 		} else if (!strcmp(name, "preview")) {
@@ -336,25 +337,34 @@ static bool select_page(struct req *req)
  */
 static bool switch_content_type(struct req *req)
 {
-	const char *fmt = req->args.feed;
+	struct str *fmt;
 	int page = req->args.page;
 
 	const char *content_type;
 	int index_stories;
 
+	fmt = nvl_lookup_str(req->scgi->request.query, "feed");
+	if (IS_ERR(fmt)) {
+		if (PTR_ERR(fmt) != -ENOENT)
+			return false; /* internal error */
+
+		fmt = NULL;
+	}
+
 	if (!fmt) {
 		/* no feed => OK, use html */
-		fmt = "html";
+		fmt = STATIC_STR("html");
 		content_type = "text/html";
 		index_stories = config.html_index_stories;
-	} else if (!strcmp(fmt, "atom")) {
+	} else if (!strcmp(str_cstr(fmt), "atom")) {
 		content_type = "application/atom+xml";
 		index_stories = config.feed_index_stories;
-	} else if (!strcmp(fmt, "rss2")) {
+	} else if (!strcmp(str_cstr(fmt), "rss2")) {
 		content_type = "application/rss+xml";
 		index_stories = config.feed_index_stories;
 	} else {
 		/* unsupported feed type */
+		str_putref(fmt);
 		return false;
 	}
 
@@ -365,13 +375,15 @@ static bool switch_content_type(struct req *req)
 
 		/* for everything else, we have only HTML */
 		default:
-			if (strcmp(fmt, "html"))
+			if (strcmp(str_cstr(fmt), "html")) {
+				str_putref(fmt);
 				return false;
+			}
 			break;
 	}
 
 	/* let the template engine know */
-	req->fmt = fmt;
+	req->fmt = fmt; /* pass along the reference gotten from lookup */
 
 	/* let the client know */
 	req_head(req, "Content-Type", content_type);
@@ -444,7 +456,7 @@ int R404(struct req *req, char *tmpl)
 	req_head(req, "Content-Type", "text/html");
 
 	req->scgi->response.status = SCGI_STATUS_NOTFOUND;
-	req->fmt = "html";
+	req->fmt = STATIC_STR("html");
 
 	vars_scope_push(&req->vars);
 
@@ -463,7 +475,7 @@ int R301(struct req *req, const char *url)
 	req_head(req, "Location", url);
 
 	req->scgi->response.status = SCGI_STATUS_REDIRECT;
-	req->fmt = "html";
+	req->fmt = STATIC_STR("html");
 
 	vars_scope_push(&req->vars);
 

@@ -46,7 +46,6 @@ struct qs {
 
 	const char *cat;
 	const char *tag;
-	const char *feed;
 };
 
 struct req {
@@ -58,7 +57,7 @@ struct req {
 	/* state */
 	struct vars vars;
 
-	const char *fmt;	/* format (e.g., "html") */
+	struct str *fmt;	/* format (e.g., "html") */
 
 	struct {
 		int index_stories;
