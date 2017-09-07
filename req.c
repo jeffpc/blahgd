@@ -235,6 +235,14 @@ void req_head(struct req *req, const char *name, const char *val)
 	ASSERT0(ret);
 }
 
+static const struct nvl_convert_info info[] = {
+	{ .name = "p",       .tgt_type = NVT_INT, },
+	{ .name = "paged",   .tgt_type = NVT_INT, },
+	{ .name = "m",       .tgt_type = NVT_INT, },
+	{ .name = "preview", .tgt_type = NVT_INT, },
+	{ .name = NULL, },
+};
+
 static bool select_page(struct req *req)
 {
 	struct nvlist *query = req->scgi->request.query;
@@ -307,6 +315,8 @@ static bool select_page(struct req *req)
 		else if (cptr)
 			*cptr = val;
 	}
+
+	(void) nvl_convert(query, info, true);
 
 	if (args->comment)
 		args->page = PAGE_COMMENT;
