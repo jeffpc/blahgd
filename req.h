@@ -45,7 +45,6 @@ struct qs {
 	int page;
 
 	int p;
-	int paged;
 	int m;
 	int preview;
 	int admin;

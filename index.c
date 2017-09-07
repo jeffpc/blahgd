@@ -121,8 +121,6 @@ static void __store_archid(struct vars *vars, int archid)
 
 int blahg_index(struct req *req, int page)
 {
-	page = max(page, 0);
-
 	__store_title(&req->vars, "Blahg", false);
 	__store_pages(&req->vars, page);
 
@@ -161,8 +159,6 @@ int blahg_archive(struct req *req, int m, int page)
 		 months[(m % 100) - 1]);
 
 	req_head(req, "Content-Type", "text/html");
-
-	page = max(page, 0);
 
 	__store_title(&req->vars, nicetitle, true);
 	__store_pages(&req->vars, page);

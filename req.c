@@ -252,7 +252,6 @@ static bool select_page(struct req *req)
 
 	args->page = PAGE_INDEX;
 	args->p = -1;
-	args->paged = -1;
 	args->m = -1;
 	args->admin = 0;
 	args->comment = 0;
@@ -291,7 +290,7 @@ static bool select_page(struct req *req)
 		if (!strcmp(name, "p")) {
 			iptr = &args->p;
 		} else if (!strcmp(name, "paged")) {
-			iptr = &args->paged;
+			continue;
 		} else if (!strcmp(name, "m")) {
 			iptr = &args->m;
 		} else if (!strcmp(name, "cat")) {
@@ -392,6 +391,25 @@ static bool switch_content_type(struct req *req)
 	return true;
 }
 
+/*
+ * Get the request page number.
+ *
+ * If we got a reasonable looking page number, let's use it.  Otherwise, we
+ * use the first page - page 0.
+ */
+static int get_page_number(struct req *req)
+{
+	uint64_t tmp;
+
+	if (nvl_lookup_int(req->scgi->request.query, "paged", &tmp))
+		return 0;
+
+	if (tmp > INT_MAX)
+		return 0;
+
+	return tmp;
+}
+
 int req_dispatch(struct req *req)
 {
 	if (!select_page(req))
@@ -408,17 +426,17 @@ int req_dispatch(struct req *req)
 			return blahg_static(req);
 		case PAGE_ARCHIVE:
 			return blahg_archive(req, req->args.m,
-					     req->args.paged);
+					     get_page_number(req));
 		case PAGE_CATEGORY:
 			return blahg_category(req, req->args.cat,
-					      req->args.paged);
+					      get_page_number(req));
 		case PAGE_TAG:
 			return blahg_tag(req, req->args.tag,
-					 req->args.paged);
+					 get_page_number(req));
 		case PAGE_COMMENT:
 			return blahg_comment(req);
 		case PAGE_INDEX:
-			return blahg_index(req, req->args.paged);
+			return blahg_index(req, get_page_number(req));
 		case PAGE_STORY:
 			return blahg_story(req, req->args.p,
 					   req->args.preview == PREVIEW_SECRET);

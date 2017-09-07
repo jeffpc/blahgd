@@ -84,8 +84,6 @@ int __tagcat(struct req *req, const char *tagcat, int page, char *tmpl,
 
 	req_head(req, "Content-Type", "text/html");
 
-	page = MAX(page, 0);
-
 	__store_title(&req->vars, tagcat);
 	__store_pages(&req->vars, page);
 	__store_tag(&req->vars, tagcat);
