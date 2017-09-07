@@ -258,7 +258,6 @@ static bool select_page(struct req *req)
 	args->cat = NULL;
 	args->tag = NULL;
 	args->feed = NULL;
-	args->preview = 0;
 
 	uri = nvl_lookup_str(req->scgi->request.headers, SCGI_DOCUMENT_URI);
 	ASSERT(!IS_ERR(uri));
@@ -302,7 +301,7 @@ static bool select_page(struct req *req)
 		} else if (!strcmp(name, "comment")) {
 			iptr = &args->comment;
 		} else if (!strcmp(name, "preview")) {
-			iptr = &args->preview;
+			continue;
 		} else if (!strcmp(name, "admin")) {
 			iptr = &args->admin;
 		} else {
@@ -438,8 +437,7 @@ int req_dispatch(struct req *req)
 		case PAGE_INDEX:
 			return blahg_index(req, get_page_number(req));
 		case PAGE_STORY:
-			return blahg_story(req, req->args.p,
-					   req->args.preview == PREVIEW_SECRET);
+			return blahg_story(req, req->args.p);
 		case PAGE_ADMIN:
 			return blahg_admin(req);
 		default:

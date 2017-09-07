@@ -61,7 +61,20 @@ static int __load_post(struct req *req, int p, bool preview)
 	return 0;
 }
 
-int blahg_story(struct req *req, int p, bool preview)
+/*
+ * Is the request a preview?
+ */
+static bool is_preview(struct req *req)
+{
+	uint64_t tmp;
+
+	if (nvl_lookup_int(req->scgi->request.query, "preview", &tmp))
+		return false;
+
+	return tmp == PREVIEW_SECRET;
+}
+
+int blahg_story(struct req *req, int p)
 {
 	if (p == -1) {
 		DBG("Invalid post #");
@@ -72,7 +85,7 @@ int blahg_story(struct req *req, int p, bool preview)
 
 	vars_scope_push(&req->vars);
 
-	if (__load_post(req, p, preview))
+	if (__load_post(req, p, is_preview(req)))
 		return R404(req, NULL);
 
 	req->scgi->response.body = render_page(req, "{storyview}");
