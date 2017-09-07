@@ -74,18 +74,20 @@ static bool is_preview(struct req *req)
 	return tmp == PREVIEW_SECRET;
 }
 
-int blahg_story(struct req *req, int p)
+int blahg_story(struct req *req)
 {
-	if (p == -1) {
-		DBG("Invalid post #");
-		return 0;
-	}
+	uint64_t postid;
+
+	if (nvl_lookup_int(req->scgi->request.query, "p", &postid))
+		return R404(req, NULL);
+	if (postid > INT_MAX)
+		return R404(req, NULL);
 
 	sidebar(req);
 
 	vars_scope_push(&req->vars);
 
-	if (__load_post(req, p, is_preview(req)))
+	if (__load_post(req, postid, is_preview(req)))
 		return R404(req, NULL);
 
 	req->scgi->response.body = render_page(req, "{storyview}");

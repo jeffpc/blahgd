@@ -44,7 +44,6 @@ enum {
 struct qs {
 	int page;
 
-	int p;
 	int m;
 	int admin;
 	int comment;
@@ -83,7 +82,7 @@ extern int blahg_category(struct req *req, const char *cat, int page);
 extern int blahg_tag(struct req *req, const char *tag, int paged);
 extern int blahg_comment(struct req *req);
 extern int blahg_index(struct req *req, int paged);
-extern int blahg_story(struct req *req, int p);
+extern int blahg_story(struct req *req);
 extern int blahg_admin(struct req *req);
 
 extern int init_wordpress_categories(void);

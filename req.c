@@ -251,7 +251,6 @@ static bool select_page(struct req *req)
 	struct str *uri;
 
 	args->page = PAGE_INDEX;
-	args->p = -1;
 	args->m = -1;
 	args->admin = 0;
 	args->comment = 0;
@@ -287,7 +286,7 @@ static bool select_page(struct req *req)
 		val = pair2str(cur);
 
 		if (!strcmp(name, "p")) {
-			iptr = &args->p;
+			continue;
 		} else if (!strcmp(name, "paged")) {
 			continue;
 		} else if (!strcmp(name, "m")) {
@@ -324,7 +323,7 @@ static bool select_page(struct req *req)
 		args->page = PAGE_CATEGORY;
 	else if (args->m != -1)
 		args->page = PAGE_ARCHIVE;
-	else if (args->p != -1)
+	else if (nvl_exists(query, "p"))
 		args->page = PAGE_STORY;
 	else if (args->admin)
 		args->page = PAGE_ADMIN;
@@ -437,7 +436,7 @@ int req_dispatch(struct req *req)
 		case PAGE_INDEX:
 			return blahg_index(req, get_page_number(req));
 		case PAGE_STORY:
-			return blahg_story(req, req->args.p);
+			return blahg_story(req);
 		case PAGE_ADMIN:
 			return blahg_admin(req);
 		default:
