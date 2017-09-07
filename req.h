@@ -44,7 +44,6 @@ enum {
 struct qs {
 	int page;
 
-	int admin;
 	const char *cat;
 	const char *tag;
 	const char *feed;

@@ -251,7 +251,6 @@ static bool select_page(struct req *req)
 	struct str *uri;
 
 	args->page = PAGE_INDEX;
-	args->admin = 0;
 	args->cat = NULL;
 	args->tag = NULL;
 	args->feed = NULL;
@@ -275,9 +274,7 @@ static bool select_page(struct req *req)
 	nvl_for_each(cur, query) {
 		const char *name, *val;
 		const char **cptr;
-		int *iptr;
 
-		iptr = NULL;
 		cptr = NULL;
 
 		name = nvpair_name(cur);
@@ -300,14 +297,12 @@ static bool select_page(struct req *req)
 		} else if (!strcmp(name, "preview")) {
 			continue;
 		} else if (!strcmp(name, "admin")) {
-			iptr = &args->admin;
+			continue;
 		} else {
 			return false;
 		}
 
-		if (iptr)
-			*iptr = atoi(val);
-		else if (cptr)
+		if (cptr)
 			*cptr = val;
 	}
 
@@ -323,7 +318,7 @@ static bool select_page(struct req *req)
 		args->page = PAGE_ARCHIVE;
 	else if (nvl_exists(query, "p"))
 		args->page = PAGE_STORY;
-	else if (args->admin)
+	else if (nvl_exists(query, "admin"))
 		args->page = PAGE_ADMIN;
 
 	return true;
