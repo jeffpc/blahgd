@@ -252,7 +252,6 @@ static bool select_page(struct req *req)
 
 	args->page = PAGE_INDEX;
 	args->admin = 0;
-	args->comment = 0;
 	args->cat = NULL;
 	args->tag = NULL;
 	args->feed = NULL;
@@ -297,7 +296,7 @@ static bool select_page(struct req *req)
 		} else if (!strcmp(name, "feed")) {
 			cptr = &args->feed;
 		} else if (!strcmp(name, "comment")) {
-			iptr = &args->comment;
+			continue;
 		} else if (!strcmp(name, "preview")) {
 			continue;
 		} else if (!strcmp(name, "admin")) {
@@ -314,7 +313,7 @@ static bool select_page(struct req *req)
 
 	(void) nvl_convert(query, info, true);
 
-	if (args->comment)
+	if (nvl_exists(query, "comment"))
 		args->page = PAGE_COMMENT;
 	else if (args->tag)
 		args->page = PAGE_TAG;

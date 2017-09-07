@@ -45,7 +45,6 @@ struct qs {
 	int page;
 
 	int admin;
-	int comment;
 	const char *cat;
 	const char *tag;
 	const char *feed;
