@@ -44,7 +44,6 @@ enum {
 struct qs {
 	int page;
 
-	int m;
 	int admin;
 	int comment;
 	const char *cat;
@@ -77,7 +76,7 @@ extern int req_dispatch(struct req *req);
 extern int R404(struct req *req, char *tmpl);
 extern int R301(struct req *req, const char *url);
 
-extern int blahg_archive(struct req *req, int m, int paged);
+extern int blahg_archive(struct req *req, int paged);
 extern int blahg_category(struct req *req, const char *cat, int page);
 extern int blahg_tag(struct req *req, const char *tag, int paged);
 extern int blahg_comment(struct req *req);

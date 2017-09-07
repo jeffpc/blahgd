@@ -134,15 +134,29 @@ int blahg_index(struct req *req, int page)
 	return 0;
 }
 
-static int validate_arch_id(int arch)
+static bool valid_arch_id(uint64_t arch)
 {
-	int y = arch / 100;
-	int m = arch % 100;
+	uint64_t y = arch / 100;
+	uint64_t m = arch % 100;
 
 	return (m >= 1) && (m <= 12) && (y >= 1970) && (y < 2100);
 }
 
-int blahg_archive(struct req *req, int m, int page)
+static int get_arch_id(struct req *req)
+{
+	const int default_arch_id = 197001;
+	uint64_t tmp;
+
+	if (nvl_lookup_int(req->scgi->request.query, "m", &tmp))
+		return default_arch_id;
+
+	if (!valid_arch_id(tmp))
+		return default_arch_id;
+
+	return tmp;
+}
+
+int blahg_archive(struct req *req, int page)
 {
 	static const char *months[12] = {
 		"January", "February", "March", "April", "May", "June",
@@ -151,9 +165,9 @@ int blahg_archive(struct req *req, int m, int page)
 	};
 
 	char nicetitle[32];
+	int m;
 
-	if (!validate_arch_id(m))
-		m = 197001;
+	m = get_arch_id(req);
 
 	snprintf(nicetitle, sizeof(nicetitle), "%d » %s", m / 100,
 		 months[(m % 100) - 1]);
