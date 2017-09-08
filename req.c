@@ -248,10 +248,9 @@ static const struct nvl_convert_info info[] = {
 static bool select_page(struct req *req)
 {
 	struct nvlist *query = req->scgi->request.query;
-	struct qs *args = &req->args;
 	struct str *uri;
 
-	args->page = PAGE_INDEX;
+	req->page = PAGE_INDEX;
 
 	uri = nvl_lookup_str(req->scgi->request.headers, SCGI_DOCUMENT_URI);
 	ASSERT(!IS_ERR(uri));
@@ -259,7 +258,7 @@ static bool select_page(struct req *req)
 	switch (get_uri_type(uri)) {
 		case URI_STATIC:
 			/* static file */
-			args->page = PAGE_STATIC;
+			req->page = PAGE_STATIC;
 			return true;
 		case URI_DYNAMIC:
 			/* regular dynamic request */
@@ -272,17 +271,17 @@ static bool select_page(struct req *req)
 	(void) nvl_convert(query, info, true);
 
 	if (nvl_exists(query, "comment"))
-		args->page = PAGE_COMMENT;
+		req->page = PAGE_COMMENT;
 	else if (nvl_exists(query, "tag"))
-		args->page = PAGE_TAG;
+		req->page = PAGE_TAG;
 	else if (nvl_exists(query, "cat"))
-		args->page = PAGE_CATEGORY;
+		req->page = PAGE_CATEGORY;
 	else if (nvl_exists(query, "m"))
-		args->page = PAGE_ARCHIVE;
+		req->page = PAGE_ARCHIVE;
 	else if (nvl_exists(query, "p"))
-		args->page = PAGE_STORY;
+		req->page = PAGE_STORY;
 	else if (nvl_exists(query, "admin"))
-		args->page = PAGE_ADMIN;
+		req->page = PAGE_ADMIN;
 
 	return true;
 }
@@ -300,7 +299,6 @@ static bool select_page(struct req *req)
 static bool switch_content_type(struct req *req)
 {
 	struct str *fmt;
-	enum page page = req->args.page;
 
 	const char *content_type;
 	int index_stories;
@@ -330,7 +328,7 @@ static bool switch_content_type(struct req *req)
 		return false;
 	}
 
-	switch (page) {
+	switch (req->page) {
 		case PAGE_INDEX:
 		case PAGE_STORY:
 			break;
@@ -386,7 +384,7 @@ int req_dispatch(struct req *req)
 	if (!switch_content_type(req))
 		return R404(req, "{error_unsupported_feed_fmt}");
 
-	switch (req->args.page) {
+	switch (req->page) {
 		case PAGE_STATIC:
 			return blahg_static(req);
 		case PAGE_ARCHIVE:

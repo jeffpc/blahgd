@@ -41,15 +41,11 @@ enum page {
 	PAGE_STATIC,
 };
 
-struct qs {
-	enum page page;
-};
-
 struct req {
 	struct scgi *scgi;
 
 	/* request */
-	struct qs args;
+	enum page page;
 
 	/* state */
 	struct vars vars;
