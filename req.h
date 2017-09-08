@@ -30,7 +30,7 @@
 
 #include "vars.h"
 
-enum {
+enum page {
 	PAGE_ARCHIVE,
 	PAGE_CATEGORY,
 	PAGE_TAG,
@@ -42,7 +42,7 @@ enum {
 };
 
 struct qs {
-	int page;
+	enum page page;
 };
 
 struct req {

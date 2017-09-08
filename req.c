@@ -300,7 +300,7 @@ static bool select_page(struct req *req)
 static bool switch_content_type(struct req *req)
 {
 	struct str *fmt;
-	int page = req->args.page;
+	enum page page = req->args.page;
 
 	const char *content_type;
 	int index_stories;
