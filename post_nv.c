@@ -24,25 +24,24 @@
 #include <jeffpc/list.h>
 #include <jeffpc/mem.h>
 
-#include "iter.h"
 #include "post.h"
 #include "req.h"
 
-static int __tag_val(struct nvlist *post, avl_tree_t *list)
+static int __tag_val(struct nvlist *post, struct rb_tree *list)
 {
 	struct post_tag *cur;
 	struct val **tags;
 	size_t ntags;
 	size_t i;
 
-	ntags = avl_numnodes(list);
+	ntags = rb_numnodes(list);
 
 	tags = mem_reallocarray(NULL, ntags, sizeof(struct val *));
 	if (!tags)
 		return -ENOMEM;
 
 	i = 0;
-	avl_for_each(list, cur)
+	rb_for_each(list, cur)
 		tags[i++] = str_getref_val(cur->tag);
 
 	return nvl_set_array(post, "tags", tags, ntags);

@@ -50,7 +50,6 @@ At present time, blahgd depends on a number of interfaces and features
 provided by illumos-based distros (e.g., OmniOS or OpenIndiana hipster).
 Specifically, blahgd requires:
 
-  - libavl.so (for AVL trees)
   - libmd.so (for SHA1)
 
 Other dependencies include:

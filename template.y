@@ -34,7 +34,6 @@
 #include <jeffpc/val.h>
 
 #include "config.h"
-#include "iter.h"
 #include "vars.h"
 #include "render.h"
 #include "pipeline.h"

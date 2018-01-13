@@ -29,7 +29,6 @@
 #include <jeffpc/mem.h>
 
 #include "post.h"
-#include "iter.h"
 #include "utils.h"
 
 /*
@@ -49,14 +48,14 @@
  *
  * To maximize code reuse, the by-tag and by-category trees contain struct
  * post_subindex nodes for each (unique) tag/category.  Those nodes contain
- * AVL trees of their own with struct post_index_entry elements mapping
- * <timestamp, post id> (much like the by time index) to a post.
+ * binary search trees of their own with struct post_index_entry elements
+ * mapping <timestamp, post id> (much like the by time index) to a post.
  *
  * Because this isn't complex enough, we also keep a linked list of all the
  * tag entries rooted in the global index tree node.
  *
  *      +--------------------------------+
- *      | index_global AVL tree          |
+ *      | index_global tree              |
  *      |+-------------------------+     |   +------+
  *      || post global index entry | ... |   | post |
  *  +--->|   by_tag  by_cat  post  |     |   +------+
@@ -68,11 +67,11 @@
  *  | +--------+       +--------------------------+
  *  | |                                           |
  *  | | +-------------------------------------+   |
- *  | | |  index_by_tag AVL tree              |   |
+ *  | | |  index_by_tag tree                  |   |
  *  | | | +-----------------------------+     |   |
  *  | | | |  post subindex              |     |   |
  *  | | | | +-------------------------+ |     |   |
- *  | | | | |  subindex AVL tree      | |     |   |
+ *  | | | | |  subindex tree          | |     |   |
  *  | | | | | +-----------------+     | |     |   |
  *  | +-----> |post index entry | ... | |     |   |
  *  |   | | | |  global  xref   |     | | ... |   |
@@ -87,11 +86,11 @@
  *  | +-------------------------------------------+
  *  | |
  *  | | +-------------------------------------+
- *  | | |  index_by_cat AVL tree              |
+ *  | | |  index_by_cat tree                  |
  *  | | | +-----------------------------+     |
  *  | | | |  post subindex              |     |
  *  | | | | +-------------------------+ |     |
- *  | | | | |  subindex AVL tree      | |     |
+ *  | | | | |  subindex tree          | |     |
  *  | | | | | +-----------------+     | |     |
  *  | +-----> |post index entry | ... | |     |
  *  |   | | | |  global  xref   |     | | ... |
@@ -104,7 +103,7 @@
  *  |   +-------------------------------------+
  *  |
  *  |   +-------------------------+
- *  |   | index_by_time AVL tree  |
+ *  |   | index_by_time tree      |
  *  |   |+------------------+     |
  *  |   || post index entry | ... |
  *  |   ||   global         |     |
@@ -122,7 +121,7 @@ enum entry_type {
 };
 
 struct post_global_index_entry {
-	avl_node_t node;
+	struct rb_node node;
 
 	/* key */
 	unsigned int id;
@@ -139,7 +138,7 @@ struct post_global_index_entry {
 };
 
 struct post_index_entry {
-	avl_node_t node;
+	struct rb_node node;
 
 	struct post_global_index_entry *global;
 
@@ -161,19 +160,19 @@ struct post_index_entry {
 };
 
 struct post_subindex {
-	avl_node_t index;
+	struct rb_node index;
 
 	/* key */
 	struct str *name;
 
 	/* value */
-	avl_tree_t subindex;
+	struct rb_tree subindex;
 };
 
-static avl_tree_t index_global;
-static avl_tree_t index_by_time;
-static avl_tree_t index_by_tag;
-static avl_tree_t index_by_cat;
+static struct rb_tree index_global;
+static struct rb_tree index_by_time;
+static struct rb_tree index_by_tag;
+static struct rb_tree index_by_cat;
 
 static struct lock index_lock;
 static LOCK_CLASS(index_lock_lc);
@@ -236,25 +235,25 @@ static int post_tag_cmp(const void *va, const void *vb)
 	return 0;
 }
 
-static void init_index_tree(avl_tree_t *tree)
+static void init_index_tree(struct rb_tree *tree)
 {
-	avl_create(tree, post_index_cmp, sizeof(struct post_index_entry),
-		   offsetof(struct post_index_entry, node));
+	rb_create(tree, post_index_cmp, sizeof(struct post_index_entry),
+		  offsetof(struct post_index_entry, node));
 }
 
 void init_post_index(void)
 {
-	avl_create(&index_global, post_global_index_cmp,
-		   sizeof(struct post_global_index_entry),
-		   offsetof(struct post_global_index_entry, node));
+	rb_create(&index_global, post_global_index_cmp,
+		  sizeof(struct post_global_index_entry),
+		  offsetof(struct post_global_index_entry, node));
 
 	init_index_tree(&index_by_time);
 
 	/* set up the by-tag/category indexes */
-	avl_create(&index_by_tag, post_tag_cmp, sizeof(struct post_subindex),
-		   offsetof(struct post_subindex, index));
-	avl_create(&index_by_cat, post_tag_cmp, sizeof(struct post_subindex),
-		   offsetof(struct post_subindex, index));
+	rb_create(&index_by_tag, post_tag_cmp, sizeof(struct post_subindex),
+		  offsetof(struct post_subindex, index));
+	rb_create(&index_by_cat, post_tag_cmp, sizeof(struct post_subindex),
+		  offsetof(struct post_subindex, index));
 
 	MXINIT(&index_lock, &index_lock_lc);
 
@@ -273,14 +272,15 @@ void init_post_index(void)
 	ASSERT(!IS_ERR(subindex_cache));
 }
 
-static avl_tree_t *__get_subindex(avl_tree_t *index, struct str *tagname)
+static struct rb_tree *__get_subindex(struct rb_tree *index,
+				       struct str *tagname)
 {
 	struct post_subindex *ret;
 	struct post_subindex key = {
 		.name = tagname,
 	};
 
-	ret = avl_find(index, &key, NULL);
+	ret = rb_find(index, &key, NULL);
 	if (!ret)
 		return NULL;
 
@@ -297,7 +297,7 @@ struct post *index_lookup_post(unsigned int postid)
 	struct post *post;
 
 	MXLOCK(&index_lock);
-	ret = avl_find(&index_global, &key, NULL);
+	ret = rb_find(&index_global, &key, NULL);
 	if (ret)
 		post = post_getref(ret->post);
 	else
@@ -313,7 +313,7 @@ int index_get_posts(struct post **ret, struct str *tagname, bool tag,
 		    int skip, int nposts)
 {
 	struct post_index_entry *cur;
-	avl_tree_t *tree;
+	struct rb_tree *tree;
 	int i;
 
 	MXLOCK(&index_lock);
@@ -332,7 +332,7 @@ int index_get_posts(struct post **ret, struct str *tagname, bool tag,
 	}
 
 	/* skip over the first (listed) entries as requested */
-	for (cur = avl_last(tree); cur && skip; cur = AVL_PREV(tree, cur)) {
+	for (cur = rb_last(tree); cur && skip; cur = rb_prev(tree, cur)) {
 		if (!cur->global->post->listed)
 			continue; /* don't count non-listed posts */
 
@@ -340,7 +340,7 @@ int index_get_posts(struct post **ret, struct str *tagname, bool tag,
 	}
 
 	/* get a reference for every post we're returning */
-	for (i = 0; cur && nposts; cur = AVL_PREV(tree, cur)) {
+	for (i = 0; cur && nposts; cur = rb_prev(tree, cur)) {
 		if (!cur->global->post->listed)
 			continue; /* skip non-listed posts */
 
@@ -358,23 +358,23 @@ int index_get_posts(struct post **ret, struct str *tagname, bool tag,
 	return i;
 }
 
-static int __insert_post_tags(avl_tree_t *index,
+static int __insert_post_tags(struct rb_tree *index,
 			      struct post_global_index_entry *global,
-			      avl_tree_t *taglist, struct list *xreflist,
+			      struct rb_tree *taglist, struct list *xreflist,
 			      enum entry_type type)
 {
 	struct post_index_entry *tag_entry;
 	struct post_subindex *sub;
 	struct post_tag *tag;
-	avl_index_t where;
+	struct rb_cookie where;
 
-	avl_for_each(taglist, tag) {
+	rb_for_each(taglist, tag) {
 		struct post_subindex key = {
 			.name = tag->tag,
 		};
 
 		/* find the right subindex, or... */
-		sub = avl_find(index, &key, &where);
+		sub = rb_find(index, &key, &where);
 		if (!sub) {
 			/* ...allocate one if it doesn't exist */
 			sub = mem_cache_alloc(subindex_cache);
@@ -384,7 +384,7 @@ static int __insert_post_tags(avl_tree_t *index,
 			sub->name = str_getref(tag->tag);
 			init_index_tree(&sub->subindex);
 
-			avl_insert(index, sub, where);
+			rb_insert_here(index, sub, &where);
 		}
 
 		/* allocate & add a entry to the subindex */
@@ -396,7 +396,7 @@ static int __insert_post_tags(avl_tree_t *index,
 		tag_entry->name   = str_getref(tag->tag);
 		tag_entry->type   = type;
 
-		ASSERT3P(safe_avl_add(&sub->subindex, tag_entry), ==, NULL);
+		ASSERT3P(rb_insert(&sub->subindex, tag_entry), ==, NULL);
 		list_insert_tail(xreflist, tag_entry);
 	}
 
@@ -442,14 +442,14 @@ int index_insert_post(struct post *post)
 	MXLOCK(&index_lock);
 
 	/* add the post to the global index */
-	if (safe_avl_add(&index_global, global)) {
+	if (rb_insert(&index_global, global)) {
 		MXUNLOCK(&index_lock);
 		ret = -EEXIST;
 		goto err_free_by_time;
 	}
 
 	/* add the post to the by-time index */
-	ASSERT3P(safe_avl_add(&index_by_time, by_time), ==, NULL);
+	ASSERT3P(rb_insert(&index_by_time, by_time), ==, NULL);
 
 	ret = __insert_post_tags(&index_by_tag, global, &post->tags,
 				 &global->by_tag, ET_TAG);
@@ -471,7 +471,7 @@ err_free_cats:
 err_free_tags:
 	// XXX: __remove_post_tags(&index_by_tag, &post->tags);
 
-	avl_remove(&index_by_time, by_time);
+	rb_remove(&index_by_time, by_time);
 
 	MXUNLOCK(&index_lock);
 
@@ -491,7 +491,7 @@ void revalidate_all_posts(void *arg)
 	struct post_global_index_entry *cur;
 
 	MXLOCK(&index_lock);
-	avl_for_each(&index_global, cur)
+	rb_for_each(&index_global, cur)
 		revalidate_post(cur->post);
 	MXUNLOCK(&index_lock);
 }
@@ -511,7 +511,7 @@ void index_for_each_tag(int (*init)(void *, unsigned long),
 	MXLOCK(&index_lock);
 
 	if (init) {
-		ret = init(private, avl_numnodes(&index_by_tag));
+		ret = init(private, rb_numnodes(&index_by_tag));
 		if (ret)
 			goto err;
 	}
@@ -524,45 +524,45 @@ void index_for_each_tag(int (*init)(void *, unsigned long),
 	 */
 	cmin = ~0;
 	cmax = 0;
-	avl_for_each(&index_by_tag, tag) {
-		cmin = MIN(cmin, avl_numnodes(&tag->subindex));
-		cmax = MAX(cmax, avl_numnodes(&tag->subindex));
+	rb_for_each(&index_by_tag, tag) {
+		cmin = MIN(cmin, rb_numnodes(&tag->subindex));
+		cmax = MAX(cmax, rb_numnodes(&tag->subindex));
 	}
 
 	/*
 	 * finally, invoke the step callback for each tag
 	 */
-	avl_for_each(&index_by_tag, tag)
-		step(private, tag->name, avl_numnodes(&tag->subindex),
+	rb_for_each(&index_by_tag, tag)
+		step(private, tag->name, rb_numnodes(&tag->subindex),
 		     cmin, cmax);
 
 err:
 	MXUNLOCK(&index_lock);
 }
 
-static void __free_global_index(avl_tree_t *tree)
+static void __free_global_index(struct rb_tree *tree)
 {
 	struct post_global_index_entry *cur;
-	void *cookie;
+	struct rb_cookie cookie;
 
-	cookie = NULL;
-	while ((cur = avl_destroy_nodes(tree, &cookie))) {
+	memset(&cookie, 0, sizeof(cookie));
+	while ((cur = rb_destroy_nodes(tree, &cookie))) {
 		post_putref(cur->post);
 		list_destroy(&cur->by_tag);
 		list_destroy(&cur->by_cat);
 		mem_cache_free(global_index_entry_cache, cur);
 	}
 
-	avl_destroy(tree);
+	rb_destroy(tree);
 }
 
-static void __free_index(avl_tree_t *tree)
+static void __free_index(struct rb_tree *tree)
 {
 	struct post_index_entry *cur;
-	void *cookie;
+	struct rb_cookie cookie;
 
-	cookie = NULL;
-	while ((cur = avl_destroy_nodes(tree, &cookie))) {
+	memset(&cookie, 0, sizeof(cookie));
+	while ((cur = rb_destroy_nodes(tree, &cookie))) {
 		struct list *xreflist = NULL;
 
 		switch (cur->type) {
@@ -584,22 +584,22 @@ static void __free_index(avl_tree_t *tree)
 		mem_cache_free(index_entry_cache, cur);
 	}
 
-	avl_destroy(tree);
+	rb_destroy(tree);
 }
 
-static void __free_tag_index(avl_tree_t *tree)
+static void __free_tag_index(struct rb_tree *tree)
 {
 	struct post_subindex *cur;
-	void *cookie;
+	struct rb_cookie cookie;
 
-	cookie = NULL;
-	while ((cur = avl_destroy_nodes(tree, &cookie))) {
+	memset(&cookie, 0, sizeof(cookie));
+	while ((cur = rb_destroy_nodes(tree, &cookie))) {
 		__free_index(&cur->subindex);
 		str_putref((struct str *) cur->name);
 		mem_cache_free(subindex_cache, cur);
 	}
 
-	avl_destroy(tree);
+	rb_destroy(tree);
 }
 
 void free_all_posts(void)

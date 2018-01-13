@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2011-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -152,21 +152,4 @@ time_t parse_time_cstr(const char *str)
 	strptime(str, "%Y-%m-%d %H:%M", &tm);
 
 	return mktime(&tm);
-}
-
-/*
- * libavl extensions
- */
-
-/* like avl_add, but returns the existing node */
-void *safe_avl_add(avl_tree_t *tree, void *node)
-{
-	avl_index_t where;
-	void *tmp;
-
-	tmp = avl_find(tree, node, &where);
-	if (!tmp)
-		avl_insert(tree, node, where);
-
-	return tmp;
 }

@@ -20,7 +20,6 @@
  * SOFTWARE.
  */
 
-#include <sys/avl.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -35,10 +34,10 @@
 #include <jeffpc/io.h>
 #include <jeffpc/list.h>
 #include <jeffpc/mem.h>
+#include <jeffpc/rbtree.h>
 
 #include "file_cache.h"
 #include "utils.h"
-#include "iter.h"
 #include "debug.h"
 
 #define FILE_EVENTS	(FILE_MODIFIED | FILE_ATTRIB)
@@ -46,7 +45,7 @@
 static LOCK_CLASS(file_lock_lc);
 static LOCK_CLASS(file_node_lc);
 
-static avl_tree_t file_cache;
+static struct rb_tree file_cache;
 static struct lock file_lock;
 
 static int filemon_port;
@@ -63,7 +62,7 @@ struct file_callback {
 
 struct file_node {
 	char *name;			/* the filename */
-	avl_node_t node;
+	struct rb_node node;
 	refcnt_t refcnt;
 	struct lock lock;
 
@@ -162,7 +161,7 @@ free:
 	 * disk.
 	 */
 	MXLOCK(&file_lock);
-	avl_remove(&file_cache, node);
+	rb_remove(&file_cache, node);
 	MXUNLOCK(&file_lock);
 
 	MXUNLOCK(&node->lock);
@@ -230,8 +229,8 @@ void init_file_cache(void)
 
 	MXINIT(&file_lock, &file_lock_lc);
 
-	avl_create(&file_cache, filename_cmp, sizeof(struct file_node),
-		   offsetof(struct file_node, node));
+	rb_create(&file_cache, filename_cmp, sizeof(struct file_node),
+		  offsetof(struct file_node, node));
 
 	file_node_cache = mem_cache_create("file-node-cache",
 					   sizeof(struct file_node), 0);
@@ -366,14 +365,14 @@ struct str *file_cache_get_cb(const char *name, void (*cb)(void *), void *arg)
 	struct file_node *out, *tmp;
 	struct file_node key;
 	struct str *str;
-	avl_index_t where;
+	struct rb_cookie where;
 	int ret;
 
 	key.name = (char *) name;
 
 	/* do we have it? */
 	MXLOCK(&file_lock);
-	out = avl_find(&file_cache, &key, NULL);
+	out = rb_find(&file_cache, &key, NULL);
 	fn_getref(out);
 	MXUNLOCK(&file_lock);
 
@@ -398,7 +397,7 @@ struct str *file_cache_get_cb(const char *name, void (*cb)(void *), void *arg)
 
 	/* ...and insert it into the cache */
 	MXLOCK(&file_lock);
-	tmp = avl_find(&file_cache, &key, &where);
+	tmp = rb_find(&file_cache, &key, &where);
 	if (tmp) {
 		/*
 		 * uh oh, someone beat us to it; free our copy & return
@@ -419,7 +418,7 @@ struct str *file_cache_get_cb(const char *name, void (*cb)(void *), void *arg)
 	/* get a ref for the cache */
 	fn_getref(out);
 
-	avl_insert(&file_cache, out, where);
+	rb_insert_here(&file_cache, out, &where);
 
 	MXUNLOCK(&file_lock);
 	MXUNLOCK(&out->lock);
@@ -454,11 +453,11 @@ output:
 void uncache_all_files(void)
 {
 	struct file_node *cur;
-	void *cookie;
+	struct rb_cookie cookie;
 
 	MXLOCK(&file_lock);
-	cookie = NULL;
-	while ((cur = avl_destroy_nodes(&file_cache, &cookie)))
+	memset(&cookie, 0, sizeof(cookie));
+	while ((cur = rb_destroy_nodes(&file_cache, &cookie)))
 		fn_putref(cur);
 	MXUNLOCK(&file_lock);
 }

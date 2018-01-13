@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2011-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,13 +26,13 @@
 #include <sys/sysmacros.h>
 #include <sys/stat.h>
 #include <string.h>
-#include <sys/avl.h>
 
 #include <jeffpc/error.h>
 #include <jeffpc/int.h>
 #include <jeffpc/val.h>
 #include <jeffpc/io.h>
 #include <jeffpc/time.h>
+#include <jeffpc/rbtree.h>
 
 extern int hasdotdot(const char *path);
 extern char *concat5(char *a, char *b, char *c, char *d, char *e);
@@ -71,11 +71,5 @@ static inline time_t parse_time_str(struct str *str)
 
 	return ret;
 }
-
-/*
- * libavl extensions
- */
-
-extern void *safe_avl_add(avl_tree_t *tree, void *node);
 
 #endif

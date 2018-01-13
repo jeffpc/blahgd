@@ -38,7 +38,6 @@
 #include <jeffpc/io.h>
 #include <jeffpc/mem.h>
 
-#include "iter.h"
 #include "post.h"
 #include "vars.h"
 #include "req.h"
@@ -52,7 +51,7 @@ static struct mem_cache *comment_cache;
 
 static LOCK_CLASS(post_lc);
 
-static void post_remove_all_tags(avl_tree_t *taglist);
+static void post_remove_all_tags(struct rb_tree *taglist);
 static void post_remove_all_comments(struct post *post);
 
 static int tag_cmp(const void *va, const void *vb)
@@ -94,7 +93,7 @@ void revalidate_post(void *arg)
 }
 
 /* consumes the struct val reference */
-static void post_add_tags(avl_tree_t *taglist, struct val *list)
+static void post_add_tags(struct rb_tree *taglist, struct val *list)
 {
 	struct val *tagval;
 	struct val *tmp;
@@ -110,7 +109,7 @@ static void post_add_tags(avl_tree_t *taglist, struct val *list)
 
 		tag->tag = val_getref_str(tagval);
 
-		if (safe_avl_add(taglist, tag)) {
+		if (rb_insert(taglist, tag)) {
 			/* found a duplicate */
 			str_putref(tag->tag);
 			free(tag);
@@ -422,10 +421,10 @@ struct post *load_post(int postid, bool preview)
 	post->preview = preview;
 	post->needs_refresh = true;
 
-	avl_create(&post->tags, tag_cmp, sizeof(struct post_tag),
-		    offsetof(struct post_tag, node));
-	avl_create(&post->cats, tag_cmp, sizeof(struct post_tag),
-		    offsetof(struct post_tag, node));
+	rb_create(&post->tags, tag_cmp, sizeof(struct post_tag),
+		  offsetof(struct post_tag, node));
+	rb_create(&post->cats, tag_cmp, sizeof(struct post_tag),
+		  offsetof(struct post_tag, node));
 	list_create(&post->comments, sizeof(struct comment),
 		    offsetof(struct comment, list));
 	refcnt_init(&post->refcnt, 1);
@@ -447,19 +446,19 @@ err:
 	return NULL;
 }
 
-static void post_remove_all_tags(avl_tree_t *taglist)
+static void post_remove_all_tags(struct rb_tree *taglist)
 {
 	struct post_tag *tag;
-	void *cookie;
+	struct rb_cookie cookie;
 
-	cookie = NULL;
-	while ((tag = avl_destroy_nodes(taglist, &cookie))) {
+	memset(&cookie, 0, sizeof(cookie));
+	while ((tag = rb_destroy_nodes(taglist, &cookie))) {
 		str_putref(tag->tag);
 		free(tag);
 	}
 
-	avl_create(taglist, tag_cmp, sizeof(struct post_tag),
-		    offsetof(struct post_tag, node));
+	rb_create(taglist, tag_cmp, sizeof(struct post_tag),
+		  offsetof(struct post_tag, node));
 }
 
 void post_destroy(struct post *post)

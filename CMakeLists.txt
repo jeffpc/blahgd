@@ -103,7 +103,6 @@ add_dependencies(blahg revisiontag)
 
 target_link_libraries(blahg
 	md
-	avl
 	m
 	${JEFFPC_LIBRARY}
 )
