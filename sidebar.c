@@ -26,6 +26,7 @@
 #include <sys/sysmacros.h>
 
 #include <jeffpc/error.h>
+#include <jeffpc/mem.h>
 
 #include "req.h"
 #include "vars.h"
@@ -56,11 +57,7 @@ static int __tagcloud_init(void *arg, unsigned long ntags)
 {
 	struct tagcloud_state *state = arg;
 
-#ifdef HAVE_REALLOCARRAY
-	state->cloud = reallocarray(NULL, ntags, sizeof(struct nvval));
-#else
-	state->cloud = malloc(ntags * sizeof(struct nvval));
-#endif
+	state->cloud = mem_reallocarray(NULL, ntags, sizeof(struct nvval));
 	state->ntags = 0;
 
 	return state->cloud ? 0 : -ENOMEM;

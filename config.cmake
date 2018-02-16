@@ -22,8 +22,6 @@
 
 include(CheckFunctionExists)
 
-check_function_exists(reallocarray HAVE_REALLOCARRAY)
-
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
 find_package(jeffpc)
 

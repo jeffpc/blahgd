@@ -22,6 +22,7 @@
 
 #include <jeffpc/val.h>
 #include <jeffpc/list.h>
+#include <jeffpc/mem.h>
 
 #include "iter.h"
 #include "post.h"
@@ -37,11 +38,7 @@ static int __tag_val(struct nvlist *post, avl_tree_t *list)
 
 	ntags = avl_numnodes(list);
 
-#ifdef HAVE_REALLOCARRAY
-	tags = reallocarray(NULL, ntags, sizeof(struct nvval));
-#else
-	tags = malloc(ntags * sizeof(struct nvval));
-#endif
+	tags = mem_reallocarray(NULL, ntags, sizeof(struct nvval));
 	if (!tags)
 		return -ENOMEM;
 
@@ -79,11 +76,7 @@ static int __com_val(struct nvlist *post, struct list *list)
 	if (!ncomments)
 		return 0;
 
-#ifdef HAVE_REALLOCARRAY
-	comments = reallocarray(NULL, ncomments, sizeof(struct nvval));
-#else
-	comments = malloc(ncomments * sizeof(struct nvval));
-#endif
+	comments = mem_reallocarray(NULL, ncomments, sizeof(struct nvval));
 	if (!comments)
 		return -ENOMEM;
 
@@ -226,11 +219,7 @@ void load_posts(struct req *req, struct post **posts, int nposts,
 
 	maxtime = 0;
 
-#ifdef HAVE_REALLOCARRAY
-	nvposts = reallocarray(NULL, nposts, sizeof(struct nvval));
-#else
-	nvposts = malloc(nposts * sizeof(struct nvval));
-#endif
+	nvposts = mem_reallocarray(NULL, nposts, sizeof(struct nvval));
 	ASSERT(nvposts);
 
 	nnvposts = 0;
