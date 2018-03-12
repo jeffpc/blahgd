@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2014-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -152,7 +152,10 @@ static void log_request(struct req *req)
 	nvl_set_nvl(tmp, "headers", nvl_getref(scgi->request.headers));
 	nvl_set_nvl(tmp, "query", nvl_getref(scgi->request.query));
 	nvl_set_str(tmp, "body", STR_DUP(scgi->request.body));
-	nvl_set_str(tmp, "fmt", str_getref(req->fmt));
+	if (req->fmt)
+		nvl_set_str(tmp, "fmt", str_getref(req->fmt));
+	else
+		nvl_set_null(tmp, "fmt");
 	nvl_set_int(tmp, "file-descriptor", scgi->fd);
 	nvl_set_int(tmp, "thread-id", (uint64_t) pthread_self());
 	nvl_set_nvl(logentry, "request", tmp);
