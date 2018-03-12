@@ -412,6 +412,8 @@ int req_dispatch(struct req *req)
 
 int R404(struct req *req, char *tmpl)
 {
+	str_putref(req->fmt);
+
 	tmpl = tmpl ? tmpl : "{404}";
 
 	req_head(req, "Content-Type", "text/html");
@@ -430,6 +432,8 @@ int R404(struct req *req, char *tmpl)
 
 int R301(struct req *req, const char *url)
 {
+	str_putref(req->fmt);
+
 	DBG("status 301 (url: '%s')", url);
 
 	req_head(req, "Content-Type", "text/html");
