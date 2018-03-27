@@ -106,9 +106,8 @@ static void inc_lineno(yyscan_t scanner);
 '{1,2}			{ yylval->ptr = STR_DUP(yytext); return CQUOT; }
 [.,()/=!:;\+?@*#|]	{ yylval->ptr = STR_DUP(yytext); return CHAR; }
 ["<>]			{ yylval->ptr = STR_DUP(yytext); return SCHAR; }
-[\xe0-\xef]		{ yylval->ptr = STR_DUP(yytext); return UTF8FIRST3; }
-[\xc0-\xdf]		{ yylval->ptr = STR_DUP(yytext); return UTF8FIRST2; }
-[\x80-\xbf]		{ yylval->ptr = STR_DUP(yytext); return UTF8REST; }
+[\xe0-\xef][\x80-\xbf][\x80-\xbf]	{ yylval->ptr = STR_DUP(yytext); return UTF8CHAR; }
+[\xc0-\xdf][\x80-\xbf]			{ yylval->ptr = STR_DUP(yytext); return UTF8CHAR; }
 [A-Za-z0-9]+		{ yylval->ptr = STR_DUP(yytext); return WORD; }
 .			{ fmt3_error2("post text contains invalid characters", yytext); yyterminate(); }
 %%
