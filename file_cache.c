@@ -326,10 +326,14 @@ static int __reload(struct file_node *node)
 	}
 
 	node->contents = str_alloc(tmp);
-	if (!node->contents) {
-		DBG("file (%s) str_alloc error", node->name);
+	if (IS_ERR(node->contents)) {
+		int ret = PTR_ERR(node->contents);
+
+		DBG("file (%s) str_alloc error: %s", node->name, xstrerror(ret));
 		free(tmp);
-		return -ENOMEM;
+
+		node->contents = NULL;
+		return ret;
 	}
 
 	node->needs_reload = false;
