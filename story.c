@@ -58,6 +58,9 @@ static int __load_post(struct req *req, int p, bool preview)
 
 	vars_set_array(&req->vars, "posts", val, 1);
 
+	if (preview)
+		vars_set_int(&req->vars, "preview", 1);
+
 	return 0;
 }
 
