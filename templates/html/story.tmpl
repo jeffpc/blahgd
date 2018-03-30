@@ -1,5 +1,5 @@
 <div class="story">
-	<h2 class="storytitle"><a href="?p={id}" rel="bookmark">{title|escape}</a></h2>
+	<h2 class="storytitle">{ifset(preview)}Preview: {endif()}<a href="?p={id}" rel="bookmark">{title|escape}</a></h2>
 	<div class="storymeta">
 		Filed under:
 		<ul>
