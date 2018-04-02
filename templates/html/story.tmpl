@@ -8,6 +8,25 @@
 		&#8212; JeffPC @ <span title="{time|zulu}">{time|date} {time|time}</span>
 	</div>
 
+{ifset(preview)}
+	<br/>
+	<div style="border: 3px solid red; width: 90%">
+{ifset(twitteruser)}
+{ifset(twittertitle)}
+{ifset(twitterdesc)}
+{ifset(twitterimg)}
+	<div>
+	<img src="{twitterimg}" width="100%" />
+	</div>
+{endif()}
+	<strong>{twittertitle|escape}</strong><br/>
+	<small>{twitterdesc|escape}</small>
+{endif()}
+{endif()}
+{endif()}
+	</div>
+{endif()}
+
 	<div class="storycontent">
 {body}
 	</div>
