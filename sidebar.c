@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2013-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@
 
 struct tagcloud_state {
 	unsigned long ntags;
-	struct nvval *cloud;
+	struct val **cloud;
 };
 
 static int __tag_size(int count, int cmin, int cmax)
@@ -57,7 +57,7 @@ static int __tagcloud_init(void *arg, unsigned long ntags)
 {
 	struct tagcloud_state *state = arg;
 
-	state->cloud = mem_reallocarray(NULL, ntags, sizeof(struct nvval));
+	state->cloud = mem_reallocarray(NULL, ntags, sizeof(struct val *));
 	state->ntags = 0;
 
 	return state->cloud ? 0 : -ENOMEM;
@@ -87,8 +87,7 @@ static void __tagcloud_step(void *arg, struct str *name,
 	if ((ret = nvl_set_int(tmp, "size", __tag_size(count, cmin, cmax))))
 		goto err;
 
-	state->cloud[state->ntags].type = NVT_NVL;
-	state->cloud[state->ntags].nvl = tmp;
+	state->cloud[state->ntags] = nvl_cast_to_val(tmp);
 	state->ntags++;
 
 	return;

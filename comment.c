@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2009-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -81,9 +81,9 @@
 #define COMMENT_EMPTY		"x"
 
 static const struct nvl_convert_info comment_convert[] = {
-	{ .name = COMMENT_DATE,		.tgt_type = NVT_INT, },
-	{ .name = COMMENT_ID,		.tgt_type = NVT_INT, },
-	{ .name = COMMENT_CAPTCHA,	.tgt_type = NVT_INT, },
+	{ .name = COMMENT_DATE,		.tgt_type = VT_INT, },
+	{ .name = COMMENT_ID,		.tgt_type = VT_INT, },
+	{ .name = COMMENT_CAPTCHA,	.tgt_type = VT_INT, },
 	{ .name = NULL, },
 };
 
@@ -416,13 +416,13 @@ static const char *save_comment(struct req *req)
 	int id;
 
 	if (nvl_exists_type(req->scgi->request.headers, SCGI_HTTP_USER_AGENT,
-			    NVT_STR)) {
+			    VT_STR)) {
 		DBG("Missing user agent...");
 		return USERAGENT_MISSING;
 	}
 
 	if (nvl_exists_type(req->scgi->request.headers, SCGI_REMOTE_ADDR,
-			    NVT_STR)) {
+			    VT_STR)) {
 		DBG("Missing remote addr...");
 		return INTERNAL_ERR;
 	}
