@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2009-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -202,12 +202,8 @@ struct nvlist *get_post(struct req *req, int postid, const char *titlevar,
 }
 
 /*
- * Fill in the `posts' array with all posts matching the prepared and bound
- * statement.
- *
- * `stmt' should be all ready to execute and it should output two columns:
- *     post id
- *     post time
+ * Set "posts", "lastupdate", and "moreposts" vars based on the array of
+ * posts passed in as @posts.
  */
 void load_posts(struct req *req, struct post **posts, int nposts,
 		bool moreposts)
