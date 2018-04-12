@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2013-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -68,7 +68,7 @@ char *render_template(struct req *req, const char *tmpl)
 		 tmpl);
 
 	raw = file_cache_get_cb(path, revalidate_all_posts, NULL);
-	if (!raw)
+	if (IS_ERR(raw))
 		return NULL;
 
 	out = render_page(req, str_cstr(raw));
