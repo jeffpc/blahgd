@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2013-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -38,7 +38,7 @@ extern void vars_scope_pop(struct vars *vars);
 extern void vars_set_str(struct vars *vars, const char *name, struct str *val);
 extern void vars_set_int(struct vars *vars, const char *name, uint64_t val);
 extern void vars_set_array(struct vars *vars, const char *name,
-		struct nvval *val, size_t nval);
+		struct val **vals, size_t nval);
 extern const struct nvpair *vars_lookup(struct vars *vars, const char *name);
 extern struct str *vars_lookup_str(struct vars *vars, const char *name);
 extern uint64_t vars_lookup_int(struct vars *vars, const char *name);

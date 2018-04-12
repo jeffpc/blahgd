@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2009-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,38 +31,27 @@
 static int __tag_val(struct nvlist *post, avl_tree_t *list)
 {
 	struct post_tag *cur;
-	struct nvval *tags;
+	struct val **tags;
 	size_t ntags;
 	size_t i;
-	int ret;
 
 	ntags = avl_numnodes(list);
 
-	tags = mem_reallocarray(NULL, ntags, sizeof(struct nvval));
+	tags = mem_reallocarray(NULL, ntags, sizeof(struct val *));
 	if (!tags)
 		return -ENOMEM;
 
 	i = 0;
-	avl_for_each(list, cur) {
-		struct nvval *tag = &tags[i++];
+	avl_for_each(list, cur)
+		tags[i++] = str_getref_val(cur->tag);
 
-		tag->type = NVT_STR;
-		tag->str = str_getref(cur->tag);
-	}
-
-	ret = nvl_set_array(post, "tags", tags, ntags);
-	if (ret) {
-		nvval_release_array(tags, ntags);
-		free(tags);
-	}
-
-	return ret;
+	return nvl_set_array(post, "tags", tags, ntags);
 }
 
 static int __com_val(struct nvlist *post, struct list *list)
 {
 	struct comment *cur;
-	struct nvval *comments;
+	struct val **comments;
 	size_t ncomments;
 	int ret;
 	int i;
@@ -76,13 +65,12 @@ static int __com_val(struct nvlist *post, struct list *list)
 	if (!ncomments)
 		return 0;
 
-	comments = mem_reallocarray(NULL, ncomments, sizeof(struct nvval));
+	comments = mem_reallocarray(NULL, ncomments, sizeof(struct val *));
 	if (!comments)
 		return -ENOMEM;
 
 	i = 0;
 	list_for_each(cur, list) {
-		struct nvval *comment = &comments[i++];
 		struct nvlist *c;
 
 		c = nvl_alloc();
@@ -91,8 +79,7 @@ static int __com_val(struct nvlist *post, struct list *list)
 			goto err;
 		}
 
-		comment->type = NVT_NVL;
-		comment->nvl = c;
+		comments[i++] = nvl_cast_to_val(c);
 
 		if ((ret = nvl_set_int(c, "commid", cur->id)))
 			goto err;
@@ -110,14 +97,12 @@ static int __com_val(struct nvlist *post, struct list *list)
 			goto err;
 	}
 
-	ret = nvl_set_array(post, "comments", comments, ncomments);
-	if (ret)
-		goto err;
-
-	return 0;
+	return nvl_set_array(post, "comments", comments, ncomments);
 
 err:
-	nvval_release_array(comments, i);
+	while (i-- > 0)
+		val_putref(comments[i]);
+
 	free(comments);
 
 	return ret;
@@ -202,24 +187,20 @@ struct nvlist *get_post(struct req *req, int postid, const char *titlevar,
 }
 
 /*
- * Fill in the `posts' array with all posts matching the prepared and bound
- * statement.
- *
- * `stmt' should be all ready to execute and it should output two columns:
- *     post id
- *     post time
+ * Set "posts", "lastupdate", and "moreposts" vars based on the array of
+ * posts passed in as @posts.
  */
 void load_posts(struct req *req, struct post **posts, int nposts,
 		bool moreposts)
 {
-	struct nvval *nvposts;
+	struct val **nvposts;
 	size_t nnvposts;
 	time_t maxtime;
 	size_t i;
 
 	maxtime = 0;
 
-	nvposts = mem_reallocarray(NULL, nposts, sizeof(struct nvval));
+	nvposts = mem_reallocarray(NULL, nposts, sizeof(struct val *));
 	ASSERT(nvposts);
 
 	nnvposts = 0;
@@ -229,9 +210,8 @@ void load_posts(struct req *req, struct post **posts, int nposts,
 
 		post_lock(post, true);
 
-		nvposts[nnvposts].type = NVT_NVL;
-		nvposts[nnvposts].nvl = __store_vars(req, post, NULL);
-		if (IS_ERR(nvposts[nnvposts].nvl)) {
+		nvposts[nnvposts] = nvl_cast_to_val(__store_vars(req, post, NULL));
+		if (IS_ERR(nvposts[nnvposts])) {
 			post_unlock(post);
 			post_putref(post);
 			continue;

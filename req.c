@@ -197,7 +197,7 @@ static void log_request(struct req *req)
 	nvl_set_nvl(logentry, "options", tmp);
 
 	/* serialize */
-	buf = nvl_pack(logentry, NVF_JSON);
+	buf = nvl_pack(logentry, VF_JSON);
 	if (IS_ERR(buf))
 		goto err_free;
 
@@ -241,10 +241,10 @@ void req_head(struct req *req, const char *name, const char *val)
 }
 
 static const struct nvl_convert_info info[] = {
-	{ .name = "p",       .tgt_type = NVT_INT, },
-	{ .name = "paged",   .tgt_type = NVT_INT, },
-	{ .name = "m",       .tgt_type = NVT_INT, },
-	{ .name = "preview", .tgt_type = NVT_INT, },
+	{ .name = "p",       .tgt_type = VT_INT, },
+	{ .name = "paged",   .tgt_type = VT_INT, },
+	{ .name = "m",       .tgt_type = VT_INT, },
+	{ .name = "preview", .tgt_type = VT_INT, },
 	{ .name = NULL, },
 };
 

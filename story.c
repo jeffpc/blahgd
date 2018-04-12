@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2009-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,7 @@
 static int __load_post(struct req *req, int p, bool preview)
 {
 	struct nvlist *post;
-	struct nvval *val;
+	struct val **val;
 
 	post = get_post(req, p, "title", preview);
 	if (!post) {
@@ -49,12 +49,16 @@ static int __load_post(struct req *req, int p, bool preview)
 		return -ENOENT;
 	}
 
-	val = malloc(sizeof(struct nvval));
-	if (!val)
-		return -ENOMEM;
+	val = malloc(sizeof(struct val *));
+	if (!val) {
+		DBG("failed to allocate val array");
 
-	val->type = NVT_NVL;
-	val->nvl = post;
+		nvl_putref(post);
+
+		return -ENOMEM;
+	}
+
+	*val = nvl_cast_to_val(post);
 
 	vars_set_array(&req->vars, "posts", val, 1);
 

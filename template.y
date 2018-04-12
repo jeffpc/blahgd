@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2012-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -77,7 +77,7 @@ static char *condconcat(struct parser_output *data, char *a, char *b)
 
 static char *__foreach(struct req *req, const struct nvpair *var, char *tmpl)
 {
-	const struct nvval *items;
+	struct val **items;
 	size_t nitems;
 	size_t i;
 	char *out;
@@ -91,13 +91,14 @@ static char *__foreach(struct req *req, const struct nvpair *var, char *tmpl)
 	for (i = 0; i < nitems; i++) {
 		vars_scope_push(&req->vars);
 
-		switch (items[i].type) {
-			case NVT_NVL:
-				vars_merge(&req->vars, items[i].nvl);
+		switch (items[i]->type) {
+			case VT_NVL:
+				vars_merge(&req->vars,
+					   val_cast_to_nvl(items[i]));
 				break;
-			case NVT_STR:
+			case VT_STR:
 				vars_set_str(&req->vars, nvpair_name(var),
-					     str_getref(items[i].str));
+					     val_getref_str(items[i]));
 				break;
 			default:
 				//vars_dump(&req->vars);
@@ -150,6 +151,8 @@ static char *print_val(struct val *val)
 		case VT_CONS:
 		case VT_BOOL:
 		case VT_CHAR:
+		case VT_ARRAY:
+		case VT_NVL:
 			panic("%s called with value of type %d", __func__,
 			      val->type);
 	}
@@ -164,12 +167,12 @@ static char *print_var(const struct nvpair *var)
 	char *ret;
 
 	switch (nvpair_type(var)) {
-		case NVT_STR:
+		case VT_STR:
 			str = nvpair_value_str(var);
 			ret = xstrdup(str_cstr(str));
 			str_putref(str);
 			break;
-		case NVT_INT:
+		case VT_INT:
 			snprintf(buf, sizeof(buf), "%"PRIu64, pair2int(var));
 			ret = xstrdup(buf);
 			break;
@@ -202,10 +205,10 @@ static char *pipeline(struct parser_output *data, struct req *req,
 	}
 
 	switch (nvpair_type(var)) {
-		case NVT_STR:
+		case VT_STR:
 			val = str_cast_to_val(nvpair_value_str(var));
 			break;
-		case NVT_INT:
+		case VT_INT:
 			val = VAL_ALLOC_INT(pair2int(var));
 			break;
 		default:
@@ -261,7 +264,7 @@ static uint64_t __function_get_arg(struct req *req, const char *arg)
 		return 0;
 
 	switch (nvpair_type(var)) {
-		case NVT_INT:
+		case VT_INT:
 			return pair2int(var);
 		default:
 			panic("unexpected nvpair type: %d",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2013-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -95,7 +95,7 @@ void varfxn(struct vars *vars, const char *name, ctype val, size_t len)	\
 
 WRAP_SET1(vars_set_str, nvl_set_str, struct str *);
 WRAP_SET1(vars_set_int, nvl_set_int, uint64_t);
-WRAP_SET2(vars_set_array, nvl_set_array, struct nvval *);
+WRAP_SET2(vars_set_array, nvl_set_array, struct val **);
 
 const struct nvpair *vars_lookup(struct vars *vars, const char *name)
 {
