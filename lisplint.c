@@ -140,6 +140,7 @@ static bool check_config(const char *fname, struct val *lv)
 	ret = check_type(fname, lv, CONFIG_COMMENT_CAPTCHA_B, VT_INT, false) && ret;
 	ret = check_type(fname, lv, CONFIG_DATA_DIR, VT_STR, false) && ret;
 	ret = check_type(fname, lv, CONFIG_WEB_DIR, VT_STR, false) && ret;
+	ret = check_type(fname, lv, CONFIG_TEMPLATE_DIR, VT_STR, false) && ret;
 	ret = check_type(fname, lv, CONFIG_BASE_URL, VT_STR, false) && ret;
 	ret = check_type(fname, lv, CONFIG_BUG_BASE_URL, VT_STR, false) && ret;
 	ret = check_type(fname, lv, CONFIG_WIKI_BASE_URL, VT_STR, false) && ret;

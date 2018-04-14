@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2013-2019 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -35,6 +35,7 @@
 #include "render.h"
 #include "parse.h"
 #include "file_cache.h"
+#include "config.h"
 
 char *render_page(struct req *req, const char *str)
 {
@@ -64,8 +65,8 @@ char *render_template(struct req *req, const char *tmpl)
 	struct str *raw;
 	char *out;
 
-	snprintf(path, sizeof(path), "templates/%s/%s.tmpl", str_cstr(req->fmt),
-		 tmpl);
+	snprintf(path, sizeof(path), "%s/%s/%s.tmpl",
+		 str_cstr(config.template_dir), str_cstr(req->fmt), tmpl);
 
 	raw = file_cache_get(path, NULL);
 	if (IS_ERR(raw))

@@ -147,6 +147,8 @@ int config_load(const char *fname)
 			rand());
 	config_load_str(lv, CONFIG_DATA_DIR, &config.data_dir, DEFAULT_DATA_DIR);
 	config_load_str(lv, CONFIG_WEB_DIR, &config.web_dir, DEFAULT_WEB_DIR);
+	config_load_str(lv, CONFIG_TEMPLATE_DIR, &config.template_dir,
+			DEFAULT_TEMPLATE_DIR);
 	config_load_url(lv, CONFIG_BASE_URL, &config.base_url);
 	config_load_url(lv, CONFIG_BUG_BASE_URL, &config.bug_base_url);
 	config_load_url(lv, CONFIG_WIKI_BASE_URL, &config.wiki_base_url);
@@ -174,6 +176,7 @@ int config_load(const char *fname)
 	DBG("config.comment_captcha_b = %"PRIu64, config.comment_captcha_b);
 	DBG("config.data_dir = %s", str_cstr(config.data_dir));
 	DBG("config.web_dir = %s", str_cstr(config.web_dir));
+	DBG("config.template_dir = %s", str_cstr(config.template_dir));
 	DBG("config.base_url = %s", str_cstr(config.base_url));
 	DBG("config.wiki_base_url = %s", str_cstr(config.wiki_base_url));
 	DBG("config.bug_base_url = %s", str_cstr(config.bug_base_url));
