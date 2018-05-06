@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2015-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -176,6 +176,7 @@ static avl_tree_t index_by_tag;
 static avl_tree_t index_by_cat;
 
 static struct lock index_lock;
+static LOCK_CLASS(index_lock_lc);
 
 static struct mem_cache *index_entry_cache;
 static struct mem_cache *global_index_entry_cache;
@@ -255,7 +256,7 @@ void init_post_index(void)
 	avl_create(&index_by_cat, post_tag_cmp, sizeof(struct post_subindex),
 		   offsetof(struct post_subindex, index));
 
-	MXINIT(&index_lock);
+	MXINIT(&index_lock, &index_lock_lc);
 
 	index_entry_cache = mem_cache_create("index-entry-cache",
 					     sizeof(struct post_index_entry),

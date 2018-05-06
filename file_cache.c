@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2014-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -42,6 +42,9 @@
 #include "debug.h"
 
 #define FILE_EVENTS	(FILE_MODIFIED | FILE_ATTRIB)
+
+static LOCK_CLASS(file_lock_lc);
+static LOCK_CLASS(file_node_lc);
 
 static avl_tree_t file_cache;
 static struct lock file_lock;
@@ -225,7 +228,7 @@ void init_file_cache(void)
 {
 	int ret;
 
-	MXINIT(&file_lock);
+	MXINIT(&file_lock, &file_lock_lc);
 
 	avl_create(&file_cache, filename_cmp, sizeof(struct file_node),
 		   offsetof(struct file_node, node));
@@ -262,7 +265,7 @@ static struct file_node *fn_alloc(const char *name)
 	node->contents = NULL;
 	node->needs_reload = true;
 
-	MXINIT(&node->lock);
+	MXINIT(&node->lock, &file_node_lc);
 	refcnt_init(&node->refcnt, 1);
 	list_create(&node->callbacks, sizeof(struct file_callback),
 		    offsetof(struct file_callback, list));

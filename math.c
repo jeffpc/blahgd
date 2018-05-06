@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2014-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -47,6 +47,7 @@
  *     process doing its job; it can chdir as needed
  */
 
+static LOCK_CLASS(math_lc);
 static struct lock lock;
 
 static int pipefd = -1;
@@ -369,5 +370,5 @@ void init_math(int fd)
 
 	pipefd = fd;
 
-	MXINIT(&lock);
+	MXINIT(&lock, &math_lc);
 }

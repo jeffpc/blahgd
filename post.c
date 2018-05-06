@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2009-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -49,6 +49,8 @@
 
 static struct mem_cache *post_cache;
 static struct mem_cache *comment_cache;
+
+static LOCK_CLASS(post_lc);
 
 static void post_remove_all_tags(avl_tree_t *taglist);
 static void post_remove_all_comments(struct post *post);
@@ -426,7 +428,7 @@ struct post *load_post(int postid, bool preview)
 	list_create(&post->comments, sizeof(struct comment),
 		    offsetof(struct comment, list));
 	refcnt_init(&post->refcnt, 1);
-	MXINIT(&post->lock);
+	MXINIT(&post->lock, &post_lc);
 
 	if ((err = __refresh(post)))
 		goto err_free;
