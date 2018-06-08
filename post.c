@@ -210,7 +210,7 @@ static void post_add_comments(struct post *post, struct val *list)
 	struct val *val;
 	struct val *tmp;
 
-	sexpr_for_each(val, tmp, list) {
+	sexpr_for_each_noref(val, tmp, list) {
 		/* sanity check */
 		ASSERT3U(val->type, ==, VT_INT);
 
