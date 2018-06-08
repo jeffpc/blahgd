@@ -226,6 +226,7 @@ void req_destroy(struct req *req)
 	log_request(req);
 
 	str_putref(req->fmt);
+	free(req->scgi->response.body);
 
 	vars_destroy(&req->vars);
 
