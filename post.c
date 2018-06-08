@@ -98,7 +98,7 @@ static void post_add_tags(avl_tree_t *taglist, struct val *list)
 	struct val *tagval;
 	struct val *tmp;
 
-	sexpr_for_each(tagval, tmp, list) {
+	sexpr_for_each_noref(tagval, tmp, list) {
 		struct post_tag *tag;
 		struct str *tagname;
 
