@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2015-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,6 @@
 #include <stdbool.h>
 #include <jeffpc/nvl.h>
 
-extern const char *pair2str(const struct nvpair *pair);
 extern uint64_t pair2int(const struct nvpair *pair);
 
 #endif
