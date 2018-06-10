@@ -93,6 +93,7 @@ void revalidate_post(void *arg)
 	post_unlock(post);
 }
 
+/* consumes the struct val reference */
 static void post_add_tags(avl_tree_t *taglist, struct val *list)
 {
 	struct val *tagval;
@@ -120,6 +121,8 @@ static void post_add_tags(avl_tree_t *taglist, struct val *list)
 			free(tag);
 		}
 	}
+
+	val_putref(list);
 }
 
 static void post_remove_all_comments(struct post *post)
