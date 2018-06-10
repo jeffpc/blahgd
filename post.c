@@ -208,6 +208,7 @@ done:
 	str_putref(meta);
 }
 
+/* consumes the struct val reference */
 static void post_add_comments(struct post *post, struct val *list)
 {
 	struct val *val;
@@ -220,6 +221,8 @@ static void post_add_comments(struct post *post, struct val *list)
 		/* add the comment */
 		post_add_comment(post, val->i);
 	}
+
+	val_putref(list);
 }
 
 static int __do_load_post_body_fmt3(struct post *post, const struct str *input)
