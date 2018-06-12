@@ -101,19 +101,14 @@ static void post_add_tags(avl_tree_t *taglist, struct val *list)
 
 	sexpr_for_each_noref(tagval, tmp, list) {
 		struct post_tag *tag;
-		struct str *tagname;
 
 		/* sanity check */
 		ASSERT3U(tagval->type, ==, VT_STR);
 
-		/* get the tag name */
-		tagname = val_getref_str(tagval);
-
 		tag = malloc(sizeof(struct post_tag));
 		ASSERT(tag);
 
-		tag->tag = tagname;
-		ASSERT(tag->tag);
+		tag->tag = val_getref_str(tagval);
 
 		if (safe_avl_add(taglist, tag)) {
 			/* found a duplicate */
