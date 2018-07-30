@@ -123,15 +123,9 @@ static struct nvlist *__store_vars(struct req *req, struct post *post,
 		 * individual post - this happens when the titlevar is not
 		 * NULL.
 		 */
-		if (post->twitter_img) {
-			struct str *tmp;
-
-			tmp = str_cat(3, str_getref(config.photo_base_url),
-				      STATIC_STR("/"),
-				      str_getref(post->twitter_img));
-
-			vars_set_str(&req->vars, "twitterimg", tmp);
-		}
+		if (post->twitter_img)
+			vars_set_str(&req->vars, "twitterimg",
+				     str_getref(post->twitter_img));
 	}
 
 	out = nvl_alloc();

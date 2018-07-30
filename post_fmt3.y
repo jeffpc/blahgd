@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2011-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -117,11 +117,16 @@ static struct str *special_char(struct str *val)
 }
 
 static void special_cmd(struct parser_output *data, struct str **var,
-			struct str *value)
+			struct str *value, bool photo)
 {
 	str_putref(*var);
 
-	*var = value;
+	if (photo)
+		*var = str_cat(3, str_getref(config.photo_base_url),
+			       STATIC_STR("/"),
+			       value);
+	else
+		*var = value;
 }
 
 static void special_cmd_list(struct parser_output *data, struct val **var,
@@ -199,12 +204,12 @@ thing : WORD				{ $$ = $1; }
       | LISTSTART verb LISTEND		{ $$ = str_cat(3, STATIC_STR("</p><pre>"),
 						       listing_str($2),
 						       STATIC_STR("</pre><p>")); }
-      | TITLESTART verb SPECIALCMDEND	{ $$ = NULL; special_cmd(data, &data->sc_title, $2); }
-      | PUBSTART verb SPECIALCMDEND	{ $$ = NULL; special_cmd(data, &data->sc_pub, $2); }
+      | TITLESTART verb SPECIALCMDEND	{ $$ = NULL; special_cmd(data, &data->sc_title, $2, false); }
+      | PUBSTART verb SPECIALCMDEND	{ $$ = NULL; special_cmd(data, &data->sc_pub, $2, false); }
       | TAGSTART verb SPECIALCMDEND	{ $$ = NULL; special_cmd_list(data, &data->sc_tags, $2); }
       | CATSTART verb SPECIALCMDEND	{ $$ = NULL; special_cmd_list(data, &data->sc_cats, $2); }
       | TWITTERIMGSTART verb SPECIALCMDEND
-					{ $$ = NULL; special_cmd(data, &data->sc_twitter_img, $2); }
+					{ $$ = NULL; special_cmd(data, &data->sc_twitter_img, $2, false); }
       ;
 
 cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd(data, $1, $3, $2); }
