@@ -158,6 +158,7 @@ static void special_cmd_list(struct parser_output *data, struct val **var,
 %token VERBSTART VERBEND DOLLAR
 %token LISTSTART LISTEND
 %token TITLESTART TAGSTART CATSTART PUBSTART TWITTERIMGSTART
+%token TWITTERPHOTOSTART
 %token SPECIALCMDEND
 
 %type <ptr> paragraphs paragraph thing cmd cmdarg optcmdarg math mexpr
@@ -210,6 +211,8 @@ thing : WORD				{ $$ = $1; }
       | CATSTART verb SPECIALCMDEND	{ $$ = NULL; special_cmd_list(data, &data->sc_cats, $2); }
       | TWITTERIMGSTART verb SPECIALCMDEND
 					{ $$ = NULL; special_cmd(data, &data->sc_twitter_img, $2, false); }
+      | TWITTERPHOTOSTART verb SPECIALCMDEND
+					{ $$ = NULL; special_cmd(data, &data->sc_twitter_img, $2, true); }
       ;
 
 cmd : WORD optcmdarg cmdarg	{ $$ = process_cmd(data, $1, $3, $2); }

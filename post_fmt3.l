@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2011-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -71,6 +71,7 @@ static void inc_lineno(yyscan_t scanner);
 "\\tag{"			{ BEGIN(SPECIALCMD); return TAGSTART; }
 "\\category{"			{ BEGIN(SPECIALCMD); return CATSTART; }
 "\\twitterimg{"			{ BEGIN(SPECIALCMD); return TWITTERIMGSTART; }
+"\\twitterphoto{"		{ BEGIN(SPECIALCMD); return TWITTERPHOTOSTART; }
 <SPECIALCMD>"}"			{ BEGIN(INITIAL); return SPECIALCMDEND; }
 <SPECIALCMD>.			{ yylval->ptr = STR_DUP(yytext); return VERBTEXT; }
 
