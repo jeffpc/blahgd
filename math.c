@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-#include <sha1.h>
+#include <openssl/sha.h>
 
 #include <jeffpc/val.h>
 #include <jeffpc/synch.h>
@@ -157,16 +157,16 @@ static struct str *render_math_real(struct str *val)
 	char pngpath[FILENAME_MAX];
 
 	const char *tex = str_cstr(val);
-	SHA1_CTX digest;
+	SHA_CTX digest;
 	struct stat statbuf;
 	unsigned char md[20];
 	char amd[41];
 	uint32_t id;
 	int ret;
 
-	SHA1Init(&digest);
-	SHA1Update(&digest, tex, strlen(tex));
-	SHA1Final(md, &digest);
+	VERIFY3S(SHA1_Init(&digest), ==, 1);
+	VERIFY3S(SHA1_Update(&digest, tex, strlen(tex)), ==, 1);
+	VERIFY3S(SHA1_Final(md, &digest), ==, 1);
 
 	hexdumpz(amd, md, 20, true);
 

@@ -46,15 +46,10 @@ blahgd's behavior:
 Dependencies
 ============
 
-At present time, blahgd depends on a number of interfaces and features
-provided by illumos-based distros (e.g., OmniOS or OpenIndiana hipster).
-Specifically, blahgd requires:
-
-  - libmd.so (for SHA1)
-
-Other dependencies include:
+To build blahgd you must have:
 
   - flex & bison
+  - libcrypto
 
 Building and Installing
 =======================

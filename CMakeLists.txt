@@ -102,7 +102,7 @@ add_library(blahg
 add_dependencies(blahg revisiontag)
 
 target_link_libraries(blahg
-	md
+	crypto
 	m
 	${JEFFPC_LIBRARY}
 )
