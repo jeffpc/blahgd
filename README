@@ -50,6 +50,7 @@ To build blahgd you must have:
 
   - flex & bison
   - libcrypto
+  - libjeffpc
 
 Building and Installing
 =======================
