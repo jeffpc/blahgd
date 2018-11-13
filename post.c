@@ -138,10 +138,7 @@ static void post_remove_all_comments(struct post *post)
 static struct str *load_comment(struct post *post, int commid)
 {
 	char path[FILENAME_MAX];
-	struct str *err_msg;
 	struct str *out;
-
-	err_msg = STATIC_STR("Error: could not load comment text.");
 
 	snprintf(path, FILENAME_MAX, "%s/posts/%d/comments/%d/text.txt",
 		 str_cstr(config.data_dir), post->id, commid);
@@ -149,9 +146,7 @@ static struct str *load_comment(struct post *post, int commid)
 	out = file_cache_get_cb(path, post->preview ? NULL : revalidate_post,
 				post);
 	if (IS_ERR(out))
-		out = err_msg;
-	else
-		str_putref(err_msg);
+		out = STATIC_STR("Error: could not load comment text.");
 
 	return out;
 }
