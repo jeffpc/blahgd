@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2011-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,8 +29,6 @@
 #include "mangle.h"
 #include "file_cache.h"
 #include "post.h"
-
-#define PAGE 4096
 
 struct str *listing(struct post *post, const char *fname)
 {
