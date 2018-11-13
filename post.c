@@ -151,7 +151,7 @@ static struct str *load_comment(struct post *post, int commid)
 	snprintf(path, FILENAME_MAX, "%s/posts/%d/comments/%d/text.txt",
 		 str_cstr(config.data_dir), post->id, commid);
 
-	out = file_cache_get(path, NULL, NULL, &file_rev);
+	out = file_cache_get(path, &file_rev);
 	if (IS_ERR(out)) {
 		out = STATIC_STR("Error: could not load comment text.");
 	} else {
@@ -180,7 +180,7 @@ static void post_add_comment(struct post *post, int commid)
 	snprintf(path, FILENAME_MAX, "%s/posts/%d/comments/%d/meta.lisp",
 		 str_cstr(config.data_dir), post->id, commid);
 
-	meta = file_cache_get(path, NULL, NULL, &file_rev);
+	meta = file_cache_get(path, &file_rev);
 	ASSERT(!IS_ERR(meta));
 
 	ret = post_add_filename(post, path, file_rev);
@@ -312,7 +312,7 @@ static int __load_post_body(struct post *post)
 	snprintf(path, FILENAME_MAX, "%s/posts/%d/post.%s",
 		 str_cstr(config.data_dir), post->id, exts[post->fmt]);
 
-	raw = file_cache_get(path, NULL, NULL, &file_rev);
+	raw = file_cache_get(path, &file_rev);
 	if (IS_ERR(raw))
 		return PTR_ERR(raw);
 
@@ -354,7 +354,7 @@ static int __refresh_published(struct post *post)
 	snprintf(path, FILENAME_MAX, "%s/posts/%d/post.lisp",
 		 str_cstr(config.data_dir), post->id);
 
-	meta = file_cache_get(path, NULL, NULL, &file_rev);
+	meta = file_cache_get(path, &file_rev);
 	if (IS_ERR(meta))
 		return PTR_ERR(meta);
 

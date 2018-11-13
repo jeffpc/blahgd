@@ -54,14 +54,6 @@ static atomic64_t current_revision;
 static int filemon_port;
 
 static struct mem_cache *file_node_cache;
-static struct mem_cache *file_callback_cache;
-
-struct file_callback {
-	struct list_node list;
-
-	void (*cb)(void *);
-	void *arg;
-};
 
 struct file_node {
 	char *name;			/* the filename */
@@ -71,7 +63,6 @@ struct file_node {
 
 	/* everything else is protected by the lock */
 	struct str *contents;		/* cache file contents if allowed */
-	struct list callbacks;		/* list of callbacks to invoke */
 	struct stat stat;		/* the stat info of the cached file */
 	bool needs_reload;		/* caching stale data */
 	uint64_t cache_rev;		/* cache version */
@@ -107,7 +98,6 @@ static void print_event(const char *fname, int event)
 static void process_file(struct file_node *node, int events)
 {
 	struct file_obj *fobj = &node->fobj;
-	struct file_callback *fcb;
 	struct stat statbuf;
 
 	MXLOCK(&node->lock);
@@ -128,9 +118,6 @@ static void process_file(struct file_node *node, int events)
 		node->needs_reload = true;
 
 		print_event(fobj->fo_name, events);
-
-		list_for_each(fcb, &node->callbacks)
-			fcb->cb(fcb->arg);
 
 		/*
 		 * If the file went away, we could rely on reloading to deal
@@ -170,29 +157,6 @@ free:
 
 	MXUNLOCK(&node->lock);
 	fn_putref(node); /* put the cache's reference */
-}
-
-static int add_cb(struct file_node *node, void (*cb)(void *), void *arg)
-{
-	struct file_callback *fcb;
-
-	if (!cb)
-		return 0;
-
-	list_for_each(fcb, &node->callbacks)
-		if ((fcb->cb == cb) && (fcb->arg == arg))
-			return 0;
-
-	fcb = mem_cache_alloc(file_callback_cache);
-	if (!fcb)
-		return -ENOMEM;
-
-	fcb->cb = cb;
-	fcb->arg = arg;
-
-	list_insert_tail(&node->callbacks, fcb);
-
-	return 0;
 }
 
 static void *filemon(void *arg)
@@ -240,10 +204,6 @@ void init_file_cache(void)
 					   sizeof(struct file_node), 0);
 	ASSERT(!IS_ERR(file_node_cache));
 
-	file_callback_cache = mem_cache_create("file-callback-cache",
-					       sizeof(struct file_callback), 0);
-	ASSERT(!IS_ERR(file_callback_cache));
-
 	/* start the file event monitor */
 	filemon_port = port_create();
 	ASSERT(filemon_port != -1);
@@ -271,8 +231,6 @@ static struct file_node *fn_alloc(const char *name)
 
 	MXINIT(&node->lock, &file_node_lc);
 	refcnt_init(&node->refcnt, 1);
-	list_create(&node->callbacks, sizeof(struct file_callback),
-		    offsetof(struct file_callback, list));
 
 	return node;
 
@@ -283,30 +241,8 @@ err:
 
 static void fn_free(struct file_node *node)
 {
-	struct file_callback *fcb;
-
 	if (!node)
 		return;
-
-#if 0
-	/*
-	 * FIXME: This will always fail
-	 *
-	 * When a post is loaded, it registers a number of callbacks with
-	 * the file cache subsystem.  When the post structures get freed in
-	 * post_destroy(), the callbacks linger on the callbacks list.  If
-	 * we are unlucky, a file change could actually invoke the callback
-	 * with a freed pointer.
-	 *
-	 * We need the post destruction to free all its callbacks but there
-	 * is currently no easy way to do that.
-	 */
-	ASSERT(list_is_empty(&node->callbacks));
-#endif
-
-	/* free all the callbacks */
-	while ((fcb = list_remove_head(&node->callbacks)))
-		mem_cache_free(file_callback_cache, fcb);
 
 	str_putref(node->contents);
 	free(node->name);
@@ -366,8 +302,7 @@ static struct file_node *load_file(const char *name)
 	return node;
 }
 
-struct str *file_cache_get(const char *name, void (*cb)(void *), void *arg,
-			   uint64_t *rev)
+struct str *file_cache_get(const char *name, uint64_t *rev)
 {
 	struct file_node *out, *tmp;
 	struct file_node key;
@@ -393,14 +328,6 @@ struct str *file_cache_get(const char *name, void (*cb)(void *), void *arg,
 		return ERR_CAST(out);
 
 	MXLOCK(&out->lock);
-
-	/* register the callback */
-	if ((ret = add_cb(out, cb, arg))) {
-		/* Dang! An error... time to undo everything */
-		MXUNLOCK(&out->lock);
-		fn_putref(out);
-		return ERR_PTR(ret);
-	}
 
 	/* ...and insert it into the cache */
 	MXLOCK(&file_lock);

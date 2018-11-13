@@ -40,7 +40,7 @@ struct str *listing(struct post *post, const char *fname)
 	snprintf(path, FILENAME_MAX, "%s/posts/%d/%s",
 		 str_cstr(config.data_dir), post->id, fname);
 
-	in = file_cache_get(path, NULL, NULL, &file_rev);
+	in = file_cache_get(path, &file_rev);
 	if (IS_ERR(in)) {
 		ret = PTR_ERR(in);
 		goto err;

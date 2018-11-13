@@ -67,7 +67,7 @@ char *render_template(struct req *req, const char *tmpl)
 	snprintf(path, sizeof(path), "templates/%s/%s.tmpl", str_cstr(req->fmt),
 		 tmpl);
 
-	raw = file_cache_get(path, NULL, NULL, NULL);
+	raw = file_cache_get(path, NULL);
 	if (IS_ERR(raw))
 		return NULL;
 
