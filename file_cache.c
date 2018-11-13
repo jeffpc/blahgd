@@ -27,6 +27,7 @@
 #include <stdbool.h>
 #include <port.h>
 
+#include <jeffpc/atomic.h>
 #include <jeffpc/val.h>
 #include <jeffpc/synch.h>
 #include <jeffpc/thread.h>
@@ -47,6 +48,8 @@ static LOCK_CLASS(file_node_lc);
 
 static struct rb_tree file_cache;
 static struct lock file_lock;
+
+static atomic64_t current_revision;
 
 static int filemon_port;
 
@@ -71,6 +74,7 @@ struct file_node {
 	struct list callbacks;		/* list of callbacks to invoke */
 	struct stat stat;		/* the stat info of the cached file */
 	bool needs_reload;		/* caching stale data */
+	uint64_t cache_rev;		/* cache version */
 	struct file_obj fobj;		/* FEN port object */
 };
 
@@ -263,6 +267,7 @@ static struct file_node *fn_alloc(const char *name)
 	node->fobj.fo_name = node->name;
 	node->contents = NULL;
 	node->needs_reload = true;
+	node->cache_rev = atomic_inc(&current_revision);
 
 	MXINIT(&node->lock, &file_node_lc);
 	refcnt_init(&node->refcnt, 1);
@@ -339,6 +344,7 @@ static int __reload(struct file_node *node)
 	}
 
 	node->needs_reload = false;
+	node->cache_rev = atomic_inc(&current_revision);
 
 	return 0;
 }
