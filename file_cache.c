@@ -366,7 +366,8 @@ static struct file_node *load_file(const char *name)
 	return node;
 }
 
-struct str *file_cache_get_cb(const char *name, void (*cb)(void *), void *arg)
+struct str *file_cache_get(const char *name, void (*cb)(void *), void *arg,
+			   uint64_t *rev)
 {
 	struct file_node *out, *tmp;
 	struct file_node key;
@@ -448,6 +449,10 @@ output:
 	}
 
 	str = str_getref(out->contents);
+
+	/* inform the caller about which version we're returning */
+	if (rev)
+		*rev = out->cache_rev;
 	MXUNLOCK(&out->lock);
 
 	/* put the reference for the file node */

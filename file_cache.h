@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2014-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,12 +27,13 @@
 
 extern void init_file_cache(void);
 extern void uncache_all_files(void);
-extern struct str *file_cache_get_cb(const char *name, void (*cb)(void *),
-				     void *arg);
+extern struct str *file_cache_get(const char *name, void (*cb)(void *),
+				  void *arg, uint64_t *rev);
 
-static inline struct str *file_cache_get(const char *name)
+static inline struct str *file_cache_get_cb(const char *name, void (*cb)(void *),
+					    void *arg)
 {
-	return file_cache_get_cb(name, NULL, NULL);
+	return file_cache_get(name, cb, arg, NULL);
 }
 
 #endif
