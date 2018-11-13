@@ -486,16 +486,6 @@ err:
 	return ret;
 }
 
-void revalidate_all_posts(void *arg)
-{
-	struct post_global_index_entry *cur;
-
-	MXLOCK(&index_lock);
-	rb_for_each(&index_global, cur)
-		revalidate_post(cur->post);
-	MXUNLOCK(&index_lock);
-}
-
 void index_for_each_tag(int (*init)(void *, unsigned long),
 			void (*step)(void *, struct str *, unsigned long,
 				     unsigned long, unsigned long),
