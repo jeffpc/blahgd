@@ -24,11 +24,13 @@
 #define __FILE_CACHE_H
 
 #include <stdlib.h>
+#include <stdbool.h>
 
 extern void init_file_cache(void);
 extern void uncache_all_files(void);
 extern struct str *file_cache_get(const char *name, void (*cb)(void *),
 				  void *arg, uint64_t *rev);
+extern bool file_cache_has_newer(const char *name, uint64_t rev);
 
 static inline struct str *file_cache_get_cb(const char *name, void (*cb)(void *),
 					    void *arg)

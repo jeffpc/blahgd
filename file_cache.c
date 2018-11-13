@@ -461,6 +461,37 @@ output:
 	return str;
 }
 
+bool file_cache_has_newer(const char *name, uint64_t rev)
+{
+	struct file_node *out;
+	struct file_node key;
+	bool ret;
+
+	key.name = (char *) name;
+
+	/* do we have it? */
+	MXLOCK(&file_lock);
+	out = rb_find(&file_cache, &key, NULL);
+	fn_getref(out);
+	MXUNLOCK(&file_lock);
+
+	/*
+	 * We don't have it cached (which is weird/a bug), so let's pretend
+	 * that there is a newer version...just in case.
+	 */
+	if (!out)
+		return true;
+
+	MXLOCK(&out->lock);
+	ret = out->needs_reload || (rev != out->cache_rev);
+	MXUNLOCK(&out->lock);
+
+	/* put the reference for the file node */
+	fn_putref(out);
+
+	return ret;
+}
+
 void uncache_all_files(void)
 {
 	struct file_node *cur;
