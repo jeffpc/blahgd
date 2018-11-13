@@ -55,7 +55,6 @@ struct post {
 
 	struct lock lock;
 
-	bool needs_refresh;
 	bool preview;
 	bool listed;
 
@@ -89,7 +88,6 @@ extern int post_add_filename(struct post *post, const char *path, uint64_t cache
 extern struct post *load_post(int postid, bool preview);
 extern void post_refresh(struct post *post);
 extern void post_destroy(struct post *post);
-extern void revalidate_post(void *arg);
 extern void load_posts(struct req *req, struct post **posts, int nposts,
 		       bool moreposts);
 extern int load_all_posts(void);

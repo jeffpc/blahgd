@@ -99,17 +99,6 @@ static void post_remove_all_filenames(struct post *post)
 	}
 }
 
-void revalidate_post(void *arg)
-{
-	struct post *post = arg;
-
-	DBG("%s: marking post #%u for refresh", __func__, post->id);
-
-	post_lock(post, false);
-	post->needs_refresh = true;
-	post_unlock(post);
-}
-
 /* consumes the struct val reference */
 static void post_add_tags(struct rb_tree *taglist, struct val *list)
 {
@@ -162,8 +151,7 @@ static struct str *load_comment(struct post *post, int commid)
 	snprintf(path, FILENAME_MAX, "%s/posts/%d/comments/%d/text.txt",
 		 str_cstr(config.data_dir), post->id, commid);
 
-	out = file_cache_get(path, post->preview ? NULL : revalidate_post,
-			     post, &file_rev);
+	out = file_cache_get(path, NULL, NULL, &file_rev);
 	if (IS_ERR(out)) {
 		out = STATIC_STR("Error: could not load comment text.");
 	} else {
@@ -192,8 +180,7 @@ static void post_add_comment(struct post *post, int commid)
 	snprintf(path, FILENAME_MAX, "%s/posts/%d/comments/%d/meta.lisp",
 		 str_cstr(config.data_dir), post->id, commid);
 
-	meta = file_cache_get(path, post->preview ? NULL : revalidate_post,
-			      post, &file_rev);
+	meta = file_cache_get(path, NULL, NULL, &file_rev);
 	ASSERT(!IS_ERR(meta));
 
 	ret = post_add_filename(post, path, file_rev);
@@ -325,8 +312,7 @@ static int __load_post_body(struct post *post)
 	snprintf(path, FILENAME_MAX, "%s/posts/%d/post.%s",
 		 str_cstr(config.data_dir), post->id, exts[post->fmt]);
 
-	raw = file_cache_get(path, post->preview ? NULL : revalidate_post,
-			     post, &file_rev);
+	raw = file_cache_get(path, NULL, NULL, &file_rev);
 	if (IS_ERR(raw))
 		return PTR_ERR(raw);
 
@@ -368,8 +354,7 @@ static int __refresh_published(struct post *post)
 	snprintf(path, FILENAME_MAX, "%s/posts/%d/post.lisp",
 		 str_cstr(config.data_dir), post->id);
 
-	meta = file_cache_get(path, post->preview ? NULL : revalidate_post,
-			      post, &file_rev);
+	meta = file_cache_get(path, NULL, NULL, &file_rev);
 	if (IS_ERR(meta))
 		return PTR_ERR(meta);
 
@@ -462,8 +447,6 @@ int __refresh(struct post *post)
 	if ((ret = __load_post_body(post)))
 		return ret;
 
-	post->needs_refresh = false;
-
 	return 0;
 }
 
@@ -500,7 +483,6 @@ struct post *load_post(int postid, bool preview)
 	post->body = NULL;
 	post->numcom = 0;
 	post->preview = preview;
-	post->needs_refresh = true;
 
 	rb_create(&post->tags, tag_cmp, sizeof(struct post_tag),
 		  offsetof(struct post_tag, node));
