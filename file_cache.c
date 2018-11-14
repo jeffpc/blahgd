@@ -127,6 +127,14 @@ static void process_file(struct file_node *node, int events)
 		 */
 		if (events & FILE_EXCEPTION)
 			goto free;
+
+		/*
+		 * Because the cached data is invalid (and therefore
+		 * useless), we can free it now and avoid having it linger
+		 * around, ending up core files, etc.
+		 */
+		str_putref(node->contents);
+		node->contents = NULL;
 	}
 
 	/* re-register */
