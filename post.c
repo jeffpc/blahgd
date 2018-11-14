@@ -81,6 +81,24 @@ void init_post_subsys(void)
 	init_post_index();
 }
 
+int post_add_filename(struct post *post, const char *path, uint64_t cache_rev)
+{
+	return nvl_set_int(post->files, path, cache_rev);
+}
+
+static void post_remove_all_filenames(struct post *post)
+{
+	const struct nvpair *pair;
+
+	while ((pair = nvl_iter_start(post->files)) != NULL) {
+		struct str *name = nvpair_name_str(pair);
+
+		VERIFY0(nvl_unset(post->files, str_cstr(name)));
+
+		str_putref(name);
+	}
+}
+
 void revalidate_post(void *arg)
 {
 	struct post *post = arg;
@@ -138,15 +156,25 @@ static void post_remove_all_comments(struct post *post)
 static struct str *load_comment(struct post *post, int commid)
 {
 	char path[FILENAME_MAX];
+	uint64_t file_rev;
 	struct str *out;
 
 	snprintf(path, FILENAME_MAX, "%s/posts/%d/comments/%d/text.txt",
 		 str_cstr(config.data_dir), post->id, commid);
 
-	out = file_cache_get_cb(path, post->preview ? NULL : revalidate_post,
-				post);
-	if (IS_ERR(out))
+	out = file_cache_get(path, post->preview ? NULL : revalidate_post,
+			     post, &file_rev);
+	if (IS_ERR(out)) {
 		out = STATIC_STR("Error: could not load comment text.");
+	} else {
+		int ret;
+
+		ret = post_add_filename(post, path, file_rev);
+		if (ret) {
+			str_putref(out);
+			out = STATIC_STR("Error: internal error has occured.");
+		}
+	}
 
 	return out;
 }
@@ -155,16 +183,21 @@ static void post_add_comment(struct post *post, int commid)
 {
 	char path[FILENAME_MAX];
 	struct comment *comm;
+	uint64_t file_rev;
 	struct str *meta;
 	struct val *lv;
 	struct val *v;
+	int ret;
 
 	snprintf(path, FILENAME_MAX, "%s/posts/%d/comments/%d/meta.lisp",
 		 str_cstr(config.data_dir), post->id, commid);
 
-	meta = file_cache_get_cb(path, post->preview ? NULL : revalidate_post,
-				 post);
+	meta = file_cache_get(path, post->preview ? NULL : revalidate_post,
+			      post, &file_rev);
 	ASSERT(!IS_ERR(meta));
+
+	ret = post_add_filename(post, path, file_rev);
+	ASSERT0(ret);
 
 	lv = sexpr_parse_str(meta);
 	ASSERT(!IS_ERR(lv));
@@ -283,6 +316,7 @@ static int __load_post_body(struct post *post)
 	};
 
 	char path[FILENAME_MAX];
+	uint64_t file_rev;
 	struct str *raw;
 	int ret;
 
@@ -291,13 +325,18 @@ static int __load_post_body(struct post *post)
 	snprintf(path, FILENAME_MAX, "%s/posts/%d/post.%s",
 		 str_cstr(config.data_dir), post->id, exts[post->fmt]);
 
-	raw = file_cache_get_cb(path, post->preview ? NULL : revalidate_post,
-				post);
+	raw = file_cache_get(path, post->preview ? NULL : revalidate_post,
+			     post, &file_rev);
 	if (IS_ERR(raw))
 		return PTR_ERR(raw);
 
+	ret = post_add_filename(post, path, file_rev);
+	if (ret)
+		goto out;
+
 	ret = __do_load_post_body_fmt3(post, raw);
 
+out:
 	str_putref(raw);
 
 	return ret;
@@ -321,21 +360,27 @@ static void __refresh_published_prop(struct post *post, struct val *lv)
 static int __refresh_published(struct post *post)
 {
 	char path[FILENAME_MAX];
+	uint64_t file_rev;
 	struct str *meta;
 	struct val *lv;
+	int ret;
 
 	snprintf(path, FILENAME_MAX, "%s/posts/%d/post.lisp",
 		 str_cstr(config.data_dir), post->id);
 
-	meta = file_cache_get_cb(path, post->preview ? NULL : revalidate_post,
-				 post);
+	meta = file_cache_get(path, post->preview ? NULL : revalidate_post,
+			      post, &file_rev);
 	if (IS_ERR(meta))
 		return PTR_ERR(meta);
 
+	ret = post_add_filename(post, path, file_rev);
+	if (ret)
+		goto err;
+
 	lv = sexpr_parse_str(meta);
 	if (IS_ERR(lv)) {
-		str_putref(meta);
-		return PTR_ERR(lv);
+		ret = PTR_ERR(lv);
+		goto err;
 	}
 
 	__refresh_published_prop(post, lv);
@@ -354,11 +399,52 @@ static int __refresh_published(struct post *post)
 	str_putref(meta);
 
 	return 0;
+
+err:
+	str_putref(meta);
+
+	return ret;
+
+}
+
+static bool must_refresh(struct post *post)
+{
+	const struct nvpair *pair;
+
+	if (nvl_iter_start(post->files) == NULL)
+		return true; /* no files means we have no idea what is needed */
+
+	nvl_for_each(pair, post->files) {
+		struct str *name = nvpair_name_str(pair);
+		uint64_t file_rev;
+
+		ASSERT0(nvpair_value_int(pair, &file_rev));
+
+		if (!file_cache_has_newer(str_cstr(name), file_rev)) {
+			str_putref(name);
+			continue;
+		}
+
+		cmn_err(CE_DEBUG, "post %u needs a refresh "
+			"('%s' changed, old rev %"PRIu64")", post->id,
+			str_cstr(name), file_rev);
+
+		str_putref(name);
+
+		return true; /* no need to check oher files, we are refreshing */
+	}
+
+	return false;
 }
 
 int __refresh(struct post *post)
 {
 	int ret;
+
+	if (!must_refresh(post))
+		return 0;
+
+	post_remove_all_filenames(post);
 
 	str_putref(post->title);
 	post->title = NULL;
@@ -425,6 +511,13 @@ struct post *load_post(int postid, bool preview)
 	refcnt_init(&post->refcnt, 1);
 	MXINIT(&post->lock, &post_lc);
 
+	post->files = nvl_alloc();
+	if (IS_ERR(post->files)) {
+		err = PTR_ERR(post->files);
+		post->files = NULL;
+		goto err_free;
+	}
+
 	if ((err = __refresh(post)))
 		goto err_free;
 
@@ -435,6 +528,7 @@ struct post *load_post(int postid, bool preview)
 
 err_free:
 	post_destroy(post);
+
 err:
 	cmn_err(CE_ERROR, "Failed to load post id %u: %s", postid,
 		xstrerror(err));
@@ -461,6 +555,8 @@ void post_destroy(struct post *post)
 	post_remove_all_tags(&post->tags);
 	post_remove_all_tags(&post->cats);
 	post_remove_all_comments(post);
+
+	nvl_putref(post->files);
 
 	str_putref(post->title);
 	str_putref(post->body);

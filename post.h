@@ -77,11 +77,15 @@ struct post {
 	struct str *body;
 
 	struct str *twitter_img;
+
+	/* filenames used to construct this post */
+	struct nvlist *files;
 };
 
 struct req;
 
 extern void init_post_subsys(void);
+extern int post_add_filename(struct post *post, const char *path, uint64_t cache_rev);
 extern struct post *load_post(int postid, bool preview);
 extern void post_refresh(struct post *post);
 extern void post_destroy(struct post *post);
@@ -106,11 +110,11 @@ extern int index_insert_post(struct post *post);
 
 REFCNT_INLINE_FXNS(struct post, post, refcnt, post_destroy, NULL)
 
-static inline void post_lock(struct post *post, bool allow_refresh)
+static inline void post_lock(struct post *post, bool refresh)
 {
 	MXLOCK(&post->lock);
 
-	if (allow_refresh && post->needs_refresh)
+	if (refresh)
 		post_refresh(post);
 }
 
