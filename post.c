@@ -433,7 +433,6 @@ int __refresh(struct post *post)
 
 void post_refresh(struct post *post)
 {
-	ASSERT0(post->preview);
 	ASSERT0(__refresh(post));
 }
 
