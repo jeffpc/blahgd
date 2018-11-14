@@ -377,6 +377,9 @@ static bool must_refresh(struct post *post)
 {
 	const struct nvpair *pair;
 
+	if (post->preview)
+		return true; /* always refresh previews */
+
 	if (nvl_iter_start(post->files) == NULL)
 		return true; /* no files means we have no idea what is needed */
 
