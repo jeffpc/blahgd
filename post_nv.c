@@ -170,7 +170,7 @@ struct nvlist *get_post(struct req *req, int postid, const char *titlevar,
 		return NULL;
 
 	post_lock(post);
-	post_refresh(post);
+	ASSERT0(post_refresh(post));
 
 	out = __store_vars(req, post, titlevar);
 
@@ -203,7 +203,7 @@ void load_posts(struct req *req, struct post **posts, int nposts,
 		struct post *post = posts[i];
 
 		post_lock(post);
-		post_refresh(post);
+		ASSERT0(post_refresh(post));
 
 		nvposts[nnvposts] = nvl_cast_to_val(__store_vars(req, post, NULL));
 		if (IS_ERR(nvposts[nnvposts])) {

@@ -403,7 +403,7 @@ static bool must_refresh(struct post *post)
 	return false;
 }
 
-int __refresh(struct post *post)
+int post_refresh(struct post *post)
 {
 	int ret;
 
@@ -429,11 +429,6 @@ int __refresh(struct post *post)
 		return ret;
 
 	return 0;
-}
-
-void post_refresh(struct post *post)
-{
-	ASSERT0(__refresh(post));
 }
 
 struct post *load_post(int postid, bool preview)
@@ -480,7 +475,7 @@ struct post *load_post(int postid, bool preview)
 		goto err_free;
 	}
 
-	if ((err = __refresh(post)))
+	if ((err = post_refresh(post)))
 		goto err_free;
 
 	if (!post->preview)
