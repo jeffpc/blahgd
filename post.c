@@ -81,9 +81,23 @@ void init_post_subsys(void)
 	init_post_index();
 }
 
-int post_add_filename(struct post *post, const char *path, uint64_t cache_rev)
+struct str *post_get_cached_file(struct post *post, const char *path)
 {
-	return nvl_set_int(post->files, path, cache_rev);
+	struct str *out;
+	uint64_t rev;
+	int err;
+
+	out = file_cache_get(path, &rev);
+	if (IS_ERR(out))
+		return out;
+
+	err = nvl_set_int(post->files, path, rev);
+	if (err) {
+		str_putref(out);
+		out = ERR_PTR(err);
+	}
+
+	return out;
 }
 
 static void post_remove_all_filenames(struct post *post)
@@ -145,24 +159,14 @@ static void post_remove_all_comments(struct post *post)
 static struct str *load_comment(struct post *post, int commid)
 {
 	char path[FILENAME_MAX];
-	uint64_t file_rev;
 	struct str *out;
 
 	snprintf(path, FILENAME_MAX, "%s/posts/%d/comments/%d/text.txt",
 		 str_cstr(config.data_dir), post->id, commid);
 
-	out = file_cache_get(path, &file_rev);
-	if (IS_ERR(out)) {
+	out = post_get_cached_file(post, path);
+	if (IS_ERR(out))
 		out = STATIC_STR("Error: could not load comment text.");
-	} else {
-		int ret;
-
-		ret = post_add_filename(post, path, file_rev);
-		if (ret) {
-			str_putref(out);
-			out = STATIC_STR("Error: internal error has occured.");
-		}
-	}
 
 	return out;
 }
@@ -171,20 +175,15 @@ static void post_add_comment(struct post *post, int commid)
 {
 	char path[FILENAME_MAX];
 	struct comment *comm;
-	uint64_t file_rev;
 	struct str *meta;
 	struct val *lv;
 	struct val *v;
-	int ret;
 
 	snprintf(path, FILENAME_MAX, "%s/posts/%d/comments/%d/meta.lisp",
 		 str_cstr(config.data_dir), post->id, commid);
 
-	meta = file_cache_get(path, &file_rev);
+	meta = post_get_cached_file(post, path);
 	ASSERT(!IS_ERR(meta));
-
-	ret = post_add_filename(post, path, file_rev);
-	ASSERT0(ret);
 
 	lv = sexpr_parse_str(meta);
 	ASSERT(!IS_ERR(lv));
@@ -303,7 +302,6 @@ static int __load_post_body(struct post *post)
 	};
 
 	char path[FILENAME_MAX];
-	uint64_t file_rev;
 	struct str *raw;
 	int ret;
 
@@ -312,17 +310,12 @@ static int __load_post_body(struct post *post)
 	snprintf(path, FILENAME_MAX, "%s/posts/%d/post.%s",
 		 str_cstr(config.data_dir), post->id, exts[post->fmt]);
 
-	raw = file_cache_get(path, &file_rev);
+	raw = post_get_cached_file(post, path);
 	if (IS_ERR(raw))
 		return PTR_ERR(raw);
 
-	ret = post_add_filename(post, path, file_rev);
-	if (ret)
-		goto out;
-
 	ret = __do_load_post_body_fmt3(post, raw);
 
-out:
 	str_putref(raw);
 
 	return ret;
@@ -346,26 +339,20 @@ static void __refresh_published_prop(struct post *post, struct val *lv)
 static int __refresh_published(struct post *post)
 {
 	char path[FILENAME_MAX];
-	uint64_t file_rev;
 	struct str *meta;
 	struct val *lv;
-	int ret;
 
 	snprintf(path, FILENAME_MAX, "%s/posts/%d/post.lisp",
 		 str_cstr(config.data_dir), post->id);
 
-	meta = file_cache_get(path, &file_rev);
+	meta = post_get_cached_file(post, path);
 	if (IS_ERR(meta))
 		return PTR_ERR(meta);
 
-	ret = post_add_filename(post, path, file_rev);
-	if (ret)
-		goto err;
-
 	lv = sexpr_parse_str(meta);
 	if (IS_ERR(lv)) {
-		ret = PTR_ERR(lv);
-		goto err;
+		str_putref(meta);
+		return PTR_ERR(lv);
 	}
 
 	__refresh_published_prop(post, lv);
@@ -384,12 +371,6 @@ static int __refresh_published(struct post *post)
 	str_putref(meta);
 
 	return 0;
-
-err:
-	str_putref(meta);
-
-	return ret;
-
 }
 
 static bool must_refresh(struct post *post)

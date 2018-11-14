@@ -33,30 +33,19 @@
 struct str *listing(struct post *post, const char *fname)
 {
 	char path[FILENAME_MAX];
-	uint64_t file_rev;
 	struct str *in;
-	int ret;
 
 	snprintf(path, FILENAME_MAX, "%s/posts/%d/%s",
 		 str_cstr(config.data_dir), post->id, fname);
 
-	in = file_cache_get(path, &file_rev);
-	if (IS_ERR(in)) {
-		ret = PTR_ERR(in);
+	in = post_get_cached_file(post, path);
+	if (IS_ERR(in))
 		goto err;
-	}
-
-	ret = post_add_filename(post, path, file_rev);
-	if (ret)
-		goto err_free;
 
 	return listing_str(in);
 
-err_free:
-	str_putref(in);
-
 err:
 	snprintf(path, FILENAME_MAX, "Failed to read in listing '%d/%s': %s",
-		 post->id, fname, xstrerror(ret));
+		 post->id, fname, xstrerror(PTR_ERR(in)));
 	return STR_DUP(path);
 }

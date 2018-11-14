@@ -84,7 +84,7 @@ struct post {
 struct req;
 
 extern void init_post_subsys(void);
-extern int post_add_filename(struct post *post, const char *path, uint64_t cache_rev);
+extern struct str *post_get_cached_file(struct post *post, const char *path);
 extern struct post *load_post(int postid, bool preview);
 extern void post_refresh(struct post *post);
 extern void post_destroy(struct post *post);
