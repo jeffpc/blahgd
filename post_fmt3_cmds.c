@@ -249,6 +249,20 @@ static struct str *__process_wiki(struct parser_output *data, struct str *txt,
 	if (!opt)
 		str_getref(txt);
 
+	/*
+	 * FIXME: We really should URL-escape the link.  (HTML5 really
+	 * doesn't like spaces in the URL, but even XHTML 1 finds them
+	 * questionable.)  Sadly, this is very hard because we don't get the
+	 * raw chars from the .tex file but rather a mangled version.  As a
+	 * result, sometimes the .tex file includes hacks like:
+	 *
+	 *	\wiki[Foo\%27s]{Foo's}
+	 *
+	 * to avoid putting a &rsquo; into the URL.  Because of this manual
+	 * escaping, we can't do a full escaping here.  We could do what
+	 * amounts to s/ /+/g.
+	 */
+
 	return str_cat(9, STATIC_STR("<a href=\""),
 		       str_getref(config.wiki_base_url),
 		       STATIC_STR("/"),
