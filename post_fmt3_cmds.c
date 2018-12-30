@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2013-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -102,7 +102,7 @@ static struct str *__process_emph(struct parser_output *data, struct str *txt,
 static struct str *__process_texttt(struct parser_output *data, struct str *txt,
 				    struct str *opt)
 {
-	return str_cat(3, STATIC_STR("<tt>"), txt, STATIC_STR("</tt>"));
+	return str_cat(3, STATIC_STR("<span class=\"tt\">"), txt, STATIC_STR("</span>"));
 }
 
 static struct str *__process_textbf(struct parser_output *data,
