@@ -201,7 +201,7 @@ thing : WORD				{ $$ = $1; }
       | PERCENT				{ $$ = STATIC_STR("%"); }
       | '\\' cmd			{ $$ = $2; }
       | MATHSTART math MATHEND		{ $$ = render_math($2); }
-      | VERBSTART verb VERBEND		{ $$ = str_cat(3, STATIC_STR("</p><p>"), $2, STATIC_STR("</p><p>")); }
+      | VERBSTART verb VERBEND		{ $$ = str_cat(3, STATIC_STR("</p>"), $2, STATIC_STR("<p>")); }
       | LISTSTART verb LISTEND		{ $$ = str_cat(3, STATIC_STR("</p><pre>"),
 						       listing_str($2),
 						       STATIC_STR("</pre><p>")); }
