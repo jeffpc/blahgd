@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2011-2019 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -77,11 +77,14 @@ static void inc_lineno(yyscan_t scanner);
 
 "$"			{ BEGIN(MATH); return MATHSTART; }
 <MATH>"$"		{ BEGIN(INITIAL); return MATHEND; }
+<MATH>"frac"		{ return MATHFRAC; }
+<MATH>"sqrt"		{ return MATHSQRT; }
+<MATH>"propto"		{ return MATHPROPTO; }
 <MATH>[\\{}()*/~^_+-]	{ return *yytext; }
-<MATH>[=<>]		{ yylval->ptr = STR_DUP(yytext); return EQLTGT; }
-<MATH>[A-Za-z0-9]+	{ yylval->ptr = STR_DUP(yytext); return WORD; }
-<MATH>[".,=<>!:;?@*#]	{ yylval->ptr = STR_DUP(yytext); return SCHAR; }
-<MATH>[ \t]+		{ yylval->ptr = STR_DUP(yytext); return WSPACE; }
+<MATH>[=<>]		{ return *yytext; }
+<MATH>[A-Za-z]+		{ yylval->ptr = STR_DUP(yytext); return WORD; }
+<MATH>[0-9.]+		{ yylval->ptr = STR_DUP(yytext); return NUMBER; }
+<MATH>[ \t]+		{ continue; /* skip whitespace */ }
 <MATH>.			{ fmt3_error2("post math contains invalid characters", yytext); yyterminate(); }
 
 "\\$"			{ return DOLLAR; }

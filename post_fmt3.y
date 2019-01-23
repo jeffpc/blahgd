@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2011-2019 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -136,6 +136,21 @@ static void special_cmd_list(struct parser_output *data, struct val **var,
 	*var = VAL_ALLOC_CONS(str_cast_to_val(value), *var);
 }
 
+static struct str *math_apply(struct str *op, struct str *a, struct str *b)
+{
+	str_getref(op);
+	if (b)
+		return str_cat(9,
+			       STATIC_STR("<"), op, STATIC_STR("><mrow>"),
+			       a, STATIC_STR("</mrow><mrow>"), b,
+			       STATIC_STR("</mrow></"), op, STATIC_STR(">"));
+	else
+		return str_cat(7,
+			       STATIC_STR("<"), op, STATIC_STR("><mrow>"),
+			       a,
+			       STATIC_STR("</mrow></"), op, STATIC_STR(">"));
+}
+
 %}
 
 %union {
@@ -145,13 +160,14 @@ static void special_cmd_list(struct parser_output *data, struct val **var,
 /* generic tokens */
 %token <ptr> WSPACE
 %token <ptr> DASH OQUOT CQUOT SCHAR CHAR
-%token <ptr> UTF8CHAR WORD
+%token <ptr> UTF8CHAR WORD NUMBER
 %token PERCENT ELLIPSIS
 %token PAREND
 
 /* math specific tokens */
-%token <ptr> EQLTGT
 %token MATHSTART MATHEND
+%token MATHFRAC MATHSQRT
+%token MATHPROPTO
 
 /* verbose & listing environment */
 %token <ptr> VERBTEXT
@@ -164,11 +180,11 @@ static void special_cmd_list(struct parser_output *data, struct val **var,
 %type <ptr> paragraphs paragraph thing cmd cmdarg optcmdarg math mexpr
 %type <ptr> verb
 
+%left '=' '<' '>'
+%left '*' '/'
+%left '+' '-'
 %left '_' '^'
 %left '~'
-%left EQLTGT
-%left '+' '-'
-%left '*' '/'
 
 %%
 
@@ -200,7 +216,7 @@ thing : WORD				{ $$ = $1; }
       | DOLLAR				{ $$ = STATIC_STR("$"); }
       | PERCENT				{ $$ = STATIC_STR("%"); }
       | '\\' cmd			{ $$ = $2; }
-      | MATHSTART math MATHEND		{ $$ = render_math($2); }
+      | MATHSTART math MATHEND		{ $$ = str_cat(3, STATIC_STR("<math>"), $2, STATIC_STR("</math>")); }
       | VERBSTART verb VERBEND		{ $$ = str_cat(3, STATIC_STR("</p>"), $2, STATIC_STR("<p>")); }
       | LISTSTART verb LISTEND		{ $$ = str_cat(3, STATIC_STR("</p><pre>"),
 						       listing_str($2),
@@ -242,22 +258,30 @@ math : math mexpr			{ $$ = str_cat(2, $1, $2); }
      | mexpr				{ $$ = $1; }
      ;
 
-mexpr : WORD				{ $$ = $1; }
-      | WSPACE				{ $$ = $1; }
-      | CHAR				{ $$ = $1; }
-      | SCHAR				{ $$ = $1; }
-      | mexpr EQLTGT mexpr 		{ $$ = str_cat(3, $1, $2, $3); }
-      | mexpr '_' mexpr 		{ $$ = str_cat(3, $1, STATIC_STR("_"), $3); }
-      | mexpr '^' mexpr 		{ $$ = str_cat(3, $1, STATIC_STR("^"), $3); }
-      | mexpr '+' mexpr 		{ $$ = str_cat(3, $1, STATIC_STR("+"), $3); }
-      | mexpr '-' mexpr 		{ $$ = str_cat(3, $1, STATIC_STR("-"), $3); }
-      | mexpr '*' mexpr		 	{ $$ = str_cat(3, $1, STATIC_STR("*"), $3); }
-      | mexpr '/' mexpr	 		{ $$ = str_cat(3, $1, STATIC_STR("/"), $3); }
-      | mexpr '~' mexpr			{ $$ = str_cat(3, $1, STATIC_STR("~"), $3); }
-      | '\\' WORD			{ $$ = str_cat(2, STATIC_STR("\\"), $2); }
-      | '\\' '_'			{ $$ = STATIC_STR("\\_"); }
-      | '(' math ')'			{ $$ = str_cat(3, STATIC_STR("("), $2, STATIC_STR(")")); }
-      | '{' math '}'			{ $$ = str_cat(3, STATIC_STR("{"), $2, STATIC_STR("}")); }
+mexpr : mexpr '+' mexpr			{ $$ = str_cat(3, $1, STATIC_STR("<mo>+</mo>"), $3); }
+      | mexpr '-' mexpr			{ $$ = str_cat(3, $1, STATIC_STR("<mo>-</mo>"), $3); }
+      | mexpr '*' mexpr			{ $$ = str_cat(3, $1, STATIC_STR("<mo>*</mo>"), $3); }
+      | mexpr '/' mexpr			{ $$ = str_cat(3, $1, STATIC_STR("<mo>/</mo>"), $3); }
+      | mexpr '^' mexpr			{ $$ = math_apply(STATIC_STR("msup"), $1, $3); }
+      | mexpr '_' mexpr			{ $$ = math_apply(STATIC_STR("msub"), $1, $3); }
+      | mexpr '=' mexpr			{ $$ = str_cat(3, $1, STATIC_STR("<mo>=</mo>"), $3); }
+      | mexpr '<' mexpr			{ $$ = str_cat(3, $1, STATIC_STR("<mo>&lt;</mo>"), $3); }
+      | mexpr '>' mexpr			{ $$ = str_cat(3, $1, STATIC_STR("<mo>&gt;</mo>"), $3); }
+      | mexpr '~' mexpr			{ $$ = str_cat(2, $1, $3); }
+      | '(' mexpr ')'			{ $$ = str_cat(3,
+						       STATIC_STR("<mrow><mo>(</mo><mrow>"),
+						       $2,
+						       STATIC_STR("</mrow><mo>)</mo></mrow>")); }
+      | '{' mexpr '}'			{ $$ = $2; }
+      | '\\' MATHFRAC '{' mexpr '}' '{' mexpr '}'
+					{ $$ = math_apply(STATIC_STR("mfrac"), $4, $7); }
+      | '\\' MATHSQRT '{' mexpr '}'	{ $$ = math_apply(STATIC_STR("msqrt"), $4, NULL); }
+      | '\\' MATHPROPTO			{ $$ = STATIC_STR("<mo>&prop;</mo>"); }
+      | NUMBER				{ $$ = str_cat(3, STATIC_STR("<mn>"), $1, STATIC_STR("</mn>")); }
+      | WORD				{ $$ = str_cat(3, STATIC_STR("<mi>"), $1, STATIC_STR("</mi>")); }
+      | MATHFRAC			{ $$ = STATIC_STR("<mi>frac</mi>"); }
+      | MATHSQRT			{ $$ = STATIC_STR("<mi>sqrt</mi>"); }
+      | MATHPROPTO			{ $$ = STATIC_STR("<mi>propto</mi>"); }
       ;
 
 %%
