@@ -83,7 +83,7 @@ static void inc_lineno(yyscan_t scanner);
 <MATH>[\\{}()*/~^_+-]	{ return *yytext; }
 <MATH>[=<>]		{ return *yytext; }
 <MATH>[A-Za-z]+		{ yylval->ptr = STR_DUP(yytext); return WORD; }
-<MATH>[0-9.]+		{ yylval->ptr = STR_DUP(yytext); return NUMBER; }
+<MATH>[+-]?[0-9.]+	{ yylval->ptr = STR_DUP(yytext); return NUMBER; }
 <MATH>[ \t]+		{ continue; /* skip whitespace */ }
 <MATH>.			{ fmt3_error2("post math contains invalid characters", yytext); yyterminate(); }
 
