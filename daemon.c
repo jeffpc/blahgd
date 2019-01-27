@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2014-2019 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -34,7 +34,6 @@
 #include "utils.h"
 #include "pipeline.h"
 #include "file_cache.h"
-#include "math.h"
 #include "req.h"
 #include "post.h"
 #include "version.h"
@@ -114,7 +113,7 @@ err_free:
 }
 
 /* the main daemon process */
-static int main_blahgd(int argc, char **argv, int mathfd)
+static int main_blahgd(int argc, char **argv)
 {
 	static const struct scgiops ops = {
 		.init = init_request,
@@ -128,7 +127,6 @@ static int main_blahgd(int argc, char **argv, int mathfd)
 	if (ret)
 		goto err;
 
-	init_math(mathfd);
 	init_pipe_subsys();
 	init_post_subsys();
 	init_file_cache();
@@ -155,18 +153,8 @@ err:
 	return ret;
 }
 
-/* the math helper worker */
-static int main_mathd(int argc, char **argv, int mathfd)
-{
-	openlog("mathd", LOG_NDELAY | LOG_PID, LOG_LOCAL0);
-
-	return render_math_processor(mathfd);
-}
-
 int main(int argc, char **argv)
 {
-	int mathfds[2];
-	pid_t pid;
 	int ret;
 
 	ASSERT0(putenv("TZ=UTC"));
@@ -177,33 +165,9 @@ int main(int argc, char **argv)
 	cmn_err(CE_INFO, "libjeffpc version %s", jeffpc_version);
 
 	ret = config_load((argc >= 2) ? argv[1] : NULL);
-	if (ret)
-		goto out;
+	if (!ret)
+		ret = main_blahgd(argc, argv);
 
-	ret = pipe(mathfds);
-	if (ret == -1) {
-		ret = -errno;
-		goto out;
-	}
-
-	switch ((pid = fork())) {
-		case -1:
-			/* error */
-			ret = -errno;
-			break;
-		case 0:
-			/* child */
-			ret = main_mathd(argc, argv, mathfds[0]);
-			break;
-		default:
-			/* parent */
-			cmn_err(CE_DEBUG, "math worker pid is %lu",
-				(unsigned long) pid);
-			ret = main_blahgd(argc, argv, mathfds[1]);
-			break;
-	}
-
-out:
 	if (ret)
 		DBG("Failed to initialize: %s", xstrerror(ret));
 

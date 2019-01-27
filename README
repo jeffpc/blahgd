@@ -37,9 +37,6 @@ blahgd's behavior:
 	DEFAULT_TAGCLOUD_MAX_SIZE
 				- default max font size of tag cloud entries
 
-	DEFAULT_LATEX_BIN	- default path to latex binary
-	DEFAULT_DVIPNG_BIN	- default path to dvipng binary
-
 	PREVIEW_SECRET		- key used to previewing unpublished posts
 
 
@@ -49,7 +46,6 @@ Dependencies
 To build blahgd you must have:
 
   - flex & bison
-  - libcrypto
   - libjeffpc
 
 Building and Installing

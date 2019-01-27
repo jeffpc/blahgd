@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2015-2019 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -38,7 +38,6 @@ static const struct uri_info safe_uris[] = {
 	{ "/favicon.ico",	"image/png",	URI_STATIC,	false },
 	{ "/style.css",		"text/css",	URI_STATIC,	false },
 	{ "/wiki.png",		"image/png",	URI_STATIC,	false },
-	{ "/math/",		"image/png",	URI_STATIC,	true  },
 	{ NULL,			NULL,		URI_BAD,	false },
 };
 

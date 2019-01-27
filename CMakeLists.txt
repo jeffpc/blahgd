@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+# Copyright (c) 2011-2019 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -81,7 +81,6 @@ add_library(blahg
 	post_fmt3_cmds.c
 	listing.c
 	mangle.c
-	math.c
 
 	# templates
 	${FLEX_tmpl_OUTPUTS} ${BISON_tmpl_OUTPUTS}
@@ -102,7 +101,6 @@ add_library(blahg
 add_dependencies(blahg revisiontag)
 
 target_link_libraries(blahg
-	crypto
 	m
 	${JEFFPC_LIBRARY}
 )

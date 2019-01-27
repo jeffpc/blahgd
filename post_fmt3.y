@@ -41,7 +41,6 @@
 #include "mangle.h"
 #include "listing.h"
 #include "post_fmt3_cmds.h"
-#include "math.h"
 #include "debug.h"
 
 #include "parse.h"

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+# Copyright (c) 2016-2019 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -57,10 +57,6 @@ set_default(COND_STACK_DEPTH		10)
 
 set_default(DEFAULT_TAGCLOUD_MIN_SIZE	6)
 set_default(DEFAULT_TAGCLOUD_MAX_SIZE	18)
-
-set_default(DEFAULT_LATEX_BIN		"/usr/bin/latex")
-set_default(DEFAULT_DVIPS_BIN		"/usr/bin/dvips")
-set_default(DEFAULT_CONVERT_BIN		"/usr/bin/convert")
 
 set_default(PREVIEW_SECRET		0x1985)
 
