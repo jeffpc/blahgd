@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013-2019 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+# Copyright (c) 2019 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,6 +20,7 @@
 # SOFTWARE.
 #
 
-add_subdirectory(fmt3-commands)
-add_subdirectory(fmt3-bugs)
-add_subdirectory(fmt3-math)
+file(GLOB TESTS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.tex)
+foreach(TEST ${TESTS})
+	simple_c_test(fmt3 math fmt3 ${TEST})
+endforeach()
