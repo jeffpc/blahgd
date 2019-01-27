@@ -29,16 +29,15 @@ struct uri_info {
 	const char *uri;
 	const char *content_type;	/* required for URI_STATIC */
 	enum uri_type type;
-	bool recurse;
 };
 
 static const struct uri_info safe_uris[] = {
-	{ "/",			NULL,		URI_DYNAMIC,	false },
-	{ "/bug.png",		"image/png",	URI_STATIC,	false },
-	{ "/favicon.ico",	"image/png",	URI_STATIC,	false },
-	{ "/style.css",		"text/css",	URI_STATIC,	false },
-	{ "/wiki.png",		"image/png",	URI_STATIC,	false },
-	{ NULL,			NULL,		URI_BAD,	false },
+	{ "/",			NULL,		URI_DYNAMIC, },
+	{ "/bug.png",		"image/png",	URI_STATIC,  },
+	{ "/favicon.ico",	"image/png",	URI_STATIC,  },
+	{ "/style.css",		"text/css",	URI_STATIC,  },
+	{ "/wiki.png",		"image/png",	URI_STATIC,  },
+	{ NULL,			NULL,		URI_BAD,     },
 };
 
 static const struct uri_info *get_uri_info(const char *path)
@@ -52,15 +51,7 @@ static const struct uri_info *get_uri_info(const char *path)
 		return NULL;
 
 	for (i = 0; safe_uris[i].uri; i++) {
-		const char *uri = safe_uris[i].uri;
-		bool rec = safe_uris[i].recurse;
-
-		/* recursive paths must begin exactly the same */
-		if (rec && !strncmp(uri, path, strlen(uri)))
-			return &safe_uris[i];
-
-		/* non-recursive paths must match exactly */
-		if (!rec && !strcmp(uri, path))
+		if (!strcmp(safe_uris[i].uri, path))
 			return &safe_uris[i];
 	}
 
