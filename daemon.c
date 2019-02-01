@@ -131,10 +131,6 @@ static int main_blahgd(int argc, char **argv)
 	init_post_subsys();
 	init_file_cache();
 
-	ret = init_wordpress_categories();
-	if (ret)
-		goto err;
-
 	ret = load_all_posts();
 	if (ret)
 		goto err;
