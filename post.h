@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2009-2019 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -98,7 +98,7 @@ extern struct nvlist *get_post(struct req *req, int postid,
 extern void init_post_index(void);
 extern struct post *index_lookup_post(unsigned int postid);
 extern int index_get_posts(struct post **ret, struct str *tagname,
-			   bool tag, bool (*pred)(struct post *, void *),
+			   bool (*pred)(struct post *, void *),
 			   void *private, int skip, int nposts);
 extern void index_for_each_tag(int (*init)(void *, unsigned long),
 			       void (*step)(void *, struct str *, unsigned long,

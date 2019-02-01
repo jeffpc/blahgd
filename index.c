@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2009-2019 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -60,7 +60,7 @@ static void __load_posts(struct req *req, int page, int archid)
 
 	if (!archid) {
 		/* regular index */
-		nposts = index_get_posts(posts, NULL, false, NULL, NULL,
+		nposts = index_get_posts(posts, NULL, NULL, NULL,
 					 page * posts_per_page,
 					 posts_per_page);
 	} else {
@@ -85,7 +85,7 @@ static void __load_posts(struct req *req, int page, int archid)
 		filter_args.start = mktime(&start);
 		filter_args.end   = mktime(&end);
 
-		nposts = index_get_posts(posts, NULL, false, archive_filter,
+		nposts = index_get_posts(posts, NULL, archive_filter,
 					 &filter_args, page * posts_per_page,
 					 posts_per_page);
 	}

@@ -81,7 +81,7 @@ int __tagcat(struct req *req, struct str *tag, int page, char *tmpl,
 
 	vars_scope_push(&req->vars);
 
-	nposts = index_get_posts(posts, tag, istag, NULL, NULL,
+	nposts = index_get_posts(posts, tag, NULL, NULL,
 				 page * posts_per_page, posts_per_page);
 
 	load_posts(req, posts, nposts, nposts == posts_per_page);

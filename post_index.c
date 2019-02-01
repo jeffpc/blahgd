@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2015-2019 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -44,12 +44,11 @@
  *
  *   - by time (used for index & archive listing)
  *   - by tag (used for tag listing)
- *   - by category (used for category listing)
  *
- * To maximize code reuse, the by-tag and by-category trees contain struct
- * post_subindex nodes for each (unique) tag/category.  Those nodes contain
- * binary search trees of their own with struct post_index_entry elements
- * mapping <timestamp, post id> (much like the by time index) to a post.
+ * The by-tag tree contains struct post_subindex nodes for each (unique)
+ * tag.  Those nodes contain binary search trees of their own with struct
+ * post_index_entry elements mapping <timestamp, post id> (much like the by
+ * time index) to a post.
  *
  * Because this isn't complex enough, we also keep a linked list of all the
  * tag entries rooted in the global index tree node.
@@ -58,35 +57,16 @@
  *      | index_global tree              |
  *      |+-------------------------+     |   +------+
  *      || post global index entry | ... |   | post |
- *  +--->|   by_tag  by_cat  post  |     |   +------+
- *  |   |+-----|-------|------|----+     |      ^
- *  |   +------|-------|------|----------+      |
- *  |          |       |      |                 |
- *  |          |       |      +-----------------+
- *  |          |       |
- *  | +--------+       +--------------------------+
- *  | |                                           |
- *  | | +-------------------------------------+   |
- *  | | |  index_by_tag tree                  |   |
- *  | | | +-----------------------------+     |   |
- *  | | | |  post subindex              |     |   |
- *  | | | | +-------------------------+ |     |   |
- *  | | | | |  subindex tree          | |     |   |
- *  | | | | | +-----------------+     | |     |   |
- *  | +-----> |post index entry | ... | |     |   |
- *  |   | | | |  global  xref   |     | | ... |   |
- *  |   | | | +----|------|-----+     | |     |   |
- *  |   | | |      |      |           | |     |   |
- *  ^<-------------+      +---> ...   | |     |   |
- *  |   | | |                         | |     |   |
- *  |   | | +-------------------------+ |     |   |
- *  |   | +-----------------------------+     |   |
- *  |   +-------------------------------------+   |
- *  |                                             |
- *  | +-------------------------------------------+
+ *  +--->|   by_tag          post  |     |   +------+
+ *  |   |+-----|--------------|----+     |      ^
+ *  |   +------|--------------|----------+      |
+ *  |          |              |                 |
+ *  |          |              +-----------------+
+ *  |          |
+ *  | +--------+
  *  | |
  *  | | +-------------------------------------+
- *  | | |  index_by_cat tree                  |
+ *  | | |  index_by_tag tree                  |
  *  | | | +-----------------------------+     |
  *  | | | |  post subindex              |     |
  *  | | | | +-------------------------+ |     |
@@ -116,7 +96,6 @@
 
 enum entry_type {
 	ET_TAG = 1,	/* global's by_tag list */
-	ET_CAT,		/* global's by_cat list */
 	ET_TIME,	/* index_by_time */
 };
 
@@ -132,9 +111,8 @@ struct post_global_index_entry {
 	/* other useful cached data from struct post */
 	unsigned int time;
 
-	/* list of tags & cats associated with this post */
+	/* list of tags associated with this post */
 	struct list by_tag;
-	struct list by_cat;
 };
 
 struct post_index_entry {
@@ -155,7 +133,7 @@ struct post_index_entry {
 	struct str *name;
 	enum entry_type type;
 
-	/* list node for global index tag/cat list */
+	/* list node for global index tag list */
 	struct list_node xref;
 };
 
@@ -172,7 +150,6 @@ struct post_subindex {
 static struct rb_tree index_global;
 static struct rb_tree index_by_time;
 static struct rb_tree index_by_tag;
-static struct rb_tree index_by_cat;
 
 static struct lock index_lock;
 static LOCK_CLASS(index_lock_lc);
@@ -249,10 +226,8 @@ void init_post_index(void)
 
 	init_index_tree(&index_by_time);
 
-	/* set up the by-tag/category indexes */
+	/* set up the by-tag indexes */
 	rb_create(&index_by_tag, post_tag_cmp, sizeof(struct post_subindex),
-		  offsetof(struct post_subindex, index));
-	rb_create(&index_by_cat, post_tag_cmp, sizeof(struct post_subindex),
 		  offsetof(struct post_subindex, index));
 
 	MXINIT(&index_lock, &index_lock_lc);
@@ -308,7 +283,7 @@ struct post *index_lookup_post(unsigned int postid)
 }
 
 /* get a list of posts based on tagname & return value from predicate */
-int index_get_posts(struct post **ret, struct str *tagname, bool tag,
+int index_get_posts(struct post **ret, struct str *tagname,
 		    bool (*pred)(struct post *, void *), void *private,
 		    int skip, int nposts)
 {
@@ -320,10 +295,8 @@ int index_get_posts(struct post **ret, struct str *tagname, bool tag,
 
 	if (!tagname)
 		tree = &index_by_time;
-	else if (tag)
-		tree = __get_subindex(&index_by_tag, tagname);
 	else
-		tree = __get_subindex(&index_by_cat, tagname);
+		tree = __get_subindex(&index_by_tag, tagname);
 
 	/* if there is no tree, there are no posts */
 	if (!tree) {
@@ -421,8 +394,6 @@ int index_insert_post(struct post *post)
 	global->time = post->time;
 	list_create(&global->by_tag, sizeof(struct post_index_entry),
 		    offsetof(struct post_index_entry, xref));
-	list_create(&global->by_cat, sizeof(struct post_index_entry),
-		    offsetof(struct post_index_entry, xref));
 
 	/* allocate an entry for the by-time index */
 	by_time = mem_cache_alloc(index_entry_cache);
@@ -456,17 +427,9 @@ int index_insert_post(struct post *post)
 	if (ret)
 		goto err_free_tags;
 
-	ret = __insert_post_tags(&index_by_cat, global, &post->cats,
-				 &global->by_cat, ET_CAT);
-	if (ret)
-		goto err_free_cats;
-
 	MXUNLOCK(&index_lock);
 
 	return 0;
-
-err_free_cats:
-	// XXX: __remove_post_tags(&index_by_cat, &post->cats);
 
 err_free_tags:
 	// XXX: __remove_post_tags(&index_by_tag, &post->tags);
@@ -539,7 +502,6 @@ static void __free_global_index(struct rb_tree *tree)
 	while ((cur = rb_destroy_nodes(tree, &cookie))) {
 		post_putref(cur->post);
 		list_destroy(&cur->by_tag);
-		list_destroy(&cur->by_cat);
 		mem_cache_free(global_index_entry_cache, cur);
 	}
 
@@ -558,9 +520,6 @@ static void __free_index(struct rb_tree *tree)
 		switch (cur->type) {
 			case ET_TAG:
 				xreflist = &cur->global->by_tag;
-				break;
-			case ET_CAT:
-				xreflist = &cur->global->by_cat;
 				break;
 			case ET_TIME:
 				xreflist = NULL;
@@ -597,7 +556,6 @@ void free_all_posts(void)
 	MXLOCK(&index_lock);
 
 	__free_tag_index(&index_by_tag);
-	__free_tag_index(&index_by_cat);
 
 	__free_index(&index_by_time);
 
