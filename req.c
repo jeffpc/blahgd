@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2014-2019 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -431,21 +431,21 @@ int R404(struct req *req, char *tmpl)
 	return 0;
 }
 
-int R301(struct req *req, const char *url)
+int R301(struct req *req, struct str *url)
 {
 	str_putref(req->fmt);
 
-	DBG("status 301 (url: '%s')", url);
+	DBG("status 301 (url: '%s')", str_cstr(url));
 
 	req_head(req, "Content-Type", "text/html");
-	req_head(req, "Location", url);
+	req_head(req, "Location", str_cstr(url));
 
 	req->scgi->response.status = SCGI_STATUS_REDIRECT;
 	req->fmt = STATIC_STR("html");
 
 	vars_scope_push(&req->vars);
 
-	vars_set_str(&req->vars, "redirect", STR_DUP(url));
+	vars_set_str(&req->vars, "redirect", url);
 
 	req->scgi->response.body = render_page(req, "{301}");
 

@@ -64,7 +64,7 @@ extern void req_head(struct req *req, const char *name, const char *val);
 extern int req_dispatch(struct req *req);
 
 extern int R404(struct req *req, char *tmpl);
-extern int R301(struct req *req, const char *url);
+extern int R301(struct req *req, struct str *url);
 
 extern int blahg_archive(struct req *req, int paged);
 extern int blahg_category(struct req *req, int page);
