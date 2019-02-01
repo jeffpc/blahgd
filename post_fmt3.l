@@ -69,7 +69,6 @@ static void inc_lineno(yyscan_t scanner);
 "\\title{"			{ BEGIN(SPECIALCMD); return TITLESTART; }
 "\\published{"			{ BEGIN(SPECIALCMD); return PUBSTART; }
 "\\tag{"			{ BEGIN(SPECIALCMD); return TAGSTART; }
-"\\category{"			{ BEGIN(SPECIALCMD); return CATSTART; }
 "\\twitterimg{"			{ BEGIN(SPECIALCMD); return TWITTERIMGSTART; }
 "\\twitterphoto{"		{ BEGIN(SPECIALCMD); return TWITTERPHOTOSTART; }
 <SPECIALCMD>"}"			{ BEGIN(INITIAL); return SPECIALCMDEND; }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2009-2019 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -249,7 +249,6 @@ static int __do_load_post_body_fmt3(struct post *post, const struct str *input)
 	x.sc_title       = NULL;
 	x.sc_pub         = NULL;
 	x.sc_tags        = NULL;
-	x.sc_cats        = NULL;
 	x.sc_twitter_img = NULL;
 
 	fmt3_lex_init(&x.scanner);
@@ -265,7 +264,7 @@ static int __do_load_post_body_fmt3(struct post *post, const struct str *input)
 	 * Now update struct post based on what we got from the .tex file.
 	 * The struct is already populated by data from the metadata file.
 	 * For the simple string values, we merely override whatever was
-	 * there.  For tags and categories we use the union.
+	 * there.  For tags we use the union.
 	 */
 
 	if (x.sc_title) {
@@ -282,7 +281,6 @@ static int __do_load_post_body_fmt3(struct post *post, const struct str *input)
 	}
 
 	post_add_tags(&post->tags, x.sc_tags);
-	post_add_tags(&post->cats, x.sc_cats);
 
 	str_putref(x.sc_title);
 	str_putref(x.sc_pub);
@@ -357,14 +355,12 @@ static int __refresh_published(struct post *post)
 
 	__refresh_published_prop(post, lv);
 
-	/* empty out the tags/cats/comments lists */
+	/* empty out the tags/comments lists */
 	post_remove_all_tags(&post->tags);
-	post_remove_all_tags(&post->cats);
 	post_remove_all_comments(post);
 
-	/* populate the tags/cats/comments lists */
+	/* populate the tags/comments lists */
 	post_add_tags(&post->tags, sexpr_alist_lookup_list(lv, "tags"));
-	post_add_tags(&post->cats, sexpr_alist_lookup_list(lv, "cats"));
 	post_add_comments(post, sexpr_alist_lookup_list(lv, "comments"));
 
 	val_putref(lv);
@@ -464,8 +460,6 @@ struct post *load_post(int postid, bool preview)
 
 	rb_create(&post->tags, tag_cmp, sizeof(struct post_tag),
 		  offsetof(struct post_tag, node));
-	rb_create(&post->cats, tag_cmp, sizeof(struct post_tag),
-		  offsetof(struct post_tag, node));
 	list_create(&post->comments, sizeof(struct comment),
 		    offsetof(struct comment, list));
 	refcnt_init(&post->refcnt, 1);
@@ -513,7 +507,6 @@ static void post_remove_all_tags(struct rb_tree *taglist)
 void post_destroy(struct post *post)
 {
 	post_remove_all_tags(&post->tags);
-	post_remove_all_tags(&post->cats);
 	post_remove_all_comments(post);
 
 	nvl_putref(post->files);

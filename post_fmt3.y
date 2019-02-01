@@ -172,7 +172,7 @@ static struct str *math_apply(struct str *op, struct str *a, struct str *b)
 %token <ptr> VERBTEXT
 %token VERBSTART VERBEND DOLLAR
 %token LISTSTART LISTEND
-%token TITLESTART TAGSTART CATSTART PUBSTART TWITTERIMGSTART
+%token TITLESTART TAGSTART PUBSTART TWITTERIMGSTART
 %token TWITTERPHOTOSTART
 %token SPECIALCMDEND
 
@@ -223,7 +223,6 @@ thing : WORD				{ $$ = $1; }
       | TITLESTART verb SPECIALCMDEND	{ $$ = NULL; special_cmd(data, &data->sc_title, $2, false); }
       | PUBSTART verb SPECIALCMDEND	{ $$ = NULL; special_cmd(data, &data->sc_pub, $2, false); }
       | TAGSTART verb SPECIALCMDEND	{ $$ = NULL; special_cmd_list(data, &data->sc_tags, $2); }
-      | CATSTART verb SPECIALCMDEND	{ $$ = NULL; special_cmd_list(data, &data->sc_cats, $2); }
       | TWITTERIMGSTART verb SPECIALCMDEND
 					{ $$ = NULL; special_cmd(data, &data->sc_twitter_img, $2, false); }
       | TWITTERPHOTOSTART verb SPECIALCMDEND

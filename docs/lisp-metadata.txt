@@ -15,7 +15,6 @@ Posts' metadata is stored alongside the post text in a file called
   (title . "abcdef")
   (fmt . 3)
   (tags "tag1" "tag2")
-  (cats "cat1" "cat2")
   (comments 1 2 3)
   (listed #t))
 
@@ -30,11 +29,9 @@ Most entries are self explanatory.  With that said,
 
  tags: list of tags associated with this post
 
- cats: list of categories associated with this post
-
  comments: entry enumerates all the comment IDs for this post
 
- listed: list this post on the index/category/tag/archive pages?
+ listed: list this post on the index/tag/archive pages?
 
 
 Comment
