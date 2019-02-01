@@ -161,8 +161,8 @@ int config_load(const char *fname)
 			NULL);
 	config_load_str(lv, CONFIG_TWITTER_DESCRIPTION, &config.twitter_description,
 			NULL);
-	config_load_list(lv, CONFIG_WORDPRESS_CATEGORIES,
-			 &config.wordpress_categories);
+	config_load_list(lv, CONFIG_CATEGORY_TO_TAG,
+			 &config.category_to_tag);
 
 	val_putref(lv);
 

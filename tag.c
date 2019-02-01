@@ -99,7 +99,33 @@ int blahg_tag(struct req *req, int page)
 			page, "{tagindex}", true);
 }
 
+/*
+ * This is the simplest way to handle categories without needing to
+ * supporting them anymore.  We simply map the category to a tag based on
+ * what's in the category-to-tag config alist.
+ *
+ * If the category doesn't exist in the alist, we return a 404.  Otherwise,
+ * we use a 301 redirect to the tag page.
+ */
 int blahg_category(struct req *req, int page)
 {
-	return R404(req, NULL);
+	struct str *tag;
+	struct str *cat;
+
+	cat = nvl_lookup_str(req->scgi->request.query, "cat");
+	if (IS_ERR(cat))
+		return R404(req, NULL);
+
+	tag = sexpr_alist_lookup_str(config.category_to_tag, str_cstr(cat));
+
+	str_putref(cat);
+
+	if (!tag)
+		return R404(req, NULL);
+
+	return R301(req,
+		    str_cat(3,
+			    str_getref(config.base_url),
+			    STATIC_STR("/?tag="),
+			    tag));
 }

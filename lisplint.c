@@ -147,7 +147,7 @@ static bool check_config(const char *fname, struct val *lv)
 	ret = check_type(fname, lv, CONFIG_PHOTO_BASE_URL, VT_STR, false) && ret;
 	ret = check_type(fname, lv, CONFIG_TAGCLOUD_MIN_SIZE, VT_INT, false) && ret;
 	ret = check_type(fname, lv, CONFIG_TAGCLOUD_MAX_SIZE, VT_INT, false) && ret;
-	ret = check_type(fname, lv, CONFIG_WORDPRESS_CATEGORIES, VT_CONS, false) && ret;
+	ret = check_type(fname, lv, CONFIG_CATEGORY_TO_TAG, VT_CONS, false) && ret;
 
 	return ret;
 }
