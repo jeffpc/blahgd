@@ -61,13 +61,14 @@ static void __store_pages(struct vars *vars, int page)
 	vars_set_int(vars, "nextpage", page - 1);
 }
 
-int __tagcat(struct req *req, struct str *tag, int page, char *tmpl,
-	     bool istag)
+int blahg_tag(struct req *req, int page)
 {
 	const unsigned int posts_per_page = req->opts.index_stories;
 	struct post *posts[posts_per_page];
+	struct str *tag;
 	int nposts;
 
+	tag = nvl_lookup_str(req->scgi->request.query, "tag");
 	if (IS_ERR(tag))
 		return R404(req, NULL);
 
@@ -88,15 +89,9 @@ int __tagcat(struct req *req, struct str *tag, int page, char *tmpl,
 
 	str_putref(tag);
 
-	req->scgi->response.body = render_page(req, tmpl);
+	req->scgi->response.body = render_page(req, "{tagindex}");
 
 	return 0;
-}
-
-int blahg_tag(struct req *req, int page)
-{
-	return __tagcat(req, nvl_lookup_str(req->scgi->request.query, "tag"),
-			page, "{tagindex}", true);
 }
 
 /*
