@@ -27,6 +27,7 @@
 
 #include <jeffpc/atomic.h>
 #include <jeffpc/mem.h>
+#include <jeffpc/version.h>
 
 #include "req.h"
 #include "utils.h"
@@ -141,6 +142,16 @@ static void log_request(struct req *req)
 	nvl_set_int(logentry, "time-stamp", now);
 	nvl_set_int(logentry, "pid", getpid());
 	nvl_set_str(logentry, "hostname", STR_DUP(hostname));
+
+	/*
+	 * store the version info
+	 */
+	tmp = nvl_alloc();
+	if (!tmp)
+		goto err_free;
+	nvl_set_str(tmp, "blahgd", STATIC_STR(version_string));
+	nvl_set_str(tmp, "libjeffpc", STATIC_STR(jeffpc_version));
+	nvl_set_nvl(logentry, "version", tmp);
 
 	/*
 	 * store the request
