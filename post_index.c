@@ -22,7 +22,6 @@
 
 #include <string.h>
 #include <stddef.h>
-#include <sys/sysmacros.h>
 
 #include <jeffpc/val.h>
 #include <jeffpc/error.h>

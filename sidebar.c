@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2013-2019 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include <sys/sysmacros.h>
 
 #include <jeffpc/error.h>
 #include <jeffpc/mem.h>
