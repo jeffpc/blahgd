@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2014-2019 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -40,8 +40,6 @@
 #include "file_cache.h"
 #include "utils.h"
 #include "debug.h"
-
-#define FILE_EVENTS	(FILE_MODIFIED | FILE_ATTRIB)
 
 static LOCK_CLASS(file_lock_lc);
 static LOCK_CLASS(file_node_lc);
@@ -143,7 +141,7 @@ static void process_file(struct file_node *node, int events)
 	fobj->fo_ctime = statbuf.st_ctim;
 
 	if (port_associate(filemon_port, PORT_SOURCE_FILE, (uintptr_t) fobj,
-			   FILE_EVENTS, node) == -1) {
+			   (FILE_MODIFIED | FILE_ATTRIB), node) == -1) {
 		DBG("failed to register file '%s' errno %d", fobj->fo_name,
 		    errno);
 		goto free;
