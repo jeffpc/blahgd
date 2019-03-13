@@ -24,7 +24,6 @@
 
 #include "config.h"
 #include "utils.h"
-#include "file_cache.h"
 #include "debug.h"
 
 /*

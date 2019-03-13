@@ -37,13 +37,13 @@
 #include <jeffpc/error.h>
 #include <jeffpc/io.h>
 #include <jeffpc/mem.h>
+#include <jeffpc/file-cache.h>
 
 #include "post.h"
 #include "vars.h"
 #include "req.h"
 #include "parse.h"
 #include "utils.h"
-#include "file_cache.h"
 #include "debug.h"
 
 static struct mem_cache *post_cache;

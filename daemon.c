@@ -30,10 +30,10 @@
 #include <jeffpc/val.h>
 #include <jeffpc/types.h>
 #include <jeffpc/scgisvc.h>
+#include <jeffpc/file-cache.h>
 
 #include "utils.h"
 #include "pipeline.h"
-#include "file_cache.h"
 #include "req.h"
 #include "post.h"
 #include "version.h"
@@ -127,9 +127,10 @@ static int main_blahgd(int argc, char **argv)
 	if (ret)
 		goto err;
 
+	ASSERT0(file_cache_init());
+
 	init_pipe_subsys();
 	init_post_subsys();
-	init_file_cache();
 
 	ret = load_all_posts();
 	if (ret)
@@ -141,7 +142,7 @@ static int main_blahgd(int argc, char **argv)
 		goto err;
 
 	free_all_posts();
-	uncache_all_files();
+	file_cache_uncache_all();
 
 	return 0;
 

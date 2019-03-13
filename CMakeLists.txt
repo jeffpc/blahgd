@@ -68,9 +68,6 @@ add_custom_command(TARGET revisiontag
 add_library(blahg
 	version.c
 
-	# file caching & change monitoring
-	file_cache.c
-
 	# post - all formats
 	post.c
 	post_index.c

@@ -31,10 +31,10 @@
 #include <sys/mman.h>
 
 #include <jeffpc/error.h>
+#include <jeffpc/file-cache.h>
 
 #include "render.h"
 #include "parse.h"
-#include "file_cache.h"
 #include "config.h"
 
 char *render_page(struct req *req, const char *str)

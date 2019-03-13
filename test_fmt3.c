@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2017 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2013-2019 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,10 +25,10 @@
 #include <jeffpc/jeffpc.h>
 #include <jeffpc/error.h>
 #include <jeffpc/val.h>
+#include <jeffpc/file-cache.h>
 
 #include "parse.h"
 #include "utils.h"
-#include "file_cache.h"
 
 static int onefile(struct post *post, char *ibuf, size_t len)
 {
@@ -89,7 +89,7 @@ int main(int argc, char **argv)
 
 	ASSERT0(putenv("UMEM_DEBUG=default,verbose"));
 
-	init_file_cache();
+	ASSERT0(file_cache_init());
 
 	for (i = 1; i < argc; i++) {
 		in = read_file(argv[i]);
