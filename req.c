@@ -23,10 +23,10 @@
 #include <unistd.h>
 #include <sys/systeminfo.h>
 #include <sys/inttypes.h>
-#include <pthread.h>
 
 #include <jeffpc/atomic.h>
 #include <jeffpc/mem.h>
+#include <jeffpc/thread.h>
 #include <jeffpc/version.h>
 
 #include "req.h"
@@ -168,7 +168,7 @@ static void log_request(struct req *req)
 	else
 		nvl_set_null(tmp, "fmt");
 	nvl_set_int(tmp, "file-descriptor", scgi->fd);
-	nvl_set_int(tmp, "thread-id", (uint64_t) pthread_self());
+	nvl_set_int(tmp, "thread-id", (uint64_t) xthr_self());
 	nvl_set_nvl(logentry, "request", tmp);
 
 	/*
