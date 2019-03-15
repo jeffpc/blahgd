@@ -22,9 +22,9 @@
 
 #include <unistd.h>
 #include <sys/systeminfo.h>
-#include <sys/inttypes.h>
 
 #include <jeffpc/atomic.h>
+#include <jeffpc/int.h>
 #include <jeffpc/mem.h>
 #include <jeffpc/thread.h>
 #include <jeffpc/version.h>
