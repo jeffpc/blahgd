@@ -123,8 +123,6 @@ add_executable(blahgd
 target_link_libraries(blahgd
 	blahg
 	pthread
-	socket
-	nsl
 )
 
 add_executable(lisplint
