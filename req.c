@@ -20,13 +20,11 @@
  * SOFTWARE.
  */
 
-#include <unistd.h>
-#include <sys/systeminfo.h>
-
 #include <jeffpc/atomic.h>
 #include <jeffpc/int.h>
 #include <jeffpc/mem.h>
 #include <jeffpc/thread.h>
+#include <jeffpc/sock.h>
 #include <jeffpc/version.h>
 
 #include "req.h"
@@ -118,7 +116,6 @@ static void log_request(struct req *req)
 {
 	struct scgi *scgi = req->scgi;
 	char fname[FILENAME_MAX];
-	char hostname[128];
 	struct nvlist *logentry;
 	struct nvlist *tmp;
 	struct buffer *buf;
@@ -126,8 +123,6 @@ static void log_request(struct req *req)
 	int ret;
 
 	now = gettime();
-
-	sysinfo(SI_HOSTNAME, hostname, sizeof(hostname));
 
 	snprintf(fname, sizeof(fname), "%s/requests/%"PRIu64".%09"PRIu64"-%011u",
 		 str_cstr(config.data_dir), now / 1000000000llu,
@@ -141,7 +136,7 @@ static void log_request(struct req *req)
 		goto err;
 	nvl_set_int(logentry, "time-stamp", now);
 	nvl_set_int(logentry, "pid", getpid());
-	nvl_set_str(logentry, "hostname", STR_DUP(hostname));
+	nvl_set_str(logentry, "hostname", STR_DUP(xgethostname()));
 
 	/*
 	 * store the version info
