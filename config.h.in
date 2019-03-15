@@ -23,6 +23,8 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
+#cmakedefine HAVE_PRIV_H 1
+
 /* settings */
 #cmakedefine DEFAULT_SCGI_PORT		${DEFAULT_SCGI_PORT}
 

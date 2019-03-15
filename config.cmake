@@ -20,7 +20,9 @@
 # SOFTWARE.
 #
 
-include(CheckFunctionExists)
+include(CheckIncludeFiles)
+
+check_include_files(priv.h HAVE_PRIV_H)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
 find_package(jeffpc)

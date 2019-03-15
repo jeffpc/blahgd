@@ -20,8 +20,12 @@
  * SOFTWARE.
  */
 
+#include "config.h"
+
 #include <syslog.h>
+#ifdef HAVE_PRIV_H
 #include <priv.h>
+#endif
 
 #include <jeffpc/jeffpc.h>
 #include <jeffpc/version.h>
@@ -68,6 +72,7 @@ static void process_request(struct scgi *scgi)
 
 static int drop_privs()
 {
+#ifdef HAVE_PRIV_H
 	static const char *privs[] = {
 		"file_read",
 		"file_write",
@@ -110,6 +115,11 @@ err_free:
 	priv_freeset(wanted);
 
 	return ret;
+#else
+	cmn_err(CE_WARN, "No supported way to drop privileges");
+
+	return 0;
+#endif
 }
 
 /* the main daemon process */
