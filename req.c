@@ -212,7 +212,7 @@ static void log_request(struct req *req)
 	if (IS_ERR(buf))
 		goto err_free;
 
-	ret = write_file(fname, buffer_data(buf), buffer_used(buf));
+	ret = write_file(fname, buffer_data(buf), buffer_size(buf));
 	if (ret)
 		goto err_free_buf;
 
