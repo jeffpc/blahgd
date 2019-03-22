@@ -208,7 +208,7 @@ static void log_request(struct req *req)
 	nvl_set_nvl(logentry, "options", tmp);
 
 	/* serialize */
-	buf = nvl_pack(logentry, VF_JSON);
+	buf = nvl_pack(logentry, VF_CBOR);
 	if (IS_ERR(buf))
 		goto err_free;
 
