@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2014-2020 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -125,8 +125,8 @@ static void log_request(struct req *req)
 	now = gettime();
 
 	snprintf(fname, sizeof(fname), "%s/requests/%"PRIu64".%09"PRIu64"-%011u",
-		 str_cstr(config.data_dir), now / 1000000000llu,
-		 now % 1000000000llu, scgi->id);
+		 str_cstr(config.data_dir), now / 1000000000u,
+		 now % 1000000000u, scgi->id);
 
 	/*
 	 * allocate a log entry & store some misc info
