@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011-2019 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+# Copyright (c) 2011-2020 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -146,4 +146,4 @@ function(simple_c_test type section bin data)
 	)
 endfunction()
 
-add_subdirectory(test)
+add_subdirectory(tests)
