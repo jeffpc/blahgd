@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
+ * Copyright (c) 2014-2020 Josef 'Jeff' Sipek <jeffpc@josefsipek.net>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,6 @@
 
 #include "config.h"
 
-#include <syslog.h>
 #ifdef HAVE_PRIV_H
 #include <priv.h>
 #endif
